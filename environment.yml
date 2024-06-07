@@ -1,4 +1,4 @@
-name: qnnpy_env
+name: qnnpy
 channels:
   - conda-forge
 dependencies:
