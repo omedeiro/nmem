@@ -2,10 +2,9 @@
 """
 Created on Fri Nov  3 14:01:31 2023
 
-@author: ICE
+@author: omedeiro
 """
 
-import sys
 from datetime import datetime
 from time import sleep
 
@@ -14,8 +13,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.stats import norm
-
-
 
 # %% Functionss
 
@@ -30,7 +27,7 @@ def create_waveforms(num_samples=256, width=30, height=1, phase=0, ramp=False):
     if stop > num_samples:
         stop = int(num_samples)
 
-    if ramp == True:
+    if ramp is True:
         waveform[start:stop] = np.linspace(0, height, int(np.floor(width)))
 
     else:
@@ -208,7 +205,7 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
         lbl = "b"
         params = get_param_mean(full_params)
 
-    except:
+    except Exception:
         try:
             full_params, cov = bimodal_fit(edges, h, (700, 10, 0.02, 1040, 10, 0.02))
             lbl = "b"
@@ -216,18 +213,18 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
             lbl = "b"
             params = get_param_mean(full_params)
 
-        except:
+        except Exception:
             full_params, cov = bimodal_fit(edges, h, (700, 10, 0.02, 750, 10, 0.02))
             lbl = "b"
             params = get_param_mean(full_params)
 
-    if (abs(np.array([full_params[2], full_params[5]])) < 1e-5).any() == True:
+    if (abs(np.array([full_params[2], full_params[5]])) < 1e-5).any() is True:
         try:
             ax.plot(x, bimodal(x, *params), color="k", linewidth=1)
             full_params = params
             params = get_param_mean(params)
             lbl = "b"
-        except:
+        except Exception:
             params = norm.fit(y)
             pdf = norm.pdf(x, *params) * h.sum() * binwidth
             ax.plot(x, pdf, color="k", linewidth=1)
@@ -236,7 +233,7 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
             )
             lbl = "g"
 
-    if (np.array([full_params[1], full_params[4]]) < 3).any() == True:
+    if (np.array([full_params[1], full_params[4]]) < 3).any() is True:
         try:
             params = norm.fit(y)
             expected = np.array([params[0] - 20, 12, 0.05, params[0] + 20, 10, 0.05])
@@ -246,7 +243,7 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
             full_params = np.array(
                 [params[0], params[1], expected[2], params[0], params[1], expected[5]]
             )
-        except:
+        except Exception:
             params = norm.fit(y)
             pdf = norm.pdf(x, *params) * h.sum() * binwidth
             ax.plot(x, pdf, color="k", linewidth=1)
@@ -290,9 +287,9 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
 
 def reject_outliers(data, m=2):
     ind = abs(data - np.mean(data)) < m * np.std(data)
-    if len(ind[ind == False]) < 50:
+    if len(ind[ind is False]) < 50:
         data = data[ind]
-        print(f"Samples rejected {len(ind[ind==False])}")
+        print(f"Samples rejected {len(ind[ind is False])}")
         rejectInd = np.invert(ind)
     else:
         rejectInd = None
@@ -326,7 +323,7 @@ def plot_waveforms(data_dict, measurement_settings, previous_params=[0]):
         plt.ylabel("splitter current (mA)")
 
         half = False
-        if half == True:
+        if half is True:
             ax1 = plt.subplot(412)
             ax1.plot(
                 (data1[0][numpoints + 1 : numpoints * 2 + 1] - data1[0][numpoints])
@@ -365,7 +362,7 @@ def plot_waveforms(data_dict, measurement_settings, previous_params=[0]):
         plt.xlim((0, 10))
 
         ax2 = ax1a.twinx()
-        if half == True:
+        if half is True:
             ax2.plot(
                 data2[0][0:numpoints] * 1e6,
                 data2[1][0:numpoints] * 1e3,
@@ -465,7 +462,7 @@ def plot_waveforms(data_dict, measurement_settings, previous_params=[0]):
 
 
 def plot_trend(ax, y, label, color, x=None, params=None, ind=None, m=1):
-    if x == None:
+    if x is None:
         x = np.arange(0, len(y), 1)
 
     ax.plot(x, y, ls="none", marker="o", label=None, color=color)
@@ -755,7 +752,7 @@ def get_traces(b, scope_samples=5000):
         time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
         b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
         b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    except:
+    except Exception:
         sleep(1e-4)
 
     return data0, data1, data2, data3
@@ -794,7 +791,7 @@ def get_traces_sequence(b, num_meas=100, num_samples=5000):
         time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
         b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
         b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    except:
+    except Exception:
         sleep(1e-4)
 
     return data0, data1, data2, data3
@@ -1012,7 +1009,7 @@ def write_sequence(b, message, channel, measurement_settings, rramp=True):
     write_string = []
     start_flag = True
     for c in message:
-        if start_flag == True:
+        if start_flag is True:
             suffix = ",0,once,highAtStartGoLow,50"
         else:
             suffix = ",0,once,maintain,50"
@@ -1181,7 +1178,7 @@ def run_measurement(
                 data0 = np.array([full_dict["C1x"][j], full_dict["C1y"][j]])
                 data1 = np.array([full_dict["C2x"][j], full_dict["C2y"][j]])
                 data2 = np.array([full_dict["C4x"][j], full_dict["C4y"][j]])
-            except:
+            except Exception:
                 data0, data1, data2, data3 = get_traces(b, scope_samples)
                 # data0 = []
                 # data1 = []
@@ -1227,7 +1224,7 @@ def run_measurement(
         }
 
     ###################################################################
-    if plot == True:
+    if plot is True:
         if bert:
             plot_waveforms_bert(data_dict, measurement_settings)
         else:
