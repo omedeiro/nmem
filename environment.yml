@@ -5,6 +5,7 @@ dependencies:
   - python=3.8
   - numpy
   - gdspy
+  - ipykernel
   - pip:
     - qnnpy
     - git+https://github.com/qnngroup/qnngds.git@OM-1-port-functions

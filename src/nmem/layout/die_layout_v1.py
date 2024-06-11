@@ -7,7 +7,6 @@ Created on Mon Nov 28 13:51:12 2022
 
 from __future__ import absolute_import, division, print_function
 
-# import colang as mc
 import string
 
 import numpy as np
@@ -1373,29 +1372,29 @@ die_array.move(die_array.center, (0, 0))
 DA = A << die_array
 
 
-for i in [1, 9, 15, 23]:
+for i in [1]:
     a = A << nMemTestDie()
     a.move(a.center, die_array.references[i].center)
 
-for i in [2, 10, 12, 14, 22]:
-    a = A << testStructureDie()
-    a.move(a.center, die_array.references[i].center)
+# for i in [2, 10, 12, 14, 22]:
+#     a = A << testStructureDie()
+#     a.move(a.center, die_array.references[i].center)
 
-for i in [3, 5, 19, 21]:
-    a = A << nTronTestDie()
-    a.move(a.center, die_array.references[i].center)
+# for i in [3, 5, 19, 21]:
+#     a = A << nTronTestDie()
+#     a.move(a.center, die_array.references[i].center)
 
-for i in [6, 8, 16, 18]:
-    a = A << snspdTestDie()
-    a.move(a.center, die_array.references[i].center)
+# for i in [6, 8, 16, 18]:
+#     a = A << snspdTestDie()
+#     a.move(a.center, die_array.references[i].center)
 
-for i in [7, 17]:
-    a = A << snspdArray()
-    a.move(a.center, die_array.references[i].center)
+# for i in [7, 17]:
+#     a = A << snspdArray()
+#     a.move(a.center, die_array.references[i].center)
 
-for i in [11, 13]:
-    a = A << nMemArray()
-    a.move(a.center, die_array.references[i].center)
+# for i in [11, 13]:
+#     a = A << nMemArray()
+#     a.move(a.center, die_array.references[i].center)
 
 qp(A)
 

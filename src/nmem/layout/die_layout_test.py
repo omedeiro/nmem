@@ -6,20 +6,13 @@ Created on Sat Feb 18 20:39:38 2023
 """
 from __future__ import absolute_import, division, print_function
 
-# import colang as mc
-import sys
-
 import numpy as np
 import phidl.geometry as pg
 import phidl.routing as pr
-from phidl import Device
-from phidl import quickplot as qp
-
-sys.path.append(r"Q:\qnnpy")
-sys.path.append(r"Q:\qnngds")
 import qnngds.geometry as qg
 import qnngds.omedeiro_v3 as om
-from phidl import set_quickplot_options
+from phidl import Device, set_quickplot_options
+from phidl import quickplot as qp
 
 set_quickplot_options(show_ports=True, show_subports=True)
 
