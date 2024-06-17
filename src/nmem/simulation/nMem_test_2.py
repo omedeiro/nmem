@@ -53,29 +53,27 @@ plt.close()
 
 length_units = "um"
 # Material parameters
-xi = 0.0062
-# xi = 0.0062
+XI = 0.0062
+LONDONL = 0.2
+D = 0.01
 
-london_lambda = 0.2
-d = 0.01
-
-mu0 = 1.256637062120000e-06
-sigma = 1 / (2.5)  # (uΩ-cm)^-1
-h = 6.626070150000000e-34
-e = 1.602176634000000e-19
-phi0 = h / (2 * e)
+MU0 = 1.256637062120000e-06
+SIGMA = 1 / (2.5)  # (uΩ-cm)^-1
+H = 6.626070150000000e-34
+E = 1.602176634000000e-19
+PHI0 = H / (2 * E)
 # UNITS
-tau0 = mu0 * sigma * london_lambda**2
-B0 = phi0 / (2 * np.pi * xi**2)
-A0 = xi * B0
-J0 = (4 * xi * B0) / (mu0 * london_lambda**2)
-K0 = J0 * d  # uA/um
-V0 = xi * J0 / sigma
+TAU0 = MU0 * SIGMA * LONDONL**2
+B0 = PHI0 / (2 * np.pi * XI**2)
+A0 = XI * B0
+J0 = (4 * XI * B0) / (MU0 * LONDONL**2)
+K0 = J0 * D  # uA/um
+V0 = XI * J0 / SIGMA
 
 layer = tdgl.Layer(
-    coherence_length=xi,
-    london_lambda=london_lambda,
-    thickness=d,
+    coherence_length=XI,
+    london_lambda=LONDONL,
+    thickness=D,
     conductivity=0.4,
     gamma=23.8,
 )
@@ -132,7 +130,7 @@ device = tdgl.Device(
 
 fig, ax = device.draw()
 
-device.make_mesh(max_edge_length=xi * 10)
+device.make_mesh(max_edge_length=XI * 10)
 fig, ax = device.plot(mesh=True, legend=False)
 
 
