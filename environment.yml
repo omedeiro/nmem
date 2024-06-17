@@ -6,7 +6,6 @@ dependencies:
   - numpy
   - gdspy
   - ipykernel
-  - pip
   - pip:
     - qnnpy
     - git+https://github.com/qnngroup/qnngds.git@OM-1-port-functions
