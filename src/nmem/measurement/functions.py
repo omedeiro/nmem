@@ -11,13 +11,20 @@ from time import sleep
 import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.pyplot import Axes
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
 # %% Functionss
 
 
-def create_waveforms(num_samples=256, width=30, height=1, phase=0, ramp=False):
+def create_waveforms(
+    num_samples: int = 256,
+    width: int = 30,
+    height: int = 1,
+    phase: int = 0,
+    ramp: bool = False,
+):
     waveform = np.zeros(num_samples)
 
     middle = np.floor(num_samples / 2) + phase
@@ -113,7 +120,7 @@ def load_waveforms(b, measurement_settings, chan=1, rramp=True):
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
 
-def voltage2current(v, c):
+def voltage2current(v: float, c: float):
     if c == 1:
         current = v / 0.1 * 169.6 / 1e6
     if c == 2:
@@ -121,7 +128,7 @@ def voltage2current(v, c):
     return current
 
 
-def calculate_voltage(measurement_settings):
+def calculate_voltage(measurement_settings: dict):
     enable_write_current = measurement_settings["enable_write_current"]
     write_current = measurement_settings["write_current"]
 
@@ -170,7 +177,7 @@ def get_param_mean(param):
     return prm
 
 
-def plot_histogram(ax, y, label, color, previous_params=[0]):
+def plot_histogram(ax: Axes, y, label, color, previous_params=[0]):
     mean, std = norm.fit(y)
     # y = y[y < 1100]
     y = y[y > 300]

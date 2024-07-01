@@ -4,8 +4,8 @@ User:
 Save File:
   sample name: SPG806
   device type: D6
-  device name: A4
-  cell: 
+  device name: B4
+  cell: C4
 
 iv_sweep:
   start: 0
@@ -100,18 +100,15 @@ AWG:
 
 Scope: 
   name: LeCroy620Zi
-  port: '18.25.24.160'
+  port: '18.25.27.57'
   channel: [C2]
 # TCPIPO.: DHCP. POOL- 18-25-29-100:INSTR
 # Attenuator:
 #   name: JDSHA9
 #   port: 'GPIB0::7'
 
-Temperature:
-  name: ICE
-  # port: 'GPIB0::12'
-  # channel: 'C'
+# Temperature:
+#   name: ICE
   
 # VNA:
 #   name: N5224A
-#   port: 'GPIB0::16'

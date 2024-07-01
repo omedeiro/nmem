@@ -3,15 +3,21 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
+  - pip
   - numpy
   - gdspy
-  - ipykernel
-  - pip
+  - yaml
   - pip:
     - qnnpy
+    - black
     - git+https://github.com/qnngroup/qnngds.git@OM-1-port-functions
     - phidl
+    - ipykernel
     - pre-commit
     - ruff
+    - scipy
+    - cycler
+    - mariadb
+    - pyvisa
     - tdgl
     - tables
