@@ -19,5 +19,5 @@ dependencies:
     - cycler
     - mariadb
     - pyvisa
-
-
+    - tdgl
+    - tables

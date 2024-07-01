@@ -1,4 +1,13 @@
-repos:
+repos:  
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        # It is recommended to specify the latest version of Python
+        # supported by your project here, or alternatively use
+        # pre-commit's default_language_version, see
+        # https://pre-commit.com/#top_level-default_language_version
+        language_version: python
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: v0.4.4
