@@ -14,9 +14,10 @@ from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
 
-sys.path.append(r"S:\SC\Measurements\SPG806")
-config = r"S:\SC\Measurements\SPG806\SPG806_config_ICE.yml"
+# sys.path.append(r"S:\SC\Measurements\SPG806")
+# config = r"S:\SC\Measurements\SPG806\SPG806_config_ICE.yml"
 
+config = r"SPG806_config_ICE.yml"
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
@@ -32,7 +33,7 @@ hor_scale_dict = {
     8: 2e-4,
     9: 5e-4,
 }
-# b.inst.scope.recall_setup(1)
+# b.inst.scope.recall_setup(1) 18.25.27.57
 # h = [5e-7, 1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]
 sample_rate_dict = {
     0: 512e6,
@@ -79,8 +80,8 @@ measurement_settings = {
     "write_current": 205e-6,
     "read_current": 590e-6,
     "enable_voltage": 0.0,
-    "enable_write_current": 332e-6,
-    "enable_read_current": 250e-6,
+    "enable_write_current": 132e-6,
+    "enable_read_current": 150e-6,
     "channel_voltage": 0.0,
     "channel_voltage_read": 0.0,
     "wr_ratio": 0.438,
@@ -109,7 +110,7 @@ measurement_settings = {
 t1 = time.time()
 
 #  Write sweep
-run1 = False
+run1 = True
 
 if run1:
     measurement_settings["x"] = np.array([332e-6])  # np.linspace(325e-6, 335e-6, 21)
@@ -147,14 +148,14 @@ if not run1:
     )
 
 
-t2 = time.time()
-print(f"run time {(t2-t1)/60:.2f} minutes")
-b.inst.scope.save_screenshot(
-    f"{file_path}_scope_screenshot.png", white_background=False
-)
-b.inst.awg.set_output(False, 1)
-b.inst.awg.set_output(False, 2)
+# t2 = time.time()
+# print(f"run time {(t2-t1)/60:.2f} minutes")
+# b.inst.scope.save_screenshot(
+#     f"{file_path}_scope_screenshot.png", white_background=False
+# )
+# b.inst.awg.set_output(False, 1)
+# b.inst.awg.set_output(False, 2)
 
-with open(f"{file_path}_measurement_settings.txt", "w") as file:
-    for key, value in save_dict.items():
-        file.write(f"{key}: {value}\n")
+# with open(f"{file_path}_measurement_settings.txt", "w") as file:
+#     for key, value in save_dict.items():
+#         file.write(f"{key}: {value}\n")
