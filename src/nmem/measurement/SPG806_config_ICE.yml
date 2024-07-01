@@ -112,4 +112,3 @@ Scope:
   
 # VNA:
 #   name: N5224A
-#   port: 'GPIB0::16'
