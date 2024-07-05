@@ -17,43 +17,6 @@ import nmem.measurement.functions as nm
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-def write_sweep(b, measurement_settings, measurement_name):
-    measurement_settings["x"] = [252e-6]#np.linspace(240e-6, 270e-6, 11)  # Enable Write Current
-    measurement_settings["y"] = np.linspace(500e-6, 600e-6, 8)  # Write Current
-
-    b, measurement_settings, save_dict = nm.run_write_sweep(b, measurement_settings)
-
-    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
-    save_dict["time_str"] = time_str
-    nm.plot_ber_sweep(
-        save_dict,
-        measurement_settings,
-        file_path,
-        "enable_write_current",
-        "write_current",
-        "ber",
-    )
-    return file_path, save_dict
-
-
-def read_sweep(b, measurement_settings, measurement_name):
-    measurement_settings["x"] = [218e-6]#np.linspace(190e-6, 230e-6, 8)  # Enable Read Current
-    measurement_settings["y"] = np.linspace(650e-6, 700e-6, 8)  # Read Current
-
-    b, measurement_settings, save_dict = nm.run_read_sweep(b, measurement_settings)
-    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
-    save_dict["time_str"] = time_str
-    nm.plot_ber_sweep(
-        save_dict,
-        measurement_settings,
-        file_path,
-        "enable_read_current",
-        "read_current",
-        "ber",
-    )
-    return file_path, save_dict
-
-
 if __name__ == "__main__":
     config = r"SPG806_config_ICE.yml"
 
@@ -85,7 +48,7 @@ if __name__ == "__main__":
 
     b = nt.nTron(config)
 
-    NUM_MEAS = 200
+    NUM_MEAS = 1000
     FREQ_IDX = 4
     REAL_TIME = 1
 
@@ -109,9 +72,9 @@ if __name__ == "__main__":
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "write_current": 300e-6,
-        "enable_write_current": 252e-6,
+        "enable_write_current": 300e-6,
         "read_current": 580e-6,  # 1
-        "enable_read_current": 218e-6,  # 2
+        "enable_read_current": 220e-6,  # 2
         # "enable_voltage": 0.0,
         # "channel_voltage": 0.0,
         # "channel_voltage_read": 0.0,
@@ -138,14 +101,29 @@ if __name__ == "__main__":
     }
 
     t1 = time.time()
-    file_path, save_dict = write_sweep(b, measurement_settings, measurement_name)
-    # file_path, save_dict = read_sweep(b, measurement_settings, measurement_name)
+    parameter_x = "enable_read_current"
+    parameter_y = "read_current"
+    measurement_settings["x"] = [220e-6]#np.linspace(250e-6, 310e-6, 11)
+    measurement_settings["y"] = np.linspace(540e-6, 640e-6, 11)
 
+    b, measurement_settings, save_dict = nm.run_sweep(
+        b, measurement_settings, parameter_x, parameter_y
+    )
+    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
+    save_dict["time_str"] = time_str
+    nm.plot_ber_sweep(
+        save_dict,
+        measurement_settings,
+        file_path,
+        parameter_x,
+        parameter_y,
+        "ber",
+    )
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
-    b.inst.scope.save_screenshot(
-        f"{file_path}_scope_screenshot.png", white_background=False
-    )
+    # b.inst.scope.save_screenshot(
+    #     f"{file_path}_scope_screenshot.png", white_background=False
+    # )
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
