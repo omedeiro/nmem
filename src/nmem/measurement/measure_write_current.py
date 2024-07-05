@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     b = nt.nTron(config)
     REAL_TIME = 1
-    NUM_MEAS = 1000
+    NUM_MEAS = 100
     FREQ_IDX = 4
 
     if REAL_TIME == 0:
@@ -60,16 +60,16 @@ if __name__ == "__main__":
     ]
     sample_name = str("-".join(sample_name))
     date_str = time.strftime("%Y%m%d")
-    measurement_name = f"{date_str}_measure_enable_response"
+    measurement_name = f"{date_str}_measure_write_current"
 
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "write_current": 205e-6,
-        "read_current": 590e-6,
+        "read_current": 190e-6,
         "enable_voltage": 0.0,
         "enable_write_current": 132e-6,
-        "enable_read_current": 150e-6,
+        "enable_read_current": 200e-6,
         "channel_voltage": 0.0,
         "channel_voltage_read": 0.0,
         "wr_ratio": 0.438,
@@ -90,16 +90,16 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "NNNNRNNNRN",
-        "bitmsg_enable": "NNNNNNNNNN",
+        "bitmsg_channel": "N0NNR1NNRN",
+        "bitmsg_enable": "NWNNEWNNEN",
     }
 
     t1 = time.time()
 
-    measurement_settings["x"] = np.array([0e-6])#np.linspace(10e-6, 350e-6, 3)
-    measurement_settings["y"] = np.linspace(580e-6, 620e-6, 21)
+    measurement_settings["x"] = np.linspace(10e-6, 250e-6, 6)
+    measurement_settings["y"] = np.linspace(10e-6, 250e-6, 6)
 
-    b, measurement_settings, save_dict = nm.run_read_sweep(b, measurement_settings)
+    b, measurement_settings, save_dict = nm.run_write_sweep(b, measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
     save_dict["time_str"] = time_str
     nm.plot_ber_sweep(

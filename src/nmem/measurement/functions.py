@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from scipy.optimize import curve_fit
 from scipy.stats import norm
+import tqdm
 
 # %% Functionss
 
@@ -822,16 +823,18 @@ def run_realtime(b, num_meas=100):
     sleep(0.5)
     b.inst.scope.clear_sweeps()
     sleep(0.1)
+    pbar = tqdm(total=num_meas)
     while b.inst.scope.get_num_sweeps() < num_meas:
         sleep(0.1)
         n = b.inst.scope.get_num_sweeps()
+        pbar.update(n)
         print(f"sampling...{n} / {num_meas}")
 
     b.inst.scope.set_trigger_mode("Stop")
 
     t1 = b.inst.scope.get_wf_data("F1")
     t0 = b.inst.scope.get_wf_data("F2")
-
+    pbar.close()
     return t0, t1
 
 
@@ -861,15 +864,15 @@ def run_realtime_bert(b, num_meas=100):
     if len(t1) < num_meas:
         t1.resize(num_meas, refcheck=False)
 
-    thresh = 100e-3
-    W0R1 = (t0 > thresh).sum()
-    W1R0 = (t1 < thresh).sum()
+    ERROR_THRESHOLD = 200e-3
+    w0r1 = (t0 > ERROR_THRESHOLD).sum()
+    w1r0 = (t1 < ERROR_THRESHOLD).sum()
 
-    errnorm_W0R1 = W0R1 / (num_meas * 2)
-    errnorm_W1R0 = W1R0 / (num_meas * 2)
+    errnorm_w0r1 = w0r1 / (num_meas * 2)
+    errnorm_w1r0 = w1r0 / (num_meas * 2)
 
-    print(f"W0R1 {W0R1}, W1R0 {W1R0}")
-    return t0, t1, W0R1, W1R0, errnorm_W0R1, errnorm_W1R0
+    print(f"W0R1 {w0r1}, W1R0 {w1r0}")
+    return t0, t1, w0r1, w1r0, errnorm_w0r1, errnorm_w1r0
 
 
 def run_sequence_bert(b, num_meas=100):
@@ -895,15 +898,15 @@ def run_sequence_bert(b, num_meas=100):
     if len(t1) < num_meas:
         t1.resize(num_meas, refcheck=False)
 
-    thresh = 200e-3
-    W0R1 = (t0 > thresh).sum()
-    W1R0 = (t1 < thresh).sum()
+    ERROR_THRESHOLD = 200e-3
+    w0r1 = (t0 > ERROR_THRESHOLD).sum()
+    w1r0 = (t1 < ERROR_THRESHOLD).sum()
 
-    errnorm_W0R1 = W0R1 / (num_meas * 2)
-    errnorm_W1R0 = W1R0 / (num_meas * 2)
+    errnorm_w0r1 = w0r1 / (num_meas * 2)
+    errnorm_w1r0 = w1r0 / (num_meas * 2)
 
-    print(f"W0R1 {W0R1}, W1R0 {W1R0}")
-    return t0, t1, W0R1, W1R0, errnorm_W0R1, errnorm_W1R0
+    print(f"W0R1 {w0r1}, W1R0 {w1r0}")
+    return t0, t1, w0r1, w1r0, errnorm_w0r1, errnorm_w1r0
 
 
 def run_sequence(b, num_meas=100, num_samples=5e3):
@@ -1274,11 +1277,41 @@ def update_dict(dict1, dict2):
 
     return result_dict
 
+
 def write_dict_to_file(file_path, save_dict):
     with open(f"{file_path}_measurement_settings.txt", "w") as file:
         for key, value in save_dict.items():
             file.write(f"{key}: {value}\n")
-            
+
+def run_sweep(b, measurement_settings: dict, parameter_x: str, parameter_y:str):
+    save_dict = {}
+    for y in measurement_settings["y"]:
+        for x in measurement_settings["x"]:
+            measurement_settings[parameter_x] = x
+            measurement_settings[parameter_y] = y
+
+            measurement_settings = calculate_voltage(measurement_settings)
+
+            data_dict, full_dict = run_measurement(
+                b, measurement_settings, plot=True, rramp=False, bert=True
+            )
+
+            data_dict.update(measurement_settings)
+
+            full_dict.update(measurement_settings)
+
+            if len(save_dict.items()) == 0:
+                save_dict = data_dict
+                save_dict_full = full_dict
+            else:
+                save_dict = update_dict(save_dict, data_dict)
+                save_dict_full = update_dict(save_dict_full, full_dict)
+
+            b.properties["measurement_settings"] = measurement_settings
+
+    return b, measurement_settings, save_dict
+
+
 def run_write_sweep(b, measurement_settings):
     save_dict = {}
     for write_current in measurement_settings["y"]:
