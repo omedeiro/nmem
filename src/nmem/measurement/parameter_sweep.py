@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     b = nt.nTron(config)
 
-    NUM_MEAS = 1000
+    NUM_MEAS = 500
     FREQ_IDX = 4
     REAL_TIME = 1
 
@@ -71,10 +71,10 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 300e-6,
-        "enable_write_current": 300e-6,
+        "write_current": 308e-6,
+        "enable_write_current": 285e-6,
         "read_current": 580e-6,  # 1
-        "enable_read_current": 220e-6,  # 2
+        "enable_read_current": 238e-6,  # 2
         # "enable_voltage": 0.0,
         # "channel_voltage": 0.0,
         # "channel_voltage_read": 0.0,
@@ -101,10 +101,13 @@ if __name__ == "__main__":
     }
 
     t1 = time.time()
-    parameter_x = "enable_read_current"
-    parameter_y = "read_current"
-    measurement_settings["x"] = [220e-6]#np.linspace(250e-6, 310e-6, 11)
-    measurement_settings["y"] = np.linspace(540e-6, 640e-6, 11)
+    parameter_x = "write_current"
+    # measurement_settings["x"] = [372e-6]
+    measurement_settings["x"] = np.linspace(300e-6, 380e-6, 11)
+
+    parameter_y = "enable_read_current"
+    measurement_settings["y"] = [238e-6]
+    # measurement_settings["y"] = np.linspace(220e-6, 260e-6, 21)
 
     b, measurement_settings, save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y

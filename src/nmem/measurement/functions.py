@@ -10,11 +10,11 @@ from time import sleep
 
 import matplotlib as mpl
 import numpy as np
+import tqdm
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from scipy.optimize import curve_fit
 from scipy.stats import norm
-import tqdm
 
 # %% Functionss
 
@@ -158,8 +158,16 @@ def calculate_voltage(measurement_settings: dict):
     measurement_settings["channel_voltage_read"] = channel_voltage_read
     measurement_settings["enable_voltage"] = enable_voltage
 
-    wr_ratio = write_current / read_current
-    ewr_ratio = enable_write_current / enable_read_current
+    if read_current == 0:
+        wr_ratio = 0
+    else:
+        wr_ratio = write_current / read_current
+
+    if enable_read_current == 0:
+        ewr_ratio = 0
+    else:
+        ewr_ratio = enable_write_current / enable_read_current
+    
 
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
