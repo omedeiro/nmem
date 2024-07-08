@@ -5,7 +5,7 @@ Save File:
   sample name: SPG806
   device type: D6
   device name: A4 # XY Cords A1 in NW corner. D1 in NE corner. 
-  cell: B1 # XY Cords A1 in NW corner. D1 in NE corner. 
+  cell: B3 # XY Cords A1 in NW corner. D1 in NE corner. 
 
 iv_sweep:
   start: 0

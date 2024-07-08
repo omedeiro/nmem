@@ -97,7 +97,7 @@ if __name__ == "__main__":
     t1 = time.time()
 
     measurement_settings["x"] = np.array([0e-6])#np.linspace(10e-6, 350e-6, 3)
-    measurement_settings["y"] = np.linspace(580e-6, 620e-6, 21)
+    measurement_settings["y"] = np.linspace(600e-6, 700e-6, 21)
 
     b, measurement_settings, save_dict = nm.run_read_sweep(b, measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
