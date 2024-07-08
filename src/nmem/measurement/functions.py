@@ -10,11 +10,11 @@ from time import sleep
 
 import matplotlib as mpl
 import numpy as np
+import tqdm
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from scipy.optimize import curve_fit
 from scipy.stats import norm
-import tqdm
 
 # %% Functionss
 
