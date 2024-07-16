@@ -41,6 +41,20 @@ def caluclate_branch_critical_currents(critical_current, width_left, width_right
     return critical_current * np.array([ratio, 1 - ratio])
 
 
+def calculate_left_branch_limits(alpha, write_current, persistent_current):
+    return [
+        calculate_left_branch_current(alpha, write_current, persistent_current),
+        calculate_left_branch_current(alpha, write_current, -persistent_current),
+    ]
+
+
+def calculate_right_branch_limits(alpha, write_current, persistent_current):
+    return [
+        calculate_right_branch_current(alpha, write_current, -persistent_current),
+        calculate_right_branch_current(alpha, write_current, persistent_current),
+    ]
+
+
 def calculate_0_current(ichl, ichr, alpha, persistent_current):
     return np.max([(ichl - persistent_current) / alpha, ichl * IRETRAP + ichr])
 
@@ -57,9 +71,10 @@ def calculate_alpha(ll, lr):
 def calculate_persistent_current(critical_current, write_current, alpha):
     persistent_current = write_current * alpha - critical_current
 
+    
     # Exclude persistent current values that are greater than the critical current
     persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
-
+    persistent_current = np.abs(persistent_current)
     return persistent_current
 
 
@@ -105,21 +120,36 @@ def calculate_read_currents(critical_currents, write_currents, persistent_curren
         for j in range(len(critical_currents)):
 
             ichr = xx[i, j] * ICHR / ICHL
-            if persistent_currents[i, j] > 0:  # Memory "1"
-                read_currents[i, j] = (ichr - persistent_currents[i, j]) / (1 - ALPHA)
-            elif persistent_currents[i, j] < 0:  # Memory "0"
-                read_currents[i, j] = (ichr + persistent_currents[i, j]) / (1 - BETA)
-            else:
+
+            left_lower, left_upper = calculate_left_branch_limits(
+                ALPHA, yy[i, j], persistent_currents[i, j]
+            )
+            right_lower, right_upper = calculate_right_branch_limits(
+                ALPHA, yy[i, j], persistent_currents[i, j]
+            )
+
+            read_lower = (
+                np.max([left_lower, right_lower]) + persistent_currents[i, j]
+            ) / ALPHA
+            read_upper = (
+                np.min([left_upper, right_upper]) + persistent_currents[i, j]
+            ) / ALPHA
+
+            read_currents[i, j] = np.mean([read_lower, read_upper])
+
+            # read_currents[i, j] = np.abs(read_currents[i, j])
+            
+            # Read current NA when persistent current is zero
+            if persistent_currents[i, j] == 0:
                 read_currents[i, j] = 0
 
-            read_currents[i, j] = np.abs(read_currents[i, j])
             # Read current cannot be less than the write current
-            # if read_currents[i, j] < yy[i, j]:
-            #     read_currents[i, j] = 0
+            if np.abs(read_currents[i, j]) < yy[i, j]:
+                read_currents[i, j] = 0
 
             # Negative read currents are not possible
-            # if read_currents[i, j] < 0:
-            #     read_currents[i, j] = 0
+            if read_currents[i, j] < 0:
+                read_currents[i, j] = 0
 
     return read_currents
 
@@ -208,18 +238,27 @@ def plot_htron_sweep(write_currents, enable_write_currents, ber, ax=None):
     return ax
 
 
-def plot_persistent_current(ax, critical_currents, write_currents):
-    [xx, yy] = np.meshgrid(critical_currents, write_currents)
+def plot_persistent_current(ax, left_critical_currents, write_currents):
+    [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
-    total_persistent_current = calculate_total_persistent_current(xx, yy, ALPHA, BETA)
+    total_persistent_current = calculate_persistent_current(xx, yy, ALPHA)
+    # total_persistent_current = np.abs(total_persistent_current)
+
+    # Exclude persistent current values that are greater than the critical current
+    # total_persistent_current[np.abs(total_persistent_current) > xx] = 0
 
     plt.pcolormesh(xx, yy, total_persistent_current)
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
-    plt.title("Persistent Current")
+    plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
-    # plt.clim([np.min(persistent_current[persistent_current<0]), np.max(persistent_current)])
+
+    ax2 = ax.twiny()
+    ax2.set_xticks(ax.get_xticks())
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_xticklabels([f"{ic*ICHR/ICHL:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
     return ax, total_persistent_current
 
 
@@ -229,12 +268,18 @@ def plot_read_current(ax, critical_currents, write_currents, persistent_currents
     )
     [xx, yy] = np.meshgrid(critical_currents, write_currents)
     plt.pcolormesh(xx, yy, read_currents)
-    plt.xlabel("Critical Current [uA]")
+    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Read Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
-    return ax
+
+    ax2 = ax.twiny()
+    ax2.set_xticks(ax.get_xticks())
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_xticklabels([f"{ic*ICHR/ICHL:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
+    return ax, read_currents
 
 
 def plot_edge_fits(ax, lines, critical_currents):
@@ -267,7 +312,7 @@ if __name__ == "__main__":
     WIDTH_RIGHT = 0.3
     IC0 = 600e-6
     HTRON_SLOPE = -2.69
-    HTRON_INTERCEPT = 1257
+    HTRON_INTERCEPT = 1057
     ALPHA = 0.356
     BETA = 0.159
     IRETRAP = 0.5
@@ -309,21 +354,32 @@ if __name__ == "__main__":
     )
     plot_edge_fits(ax, lines, left_critical_currents)
 
-    # fig, ax = plt.subplots()
-    # ax = plot_read_current(
-    #     ax, left_critical_currents, write_currents, total_persistent_current
-    # )
-    # IDXX = 10
-    # IDXY = 10
-    # ax = plot_point(
-    #     ax,
-    #     left_critical_currents[IDXX],
-    #     write_currents[IDXY],
-    #     marker="*",
-    #     color="red",
-    #     markersize=15,
-    # )
+    fig, ax = plt.subplots()
+    ax, read_currents = plot_read_current(
+        ax, left_critical_currents, write_currents, total_persistent_current
+    )
+    IDXX = 10
+    IDXY = 10
+    ax = plot_point(
+        ax,
+        left_critical_currents[IDXX],
+        write_currents[IDXY],
+        marker="*",
+        color="red",
+        markersize=15,
+    )
 
+    print(
+        calculate_left_branch_limits(
+            ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
+        )
+    )
+
+    print(
+        calculate_right_branch_limits(
+            ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
+        )
+    )
     # plt.show()
 
     # params = get_point_parameters(
