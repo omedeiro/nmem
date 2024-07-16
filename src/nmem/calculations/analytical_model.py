@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from cycler import cycler
 
 
 def htron_critical_current(slope, intercept, heater_current):
@@ -68,49 +69,76 @@ def calculate_alpha(ll, lr):
     return lr / (ll + lr)
 
 
-def calculate_persistent_current(critical_current, write_current, alpha):
-    persistent_current = write_current * alpha - critical_current
+def calculate_persistent_current(left_critical_current, write_current, alpha):
 
-    
-    # Exclude persistent current values that are greater than the critical current
-    persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
-    persistent_current = np.abs(persistent_current)
-    return persistent_current
+    # Assuming no persistent current in the loop
+    left_branch_current = write_current * alpha
+    right_branch_current = write_current * (1 - alpha)
 
+    # Assuming that all of the excess current is persistent. None shunted to ground.
+    persistent_current = left_branch_current - left_critical_current
 
-def calculate_inverting_persistent_current(critical_current, write_current, alpha):
-    persistent_current = write_current * alpha - critical_current
+    # Exclude negative persistent currents
+    mask_negative = persistent_current < 0
+    persistent_current[mask_negative] = 0
 
-    # Exclude persistent current values that are greater than the critical current
-    persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
+    # The right critical current is the left critical current scaled by the ratio of the switching currents
+    right_critical_current = left_critical_current * ICHR / ICHL
 
-    persistent_current[write_current < critical_current / alpha - 226] = 0
-    persistent_current[write_current > critical_current / alpha - 165] = 0
+    # New left branch current
+    left_branch_current = write_current * alpha - persistent_current
+    # New right branch current
+    right_branch_current = write_current * (1 - alpha) - persistent_current
 
-    return persistent_current
-
-
-def calculate_non_inverting_persistent_current(critical_current, write_current, beta):
-    persistent_current = -write_current * beta + critical_current
-
-    persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
-
-    persistent_current[write_current < critical_current / beta - 433] = 0
-    persistent_current[write_current > critical_current / beta - 353] = 0
-
-    return persistent_current
-
-
-def calculate_total_persistent_current(critical_current, write_current, alpha, beta):
-    total_persistent_current = calculate_inverting_persistent_current(
-        critical_current, write_current, alpha
-    ) + calculate_non_inverting_persistent_current(
-        critical_current, write_current, beta
+    # Exclude persistent current values that are greater than the right critical current
+    mask_right_switch = right_branch_current > right_critical_current
+    persistent_current = np.where(
+        mask_right_switch,
+        np.abs(right_critical_current - right_branch_current),
+        persistent_current,
     )
-    total_persistent_current = np.where(
-        total_persistent_current > critical_current, 0, total_persistent_current
-    )
-    return total_persistent_current
+
+    # Exclude persistent current values that are greater than the critical current
+    mask_persistent_switch = np.abs(persistent_current) > np.abs(left_critical_current)
+    persistent_current[mask_persistent_switch] = 0
+
+    mask_list = [mask_negative, mask_right_switch, mask_persistent_switch]
+    return persistent_current, mask_list
+
+
+# def calculate_inverting_persistent_current(critical_current, write_current, alpha):
+#     persistent_current = write_current * alpha - critical_current
+
+#     # Exclude persistent current values that are greater than the critical current
+#     persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
+
+#     persistent_current[write_current < critical_current / alpha - 226] = 0
+#     persistent_current[write_current > critical_current / alpha - 165] = 0
+
+#     return persistent_current
+
+
+# def calculate_non_inverting_persistent_current(critical_current, write_current, beta):
+#     persistent_current = -write_current * beta + critical_current
+
+#     persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
+
+#     persistent_current[write_current < critical_current / beta - 433] = 0
+#     persistent_current[write_current > critical_current / beta - 353] = 0
+
+#     return persistent_current
+
+
+# def calculate_total_persistent_current(critical_current, write_current, alpha, beta):
+#     total_persistent_current = calculate_inverting_persistent_current(
+#         critical_current, write_current, alpha
+#     ) + calculate_non_inverting_persistent_current(
+#         critical_current, write_current, beta
+#     )
+#     total_persistent_current = np.where(
+#         total_persistent_current > critical_current, 0, total_persistent_current
+#     )
+#     return total_persistent_current
 
 
 def calculate_read_currents(critical_currents, write_currents, persistent_currents):
@@ -138,7 +166,7 @@ def calculate_read_currents(critical_currents, write_currents, persistent_curren
             read_currents[i, j] = np.mean([read_lower, read_upper])
 
             # read_currents[i, j] = np.abs(read_currents[i, j])
-            
+
             # Read current NA when persistent current is zero
             if persistent_currents[i, j] == 0:
                 read_currents[i, j] = 0
@@ -238,16 +266,36 @@ def plot_htron_sweep(write_currents, enable_write_currents, ber, ax=None):
     return ax
 
 
+def plot_edge_region(c, mask, color="red", edge_color_array=None):
+    edge_color_list = []
+    for i in range(mask.shape[0]):
+        for j in range(mask.shape[1]):
+            if mask[i, j]:
+                edge_color_list.append(color)
+            else:
+                if edge_color_array is not None:
+                    edge_color_list.append(edge_color_array[i, j])
+                else:
+                    edge_color_list.append("none")
+    c.set_edgecolor(edge_color_list)
+    return c, edge_color_list
+
+
 def plot_persistent_current(ax, left_critical_currents, write_currents):
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
-    total_persistent_current = calculate_persistent_current(xx, yy, ALPHA)
-    # total_persistent_current = np.abs(total_persistent_current)
+    total_persistent_current, mask_list = calculate_persistent_current(xx, yy, ALPHA)
 
-    # Exclude persistent current values that are greater than the critical current
-    # total_persistent_current[np.abs(total_persistent_current) > xx] = 0
 
-    plt.pcolormesh(xx, yy, total_persistent_current)
+    c = plt.pcolormesh(xx, yy, total_persistent_current, edgecolors="k", linewidth=0.5)
+
+    edge_color_array=None
+    for i, mask in enumerate(mask_list):
+        colors = ["r", "g", "b", "y"]
+
+        c, edge_color_list = plot_edge_region(c, mask, color=colors[i], edge_color_array=edge_color_array)
+        edge_color_array = np.array(edge_color_list).reshape(mask.shape)
+
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Maximum Persistent Current")
@@ -343,6 +391,11 @@ if __name__ == "__main__":
         {"p1": 6.272, "p2": -433.9},
         {"p1": 6.272, "p2": -353.8},
     ]
+
+    enable_write_currents = np.linspace(
+        enable_write_currents[0], enable_write_currents[-1], 50
+    )
+    write_currents = np.linspace(write_currents[0], write_currents[-1], 50)
 
     left_critical_currents = (
         htron_critical_current(HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents)
