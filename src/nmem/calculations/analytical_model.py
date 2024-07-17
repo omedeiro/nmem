@@ -1,185 +1,30 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from cycler import cycler
 
+from nmem.calculations.calculations import (
+    caluclate_branch_critical_currents,
+    calculate_left_branch_current,
+    calculate_right_branch_current,
+    calculate_left_branch_limits,
+    calculate_right_branch_limits,
+    calculate_0_current,
+    calculate_1_current,
+    htron_critical_current,
+)
 
-def htron_critical_current(slope, intercept, heater_current):
-    return heater_current * slope + intercept
+from nmem.calculations.plotting import (
+    plot_persistent_current,
+    plot_read_current,
+    plot_point,
+    plot_edge_fits,
+    plot_htron_sweep,
+)
 
 
 def import_matlab_data(file_path):
     data = sio.loadmat(file_path)
     return data
-
-
-def calculate_right_branch_inductance(alpha, ll):
-    return alpha * ll / (1 - alpha)
-
-
-def calculate_left_branch_inductance(alpha, lr):
-    return (1 - alpha) * lr / alpha
-
-
-def calculate_right_branch_current(alpha, channel_current, persistent_current):
-    """State 1 is defined as a positive persistent current, clockwise
-    State 0 is defined as a negative persistent current, counter-clockwise
-    Right branch sums current during read.
-    """
-    return channel_current * (1 - alpha) + persistent_current
-
-
-def calculate_left_branch_current(alpha, channel_current, persistent_current):
-    """State 1 is defined as a positive persistent current, clockwise
-    State 0 is defined as a negative persistent current, counter-clockwise
-    Left branch negates current during read.
-    """
-    return channel_current * alpha - persistent_current
-
-
-def caluclate_branch_critical_currents(critical_current, width_left, width_right):
-    ratio = width_left / (width_left + width_right)
-    return critical_current * np.array([ratio, 1 - ratio])
-
-
-def calculate_left_branch_limits(alpha, write_current, persistent_current):
-    return [
-        calculate_left_branch_current(alpha, write_current, persistent_current),
-        calculate_left_branch_current(alpha, write_current, -persistent_current),
-    ]
-
-
-def calculate_right_branch_limits(alpha, write_current, persistent_current):
-    return [
-        calculate_right_branch_current(alpha, write_current, -persistent_current),
-        calculate_right_branch_current(alpha, write_current, persistent_current),
-    ]
-
-
-def calculate_0_current(ichl, ichr, alpha, persistent_current):
-    return np.max([(ichl - persistent_current) / alpha, ichl * IRETRAP + ichr])
-
-
-def calculate_1_current(ichl, ichr, alpha, persistent_current):
-    return np.max([(ichr - persistent_current) / (1 - alpha), ichr * IRETRAP + ichl])
-
-
-def calculate_alpha(ll, lr):
-    """ll < lr"""
-    return lr / (ll + lr)
-
-
-def calculate_persistent_current(left_critical_current, write_current, alpha):
-
-    # Assuming no persistent current in the loop
-    left_branch_current = write_current * alpha
-    right_branch_current = write_current * (1 - alpha)
-
-    # Assuming that all of the excess current is persistent. None shunted to ground.
-    persistent_current = left_branch_current - left_critical_current
-
-    # Exclude negative persistent currents
-    mask_negative = persistent_current < 0
-    persistent_current[mask_negative] = 0
-
-    # The right critical current is the left critical current scaled by the ratio of the switching currents
-    right_critical_current = left_critical_current * ICHR / ICHL
-
-    # New left branch current
-    left_branch_current = write_current * alpha - persistent_current
-    # New right branch current
-    right_branch_current = write_current * (1 - alpha) - persistent_current
-
-    # Exclude persistent current values that are greater than the right critical current
-    mask_right_switch = right_branch_current > right_critical_current
-    persistent_current = np.where(
-        mask_right_switch,
-        np.abs(right_critical_current - right_branch_current),
-        persistent_current,
-    )
-
-    # Exclude persistent current values that are greater than the critical current
-    mask_persistent_switch = np.abs(persistent_current) > np.abs(left_critical_current)
-    persistent_current[mask_persistent_switch] = 0
-
-    mask_list = [mask_negative, mask_right_switch, mask_persistent_switch]
-    return persistent_current, mask_list
-
-
-# def calculate_inverting_persistent_current(critical_current, write_current, alpha):
-#     persistent_current = write_current * alpha - critical_current
-
-#     # Exclude persistent current values that are greater than the critical current
-#     persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
-
-#     persistent_current[write_current < critical_current / alpha - 226] = 0
-#     persistent_current[write_current > critical_current / alpha - 165] = 0
-
-#     return persistent_current
-
-
-# def calculate_non_inverting_persistent_current(critical_current, write_current, beta):
-#     persistent_current = -write_current * beta + critical_current
-
-#     persistent_current[np.abs(persistent_current) > np.abs(critical_current)] = 0
-
-#     persistent_current[write_current < critical_current / beta - 433] = 0
-#     persistent_current[write_current > critical_current / beta - 353] = 0
-
-#     return persistent_current
-
-
-# def calculate_total_persistent_current(critical_current, write_current, alpha, beta):
-#     total_persistent_current = calculate_inverting_persistent_current(
-#         critical_current, write_current, alpha
-#     ) + calculate_non_inverting_persistent_current(
-#         critical_current, write_current, beta
-#     )
-#     total_persistent_current = np.where(
-#         total_persistent_current > critical_current, 0, total_persistent_current
-#     )
-#     return total_persistent_current
-
-
-def calculate_read_currents(critical_currents, write_currents, persistent_currents):
-    [xx, yy] = np.meshgrid(critical_currents, write_currents)
-    read_currents = np.zeros((len(write_currents), len(critical_currents)))
-    for i in range(len(write_currents)):
-        for j in range(len(critical_currents)):
-
-            ichr = xx[i, j] * ICHR / ICHL
-
-            left_lower, left_upper = calculate_left_branch_limits(
-                ALPHA, yy[i, j], persistent_currents[i, j]
-            )
-            right_lower, right_upper = calculate_right_branch_limits(
-                ALPHA, yy[i, j], persistent_currents[i, j]
-            )
-
-            read_lower = (
-                np.max([left_lower, right_lower]) + persistent_currents[i, j]
-            ) / ALPHA
-            read_upper = (
-                np.min([left_upper, right_upper]) + persistent_currents[i, j]
-            ) / ALPHA
-
-            read_currents[i, j] = np.mean([read_lower, read_upper])
-
-            # read_currents[i, j] = np.abs(read_currents[i, j])
-
-            # Read current NA when persistent current is zero
-            if persistent_currents[i, j] == 0:
-                read_currents[i, j] = 0
-
-            # Read current cannot be less than the write current
-            if np.abs(read_currents[i, j]) < yy[i, j]:
-                read_currents[i, j] = 0
-
-            # Negative read currents are not possible
-            if read_currents[i, j] < 0:
-                read_currents[i, j] = 0
-
-    return read_currents
 
 
 def get_point_parameters(
@@ -230,124 +75,6 @@ def get_point_parameters(
     return params
 
 
-def plot_point(ax, x, y, **kwargs):
-    ax.plot(x, y, **kwargs)
-    return ax
-
-
-def plot_htron_critical_current(slope, intercept, currents):
-
-    x = currents
-    y = htron_critical_current(slope, intercept, x)
-
-    plt.plot(x, y)
-    plt.xlabel("Enable Current [uA]")
-    plt.ylabel("Critical Current [uA]")
-    plt.title("Critical Current vs Enable Current")
-    plt.show()
-
-
-def print_dict_keys(data_dict):
-    for key in data_dict.keys():
-        print(key)
-
-
-def plot_htron_sweep(write_currents, enable_write_currents, ber, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    xx, yy = np.meshgrid(enable_write_currents, write_currents)
-    plt.contourf(xx, yy, ber)
-    # plt.gca().invert_xaxis()
-    plt.xlabel("Enable Current [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("BER vs Write Current and Critical Current")
-    plt.colorbar()
-    return ax
-
-
-def plot_edge_region(c, mask, color="red", edge_color_array=None):
-    edge_color_list = []
-    for i in range(mask.shape[0]):
-        for j in range(mask.shape[1]):
-            if mask[i, j]:
-                edge_color_list.append(color)
-            else:
-                if edge_color_array is not None:
-                    edge_color_list.append(edge_color_array[i, j])
-                else:
-                    edge_color_list.append("none")
-    c.set_edgecolor(edge_color_list)
-    return c, edge_color_list
-
-
-def plot_persistent_current(ax, left_critical_currents, write_currents):
-    [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
-
-    total_persistent_current, mask_list = calculate_persistent_current(xx, yy, ALPHA)
-
-
-    c = plt.pcolormesh(xx, yy, total_persistent_current, edgecolors="k", linewidth=0.5)
-
-    edge_color_array=None
-    for i, mask in enumerate(mask_list):
-        colors = ["r", "g", "b", "y"]
-
-        c, edge_color_list = plot_edge_region(c, mask, color=colors[i], edge_color_array=edge_color_array)
-        edge_color_array = np.array(edge_color_list).reshape(mask.shape)
-
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("Maximum Persistent Current")
-    plt.gca().invert_xaxis()
-    plt.colorbar()
-
-    ax2 = ax.twiny()
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic*ICHR/ICHL:.0f}" for ic in ax.get_xticks()])
-    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
-    return ax, total_persistent_current
-
-
-def plot_read_current(ax, critical_currents, write_currents, persistent_currents):
-    read_currents = calculate_read_currents(
-        critical_currents, write_currents, persistent_currents
-    )
-    [xx, yy] = np.meshgrid(critical_currents, write_currents)
-    plt.pcolormesh(xx, yy, read_currents)
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("Read Current")
-    plt.gca().invert_xaxis()
-    plt.colorbar()
-
-    ax2 = ax.twiny()
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic*ICHR/ICHL:.0f}" for ic in ax.get_xticks()])
-    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
-    return ax, read_currents
-
-
-def plot_edge_fits(ax, lines, critical_currents):
-    x_min, x_max = ax.get_xlim()
-    y_min, y_max = ax.get_ylim()
-
-    for line in lines:
-        plot_edge_fit(ax, critical_currents, **line)
-
-    ax.set_xlim(x_min, x_max)
-    ax.set_ylim(y_min, y_max)
-    return ax
-
-
-def plot_edge_fit(ax, x, p1, p2):
-    y = p1 * x + p2
-    ax.plot(x, y, color="red")
-    return ax
-
-
 def calculate_critical_current_bounds(persistent_current, read_current, alpha):
     return read_current * alpha * np.ones((2, 1)) + [
         -persistent_current,
@@ -361,7 +88,7 @@ if __name__ == "__main__":
     IC0 = 600e-6
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1057
-    ALPHA = 0.356
+    ALPHA = -1 / HTRON_SLOPE
     BETA = 0.159
     IRETRAP = 0.5
     ICHL, ICHR = caluclate_branch_critical_currents(IC0, WIDTH_LEFT, WIDTH_RIGHT)
@@ -403,13 +130,13 @@ if __name__ == "__main__":
     )
     fig, ax = plt.subplots()
     ax, total_persistent_current = plot_persistent_current(
-        ax, left_critical_currents, write_currents
+        ax, left_critical_currents, write_currents, ALPHA, ICHR, ICHL
     )
     plot_edge_fits(ax, lines, left_critical_currents)
 
     fig, ax = plt.subplots()
     ax, read_currents = plot_read_current(
-        ax, left_critical_currents, write_currents, total_persistent_current
+        ax, left_critical_currents, write_currents, total_persistent_current, ALPHA, ICHR, ICHL
     )
     IDXX = 10
     IDXY = 10
