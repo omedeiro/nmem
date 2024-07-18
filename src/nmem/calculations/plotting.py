@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -12,8 +11,9 @@ def plot_point(ax, x, y, **kwargs):
     return ax
 
 
-def plot_htron_critical_current(enable_currents, critical_currents):
-
+def plot_htron_critical_current(
+    enable_currents: np.ndarray, critical_currents: np.ndarray
+):
     plt.plot(enable_currents, critical_currents)
     plt.xlabel("Enable Current [uA]")
     plt.ylabel("Critical Current [uA]")
@@ -21,15 +21,17 @@ def plot_htron_critical_current(enable_currents, critical_currents):
     plt.show()
 
 
-def print_dict_keys(data_dict):
+def print_dict_keys(data_dict: dict):
     for key in data_dict.keys():
         print(key)
 
 
-def plot_htron_sweep(write_currents, enable_write_currents, ber, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-
+def plot_htron_sweep(
+    ax: plt.Axes,
+    write_currents: np.ndarray,
+    enable_write_currents: np.ndarray,
+    ber: np.ndarray,
+):
     xx, yy = np.meshgrid(enable_write_currents, write_currents)
     plt.contourf(xx, yy, ber)
     # plt.gca().invert_xaxis()
@@ -58,7 +60,6 @@ def plot_edge_region(c, mask, color="red", edge_color_array=None):
 def plot_mask_region(c, mask_list, colors=["r", "g", "b", "y"], edge_color_array=None):
     edge_color_array = None
     for i, mask in enumerate(mask_list):
-
         c, edge_color_list = plot_edge_region(
             c, mask, color=colors[i], edge_color_array=edge_color_array
         )
@@ -68,11 +69,19 @@ def plot_mask_region(c, mask_list, colors=["r", "g", "b", "y"], edge_color_array
 
 
 def plot_persistent_current(
-    ax, left_critical_currents, write_currents, alpha, ichr, ichl
+    ax,
+    left_critical_currents: np.ndarray,
+    write_currents: np.ndarray,
+    alpha: float,
+    ichr: float,
+    ichl: float,
+    iretrap: float,
 ):
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
-    total_persistent_current, mask_list = calculate_persistent_current(xx, yy, alpha, ichl, ichr)
+    total_persistent_current = calculate_persistent_current(
+        xx, yy, alpha, ichl, ichr, iretrap
+    )
 
     c = plt.pcolormesh(
         xx, yy, total_persistent_current, edgecolors="none", linewidth=0.5
@@ -121,7 +130,9 @@ def plot_persistent_current(
     return ax, total_persistent_current
 
 
-def plot_read_current(ax, critical_currents, write_currents, persistent_currents, alpha, ichr, ichl):
+def plot_read_current(
+    ax, critical_currents, write_currents, persistent_currents, alpha, ichr, ichl
+):
     read_currents, mask_list = calculate_read_currents(
         critical_currents, write_currents, persistent_currents, alpha, ichr, ichl
     )

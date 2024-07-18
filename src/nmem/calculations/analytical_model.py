@@ -1,24 +1,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-
 from nmem.calculations.calculations import (
-    caluclate_branch_critical_currents,
-    calculate_left_branch_current,
-    calculate_right_branch_current,
-    calculate_left_branch_limits,
-    calculate_right_branch_limits,
     calculate_0_current,
     calculate_1_current,
+    calculate_left_branch_current,
+    calculate_right_branch_current,
+    caluclate_branch_critical_currents,
     htron_critical_current,
 )
-
 from nmem.calculations.plotting import (
     plot_persistent_current,
-    plot_read_current,
     plot_point,
-    plot_edge_fits,
-    plot_htron_sweep,
 )
 
 
@@ -28,10 +21,15 @@ def import_matlab_data(file_path):
 
 
 def get_point_parameters(
-    i: int, j: int, alpha: float, critical_currents, write_currents, persistent_currents
+    i: int,
+    j: int,
+    alpha: float,
+    critical_currents: np.ndarray,
+    write_currents: np.ndarray,
+    persistent_currents: np.ndarray,
 ):
-    critical_current = critical_currents[i]
-    write_current = write_currents[j]
+    critical_current = float(critical_currents[i])
+    write_current = float(write_currents[j])
     persistent_current = persistent_currents[i, j]
     left_branch_current0 = calculate_left_branch_current(
         alpha, write_current, -persistent_current
@@ -58,43 +56,33 @@ def get_point_parameters(
     ideal_read_margin = np.abs(state_0_current - state_1_current)
 
     params = {
-        "Write Current": write_current,
-        "Persistent Current": persistent_current,
-        "Left Side Critical Current": critical_current,
-        "Right Side Critical Current": critical_current / ICHL * ICHR,
-        "Write Left Branch Current 0/1 ": [left_branch_current0, left_branch_current1],
-        "Write Right Branch Current 0/1 ": [
-            right_branch_current0,
-            right_branch_current1,
-        ],
-        "State 0 Current": state_0_current,
-        "State 1 Current": state_1_current,
-        "Ideal Read Current": ideal_read_current,
-        "Ideal Read Margin": ideal_read_margin,
+        "Write Current": f"{write_current:.2f}",
+        "Persistent Current": f"{persistent_current:.2f}",
+        "Left Side Critical Current": f"{critical_current:.2f}",
+        "Right Side Critical Current": f"{critical_current * ICHR / ICHL:.2f}",
+        "Write Left Branch Current 0/1 ": f"{left_branch_current0:.2f}/{left_branch_current1:.2f}",
+        "Write Right Branch Current 0/1 ": f"{right_branch_current0:.2f}/{right_branch_current1:.2f}",
+        "State 0 Current": f"{state_0_current:.2f}",
+        "State 1 Current": f"{state_1_current:.2f}",
+        "Ideal Read Current": f"{ideal_read_current:.2f}",
+        "Ideal Read Margin": f"{ideal_read_margin:.2f}",
     }
     return params
 
 
-def calculate_critical_current_bounds(persistent_current, read_current, alpha):
-    return read_current * alpha * np.ones((2, 1)) + [
-        -persistent_current,
-        persistent_current,
-    ]
-
-
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.3
+    WIDTH_RIGHT = 0.45
     IC0 = 600e-6
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1057
     ALPHA = -1 / HTRON_SLOPE
     BETA = 0.159
-    IRETRAP = 0.5
+    IRETRAP = 0.9
     ICHL, ICHR = caluclate_branch_critical_currents(IC0, WIDTH_LEFT, WIDTH_RIGHT)
     IC_RATIO = ICHL / (ICHL + ICHR)
-    print(f"Left critical current: {ICHL*1e6} uA")
-    print(f"Right critical current: {ICHR*1e6} uA")
+    print(f"Left critical current at I_en=0: {ICHL*1e6} uA")
+    print(f"Right critical current I_en=0: {ICHR*1e6} uA")
 
     # Import data
     FILE_PATH = "/home/omedeiro/"
@@ -110,9 +98,10 @@ if __name__ == "__main__":
     ber_2D = np.reshape(ber, (len(write_currents), len(enable_write_currents)))
 
     # Plot experimental data
-    ax = plot_htron_sweep(write_currents, enable_write_currents, ber_2D)
+    # fig, ax = plt.subplots()
+    # ax = plot_htron_sweep(ax, write_currents, enable_write_currents, ber_2D)
 
-    lines = [
+    EDGE_FITS = [
         {"p1": 2.818, "p2": -226.1},
         {"p1": 2.818, "p2": -165.1},
         {"p1": 6.272, "p2": -433.9},
@@ -128,18 +117,27 @@ if __name__ == "__main__":
         htron_critical_current(HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents)
         * IC_RATIO
     )
-    fig, ax = plt.subplots()
-    ax, total_persistent_current = plot_persistent_current(
-        ax, left_critical_currents, write_currents, ALPHA, ICHR, ICHL
-    )
-    plot_edge_fits(ax, lines, left_critical_currents)
 
     fig, ax = plt.subplots()
-    ax, read_currents = plot_read_current(
-        ax, left_critical_currents, write_currents, total_persistent_current, ALPHA, ICHR, ICHL
+    ax, total_persistent_current = plot_persistent_current(
+        ax, left_critical_currents, write_currents, ALPHA, ICHR, ICHL, IRETRAP
     )
+
+    # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
+
+    # fig, ax = plt.subplots()
+    # ax, read_currents = plot_read_current(
+    #     ax,
+    #     left_critical_currents,
+    #     write_currents,
+    #     total_persistent_current,
+    #     ALPHA,
+    #     ICHR,
+    #     ICHL,
+    # )
+
     IDXX = 10
-    IDXY = 10
+    IDXY = 35
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],
@@ -149,21 +147,28 @@ if __name__ == "__main__":
         markersize=15,
     )
 
-    print(
-        calculate_left_branch_limits(
-            ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
-        )
-    )
+    plt.show()
 
-    print(
-        calculate_right_branch_limits(
-            ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
-        )
-    )
+    # print(
+    #     calculate_left_branch_limits(
+    #         ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
+    #     )
+    # )
+
+    # print(
+    #     calculate_right_branch_limits(
+    #         ALPHA, read_currents[IDXX, IDXY], total_persistent_current[IDXX, IDXY]
+    #     )
+    # )
     # plt.show()
 
-    # params = get_point_parameters(
-    #     IDXX, IDXY, ALPHA, left_critical_currents, write_currents, total_persistent_current
-    # )
-    # for key, value in params.items():
-    #     print(f"{key}: {value}")
+    params = get_point_parameters(
+        IDXX,
+        IDXY,
+        ALPHA,
+        left_critical_currents,
+        write_currents,
+        total_persistent_current,
+    )
+    for key, value in params.items():
+        print(f"{key}: {value}")
