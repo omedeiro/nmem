@@ -12,6 +12,7 @@ from nmem.calculations.calculations import (
 from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_point,
+    plot_read_current,
 )
 
 
@@ -27,6 +28,7 @@ def get_point_parameters(
     critical_currents: np.ndarray,
     write_currents: np.ndarray,
     persistent_currents: np.ndarray,
+    iretrap: float,
 ):
     critical_current = float(critical_currents[i])
     write_current = float(write_currents[j])
@@ -46,10 +48,18 @@ def get_point_parameters(
     )
 
     state_0_current = calculate_0_current(
-        critical_current, critical_current / ICHL * ICHR, alpha, persistent_current
+        critical_current,
+        critical_current / ICHL * ICHR,
+        alpha,
+        persistent_current,
+        iretrap,
     )
     state_1_current = calculate_1_current(
-        critical_current, critical_current / ICHL * ICHR, alpha, persistent_current
+        critical_current,
+        critical_current / ICHL * ICHR,
+        alpha,
+        persistent_current,
+        iretrap,
     )
 
     ideal_read_current = np.mean([state_0_current, state_1_current])
@@ -72,7 +82,7 @@ def get_point_parameters(
 
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.45
+    WIDTH_RIGHT = 0.3
     IC0 = 600e-6
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1057
@@ -80,7 +90,7 @@ if __name__ == "__main__":
     BETA = 0.159
     IRETRAP = 0.9
     ICHL, ICHR = caluclate_branch_critical_currents(IC0, WIDTH_LEFT, WIDTH_RIGHT)
-    IC_RATIO = ICHL / (ICHL + ICHR)
+    IC_RATIO = WIDTH_LEFT / WIDTH_RIGHT
     print(f"Left critical current at I_en=0: {ICHL*1e6} uA")
     print(f"Right critical current I_en=0: {ICHR*1e6} uA")
 
@@ -120,21 +130,30 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     ax, total_persistent_current = plot_persistent_current(
-        ax, left_critical_currents, write_currents, ALPHA, ICHR, ICHL, IRETRAP
+        ax,
+        left_critical_currents,
+        write_currents,
+        ALPHA,
+        ICHR,
+        ICHL,
+        IRETRAP,
+        WIDTH_LEFT,
+        WIDTH_RIGHT,
     )
 
     # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
 
-    # fig, ax = plt.subplots()
-    # ax, read_currents = plot_read_current(
-    #     ax,
-    #     left_critical_currents,
-    #     write_currents,
-    #     total_persistent_current,
-    #     ALPHA,
-    #     ICHR,
-    #     ICHL,
-    # )
+    fig, ax = plt.subplots()
+    ax, read_currents = plot_read_current(
+        ax,
+        left_critical_currents,
+        write_currents,
+        total_persistent_current,
+        ALPHA,
+        ICHR,
+        ICHL,
+        IRETRAP,
+    )
 
     IDXX = 10
     IDXY = 35
@@ -162,6 +181,11 @@ if __name__ == "__main__":
     # )
     # plt.show()
 
+    param_dict = {
+        "Critical Current Ratio": f"{IC_RATIO:.2f}",
+        "Inductive Ratio": f"{ALPHA:.2f}",
+        "Channel Critical Current (uA)": f"{IC0*1e6:.2f}",
+    }
     params = get_point_parameters(
         IDXX,
         IDXY,
@@ -169,6 +193,10 @@ if __name__ == "__main__":
         left_critical_currents,
         write_currents,
         total_persistent_current,
+        IRETRAP,
     )
     for key, value in params.items():
+        print(f"{key}: {value}")
+
+    for key, value in param_dict.items():
         print(f"{key}: {value}")

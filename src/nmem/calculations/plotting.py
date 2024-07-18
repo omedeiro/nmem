@@ -76,11 +76,13 @@ def plot_persistent_current(
     ichr: float,
     ichl: float,
     iretrap: float,
+    width_left: float,
+    width_right: float,
 ):
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
     total_persistent_current = calculate_persistent_current(
-        xx, yy, alpha, ichl, ichr, iretrap
+        xx, yy, alpha, ichl, ichr, iretrap, width_left, width_right
     )
 
     c = plt.pcolormesh(
@@ -131,10 +133,10 @@ def plot_persistent_current(
 
 
 def plot_read_current(
-    ax, critical_currents, write_currents, persistent_currents, alpha, ichr, ichl
+    ax, critical_currents, write_currents, persistent_currents, alpha, ichr, ichl, iretrap
 ):
     read_currents, mask_list = calculate_read_currents(
-        critical_currents, write_currents, persistent_currents, alpha, ichr, ichl
+        critical_currents, write_currents, persistent_currents, alpha, ichr, ichl, iretrap
     )
 
     [xx, yy] = np.meshgrid(critical_currents, write_currents)
