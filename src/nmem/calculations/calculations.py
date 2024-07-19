@@ -108,12 +108,39 @@ def calculate_persistent_current(
     width_left: float,
     width_right: float,
 ) -> np.ndarray:
+    """Calculate the persistent current in the loop for a given set of parameters.
+
+    Parameters
+    ----------
+    left_critical_currents : np.ndarray
+        The critical current of the left branch.
+    write_currents : np.ndarray
+        The write current of the device.
+    alpha : float
+        The ratio of the left branch inductance to the total inductance.
+    ichl : float
+        The critical current of the left branch.
+    ichr : float
+        The critical current of the right branch.
+    iretrap : float
+        The retrapping current of the device.
+    width_left : float
+        The width of the left branch.
+    width_right : float
+        The width of the right branch.
+
+    Returns
+    -------
+    np.ndarray
+    The persistent current in the loop.
+    """
     # The right critical current is the left critical current scaled
     # by the ratio of the switching currents.
     right_critical_current = left_critical_currents * ichr / ichl
 
     # Assuming no persistent current in the loop
     persistent_current = np.zeros_like(left_critical_currents)
+
     # Current is inductively split between the left and right branches
     left_branch_current = write_currents * alpha
     right_branch_current = write_currents * (1 - alpha)
@@ -158,10 +185,16 @@ def calculate_persistent_current(
         right_retrap, right_critical_current * iretrap, persistent_current
     )
 
-    # left_persistent_switch = persistent_current > ichl*1e6
+    left_persistent_switch = persistent_current > ichl * 1e6
     # persistent_current = np.where(left_persistent_switch, ichl, persistent_current)
 
-    return persistent_current
+    regions = {
+        "left_switch": left_switch,
+        "right_switch": right_switch,
+        "right_retrap": right_retrap,
+        "left_persistent_switch": left_persistent_switch,
+    }
+    return persistent_current, regions
 
 
 def calculate_read_currents(
@@ -198,22 +231,22 @@ def calculate_read_currents(
             )
 
     # Negative read currents are not possible
-    # mask_negative = read_currents < 0
+    mask_negative = read_currents < 0
     # read_currents[mask_negative] = 0
 
     # # # Read current NA when persistent current is zero
-    # mask_zero_persistent = persistent_currents == 0
+    mask_zero_persistent = persistent_currents == 0
     # read_currents[mask_zero_persistent] = 0
 
     # # # Read current cannot be less than the write current
-    # mask_less_than_write = np.abs(read_currents) < write_currents
+    mask_less_than_write = np.abs(read_currents) < write_currents
     # read_currents[mask_less_than_write] = 0
 
     # # Read current cannot be greater than the right critical current
-    # mask_greater_than_right = read_currents > right_critical_currents
+    mask_greater_than_right = read_currents > right_critical_currents
     # read_currents[mask_greater_than_right] = 0
 
-    # mask_list = [mask_negative, mask_zero_persistent, mask_less_than_write]
+    mask_list = [mask_negative, mask_zero_persistent, mask_less_than_write]
     mask_list = []
     return read_currents, mask_list
 

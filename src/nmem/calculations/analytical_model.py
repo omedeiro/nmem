@@ -129,7 +129,7 @@ if __name__ == "__main__":
     )
 
     fig, ax = plt.subplots()
-    ax, total_persistent_current = plot_persistent_current(
+    ax, total_persistent_current, regions = plot_persistent_current(
         ax,
         left_critical_currents,
         write_currents,
@@ -139,6 +139,7 @@ if __name__ == "__main__":
         IRETRAP,
         WIDTH_LEFT,
         WIDTH_RIGHT,
+        plot_regions=False,
     )
 
     # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
@@ -153,6 +154,7 @@ if __name__ == "__main__":
         ICHR,
         ICHL,
         IRETRAP,
+        plot_region=True,
     )
 
     IDXX = 10

@@ -42,7 +42,7 @@ def plot_htron_sweep(
     return ax
 
 
-def plot_edge_region(c, mask, color="red", edge_color_array=None):
+def plot_edge_region(c, mask: np.ndarray, color="red", edge_color_array=None):
     edge_color_list = []
     for i in range(mask.shape[0]):
         for j in range(mask.shape[1]):
@@ -57,7 +57,13 @@ def plot_edge_region(c, mask, color="red", edge_color_array=None):
     return c, edge_color_list
 
 
-def plot_mask_region(c, mask_list, colors=["r", "g", "b", "y"], edge_color_array=None):
+def plot_mask_region(
+    c,
+    mask_list: list,
+    mask_names: list,
+    colors=["r", "g", "b", "y"],
+    edge_color_array=None,
+):
     edge_color_array = None
     for i, mask in enumerate(mask_list):
         c, edge_color_list = plot_edge_region(
@@ -78,10 +84,11 @@ def plot_persistent_current(
     iretrap: float,
     width_left: float,
     width_right: float,
+    plot_regions=False,
 ):
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
-    total_persistent_current = calculate_persistent_current(
+    total_persistent_current, regions = calculate_persistent_current(
         xx, yy, alpha, ichl, ichr, iretrap, width_left, width_right
     )
 
@@ -89,59 +96,93 @@ def plot_persistent_current(
         xx, yy, total_persistent_current, edgecolors="none", linewidth=0.5
     )
 
-    # c = plot_mask_region(c, mask_list)
+    if plot_regions:
+        mask_list = [
+            regions["left_switch"],
+            regions["right_switch"],
+            regions["right_retrap"],
+            regions["left_persistent_switch"],
+        ]
+        mask_names = [
+            "left_switch",
+            "right_switch",
+            "right_retrap",
+            "left_persistent_switch",
+        ]
+        c = plot_mask_region(c, mask_list, mask_names)
 
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
-    plt.text(
-        60,
-        80,
-        "Write too low",
-        fontsize=12,
-        color="red",
-        ha="left",
-        backgroundcolor="white",
-    )
-    plt.text(
-        40,
-        220,
-        "Switched right side, inverting",
-        fontsize=12,
-        color="green",
-        ha="left",
-        backgroundcolor="white",
-    )
-    plt.text(
-        10,
-        170,
-        "I_P > ICHL",
-        fontsize=12,
-        color="blue",
-        ha="center",
-        backgroundcolor="white",
-    )
+    # plt.text(
+    #     60,
+    #     80,
+    #     "Write too low",
+    #     fontsize=12,
+    #     color="red",
+    #     ha="left",
+    #     backgroundcolor="white",
+    # )
+    # plt.text(
+    #     40,
+    #     220,
+    #     "Switched right side, inverting",
+    #     fontsize=12,
+    #     color="green",
+    #     ha="left",
+    #     backgroundcolor="white",
+    # )
+    # plt.text(
+    #     10,
+    #     170,
+    #     "I_P > ICHL",
+    #     fontsize=12,
+    #     color="blue",
+    #     ha="center",
+    #     backgroundcolor="white",
+    # )
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticklabels([f"{ic*ichr/ichl:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
-    return ax, total_persistent_current
+    return ax, total_persistent_current, regions
 
 
 def plot_read_current(
-    ax, critical_currents, write_currents, persistent_currents, alpha, ichr, ichl, iretrap
+    ax,
+    critical_currents,
+    write_currents,
+    persistent_currents,
+    alpha,
+    ichr,
+    ichl,
+    iretrap,
+    plot_region=False,
 ):
     read_currents, mask_list = calculate_read_currents(
-        critical_currents, write_currents, persistent_currents, alpha, ichr, ichl, iretrap
+        critical_currents,
+        write_currents,
+        persistent_currents,
+        alpha,
+        ichr,
+        ichl,
+        iretrap,
     )
 
     [xx, yy] = np.meshgrid(critical_currents, write_currents)
     c = plt.pcolormesh(xx, yy, read_currents, linewidth=0.5)
-    c = plot_mask_region(c, mask_list)
+    if plot_region:
+        mask_names = [
+            "Negative Read Current",
+            "Zero Persistent Current",
+            "Read Current < Write Current",
+            "Read Current > Right Critical Current",
+        ]
+        c = plot_mask_region(c, mask_list, mask_names)
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Read Current")
