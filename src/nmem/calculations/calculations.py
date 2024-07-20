@@ -38,13 +38,6 @@ def calculate_left_branch_current(
     return channel_current * alpha - persistent_current
 
 
-def caluclate_branch_critical_currents(
-    critical_current: float, width_left: float, width_right: float
-) -> np.ndarray:
-    ratio = width_left / width_right
-    return critical_current * np.array([ratio, 1 - ratio])
-
-
 def calculate_left_branch_limits(alpha, write_current, persistent_current):
     return [
         calculate_left_branch_current(alpha, write_current, persistent_current),
@@ -80,6 +73,14 @@ def calculate_0_current(
     persistent_current: float,
     iretrap: float,
 ) -> float:
+    """ Calculate the current required to switch the device to state 0.
+    
+    Parameters
+    ----------
+    ichl : float
+        The critical current of the left branch.
+    ichr : float
+        The critical current of the right branch."""
     return np.max([(ichl - persistent_current) / alpha, ichl * iretrap + ichr])
 
 
@@ -156,7 +157,7 @@ def calculate_persistent_current(
     right_branch_current = np.where(left_switch, write_currents, right_branch_current)
 
     # If the right branch also switches
-    right_switch = right_branch_current > (right_critical_current)
+    right_switch = right_branch_current > right_critical_current
 
     LEFT_SQUARES = width_left
     RIGHT_SQUARES = width_right / width_left
@@ -181,9 +182,9 @@ def calculate_persistent_current(
 
     # If the resistive right branch current is less than the right retrapping
     right_retrap = right_branch_current < right_critical_current * iretrap
-    persistent_current = np.where(
-        right_retrap, right_critical_current * iretrap, persistent_current
-    )
+    # persistent_current = np.where(
+    #     right_retrap, right_critical_current * iretrap, persistent_current
+    # )
 
     left_persistent_switch = persistent_current > ichl * 1e6
     # persistent_current = np.where(left_persistent_switch, ichl, persistent_current)
