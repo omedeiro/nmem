@@ -79,17 +79,25 @@ def plot_persistent_current(
     left_critical_currents: np.ndarray,
     write_currents: np.ndarray,
     alpha: float,
-    ichr: float,
-    ichl: float,
+    max_left_critical_current: float,
+    max_right_critical_current: float,
     iretrap: float,
     width_left: float,
     width_right: float,
     plot_regions=False,
 ):
+    ic_ratio = max_left_critical_current / max_right_critical_current
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
     total_persistent_current, regions = calculate_persistent_current(
-        xx, yy, alpha, ichl, ichr, iretrap, width_left, width_right
+        xx,
+        yy,
+        alpha,
+        max_left_critical_current,
+        max_right_critical_current,
+        iretrap,
+        width_left,
+        width_right,
     )
 
     c = plt.pcolormesh(
@@ -149,29 +157,30 @@ def plot_persistent_current(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic*ichr/ichl:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ic/ic_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
     return ax, total_persistent_current, regions
 
 
 def plot_read_current(
-    ax,
-    critical_currents,
-    write_currents,
-    persistent_currents,
-    alpha,
-    ichr,
-    ichl,
-    iretrap,
-    plot_region=False,
+    ax: plt.Axes,
+    critical_currents: np.ndarray,
+    write_currents: np.ndarray,
+    persistent_currents: np.ndarray,
+    alpha: float,
+    max_left_critical_current: float,
+    max_right_critical_current: float,
+    iretrap: float,
+    plot_region: bool = False,
 ):
+    ic_ratio = max_left_critical_current / max_right_critical_current
     read_currents, mask_list = calculate_read_currents(
         critical_currents,
         write_currents,
         persistent_currents,
         alpha,
-        ichr,
-        ichl,
+        max_left_critical_current,
+        max_right_critical_current,
         iretrap,
     )
 
@@ -195,7 +204,7 @@ def plot_read_current(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic*ichr/ichl:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ic/ic_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
     return ax, read_currents
 

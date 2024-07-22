@@ -63,23 +63,23 @@ def get_point_parameters(
     ideal_read_margin = np.abs(state_0_current - state_1_current)
 
     param_dict = {
-        "Total Critical Current (enable off)": f"{IC0*1e6:.2f}",
-        "Left Critical Current (enable off)": f"{ICHL*1e6:.2f}",
-        "Right Critical Current (enable off)": f"{ICHR*1e6:.2f}",
+        "Total Critical Current (enable off) [uA]": f"{IC0:.2f}",
+        "Left Critical Current (enable off) [uA]": f"{ICHL:.2f}",
+        "Right Critical Current (enable off) [uA]": f"{ICHR:.2f}",
         "Width Ratio": f"{WIDTH_RATIO:.2f}",
         "Inductive Ratio": f"{ALPHA:.2f}",
         "Switching Current Ratio": f"{IC_RATIO:.2f}",
-        "Write Current": f"{write_current:.2f}",
-        "Enable Write Current": f"{enable_current:.2f}",
-        "Left Branch Write Current": f"{left_branch_write_current:.2f}",
-        "Right Branch Write Current": f"{right_branch_write_current:.2f}",
-        "Left Side Critical Current (enable on)": f"{critical_current:.2f}",
-        "Right Side Critical Current (enable on)": f"{critical_current / IC_RATIO:.2f}",
+        "Write Current": f"{write_current:.2f} [uA]",
+        "Enable Write Current [uA]": f"{enable_current:.2f}",
+        "Left Branch Write Current [uA]": f"{left_branch_write_current:.2f}",
+        "Right Branch Write Current [uA]": f"{right_branch_write_current:.2f}",
+        "Left Side Critical Current (enable on) [uA]": f"{critical_current:.2f}",
+        "Right Side Critical Current (enable on) [uA]": f"{critical_current / IC_RATIO:.2f}",
         "Persistent Current": f"{persistent_current:.2f}",
-        "State 0 Current": f"{state_0_current:.2f}",
-        "State 1 Current": f"{state_1_current:.2f}",
-        "Ideal Read Current": f"{ideal_read_current:.2f}",
-        "Ideal Read Margin": f"{ideal_read_margin:.2f}",
+        "State 0 Current [uA]": f"{state_0_current:.2f}",
+        "State 1 Current [uA]": f"{state_1_current:.2f}",
+        "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
+        "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
     }
     param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
     param_df.columns = ["Value"]
@@ -90,7 +90,7 @@ def get_point_parameters(
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.4
-    IC0 = 600e-6
+    IC0 = 600
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1000
     ALPHA = 0.628

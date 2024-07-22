@@ -81,12 +81,11 @@ def calculate_0_current(
         The critical current of the left branch.
     right_critical_current : float
         The critical current of the right branch."""
-    return np.max(
-        [
-            (left_critical_current - persistent_current) / alpha,
-            left_critical_current * iretrap + right_critical_current,
-        ]
-    )
+
+    read_current_left = (left_critical_current - persistent_current) / alpha
+    read_current_right = right_critical_current + left_critical_current * iretrap
+
+    return np.max([read_current_left, read_current_right])
 
 
 def calculate_1_current(
@@ -104,12 +103,11 @@ def calculate_1_current(
         The critical current of the left branch.
     right_critical_current : float
         The critical current of the right branch."""
-    return np.max(
-        [
-            (right_critical_current - persistent_current) / (1 - alpha),
-            right_critical_current * iretrap + left_critical_current,
-        ]
-    )
+
+    read_current_left = left_critical_current + right_critical_current * iretrap
+    read_current_right = (right_critical_current - persistent_current) / (1 - alpha)
+
+    return np.max([read_current_left, read_current_right])
 
 
 def calculate_alpha(ll, lr):
@@ -121,8 +119,8 @@ def calculate_persistent_current(
     left_critical_currents: np.ndarray,
     write_currents: np.ndarray,
     alpha: float,
-    ichl: float,
-    ichr: float,
+    max_left_critical_current: float,
+    max_right_critical_current: float,
     iretrap: float,
     width_left: float,
     width_right: float,
@@ -137,10 +135,10 @@ def calculate_persistent_current(
         The write current of the device.
     alpha : float
         The ratio of the left branch inductance to the total inductance.
-    ichl : float
-        The critical current of the left branch.
-    ichr : float
-        The critical current of the right branch.
+    max_left_critical_current : float
+        The maximum critical current of the left branch. At minimum temperature
+    max_right_critical_current : float
+        The maximum critical current of the right branch. At minimum temperature
     iretrap : float
         The retrapping current of the device.
     width_left : float
@@ -155,7 +153,8 @@ def calculate_persistent_current(
     """
     # The right critical current is the left critical current scaled
     # by the ratio of the switching currents.
-    right_critical_currents = left_critical_currents * ichr / ichl
+    ic_ratio = max_left_critical_current / max_right_critical_current
+    right_critical_currents = left_critical_currents / ic_ratio
 
     # Assuming no persistent current in the loop
     persistent_current = np.zeros_like(left_critical_currents)
@@ -208,9 +207,9 @@ def calculate_persistent_current(
     )
     persistent_current = np.abs(persistent_current)
 
-    left_persistent_switch = persistent_current > ichl * 1e6
+    left_persistent_switch = persistent_current > max_left_critical_current
     persistent_current = np.where(
-        left_persistent_switch, ichl * 1e6, persistent_current
+        left_persistent_switch, max_left_critical_current, persistent_current
     )
 
     regions = {
@@ -229,13 +228,14 @@ def calculate_read_currents(
     write_currents: np.ndarray,
     persistent_currents: np.ndarray,
     alpha: float,
-    ichr: float,
-    ichl: float,
+    max_left_critical_current: float,
+    max_right_critical_current: float,
     iretrap: float,
 ):
+    ic_ratio = max_left_critical_current / max_right_critical_current
 
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
-    right_critical_currents = left_critical_currents * ichr / ichl
+    right_critical_currents = left_critical_currents / ic_ratio
     read_currents = np.zeros_like(xx)
     for i in range(len(write_currents)):
         for j in range(len(left_critical_currents)):
