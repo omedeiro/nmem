@@ -67,12 +67,12 @@ def calculate_read_limits_right(alpha, right_critical_current, persistent_curren
 
 
 def calculate_0_current(
-    left_critical_current: float,
-    right_critical_current: float,
+    left_critical_current: np.ndarray,
+    right_critical_current: np.ndarray,
     alpha: float,
-    persistent_current: float,
+    persistent_current: np.ndarray,
     iretrap: float,
-) -> float:
+) -> np.ndarray:
     """Calculate the current required to switch the device to state 0.
 
     Parameters
@@ -85,16 +85,16 @@ def calculate_0_current(
     read_current_left = (left_critical_current - persistent_current) / alpha
     read_current_right = right_critical_current + left_critical_current * iretrap
 
-    return np.max([read_current_left, read_current_right])
+    return np.maximum(read_current_left, read_current_right)
 
 
 def calculate_1_current(
-    left_critical_current: float,
-    right_critical_current: float,
+    left_critical_current: np.ndarray,
+    right_critical_current: np.ndarray,
     alpha: float,
-    persistent_current: float,
+    persistent_current: np.ndarray,
     iretrap: float,
-) -> float:
+) -> np.ndarray:
     """Calculate the current required to switch the device to state 1.
 
     Parameters
@@ -107,7 +107,7 @@ def calculate_1_current(
     read_current_left = left_critical_current + right_critical_current * iretrap
     read_current_right = (right_critical_current - persistent_current) / (1 - alpha)
 
-    return np.max([read_current_left, read_current_right])
+    return np.maximum(read_current_left, read_current_right)
 
 
 def calculate_alpha(ll, lr):
@@ -236,35 +236,33 @@ def calculate_read_currents(
 
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
     right_critical_currents = left_critical_currents / ic_ratio
-    read_currents = np.zeros_like(xx)
-    for i in range(len(write_currents)):
-        for j in range(len(left_critical_currents)):
-            zero_switching_current = calculate_0_current(
-                left_critical_currents[j],
-                right_critical_currents[j],
-                alpha,
-                persistent_currents[j, i],
-                iretrap,
-            )
-            one_switching_current = calculate_1_current(
-                left_critical_currents[j],
-                right_critical_currents[j],
-                alpha,
-                persistent_currents[j, i],
-                iretrap,
-            )
+    # read_currents = np.zeros_like(xx)
 
-            read_currents[j, i] = np.mean(
-                [zero_switching_current, one_switching_current]
-            )
-
+    zero_switching_current = calculate_0_current(
+        xx,
+        yy,
+        alpha,
+        persistent_currents,
+        iretrap,
+    )
+    one_switching_current = calculate_1_current(
+        xx,
+        yy,
+        alpha,
+        persistent_currents,
+        iretrap,
+    )
+    print(f"zero_switching_current: {zero_switching_current.shape}")
+    print(f"one_switching_current: {one_switching_current.shape}")
+    read_currents = (zero_switching_current + one_switching_current) / 2
+    print(f"read_currents: {read_currents.shape}")
     # Negative read currents are not possible
     mask_negative = read_currents < 0
     # read_currents[mask_negative] = 0
 
     # # # Read current NA when persistent current is zero
     mask_zero_persistent = persistent_currents == 0
-    read_currents[mask_zero_persistent] = 0
+    # read_currents[mask_zero_persistent] = 0
 
     # # # Read current cannot be less than the write current
     mask_less_than_write = np.abs(read_currents) < write_currents
@@ -275,7 +273,7 @@ def calculate_read_currents(
     # read_currents[mask_greater_than_right] = 0
 
     mask_list = [mask_negative, mask_zero_persistent, mask_less_than_write]
-    mask_list = []
+    # mask_list = []
     return read_currents, mask_list
 
 

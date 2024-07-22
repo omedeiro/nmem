@@ -69,7 +69,7 @@ def get_point_parameters(
         "Width Ratio": f"{WIDTH_RATIO:.2f}",
         "Inductive Ratio": f"{ALPHA:.2f}",
         "Switching Current Ratio": f"{IC_RATIO:.2f}",
-        "Write Current": f"{write_current:.2f} [uA]",
+        "Write Current [uA]": f"{write_current:.2f}",
         "Enable Write Current [uA]": f"{enable_current:.2f}",
         "Left Branch Write Current [uA]": f"{left_branch_write_current:.2f}",
         "Right Branch Write Current [uA]": f"{right_branch_write_current:.2f}",
@@ -126,11 +126,11 @@ if __name__ == "__main__":
         {"p1": 6.272, "p2": -433.9},
         {"p1": 6.272, "p2": -353.8},
     ]
-
+    N = 50
     enable_write_currents = np.linspace(
-        enable_write_currents[0], enable_write_currents[-1], 50
+        enable_write_currents[0], enable_write_currents[-1], N
     )
-    write_currents = np.linspace(write_currents[0], write_currents[-1], 50)
+    write_currents = np.linspace(write_currents[0], write_currents[-1], N)
 
     channel_critical_current_enabled = htron_critical_current(
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents
