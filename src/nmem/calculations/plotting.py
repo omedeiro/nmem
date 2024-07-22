@@ -116,6 +116,8 @@ def plot_persistent_current(
     plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
+    ax.set_xlim(right=0)
+
     # plt.text(
     #     60,
     #     80,
@@ -188,6 +190,7 @@ def plot_read_current(
     plt.title("Read Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
+    ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())

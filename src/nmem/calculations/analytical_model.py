@@ -12,6 +12,7 @@ from nmem.calculations.calculations import (
 from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_point,
+    plot_read_current,
 )
 
 
@@ -88,11 +89,11 @@ def get_point_parameters(
 
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.3
+    WIDTH_RIGHT = 0.4
     IC0 = 600e-6
     HTRON_SLOPE = -2.69
-    HTRON_INTERCEPT = 1057
-    ALPHA = -1 / HTRON_SLOPE
+    HTRON_INTERCEPT = 1000
+    ALPHA = 0.628
     BETA = 0.159
     IRETRAP = 0.9
 
@@ -154,21 +155,21 @@ if __name__ == "__main__":
 
     # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
 
-    # fig, ax = plt.subplots()
-    # ax, read_currents = plot_read_current(
-    #     ax,
-    #     left_critical_currents,
-    #     write_currents,
-    #     total_persistent_current,
-    #     ALPHA,
-    #     ICHR,
-    #     ICHL,
-    #     IRETRAP,
-    #     plot_region=True,
-    # )
+    fig, ax = plt.subplots()
+    ax, read_currents = plot_read_current(
+        ax,
+        left_critical_currents,
+        write_currents,
+        total_persistent_current,
+        ALPHA,
+        ICHR,
+        ICHL,
+        IRETRAP,
+        plot_region=True,
+    )
 
-    IDXX = 15
-    IDXY = 35
+    IDXX = 20
+    IDXY = 10
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],

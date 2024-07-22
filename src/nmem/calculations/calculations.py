@@ -67,31 +67,49 @@ def calculate_read_limits_right(alpha, right_critical_current, persistent_curren
 
 
 def calculate_0_current(
-    ichl: float,
-    ichr: float,
+    left_critical_current: float,
+    right_critical_current: float,
     alpha: float,
     persistent_current: float,
     iretrap: float,
 ) -> float:
-    """ Calculate the current required to switch the device to state 0.
-    
+    """Calculate the current required to switch the device to state 0.
+
     Parameters
     ----------
-    ichl : float
+    left_critical_current : float
         The critical current of the left branch.
-    ichr : float
+    right_critical_current : float
         The critical current of the right branch."""
-    return np.max([(ichl - persistent_current) / alpha, ichl * iretrap + ichr])
+    return np.max(
+        [
+            (left_critical_current - persistent_current) / alpha,
+            left_critical_current * iretrap + right_critical_current,
+        ]
+    )
 
 
 def calculate_1_current(
-    ichl: float,
-    ichr: float,
+    left_critical_current: float,
+    right_critical_current: float,
     alpha: float,
     persistent_current: float,
     iretrap: float,
 ) -> float:
-    return np.max([(ichr - persistent_current) / (1 - alpha), ichr * iretrap + ichl])
+    """Calculate the current required to switch the device to state 1.
+
+    Parameters
+    ----------
+    left_critical_current : float
+        The critical current of the left branch.
+    right_critical_current : float
+        The critical current of the right branch."""
+    return np.max(
+        [
+            (right_critical_current - persistent_current) / (1 - alpha),
+            right_critical_current * iretrap + left_critical_current,
+        ]
+    )
 
 
 def calculate_alpha(ll, lr):
@@ -137,14 +155,14 @@ def calculate_persistent_current(
     """
     # The right critical current is the left critical current scaled
     # by the ratio of the switching currents.
-    right_critical_current = left_critical_currents * ichr / ichl
+    right_critical_currents = left_critical_currents * ichr / ichl
 
     # Assuming no persistent current in the loop
     persistent_current = np.zeros_like(left_critical_currents)
 
     # Current is inductively split between the left and right branches
-    left_branch_current = write_currents * alpha
-    right_branch_current = write_currents * (1 - alpha)
+    left_branch_current = write_currents * (1 - alpha)
+    right_branch_current = write_currents * alpha
 
     # If the left branch current is greater than the
     # left critical current, the branch switches.
@@ -157,37 +175,43 @@ def calculate_persistent_current(
     right_branch_current = np.where(left_switch, write_currents, right_branch_current)
 
     # If the right branch also switches
-    right_switch = right_branch_current > right_critical_current
+    right_switch = right_branch_current > right_critical_currents
 
-    LEFT_SQUARES = width_left
-    RIGHT_SQUARES = width_right / width_left
-    SHEET_RESISTANCE = 1
+    # LEFT_SQUARES = width_left
+    # RIGHT_SQUARES = width_right / width_left
+    # SHEET_RESISTANCE = 1
 
-    left_hotspot_resistance = SHEET_RESISTANCE * LEFT_SQUARES
-    right_hotspot_resistance = SHEET_RESISTANCE * RIGHT_SQUARES
+    # left_hotspot_resistance = SHEET_RESISTANCE * LEFT_SQUARES
+    # right_hotspot_resistance = SHEET_RESISTANCE * RIGHT_SQUARES
 
-    hotspot_resistance_ratio = left_hotspot_resistance / (
-        left_hotspot_resistance + right_hotspot_resistance
-    )
-
-    # The current is then resistively split between the left and right branches
-    left_branch_current = np.where(
-        right_switch, write_currents * hotspot_resistance_ratio, left_branch_current
-    )
-    right_branch_current = np.where(
-        right_switch,
-        write_currents * (1 - hotspot_resistance_ratio),
-        right_branch_current,
-    )
-
-    # If the resistive right branch current is less than the right retrapping
-    right_retrap = right_branch_current < right_critical_current * iretrap
-    # persistent_current = np.where(
-    #     right_retrap, right_critical_current * iretrap, persistent_current
+    # hotspot_resistance_ratio = left_hotspot_resistance / (
+    #     left_hotspot_resistance + right_hotspot_resistance
     # )
 
+    # # The current is then resistively split between the left and right branches
+    # left_branch_current = np.where(
+    #     right_switch, write_currents * hotspot_resistance_ratio, left_branch_current
+    # )
+    # right_branch_current = np.where(
+    #     right_switch,
+    #     write_currents * (1 - hotspot_resistance_ratio),
+    #     right_branch_current,
+    # )
+
+    # If the resistive right branch current is less than the right retrapping
+    right_retrap = right_branch_current < right_critical_currents * iretrap
+
+    persistent_current = np.where(
+        right_switch,
+        left_critical_currents - right_critical_currents * iretrap,
+        persistent_current,
+    )
+    persistent_current = np.abs(persistent_current)
+
     left_persistent_switch = persistent_current > ichl * 1e6
-    # persistent_current = np.where(left_persistent_switch, ichl, persistent_current)
+    persistent_current = np.where(
+        left_persistent_switch, ichl * 1e6, persistent_current
+    )
 
     regions = {
         "left_switch": left_switch,
@@ -195,6 +219,8 @@ def calculate_persistent_current(
         "right_retrap": right_retrap,
         "left_persistent_switch": left_persistent_switch,
     }
+
+    # persistent_current = np.where(persistent_current>ichl*1e6, ichl*1e6, persistent_current)
     return persistent_current, regions
 
 
@@ -207,6 +233,7 @@ def calculate_read_currents(
     ichl: float,
     iretrap: float,
 ):
+
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
     right_critical_currents = left_critical_currents * ichr / ichl
     read_currents = np.zeros_like(xx)
@@ -237,7 +264,7 @@ def calculate_read_currents(
 
     # # # Read current NA when persistent current is zero
     mask_zero_persistent = persistent_currents == 0
-    # read_currents[mask_zero_persistent] = 0
+    read_currents[mask_zero_persistent] = 0
 
     # # # Read current cannot be less than the write current
     mask_less_than_write = np.abs(read_currents) < write_currents
