@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.ticker as ticker
 
 
 def htron_critical_current(
@@ -72,7 +71,6 @@ def calculate_0_state_currents(
     right_critical_current: np.ndarray,
     persistent_current: np.ndarray,
     alpha: float,
-    iretrap: float,
 ):
     """Calculate the current required to switch the device to state 0.
 
@@ -88,20 +86,22 @@ def calculate_0_state_currents(
     The bias current limits assuming the device is in state 0."""
 
     # The 0 state is defined as a negative persistent current
-    if persistent_current > 0:
-        persistent_current = -persistent_current
+    persistent_current = np.where(
+        persistent_current > 0, -persistent_current, persistent_current
+    )
 
-    bias_current_left = (left_critical_current - persistent_current) / alpha
-    bias_current_right = (right_critical_current + persistent_current) / (1 - alpha)
+    bias_current_to_switch_left = (left_critical_current - persistent_current) / alpha
+    bias_current_to_switch_right = (right_critical_current + persistent_current) / (
+        1 - alpha
+    )
 
-    return bias_current_left, bias_current_right
+    return bias_current_to_switch_left, bias_current_to_switch_right
 
 
 def calculate_1_state_currents(
     left_critical_current: np.ndarray,
     right_critical_current: np.ndarray,
     persistent_current: np.ndarray,
-    iretrap: float,
     alpha: float,
 ):
     """Calculate the current required to switch the device to state 1.
@@ -124,13 +124,16 @@ def calculate_1_state_currents(
     The bias current limits assuming the device is in state 1."""
 
     # The 1 state is defined as a positive persistent current
-    if persistent_current < 0:
-        persistent_current = -persistent_current
+    persistent_current = np.where(
+        persistent_current < 0, -persistent_current, persistent_current
+    )
 
-    bias_current_left = (left_critical_current + persistent_current) / alpha
-    bias_current_right = (right_critical_current - persistent_current) / (1 - alpha)
+    bias_current_to_switch_left = (left_critical_current + persistent_current) / alpha
+    bias_current_to_switch_right = (right_critical_current - persistent_current) / (
+        1 - alpha
+    )
 
-    return bias_current_left, bias_current_right
+    return bias_current_to_switch_left, bias_current_to_switch_right
 
 
 def calculate_alpha(ll, lr):
@@ -249,19 +252,17 @@ def calculate_read_currents(
     right_critical_currents = left_critical_currents / ic_ratio
     # read_currents = np.zeros_like(xx)
 
-    zero_switching_current = calculate_0_current(
+    zero_switching_current = calculate_0_state_currents(
         xx,
         yy,
         persistent_currents,
         alpha,
-        iretrap,
     )
-    one_switching_current = calculate_1_current(
+    one_switching_current = calculate_1_state_currents(
         xx,
         yy,
         persistent_currents,
         alpha,
-        iretrap,
     )
     print(f"zero_switching_current: {zero_switching_current.shape}")
     print(f"one_switching_current: {one_switching_current.shape}")
@@ -297,7 +298,6 @@ def calculate_critical_current_bounds(persistent_current, read_current, alpha):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
-    import matplotlib.patches as patches
 
     left_critical_current = 22
     right_critical_current = 87
@@ -323,34 +323,29 @@ if __name__ == "__main__":
         f"One current left: {one_current_left}, One current right: {one_current_right}"
     )
 
-    READ_BIAS = 10.0
-    fig, ax = plt.subplots()
-    plt.bar(
-        [-2, -1],
-        [-persistent_current+READ_BIAS*(0.63), persistent_current+READ_BIAS*(0.63)],
-        color=["b", "r"],
-        width=1,
-        bottom=left_critical_current,
-    )
-    plt.bar(
-        [1, 2],
-        [persistent_current+READ_BIAS*(1-0.63), READ_BIAS],
-        color=["b", "r"],
-        width=1,
-        bottom=right_critical_current,
-    )
-    # plt.hlines(READ_BIAS, -4, 4, color="k")
-    # plt.hlines(-READ_BIAS, -4, 4, color="k")
-    # ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%+g"))
+    READ_BIAS = 130
 
-    plt.yticks()
-    plt.xticks([-1.5, 1.5], ["0", "1"])
-    plt.xlabel("State")
-    plt.grid(axis="y")
+    print("STATE 0")
+    if READ_BIAS > zero_current_left and READ_BIAS > zero_current_right:
+        print("Both sides switched")
 
-    plt.hlines(left_critical_current, -2.75, -0.25, color="k")
-    plt.hlines(right_critical_current, 0.25, 2.75, color="k")
-    ax.set_ylim(bottom=0)
-    # plt.text(0, 50, "not switching", ha="center", va="center", color="black")
-    # plt.text(0, -50, "switching", ha="center", va="center", color="black")
-    # plt.hlines(right_critical_current, -1, 6, color="r")
+    if READ_BIAS > zero_current_left and READ_BIAS < zero_current_right:
+        print("Left side switched")
+    if READ_BIAS < zero_current_left and READ_BIAS > zero_current_right:
+        print("Right side switched")
+
+    print("STATE 1")
+    if READ_BIAS > one_current_left and READ_BIAS > one_current_right:
+        print("Both sides switched")
+    if READ_BIAS > one_current_left and READ_BIAS < one_current_right:
+        print("Left side switched")
+    if READ_BIAS < one_current_left and READ_BIAS > one_current_right:
+        print("Right side switched")
+
+    read_bias = np.linspace(0, 300, 100)
+    plt.plot(read_bias, read_bias * 0.63, label="Left current")
+    plt.plot(read_bias, read_bias * 0.37, label="Right current")
+    plt.axhline(22, color="red", linestyle="--", label="Left critical current")
+    plt.axhline(87, color="blue", linestyle="--", label="Right critical current")
+    plt.axhline(60, color="green", linestyle="--", label="Persistent current")
+    plt.axvline(READ_BIAS, color="black", linestyle="--", label="Read bias")

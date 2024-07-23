@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 from nmem.calculations.calculations import (
-    calculate_0_current,
-    calculate_1_current,
+    calculate_0_state_currents,
+    calculate_1_state_currents,
     calculate_left_branch_current,
     calculate_right_branch_current,
     htron_critical_current,
@@ -12,7 +12,6 @@ from nmem.calculations.calculations import (
 from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_point,
-    plot_read_current,
 )
 
 
@@ -28,39 +27,39 @@ def get_point_parameters(
     write_currents: np.ndarray,
     persistent_currents: np.ndarray,
     enable_currents: np.ndarray,
+    alpha: float,
+    iretrap: float,
 ):
     critical_current = float(critical_currents[i])
     write_current = float(write_currents[j])
     persistent_current = float(persistent_currents[j, i])
     enable_current = float(enable_currents[i])
 
-    left_branch_write_current = calculate_left_branch_current(ALPHA, write_current, 0)
-    right_branch_write_current = calculate_right_branch_current(ALPHA, write_current, 0)
+    left_branch_write_current = calculate_left_branch_current(alpha, write_current, 0)
+    right_branch_write_current = calculate_right_branch_current(alpha, write_current, 0)
 
     left_branch_current1 = calculate_left_branch_current(
-        ALPHA, write_current, persistent_current
+        alpha, write_current, persistent_current
     )
     right_branch_current1 = calculate_right_branch_current(
-        ALPHA, write_current, persistent_current
+        alpha, write_current, persistent_current
     )
 
-    state_0_current = calculate_0_current(
+    zero_current_left, zero_current_right = calculate_0_state_currents(
         critical_current,
         critical_current / IC_RATIO,
         persistent_current,
-        ALPHA,
-        IRETRAP,
+        alpha,
     )
-    state_1_current = calculate_1_current(
+    one_current_left, one_current_right = calculate_1_state_currents(
         critical_current,
         critical_current / IC_RATIO,
         persistent_current,
-        ALPHA,
-        IRETRAP,
+        alpha,
     )
 
-    ideal_read_current = np.mean([state_0_current, state_1_current])
-    ideal_read_margin = (state_0_current - state_1_current) / 2
+    ideal_read_current = np.mean([zero_current_left, zero_current_left])
+    ideal_read_margin = (zero_current_left - zero_current_left) / 2
 
     param_dict = {
         "Total Critical Current (enable off) [uA]": f"{IC0:.2f}",
@@ -76,8 +75,10 @@ def get_point_parameters(
         "Left Side Critical Current (enable on) [uA]": f"{critical_current:.2f}",
         "Right Side Critical Current (enable on) [uA]": f"{critical_current / IC_RATIO:.2f}",
         "Persistent Current": f"{persistent_current:.2f}",
-        "State 0 Current [uA]": f"{state_0_current:.2f}",
-        "State 1 Current [uA]": f"{state_1_current:.2f}",
+        "Zero State Left Branch Current [uA]": f"{zero_current_left:.2f}",
+        "Zero State Right Branch Current [uA]": f"{zero_current_right:.2f}",
+        "One State Left Branch Current [uA]": f"{one_current_left:.2f}",
+        "One State Right Branch Current [uA]": f"{one_current_right:.2f}",
         "Set Read Current [uA]": f"{IREAD:.2f}",
         "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
         "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
@@ -109,21 +110,21 @@ def plot_read_margin(
     [xx, yy] = np.meshgrid(left_switching_currents, write_currents)
     right_critical_currents = left_switching_currents / IC_RATIO
 
-    zero_currents = calculate_0_current(
+    zero_current_left, zero_current_right = calculate_0_state_currents(
         left_critical_currents,
         right_critical_currents,
-        alpha,
         persistent_currents,
+        alpha,
         iretrap,
     )
-    one_currents = calculate_1_current(
+    one_current_left, one_current_right = calculate_1_state_currents(
         left_critical_currents,
         right_critical_currents,
-        alpha,
         persistent_currents,
+        alpha,
         iretrap,
     )
-    read_margin = zero_currents - one_currents
+    read_margin = zero_current_left
 
     read_margin = np.where(persistent_currents == 0, 0, read_margin)
 
@@ -154,7 +155,8 @@ if __name__ == "__main__":
     BETA = 0.159
     IRETRAP = 1
     IREAD = 280
-
+    IDXX = 22
+    IDXY = 5
     WIDTH_RATIO = WIDTH_LEFT / (WIDTH_LEFT + WIDTH_RIGHT)
     ICHL = IC0 * WIDTH_RATIO
     ICHR = IC0 * (1 - WIDTH_RATIO)
@@ -210,8 +212,7 @@ if __name__ == "__main__":
         WIDTH_RIGHT,
         plot_regions=False,
     )
-    IDXX = 22
-    IDXY = 4
+
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],
@@ -253,6 +254,8 @@ if __name__ == "__main__":
         write_currents,
         total_persistent_current,
         enable_write_currents,
+        ALPHA,
+        IRETRAP,
     )
     print(param_df)
 
