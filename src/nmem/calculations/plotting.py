@@ -93,9 +93,9 @@ def plot_persistent_current(
         xx,
         yy,
         alpha,
+        iretrap,
         max_left_critical_current,
         max_right_critical_current,
-        iretrap,
         width_left,
         width_right,
     )
@@ -179,9 +179,9 @@ def plot_read_current(
         write_currents,
         persistent_currents,
         alpha,
+        iretrap,
         max_left_critical_current,
         max_right_critical_current,
-        iretrap,
     )
 
     [xx, yy] = np.meshgrid(critical_currents, write_currents)
