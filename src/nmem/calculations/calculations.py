@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.ticker as ticker
 
 
 def htron_critical_current(
@@ -66,35 +67,43 @@ def calculate_read_limits_right(alpha, right_critical_current, persistent_curren
     ]
 
 
-def calculate_0_current(
+def calculate_0_state_currents(
     left_critical_current: np.ndarray,
     right_critical_current: np.ndarray,
-    alpha: float,
     persistent_current: np.ndarray,
+    alpha: float,
     iretrap: float,
-) -> np.ndarray:
+):
     """Calculate the current required to switch the device to state 0.
 
     Parameters
     ----------
-    left_critical_current : float
+    left_critical_current : np.ndarray
         The critical current of the left branch.
-    right_critical_current : float
-        The critical current of the right branch."""
+    right_critical_current : np.ndarray
+        The critical current of the right branch.
 
-    read_current_left = (left_critical_current - persistent_current) / alpha
-    read_current_right = right_critical_current + left_critical_current * iretrap
+    Returns
+    -------
+    The bias current limits assuming the device is in state 0."""
 
-    return np.maximum(read_current_left, read_current_right)
+    # The 0 state is defined as a negative persistent current
+    if persistent_current > 0:
+        persistent_current = -persistent_current
+
+    bias_current_left = (left_critical_current - persistent_current) / alpha
+    bias_current_right = (right_critical_current + persistent_current) / (1 - alpha)
+
+    return bias_current_left, bias_current_right
 
 
-def calculate_1_current(
+def calculate_1_state_currents(
     left_critical_current: np.ndarray,
     right_critical_current: np.ndarray,
-    alpha: float,
     persistent_current: np.ndarray,
     iretrap: float,
-) -> np.ndarray:
+    alpha: float,
+):
     """Calculate the current required to switch the device to state 1.
 
     Parameters
@@ -102,12 +111,26 @@ def calculate_1_current(
     left_critical_current : float
         The critical current of the left branch.
     right_critical_current : float
-        The critical current of the right branch."""
+        The critical current of the right branch.
+    persistent_current : float
+        The persistent current in the loop.
+    iretrap : float
+        The retrapping current of the device.
+    alpha : float
+        The ratio of the right branch inductance to the total inductance. LR/(LL+LR)
 
-    read_current_left = left_critical_current + right_critical_current * iretrap
-    read_current_right = (right_critical_current - persistent_current) / (1 - alpha)
+    Returns
+    -------
+    The bias current limits assuming the device is in state 1."""
 
-    return np.maximum(read_current_left, read_current_right)
+    # The 1 state is defined as a positive persistent current
+    if persistent_current < 0:
+        persistent_current = -persistent_current
+
+    bias_current_left = (left_critical_current + persistent_current) / alpha
+    bias_current_right = (right_critical_current - persistent_current) / (1 - alpha)
+
+    return bias_current_left, bias_current_right
 
 
 def calculate_alpha(ll, lr):
@@ -119,9 +142,9 @@ def calculate_persistent_current(
     left_critical_currents: np.ndarray,
     write_currents: np.ndarray,
     alpha: float,
+    iretrap: float,
     max_left_critical_current: float,
     max_right_critical_current: float,
-    iretrap: float,
     width_left: float,
     width_right: float,
 ) -> np.ndarray:
@@ -134,7 +157,7 @@ def calculate_persistent_current(
     write_currents : np.ndarray
         The write current of the device.
     alpha : float
-        The ratio of the left branch inductance to the total inductance.
+        The ratio of the right branch inductance to the total inductance. LR/(LL+LR)
     max_left_critical_current : float
         The maximum critical current of the left branch. At minimum temperature
     max_right_critical_current : float
@@ -160,8 +183,8 @@ def calculate_persistent_current(
     persistent_current = np.zeros_like(left_critical_currents)
 
     # Current is inductively split between the left and right branches
-    left_branch_current = write_currents * (1 - alpha)
-    right_branch_current = write_currents * alpha
+    left_branch_current = write_currents * (1 - alpha)  # LL / (LL+LR)
+    right_branch_current = write_currents * alpha  # LR / (LL+LR)
 
     # If the left branch current is greater than the
     # left critical current, the branch switches.
@@ -170,56 +193,44 @@ def calculate_persistent_current(
     # Where the left branch switched the persistent current is set to the write current.
     persistent_current = np.where(left_switch, write_currents, persistent_current)
 
-    # Therefore, the right branch must carry the full write current
+    # Therefore, the right branch must carry the full write current.
     right_branch_current = np.where(left_switch, write_currents, right_branch_current)
 
-    # If the right branch also switches
-    right_switch = right_branch_current > right_critical_currents
+    # If the right branch also switches...
+    right_switch = (right_branch_current > right_critical_currents) * left_switch
 
-    # LEFT_SQUARES = width_left
-    # RIGHT_SQUARES = width_right / width_left
-    # SHEET_RESISTANCE = 1
-
-    # left_hotspot_resistance = SHEET_RESISTANCE * LEFT_SQUARES
-    # right_hotspot_resistance = SHEET_RESISTANCE * RIGHT_SQUARES
-
-    # hotspot_resistance_ratio = left_hotspot_resistance / (
-    #     left_hotspot_resistance + right_hotspot_resistance
-    # )
-
-    # # The current is then resistively split between the left and right branches
-    # left_branch_current = np.where(
-    #     right_switch, write_currents * hotspot_resistance_ratio, left_branch_current
-    # )
-    # right_branch_current = np.where(
-    #     right_switch,
-    #     write_currents * (1 - hotspot_resistance_ratio),
-    #     right_branch_current,
-    # )
-
-    # If the resistive right branch current is less than the right retrapping
-    right_retrap = right_branch_current < right_critical_currents * iretrap
-
+    # The right branch will direct back to the left branch
+    right_retrap_left_current = write_currents - right_critical_currents * iretrap
     persistent_current = np.where(
-        right_switch,
-        left_critical_currents - right_critical_currents * iretrap,
+        right_switch, -right_retrap_left_current, persistent_current
+    )
+
+    # If the redirected current is enough the switch the left branch,
+    # both branches are switched during the write and the persistent current
+    # is set to zero
+    right_retrap_left_switch = right_retrap_left_current > left_critical_currents
+    persistent_current = np.where(
+        right_switch * right_retrap_left_switch,
+        0,
         persistent_current,
     )
-    persistent_current = np.abs(persistent_current)
 
-    left_persistent_switch = persistent_current > max_left_critical_current
+    # Limit the persistent current by the maximum critical current of the left branch
+    # with no enable current. This is the maximum persistent current.
+    left_persistent_switch = np.abs(persistent_current) > max_left_critical_current
     persistent_current = np.where(
-        left_persistent_switch, max_left_critical_current, persistent_current
+        left_persistent_switch,
+        max_left_critical_current,
+        persistent_current,
     )
 
     regions = {
         "left_switch": left_switch,
         "right_switch": right_switch,
-        "right_retrap": right_retrap,
+        "right_retrap": right_retrap_left_current,
         "left_persistent_switch": left_persistent_switch,
     }
 
-    # persistent_current = np.where(persistent_current>ichl*1e6, ichl*1e6, persistent_current)
     return persistent_current, regions
 
 
@@ -228,9 +239,9 @@ def calculate_read_currents(
     write_currents: np.ndarray,
     persistent_currents: np.ndarray,
     alpha: float,
+    iretrap: float,
     max_left_critical_current: float,
     max_right_critical_current: float,
-    iretrap: float,
 ):
     ic_ratio = max_left_critical_current / max_right_critical_current
 
@@ -241,15 +252,15 @@ def calculate_read_currents(
     zero_switching_current = calculate_0_current(
         xx,
         yy,
-        alpha,
         persistent_currents,
+        alpha,
         iretrap,
     )
     one_switching_current = calculate_1_current(
         xx,
         yy,
-        alpha,
         persistent_currents,
+        alpha,
         iretrap,
     )
     print(f"zero_switching_current: {zero_switching_current.shape}")
@@ -262,7 +273,7 @@ def calculate_read_currents(
 
     # # # Read current NA when persistent current is zero
     mask_zero_persistent = persistent_currents == 0
-    # read_currents[mask_zero_persistent] = 0
+    read_currents = np.where(mask_zero_persistent, 0, read_currents)
 
     # # # Read current cannot be less than the write current
     mask_less_than_write = np.abs(read_currents) < write_currents
@@ -282,3 +293,64 @@ def calculate_critical_current_bounds(persistent_current, read_current, alpha):
         -persistent_current,
         persistent_current,
     ]
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as patches
+
+    left_critical_current = 22
+    right_critical_current = 87
+    persistent_current = 60
+    zero_current_left, zero_current_right = calculate_0_state_currents(
+        np.array([left_critical_current]),
+        np.array([right_critical_current]),
+        np.array([persistent_current]),
+        0.63,
+        0.9,
+    )
+    one_current_left, one_current_right = calculate_1_state_currents(
+        np.array([left_critical_current]),
+        np.array([right_critical_current]),
+        np.array([persistent_current]),
+        0.63,
+        0.9,
+    )
+    print(
+        f"Zero current left: {zero_current_left}, Zero current right: {zero_current_right}"
+    )
+    print(
+        f"One current left: {one_current_left}, One current right: {one_current_right}"
+    )
+
+    READ_BIAS = 10.0
+    fig, ax = plt.subplots()
+    plt.bar(
+        [-2, -1],
+        [-persistent_current+READ_BIAS*(0.63), persistent_current+READ_BIAS*(0.63)],
+        color=["b", "r"],
+        width=1,
+        bottom=left_critical_current,
+    )
+    plt.bar(
+        [1, 2],
+        [persistent_current+READ_BIAS*(1-0.63), READ_BIAS],
+        color=["b", "r"],
+        width=1,
+        bottom=right_critical_current,
+    )
+    # plt.hlines(READ_BIAS, -4, 4, color="k")
+    # plt.hlines(-READ_BIAS, -4, 4, color="k")
+    # ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%+g"))
+
+    plt.yticks()
+    plt.xticks([-1.5, 1.5], ["0", "1"])
+    plt.xlabel("State")
+    plt.grid(axis="y")
+
+    plt.hlines(left_critical_current, -2.75, -0.25, color="k")
+    plt.hlines(right_critical_current, 0.25, 2.75, color="k")
+    ax.set_ylim(bottom=0)
+    # plt.text(0, 50, "not switching", ha="center", va="center", color="black")
+    # plt.text(0, -50, "switching", ha="center", va="center", color="black")
+    # plt.hlines(right_critical_current, -1, 6, color="r")
