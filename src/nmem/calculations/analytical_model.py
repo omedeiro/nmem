@@ -31,7 +31,7 @@ def get_point_parameters(
 ):
     critical_current = float(critical_currents[i])
     write_current = float(write_currents[j])
-    persistent_current = persistent_currents[j, i]
+    persistent_current = float(persistent_currents[j, i])
     enable_current = float(enable_currents[i])
 
     left_branch_write_current = calculate_left_branch_current(ALPHA, write_current, 0)
@@ -46,21 +46,21 @@ def get_point_parameters(
 
     state_0_current = calculate_0_current(
         critical_current,
-        critical_current / ICHL * ICHR,
-        ALPHA,
+        critical_current / IC_RATIO,
         persistent_current,
+        ALPHA,
         IRETRAP,
     )
     state_1_current = calculate_1_current(
         critical_current,
-        critical_current / ICHL * ICHR,
-        ALPHA,
+        critical_current / IC_RATIO,
         persistent_current,
+        ALPHA,
         IRETRAP,
     )
 
     ideal_read_current = np.mean([state_0_current, state_1_current])
-    ideal_read_margin = np.abs(state_0_current - state_1_current)
+    ideal_read_margin = (state_0_current - state_1_current) / 2
 
     param_dict = {
         "Total Critical Current (enable off) [uA]": f"{IC0:.2f}",
@@ -78,6 +78,7 @@ def get_point_parameters(
         "Persistent Current": f"{persistent_current:.2f}",
         "State 0 Current [uA]": f"{state_0_current:.2f}",
         "State 1 Current [uA]": f"{state_1_current:.2f}",
+        "Set Read Current [uA]": f"{IREAD:.2f}",
         "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
         "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
     }
@@ -87,15 +88,72 @@ def get_point_parameters(
     return param_df
 
 
+# def persistent_bounds(
+#         left_critical_currents: np.ndarray,
+#         write_currents: np.ndarray,
+#         alpha: float,
+#         persistent_currents: np.ndarray,
+# )
+
+
+def plot_read_margin(
+    ax: plt.Axes,
+    left_switching_currents: np.ndarray,
+    write_currents: np.ndarray,
+    read_currents: np.ndarray,
+    persistent_currents: np.ndarray,
+    alpha: float,
+    iretrap: float,
+    set_read_current: float,
+):
+    [xx, yy] = np.meshgrid(left_switching_currents, write_currents)
+    right_critical_currents = left_switching_currents / IC_RATIO
+
+    zero_currents = calculate_0_current(
+        left_critical_currents,
+        right_critical_currents,
+        alpha,
+        persistent_currents,
+        iretrap,
+    )
+    one_currents = calculate_1_current(
+        left_critical_currents,
+        right_critical_currents,
+        alpha,
+        persistent_currents,
+        iretrap,
+    )
+    read_margin = zero_currents - one_currents
+
+    read_margin = np.where(persistent_currents == 0, 0, read_margin)
+
+    plt.pcolormesh(xx, yy, read_margin, linewidth=0.5)
+    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
+    plt.ylabel("Write Current [uA]")
+    plt.title("Read Margin")
+    plt.gca().invert_xaxis()
+    plt.colorbar()
+    ax.set_xlim(right=0)
+
+    ax2 = ax.twiny()
+    ax2.set_xticks(ax.get_xticks())
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_xticklabels([f"{ic/IC_RATIO:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
+
+    return read_margin
+
+
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.4
-    IC0 = 600
+    IC0 = 400
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1000
-    ALPHA = 0.628
+    ALPHA = 1 - (-1 / HTRON_SLOPE)
     BETA = 0.159
-    IRETRAP = 0.9
+    IRETRAP = 1
+    IREAD = 280
 
     WIDTH_RATIO = WIDTH_LEFT / (WIDTH_LEFT + WIDTH_RIGHT)
     ICHL = IC0 * WIDTH_RATIO
@@ -152,24 +210,8 @@ if __name__ == "__main__":
         WIDTH_RIGHT,
         plot_regions=False,
     )
-
-    # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
-
-    fig, ax = plt.subplots()
-    ax, read_currents = plot_read_current(
-        ax,
-        left_critical_currents,
-        write_currents,
-        total_persistent_current,
-        ALPHA,
-        ICHL,
-        ICHR,
-        IRETRAP,
-        plot_region=True,
-    )
-
-    IDXX = 20
-    IDXY = 10
+    IDXX = 22
+    IDXY = 4
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],
@@ -178,8 +220,31 @@ if __name__ == "__main__":
         color="red",
         markersize=15,
     )
+    # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
 
-    plt.show()
+    #     fig, ax = plt.subplots()
+    #     ax, read_currents = plot_read_current(
+    #         ax,
+    #         left_critical_currents,
+    #         write_currents,
+    #         total_persistent_current,
+    #         ALPHA,
+    #         ICHL,
+    #         ICHR,
+    #         IRETRAP,
+    #         plot_region=False,
+    #     )
+
+    #     ax = plot_point(
+    #         ax,
+    #         left_critical_currents[IDXX],
+    #         write_currents[IDXY],
+    #         marker="*",
+    #         color="red",
+    #         markersize=15,
+    #     )
+
+    #     plt.show()
 
     param_df = get_point_parameters(
         IDXX,
@@ -190,3 +255,24 @@ if __name__ == "__main__":
         enable_write_currents,
     )
     print(param_df)
+
+#     # %%
+#     fig, ax = plt.subplots()
+#     read_margin = plot_read_margin(
+#         ax,
+#         left_critical_currents,
+#         write_currents,
+#         read_currents,
+#         total_persistent_current,
+#         ALPHA,
+#         IRETRAP,
+#         IREAD,
+#     )
+#     ax = plot_point(
+#         ax,
+#         left_critical_currents[IDXX],
+#         write_currents[IDXY],
+#         marker="*",
+#         color="red",
+#         markersize=15,
+#     )
