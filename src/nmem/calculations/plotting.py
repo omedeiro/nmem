@@ -76,29 +76,18 @@ def plot_mask_region(
 
 def plot_persistent_current(
     ax,
-    left_critical_currents: np.ndarray,
-    write_currents: np.ndarray,
-    alpha: float,
-    max_left_critical_current: float,
-    max_right_critical_current: float,
-    iretrap: float,
-    width_left: float,
-    width_right: float,
+    data_dict: dict,
     plot_regions=False,
 ):
+    left_critical_currents = data_dict["left_critical_currents"]
+    write_currents = data_dict["write_currents"]
+    max_left_critical_current = data_dict["max_left_critical_current"]
+    max_right_critical_current = data_dict["max_right_critical_current"]
     ic_ratio = max_left_critical_current / max_right_critical_current
+
     [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
 
-    total_persistent_current, regions = calculate_persistent_current(
-        xx,
-        yy,
-        alpha,
-        iretrap,
-        max_left_critical_current,
-        max_right_critical_current,
-        width_left,
-        width_right,
-    )
+    total_persistent_current, regions = calculate_persistent_current(data_dict)
 
     c = plt.pcolormesh(
         xx, yy, total_persistent_current, edgecolors="none", linewidth=0.5
@@ -164,27 +153,15 @@ def plot_persistent_current(
 
 def plot_read_current(
     ax: plt.Axes,
-    critical_currents: np.ndarray,
-    write_currents: np.ndarray,
-    persistent_currents: np.ndarray,
-    alpha: float,
-    max_left_critical_current: float,
-    max_right_critical_current: float,
-    iretrap: float,
+    data_dict: dict,
     plot_region: bool = False,
 ):
-    ic_ratio = max_left_critical_current / max_right_critical_current
-    read_currents, mask_list = calculate_read_currents(
-        critical_currents,
-        write_currents,
-        persistent_currents,
-        alpha,
-        iretrap,
-        max_left_critical_current,
-        max_right_critical_current,
-    )
+    ic_ratio = data_dict["ic_ratio"]
 
-    [xx, yy] = np.meshgrid(critical_currents, write_currents)
+    read_currents, mask_list = calculate_read_currents(data_dict)
+
+    xx = data_dict["left_critical_currents_mesh"]
+    yy = data_dict["write_currents_mesh"]
     c = plt.pcolormesh(xx, yy, read_currents, linewidth=0.5)
     if plot_region:
         mask_names = [
