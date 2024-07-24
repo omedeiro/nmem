@@ -79,18 +79,14 @@ def plot_persistent_current(
     data_dict: dict,
     plot_regions=False,
 ):
-    left_critical_currents = data_dict["left_critical_currents"]
-    write_currents = data_dict["write_currents"]
-    max_left_critical_current = data_dict["max_left_critical_current"]
-    max_right_critical_current = data_dict["max_right_critical_current"]
-    ic_ratio = max_left_critical_current / max_right_critical_current
-
-    [xx, yy] = np.meshgrid(left_critical_currents, write_currents)
+    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
+    write_currents_mesh = data_dict["write_currents_mesh"]
+    width_ratio = data_dict["width_ratio"]
 
     total_persistent_current, regions = calculate_persistent_current(data_dict)
 
     c = plt.pcolormesh(
-        xx, yy, total_persistent_current, edgecolors="none", linewidth=0.5
+        left_critical_currents_mesh, write_currents_mesh, total_persistent_current, edgecolors="none", linewidth=0.5
     )
 
     if plot_regions:
@@ -146,7 +142,9 @@ def plot_persistent_current(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic/ic_ratio:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels(
+        [f"{ic*(1-width_ratio)/width_ratio:.0f}" for ic in ax.get_xticks()]
+    )
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
     return ax, total_persistent_current, regions
 
@@ -156,8 +154,7 @@ def plot_read_current(
     data_dict: dict,
     plot_region: bool = False,
 ):
-    ic_ratio = data_dict["ic_ratio"]
-
+    width_ratio = data_dict["width_ratio"]
     read_currents, mask_list = calculate_read_currents(data_dict)
 
     xx = data_dict["left_critical_currents_mesh"]
@@ -181,7 +178,9 @@ def plot_read_current(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic/ic_ratio:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels(
+        [f"{ic*(1-width_ratio)/width_ratio:.0f}" for ic in ax.get_xticks()]
+    )
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
     return ax, read_currents
 

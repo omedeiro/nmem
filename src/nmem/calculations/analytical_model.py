@@ -26,12 +26,11 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
     right_critical_current = float(data_dict["right_critical_currents"][i])
     write_current = float(data_dict["write_currents"][j])
     enable_write_current = float(data_dict["enable_write_currents"][i])
-    persistent_current = float(data_dict["persistent_currents"][i, j])
+    persistent_current = float(data_dict["persistent_currents"][j, i])
     max_left_critical_current = data_dict["max_left_critical_current"]
     max_right_critical_current = data_dict["max_right_critical_current"]
 
     alpha = data_dict["alpha"]
-    ic_ratio = data_dict["ic_ratio"]
     width_ratio = data_dict["width_ratio"]
     
     # Initial Write
@@ -47,7 +46,6 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         "Right Critical Current (enable off) [uA]": f"{max_right_critical_current:.2f}",
         "Width Ratio": f"{width_ratio:.2f}",
         "Inductive Ratio": f"{ALPHA:.2f}",
-        "Switching Current Ratio": f"{ic_ratio:.2f}",
         "Write Current [uA]": f"{write_current:.2f}",
         "Enable Write Current [uA]": f"{enable_write_current:.2f}",
         "Left Branch Write Current [uA]": f"{left_branch_write_current:.2f}",
@@ -71,32 +69,30 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
 
 def plot_read_margin(
     ax: plt.Axes,
-    left_switching_currents: np.ndarray,
-    write_currents: np.ndarray,
-    read_currents: np.ndarray,
-    persistent_currents: np.ndarray,
-    alpha: float,
-    iretrap: float,
-    set_read_current: float,
+    data_dict: dict,
 ):
-    [xx, yy] = np.meshgrid(left_switching_currents, write_currents)
-    right_critical_currents = left_switching_currents / ic_ratio
+    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
+    right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
+    write_currents_mesh = data_dict["write_currents_mesh"]
+    persistent_currents = data_dict["persistent_currents"]
+    alpha = data_dict["alpha"]
+
 
     zero_current_left, zero_current_right = calculate_0_state_currents(
-        left_critical_currents,
-        right_critical_currents,
+        left_critical_currents_mesh,
+        right_critical_currents_mesh,
         persistent_currents,
         alpha,
     )
     one_current_left, one_current_right = calculate_1_state_currents(
-        left_critical_currents,
-        right_critical_currents,
+        left_critical_currents_mesh,
+        right_critical_currents_mesh,
         persistent_currents,
         alpha,
     )
     read_currents = (zero_current_right + one_current_right) / 2
     # inverting_operation = zero_current_right < one_current_right
-    plt.pcolormesh(xx, yy, read_currents, linewidth=0.5)
+    plt.pcolormesh(left_critical_currents_mesh, write_currents_mesh, read_currents, linewidth=0.5)
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     # plt.title("Read Margin")
@@ -107,7 +103,7 @@ def plot_read_margin(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic/ic_ratio:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ic*(1-width_ratio)/width_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     return
@@ -115,16 +111,16 @@ def plot_read_margin(
 
 if __name__ == "__main__":
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.4
-    IC0 = 600
+    WIDTH_RIGHT = 0.3
+    IC0 = 1000
     HTRON_SLOPE = -2.69
     HTRON_INTERCEPT = 1000
     ALPHA = 1 - (1 / 2.818)
-    BETA = 0.159
-    IRETRAP = 1
+
+    IRETRAP = 0.9
     IREAD = 280
-    IDXX = 25
-    IDXY = 5
+    IDXX = 3
+    IDXY = 11
     N = 50
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = (
@@ -133,8 +129,6 @@ if __name__ == "__main__":
     width_ratio = WIDTH_LEFT / (WIDTH_LEFT + WIDTH_RIGHT)
     max_left_critical_current = IC0 * width_ratio
     max_right_critical_current = IC0 * (1 - width_ratio)
-
-    ic_ratio = max_left_critical_current / max_right_critical_current
 
     matlab_data_dict = import_matlab_data(FILE_PATH + "/" + FILE_NAME)
 
@@ -154,6 +148,7 @@ if __name__ == "__main__":
         {"p1": 6.272, "p2": -433.9},
         {"p1": 6.272, "p2": -353.8},
     ]
+
     enable_write_currents = np.linspace(
         enable_write_currents[0], enable_write_currents[-1], N
     )
@@ -163,18 +158,21 @@ if __name__ == "__main__":
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents
     )
 
-    left_critical_currents = channel_critical_current_enabled * ic_ratio
-    right_critical_currents = channel_critical_current_enabled * (1 - ic_ratio)
+    left_critical_currents = channel_critical_current_enabled * width_ratio
+    right_critical_currents = channel_critical_current_enabled * (1 - width_ratio)
 
-    [left_critical_currents_mesh, write_critical_currents_mesh] = np.meshgrid(
+    [left_critical_currents_mesh, write_currents_mesh] = np.meshgrid(
         left_critical_currents, write_currents
     )
+    right_critical_currents_mesh = left_critical_currents_mesh * (1 - width_ratio)/width_ratio
+
     data_dict = {
         "left_critical_currents": left_critical_currents,
         "right_critical_currents": right_critical_currents,
         "left_critical_currents_mesh": left_critical_currents_mesh,
+        "right_critical_currents_mesh": right_critical_currents_mesh,
         "write_currents": write_currents,
-        "write_currents_mesh": write_critical_currents_mesh,
+        "write_currents_mesh": write_currents_mesh,
         "enable_write_currents": enable_write_currents,
         "ber": ber_2D,
         "alpha": ALPHA,
@@ -186,7 +184,6 @@ if __name__ == "__main__":
         "max_channel_critical_current": IC0,
         "max_left_critical_current": max_left_critical_current,
         "max_right_critical_current": max_right_critical_current,
-        "ic_ratio": ic_ratio,
     }
 
     fig, ax = plt.subplots()
@@ -238,13 +235,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     read_margin = plot_read_margin(
         ax,
-        left_critical_currents,
-        write_currents,
-        np.zeros_like(write_currents),
-        total_persistent_current,
-        ALPHA,
-        IRETRAP,
-        IREAD,
+        data_dict,
     )
     ax = plot_point(
         ax,
