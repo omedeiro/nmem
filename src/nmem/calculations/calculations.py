@@ -268,9 +268,8 @@ def calculate_read_currents(data_dict: dict):
     )
 
     read_currents = (zero_state_current + one_state_current) / 2
-    read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
-    read_currents = np.where(persistent_currents == 0, 0, read_currents)
-    return read_currents
+    read_margin = np.abs(zero_state_current - one_state_current) / 2
+    return read_currents, read_margin
 
 
 def calculate_critical_current_bounds(persistent_current, read_current, alpha):
@@ -287,7 +286,7 @@ if __name__ == "__main__":
     right_critical_current = 87
     persistent_current = 60
     alpha = 0.63
-    iretrap = 0.9
+    iretrap = 0.1
     left_critical_currents_mesh, write_currents_mesh = np.meshgrid(
         np.linspace(0, 100, 100), np.linspace(50, 250, 100)
     )
@@ -302,9 +301,16 @@ if __name__ == "__main__":
         "iretrap": iretrap,
     }
 
-    persistent_current, regions = calculate_persistent_current(data_dict)
-    data_dict["persistent_currents"] = persistent_current
-    read_currents = calculate_read_currents(data_dict)
+    READ_SET = 350
+    persistent_currents, regions = calculate_persistent_current(data_dict)
+    data_dict["persistent_currents"] = persistent_currents
+    read_currents, read_margin = calculate_read_currents(data_dict)
+    read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
+    read_currents = np.where(persistent_currents == 0, 0, read_currents)
+
+    # read_currents = np.where(READ_SET > read_currents+read_margin, 0, read_currents)
+    # read_currents = np.where(READ_SET < read_currents-read_margin, 0, read_currents)
+
     plt.pcolormesh(left_critical_currents_mesh, write_currents_mesh, read_currents)
     plt.gca().invert_xaxis()
     plt.colorbar()

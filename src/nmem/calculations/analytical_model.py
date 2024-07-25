@@ -14,6 +14,7 @@ from nmem.calculations.calculations import (
 from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_point,
+    plot_read_current,
 )
 
 
@@ -34,7 +35,7 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
     iretrap = data_dict["iretrap"]
     alpha = data_dict["alpha"]
     width_ratio = data_dict["width_ratio"]
-
+    set_read_current = data_dict["set_read_current"]
     # Initial Write
     left_branch_write_current = calculate_left_branch_current(alpha, write_current, 0)
     right_branch_write_current = calculate_right_branch_current(alpha, write_current, 0)
@@ -61,29 +62,40 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         alpha,
         iretrap,
     )
+
+    left_retrap_current = left_critical_current + right_critical_current * iretrap
+    right_retrap_current = right_critical_current + left_critical_current * iretrap
+
     ideal_read_current = (zero_state_current + one_state_current) / 2
     ideal_read_margin = np.abs(zero_state_current - one_state_current) / 2
+    inverting_operation = zero_state_current < one_state_current
 
     param_dict = {
         "Total Critical Current (enable off) [uA]": f"{IC0:.2f}",
         "Left Critical Current (enable off) [uA]": f"{max_left_critical_current:.2f}",
         "Right Critical Current (enable off) [uA]": f"{max_right_critical_current:.2f}",
         "Width Ratio": f"{width_ratio:.2f}",
-        "Inductive Ratio": f"{ALPHA:.2f}",
+        "Inductive Ratio": f"{alpha:.2f}",
+        "Retrap Ratio": f"{iretrap:.2f}",
         "Write Current [uA]": f"{write_current:.2f}",
         "Enable Write Current [uA]": f"{enable_write_current:.2f}",
         "Left Branch Write Current [uA]": f"{left_branch_write_current:.2f}",
         "Right Branch Write Current [uA]": f"{right_branch_write_current:.2f}",
-        "Left Side Critical Current (enable on) [uA]": f"{left_critical_current:.2f}",
-        "Right Side Critical Current (enable on) [uA]": f"{right_critical_current:.2f}",
-        "Persistent Current": f"{persistent_current:.2f}",
+        "Left Side Critical Current (enable on) [uA]": f"{left_critical_currents_mesh[j, i]:.2f}",
+        "Right Side Critical Current (enable on) [uA]": f"{right_critical_currents_mesh[j, i]:.2f}",
+        "Persistent Current": f"{ persistent_currents[j, i]:.2f}",
         "Zero Current Left [uA]": f"{zero_currents_left:.2f}",
         "Zero Current Right [uA]": f"{zero_currents_right:.2f}",
         "One Current Left [uA]": f"{one_currents_left:.2f}",
         "One Current Right [uA]": f"{one_currents_right:.2f}",
-        "Set Read Current [uA]": f"{IREAD:.2f}",
+        "Left Retrap Current [uA]": f"{left_retrap_current:.2f}",
+        "Right Retrap Current [uA]": f"{right_retrap_current:.2f}",
+        "State 0 Current [uA]": f"{zero_state_current:.2f}",
+        "State 1 Current [uA]": f"{one_state_current:.2f}",
+        "Set Read Current [uA]": f"{set_read_current:.2f}",
         "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
         "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
+        "Inverting Operation": f"{inverting_operation}",
     }
     param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
     param_df.columns = ["Value"]
@@ -151,9 +163,9 @@ if __name__ == "__main__":
     HTRON_INTERCEPT = 1000
     ALPHA = 1 - (1 / 2.818)
 
-    IRETRAP = 0.9
-    IREAD = 280
-    IDXX = 10
+    IRETRAP = 0.5
+    IREAD = 200
+    IDXX = 20
     IDXY = 11
     N = 50
     FILE_PATH = "/home/omedeiro/"
@@ -213,7 +225,7 @@ if __name__ == "__main__":
         "ber": ber_2D,
         "alpha": ALPHA,
         "iretrap": IRETRAP,
-        "iread": IREAD,
+        "set_read_current": IREAD,
         "width_left": WIDTH_LEFT,
         "width_right": WIDTH_RIGHT,
         "width_ratio": width_ratio,
@@ -240,32 +252,12 @@ if __name__ == "__main__":
     )
     # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
 
-    # fig, ax = plt.subplots()
-    # ax, read_currents = plot_read_current(
-    #     ax,
-    #     data_dict,
-    # )
-
-    # ax = plot_point(
-    #     ax,
-    #     left_critical_currents[IDXX],
-    #     write_currents[IDXY],
-    #     marker="*",
-    #     color="red",
-    #     markersize=15,
-    # )
-
-    # plt.show()
-
-    # param_df = get_point_parameters(IDXX, IDXY, data_dict)
-    # print(param_df)
-
-    #     # %%
     fig, ax = plt.subplots()
-    read_margin = plot_read_margin(
+    ax, read_currents = plot_read_current(
         ax,
         data_dict,
     )
+
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],
@@ -274,3 +266,23 @@ if __name__ == "__main__":
         color="red",
         markersize=15,
     )
+
+    # plt.show()
+
+    param_df = get_point_parameters(IDXX, IDXY, data_dict)
+    print(param_df)
+
+    # #     # %%
+    # fig, ax = plt.subplots()
+    # read_margin = plot_read_margin(
+    #     ax,
+    #     data_dict,
+    # )
+    # ax = plot_point(
+    #     ax,
+    #     left_critical_currents[IDXX],
+    #     write_currents[IDXY],
+    #     marker="*",
+    #     color="red",
+    #     markersize=15,
+    # )

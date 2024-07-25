@@ -156,23 +156,28 @@ def plot_persistent_current(
 def plot_read_current(
     ax: plt.Axes,
     data_dict: dict,
-    mask_list: list = [],
-    plot_region: bool = False,
 ):
+    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
+    write_currents_mesh = data_dict["write_currents_mesh"]
+    persistent_currents = data_dict["persistent_currents"]
     width_ratio = data_dict["width_ratio"]
-    read_currents = calculate_read_currents(data_dict)
+    set_read_current = data_dict["set_read_current"]
 
-    xx = data_dict["left_critical_currents_mesh"]
-    yy = data_dict["write_currents_mesh"]
-    c = plt.pcolormesh(xx, yy, read_currents, linewidth=0.5)
-    if plot_region:
-        mask_names = [
-            "Negative Read Current",
-            "Zero Persistent Current",
-            "Read Current < Write Current",
-            "Read Current > Right Critical Current",
-        ]
-        c = plot_mask_region(c, mask_list, mask_names)
+    read_currents, read_margin = calculate_read_currents(data_dict)
+
+    read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
+    read_currents = np.where(persistent_currents == 0, 0, read_currents)
+
+    read_currents = np.where(
+        set_read_current < read_currents - read_margin, 0, read_currents
+    )
+    read_currents = np.where(
+        set_read_current > read_currents + read_margin, 0, read_currents
+    )
+    c = plt.pcolormesh(
+        left_critical_currents_mesh, write_currents_mesh, read_currents, linewidth=0.5
+    )
+
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Read Current")
