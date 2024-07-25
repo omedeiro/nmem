@@ -86,7 +86,11 @@ def plot_persistent_current(
     total_persistent_current, regions = calculate_persistent_current(data_dict)
 
     c = plt.pcolormesh(
-        left_critical_currents_mesh, write_currents_mesh, total_persistent_current, edgecolors="none", linewidth=0.5
+        left_critical_currents_mesh,
+        write_currents_mesh,
+        total_persistent_current,
+        edgecolors="none",
+        linewidth=0.5,
     )
 
     if plot_regions:
@@ -152,10 +156,11 @@ def plot_persistent_current(
 def plot_read_current(
     ax: plt.Axes,
     data_dict: dict,
+    mask_list: list = [],
     plot_region: bool = False,
 ):
     width_ratio = data_dict["width_ratio"]
-    read_currents, mask_list = calculate_read_currents(data_dict)
+    read_currents = calculate_read_currents(data_dict)
 
     xx = data_dict["left_critical_currents_mesh"]
     yy = data_dict["write_currents_mesh"]
