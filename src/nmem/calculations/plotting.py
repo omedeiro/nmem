@@ -163,21 +163,14 @@ def plot_read_current(
     width_ratio = data_dict["width_ratio"]
     set_read_current = data_dict["set_read_current"]
 
-    read_currents, read_margin = calculate_read_currents(data_dict)
+    read_currents, read_margins = calculate_read_currents(data_dict)
 
     read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
     read_currents = np.where(persistent_currents == 0, 0, read_currents)
 
-    read_currents = np.where(
-        set_read_current < read_currents - read_margin, 0, read_currents
-    )
-    read_currents = np.where(
-        set_read_current > read_currents + read_margin, 0, read_currents
-    )
-    c = plt.pcolormesh(
+    plt.pcolormesh(
         left_critical_currents_mesh, write_currents_mesh, read_currents, linewidth=0.5
     )
-
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Read Current")
@@ -192,7 +185,7 @@ def plot_read_current(
         [f"{ic*(1-width_ratio)/width_ratio:.0f}" for ic in ax.get_xticks()]
     )
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
-    return ax, read_currents
+    return ax, read_currents, read_margins
 
 
 def plot_edge_fits(ax, lines, critical_currents):

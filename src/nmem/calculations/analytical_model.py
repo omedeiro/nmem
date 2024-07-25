@@ -12,6 +12,7 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.calculations.plotting import (
+    plot_htron_sweep,
     plot_persistent_current,
     plot_point,
     plot_read_current,
@@ -156,17 +157,17 @@ def plot_read_margin(
 
 
 if __name__ == "__main__":
-    WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.3
+    WIDTH_LEFT = 0.08
+    WIDTH_RIGHT = 0.45
     IC0 = 1000
     HTRON_SLOPE = -2.69
-    HTRON_INTERCEPT = 1000
+    HTRON_INTERCEPT = 1050
     ALPHA = 1 - (1 / 2.818)
 
     IRETRAP = 0.5
     IREAD = 200
-    IDXX = 20
-    IDXY = 11
+    IDXX = 10
+    IDXY = 20
     N = 50
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = (
@@ -185,8 +186,8 @@ if __name__ == "__main__":
     ber_2D = np.reshape(ber, (len(write_currents), len(enable_write_currents)))
 
     # Plot experimental data
-    # fig, ax = plt.subplots()
-    # ax = plot_htron_sweep(ax, write_currents, enable_write_currents, ber_2D)
+    fig, ax = plt.subplots()
+    ax = plot_htron_sweep(ax, write_currents, enable_write_currents, ber_2D)
 
     EDGE_FITS = [
         {"p1": 2.818, "p2": -226.1},
@@ -253,10 +254,12 @@ if __name__ == "__main__":
     # plot_edge_fits(ax, EDGE_FITS, left_critical_currents)
 
     fig, ax = plt.subplots()
-    ax, read_currents = plot_read_current(
+    ax, read_currents, read_margins = plot_read_current(
         ax,
         data_dict,
     )
+    data_dict["read_currents"] = read_currents
+    data_dict["read_margins"] = read_margins
 
     ax = plot_point(
         ax,

@@ -27,6 +27,10 @@ classifiers = [
 ]
 
 
+[tool.ruff]
+line-length = 88
+output-format = "concise"
+
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
 ignore = ["F841", "E731", "E501"]
@@ -42,7 +46,6 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = false
 docstring-code-line-length = "dynamic"
-
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
