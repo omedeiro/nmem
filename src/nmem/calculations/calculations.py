@@ -8,12 +8,16 @@ def htron_critical_current(
     return channel_current
 
 
-def calculate_right_branch_inductance(alpha: float, ll: float) -> float:
-    return alpha * ll / (1 - alpha)
+def calculate_right_branch_inductance(
+    alpha: float, left_branch_inductance: float
+) -> float:
+    return left_branch_inductance * alpha / (1 - alpha)
 
 
-def calculate_left_branch_inductance(alpha, lr):
-    return (1 - alpha) * lr / alpha
+def calculate_left_branch_inductance(
+    alpha: float, right_branch_inductance: float
+) -> float:
+    return right_branch_inductance * (1 - alpha) / alpha
 
 
 def calculate_right_branch_current(
@@ -289,13 +293,6 @@ def calculate_read_currents(data_dict: dict):
     read_currents = (zero_state_current + one_state_current) / 2
     read_margins = np.abs(zero_state_current - one_state_current) / 2
     return read_currents, read_margins
-
-
-def calculate_critical_current_bounds(persistent_current, read_current, alpha):
-    return read_current * alpha * np.ones((2, 1)) + [
-        -persistent_current,
-        persistent_current,
-    ]
 
 
 if __name__ == "__main__":

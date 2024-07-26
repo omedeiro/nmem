@@ -33,12 +33,30 @@ def plot_htron_sweep(
     ber: np.ndarray,
 ):
     xx, yy = np.meshgrid(enable_write_currents, write_currents)
-    plt.contourf(xx, yy, ber)
+    plt.pcolormesh(xx, yy, ber)
     # plt.gca().invert_xaxis()
     plt.xlabel("Enable Current [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("BER vs Write Current and Critical Current")
     plt.colorbar()
+    return ax
+
+
+def plot_htron_sweep_scaled(
+    ax: plt.Axes,
+    write_currents: np.ndarray,
+    left_critical_currents: np.ndarray,
+    ber: np.ndarray,
+):
+    plt.sca(ax)
+    xx, yy = np.meshgrid(left_critical_currents, write_currents)
+    plt.contour(xx, yy, ber)
+    # plt.gca().invert_xaxis()
+    plt.xlabel("Enable Current [uA]")
+    plt.ylabel("Write Current [uA]")
+    plt.title("BER vs Write Current and Critical Current")
+    plt.colorbar()
+
     return ax
 
 
@@ -113,7 +131,7 @@ def plot_persistent_current(
     plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     # plt.text(
     #     60,
@@ -165,7 +183,7 @@ def plot_read_current(
 
     read_currents, read_margins = calculate_read_currents(data_dict)
 
-    read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
+    # read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
     read_currents = np.where(persistent_currents == 0, 0, read_currents)
 
     plt.pcolormesh(
@@ -176,7 +194,7 @@ def plot_read_current(
     plt.title("Read Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
