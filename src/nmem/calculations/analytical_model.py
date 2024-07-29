@@ -153,12 +153,12 @@ if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
     HTRON_SLOPE = -2.6  # uA / uA
-    HTRON_INTERCEPT = 1057  # uA
+    HTRON_INTERCEPT = 1000  # uA
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.30
     ALPHA = 1 - (1 / 6.272)
 
-    IRETRAP = 1
+    IRETRAP = 0.9
     IREAD = 200
     IDXX = 20
     IDXY = 20
