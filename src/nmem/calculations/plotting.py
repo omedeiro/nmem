@@ -39,20 +39,20 @@ def plot_htron_sweep(
     plt.ylabel("Write Current [uA]")
     plt.title("BER vs Write Current and Critical Current")
     plt.colorbar()
+    plt.clim(0, 1)
     return ax
 
 
 def plot_htron_sweep_scaled(
     ax: plt.Axes,
-    write_currents: np.ndarray,
     left_critical_currents: np.ndarray,
+    write_currents: np.ndarray,
     ber: np.ndarray,
 ):
     plt.sca(ax)
     xx, yy = np.meshgrid(left_critical_currents, write_currents)
-    plt.contour(xx, yy, ber)
-    # plt.gca().invert_xaxis()
-    plt.xlabel("Enable Current [uA]")
+    plt.pcolor(xx, yy, ber, shading="auto")
+    plt.xlabel("Left Critical Current [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("BER vs Write Current and Critical Current")
     plt.colorbar()
@@ -211,8 +211,8 @@ def plot_edge_fits(ax, lines, critical_currents):
     y_min, y_max = ax.get_ylim()
 
     for line in lines:
-        plot_edge_fit(ax, critical_currents, **line)
-
+        ax = plot_edge_fit(ax, critical_currents, **line)
+        print(line)
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     return ax
