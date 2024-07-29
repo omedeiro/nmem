@@ -86,7 +86,7 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         "Right Branch Write Current [uA]": f"{right_branch_write_current:.2f}",
         "Left Side Critical Current (enable on) [uA]": f"{left_critical_currents_mesh[j, i]:.2f}",
         "Right Side Critical Current (enable on) [uA]": f"{right_critical_currents_mesh[j, i]:.2f}",
-        "Persistent Current": f"{ persistent_currents[j, i]:.2f}",
+        "Maximum Persistent Current": f"{persistent_currents[j, i]:.2f}",
         "Zero Current Left [uA]": f"{zero_currents_left:.2f}",
         "Zero Current Right [uA]": f"{zero_currents_right:.2f}",
         "One Current Left [uA]": f"{one_currents_left:.2f}",
@@ -154,13 +154,13 @@ if __name__ == "__main__":
     # HTRON_INTERCEPT = 1257  # uA
     HTRON_SLOPE = -2.6  # uA / uA
     HTRON_INTERCEPT = 1057  # uA
-    WIDTH_LEFT = 0.10
+    WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.30
     ALPHA = 1 - (1 / 6.272)
 
-    IRETRAP = 0.9
+    IRETRAP = 1
     IREAD = 200
-    IDXX = 13
+    IDXX = 20
     IDXY = 20
     N = 100
     FILE_PATH = "/home/omedeiro/"
@@ -188,6 +188,7 @@ if __name__ == "__main__":
         ber, (len(write_currents_measured), len(enable_write_currents_measured))
     )
 
+    # Define the write and enable write currents
     enable_write_currents = np.linspace(
         enable_write_currents_measured[0], enable_write_currents_measured[-1], N
     )
@@ -195,28 +196,25 @@ if __name__ == "__main__":
         write_currents_measured[0], write_currents_measured[-1], N
     )
 
+    # Calculate the channel critical current
     channel_critical_current_enabled = htron_critical_current(
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents
     )
-
-    enable_write_currents_measured = np.linspace(
-        enable_write_currents[0], enable_write_currents[-1], 23
-    )
-    write_currents_measured = np.linspace(write_currents[0], write_currents[-1], 21)
-
     channel_critical_current_enabled_measured = htron_critical_current(
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents_measured
     )
+
+    # Define the critical currents for the left and right branches
     left_critical_currents_measured = (
         channel_critical_current_enabled_measured * width_ratio
     )
     right_critical_currents_measured = channel_critical_current_enabled_measured * (
         1 - width_ratio
     )
-
     left_critical_currents = channel_critical_current_enabled * width_ratio
     right_critical_currents = channel_critical_current_enabled * (1 - width_ratio)
 
+    # Create the meshgrid for the critical currents
     [left_critical_currents_mesh, write_currents_mesh] = np.meshgrid(
         left_critical_currents, write_currents
     )
@@ -224,6 +222,7 @@ if __name__ == "__main__":
         left_critical_currents_mesh * (1 - width_ratio) / width_ratio
     )
 
+    # Create the data dictionary
     data_dict = {
         "left_critical_currents": left_critical_currents,
         "right_critical_currents": right_critical_currents,
@@ -249,11 +248,17 @@ if __name__ == "__main__":
     ax = plot_htron_sweep_scaled(
         ax, left_critical_currents_measured, write_currents_measured, ber_2D
     )
-
-    # Plot edge fits
-    # ax = plot_edge_fits(ax, EDGE_FITS, left_critical_currents_measured)
+    ax = plot_point(
+        ax,
+        left_critical_currents[IDXX],
+        write_currents[IDXY],
+        marker="*",
+        color="red",
+        markersize=15,
+    )
     plt.gca().invert_xaxis()
 
+    # Plot the persistent current
     fig, ax = plt.subplots()
     ax, total_persistent_current, regions = plot_persistent_current(
         ax,
@@ -271,6 +276,7 @@ if __name__ == "__main__":
         markersize=15,
     )
 
+    # Plot the read current
     fig, ax = plt.subplots()
     ax, read_currents, read_margins = plot_read_current(
         ax,
@@ -288,12 +294,7 @@ if __name__ == "__main__":
         markersize=15,
     )
 
-    # plt.show()
-
-    param_df = get_point_parameters(IDXX, IDXY, data_dict)
-    print(param_df)
-
-    #     # %%
+    # Plot the read margin
     fig, ax = plt.subplots()
     read_margin = plot_read_margin(
         ax,
@@ -307,3 +308,9 @@ if __name__ == "__main__":
         color="red",
         markersize=15,
     )
+
+    plt.show()
+
+    # Get the point parameters
+    param_df = get_point_parameters(IDXX, IDXY, data_dict)
+    print(param_df)

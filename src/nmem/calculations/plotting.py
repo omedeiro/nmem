@@ -38,8 +38,9 @@ def plot_htron_sweep(
     plt.xlabel("Enable Current [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("BER vs Write Current and Critical Current")
-    plt.colorbar()
+    cbar = plt.colorbar()
     plt.clim(0, 1)
+    cbar.set_ticks([0, 0.5, 1])
     return ax
 
 
@@ -55,7 +56,9 @@ def plot_htron_sweep_scaled(
     plt.xlabel("Left Critical Current [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("BER vs Write Current and Critical Current")
-    plt.colorbar()
+    cbar = plt.colorbar()
+    plt.clim(0, 1)
+    cbar.set_ticks([0, 0.5, 1])
 
     return ax
 

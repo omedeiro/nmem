@@ -113,7 +113,7 @@ def calculate_zero_state_current(
     alpha: float,
     iretrap: float,
 ):
-    """Calculate the current required to switch the device to state 0.
+    """Calculate the current required to switch the device when in state 0
 
     Parameters
     ----------
