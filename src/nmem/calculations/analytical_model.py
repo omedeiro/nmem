@@ -39,29 +39,23 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
     alpha = data_dict["alpha"]
     width_ratio = data_dict["width_ratio"]
     set_read_current = data_dict["set_read_current"]
+
     # Initial Write
     left_branch_write_current = calculate_left_branch_current(alpha, write_current, 0)
     right_branch_write_current = calculate_right_branch_current(alpha, write_current, 0)
 
-    zero_currents_left, zero_currents_right = calculate_channel_current_zero(
-        left_critical_current, right_critical_current, persistent_current, alpha
-    )
-
-    one_currents_left, one_currents_right = calculate_channel_current_one(
-        left_critical_current, right_critical_current, persistent_current, alpha
-    )
-    # Zero State
+    # Set Read
     zero_state_current = calculate_zero_state_current(
-        left_critical_currents_mesh[j, i],
-        right_critical_currents_mesh[j, i],
-        persistent_currents[j, i],
+        left_critical_current,
+        right_critical_current,
+        persistent_current,
         alpha,
         iretrap,
     )
     one_state_current = calculate_one_state_current(
-        left_critical_currents_mesh[j, i],
-        right_critical_currents_mesh[j, i],
-        persistent_currents[j, i],
+        left_critical_current,
+        right_critical_current,
+        persistent_current,
         alpha,
         iretrap,
     )
@@ -71,35 +65,61 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
 
     ideal_read_current = (zero_state_current + one_state_current) / 2
     ideal_read_margin = np.abs(zero_state_current - one_state_current) / 2
-    inverting_operation = zero_state_current < one_state_current
+    noninverting_operation = zero_state_current < one_state_current
 
-    param_dict = {
+    max_ichr = ideal_read_current
+    min_ichr = persistent_current + ideal_read_current * (1 - alpha)
+
+    min_ichl = -persistent_current + ideal_read_current * alpha
+    if min_ichl < 0:
+        min_ichl = 0
+        
+    max_ichl = persistent_current + ideal_read_current * alpha
+
+    ichl_within_range = min_ichl < left_critical_current < max_ichl
+    ichr_within_range = min_ichr < right_critical_current < max_ichr
+
+    set_param_dict = {
         "Total Critical Current (enable off) [uA]": f"{HTRON_INTERCEPT:.2f}",
         "Left Critical Current (enable off) [uA]": f"{max_left_critical_current:.2f}",
         "Right Critical Current (enable off) [uA]": f"{max_right_critical_current:.2f}",
         "Width Ratio": f"{width_ratio:.2f}",
-        "Inductive Ratio": f"{alpha:.2f}",
+        "Inductive Ratio (alpha)": f"{alpha:.2f}",
         "Retrap Ratio": f"{iretrap:.2f}",
+    }
+    write_param_dict = {
         "Write Current [uA]": f"{write_current:.2f}",
         "Enable Write Current [uA]": f"{enable_write_current:.2f}",
         "Left Branch Write Current [uA]": f"{left_branch_write_current:.2f}",
         "Right Branch Write Current [uA]": f"{right_branch_write_current:.2f}",
-        "Left Side Critical Current (enable on) [uA]": f"{left_critical_currents_mesh[j, i]:.2f}",
-        "Right Side Critical Current (enable on) [uA]": f"{right_critical_currents_mesh[j, i]:.2f}",
-        "Maximum Persistent Current": f"{persistent_currents[j, i]:.2f}",
-        "Zero Current Left [uA]": f"{zero_currents_left:.2f}",
-        "Zero Current Right [uA]": f"{zero_currents_right:.2f}",
-        "One Current Left [uA]": f"{one_currents_left:.2f}",
-        "One Current Right [uA]": f"{one_currents_right:.2f}",
-        "Left Retrap Current [uA]": f"{left_retrap_current:.2f}",
-        "Right Retrap Current [uA]": f"{right_retrap_current:.2f}",
-        "State 0 Current [uA]": f"{zero_state_current:.2f}",
-        "State 1 Current [uA]": f"{one_state_current:.2f}",
-        "Set Read Current [uA]": f"{set_read_current:.2f}",
+        "Left Side Critical Current (enable on) [uA]": f"{left_critical_current:.2f}",
+        "Right Side Critical Current (enable on) [uA]": f"{right_critical_current:.2f}",
+        "Left Side Retrapping Current (enable on) [uA]": f"{left_critical_current*iretrap:.2f}",
+        "Right Side Retrapping Current (enable on) [uA]": f"{right_critical_current*iretrap:.2f}",
+        "Maximum Persistent Current": f"{persistent_current:.2f}",
+    }
+    read_param_dict = {
+        "Left Side Critical Current (enable on) [uA]": f"{left_critical_current:.2f}",
+        "Right Side Critical Current (enable on) [uA]": f"{right_critical_current:.2f}",
+        "Maximum Persistent Current": f"{persistent_current:.2f}",
+        "Zero State Current [uA]": f"{zero_state_current:.2f}",
+        "One State Current [uA]": f"{one_state_current:.2f}",
         "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
         "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
-        "Inverting Operation": f"{inverting_operation}",
+        "Non-inverting Operation": f"{noninverting_operation}",
+        "ICHL within range": f"{ichl_within_range}",
+        "ICHR within range": f"{ichr_within_range}",
+        "minimum ICHL [uA]": f"{min_ichl:.2f}",
+        "maximum ICHL [uA]": f"{max_ichl:.2f}",
+        "minimum ICHR [uA]": f"{min_ichr:.2f}",
+        "maximum ICHR [uA]": f"{max_ichr:.2f}",
     }
+    param_dict = {
+        # **set_param_dict,
+        # **write_param_dict,
+        **read_param_dict,
+    }
+
     param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
     param_df.columns = ["Value"]
 
@@ -124,11 +144,12 @@ def plot_read_margin(
         0,
     )
 
-    plt.pcolormesh(
+    plt.pcolor(
         left_critical_currents_mesh,
         write_currents_mesh,
-        read_currents_new,
+        data_dict["one_state_currents"],
         linewidth=0.5,
+        shading="auto",
     )
 
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
@@ -156,12 +177,12 @@ if __name__ == "__main__":
     HTRON_INTERCEPT = 1000  # uA
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.30
-    ALPHA = 1 - (1 / 6.272)
+    ALPHA = 1 - 0.36
 
     IRETRAP = 0.9
-    IREAD = 200
-    IDXX = 20
-    IDXY = 20
+    IREAD = 344
+    IDXX = 50
+    IDXY = 35
     N = 100
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = (
@@ -260,12 +281,12 @@ if __name__ == "__main__":
 
     # Plot the persistent current
     fig, ax = plt.subplots()
-    ax, total_persistent_current, regions = plot_persistent_current(
+    ax, max_persistent_current, regions = plot_persistent_current(
         ax,
         data_dict,
         plot_regions=False,
     )
-    data_dict["persistent_currents"] = total_persistent_current
+    data_dict["persistent_currents"] = max_persistent_current
 
     ax = plot_point(
         ax,
@@ -285,6 +306,22 @@ if __name__ == "__main__":
     data_dict["read_currents"] = read_currents
     data_dict["read_margins"] = read_margins
 
+    zero_state_currents = calculate_zero_state_current(
+        left_critical_currents_mesh,
+        right_critical_currents_mesh,
+        max_persistent_current,
+        ALPHA,
+        IRETRAP,
+    )
+    one_state_currents = calculate_one_state_current(
+        left_critical_currents_mesh,
+        right_critical_currents_mesh,
+        max_persistent_current,
+        ALPHA,
+        IRETRAP,
+    )
+    data_dict["zero_state_currents"] = zero_state_currents
+    data_dict["one_state_currents"] = one_state_currents
     ax = plot_point(
         ax,
         left_critical_currents[IDXX],
