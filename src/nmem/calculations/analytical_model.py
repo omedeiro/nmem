@@ -5,9 +5,15 @@ import scipy.io as sio
 from nmem.calculations.calculations import (
     calculate_channel_current_one,
     calculate_channel_current_zero,
+    calculate_ideal_read_current,
+    calculate_ideal_read_margin,
     calculate_left_branch_current,
+    calculate_left_lower_bound,
+    calculate_left_upper_bound,
     calculate_one_state_current,
     calculate_right_branch_current,
+    calculate_right_lower_bound,
+    calculate_right_upper_bound,
     calculate_zero_state_current,
     htron_critical_current,
 )
@@ -60,21 +66,19 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         iretrap,
     )
 
-    left_retrap_current = left_critical_current + right_critical_current * iretrap
-    right_retrap_current = right_critical_current + left_critical_current * iretrap
+    ideal_read_current = calculate_ideal_read_current(
+        zero_state_current, one_state_current
+    )
+    ideal_read_margin = calculate_ideal_read_margin(
+        zero_state_current, one_state_current
+    )
 
-    ideal_read_current = (zero_state_current + one_state_current) / 2
-    ideal_read_margin = np.abs(zero_state_current - one_state_current) / 2
     noninverting_operation = zero_state_current < one_state_current
 
-    max_ichr = ideal_read_current
-    min_ichr = persistent_current + ideal_read_current * (1 - alpha)
-
-    min_ichl = -persistent_current + ideal_read_current * alpha
-    if min_ichl < 0:
-        min_ichl = 0
-        
-    max_ichl = persistent_current + ideal_read_current * alpha
+    min_ichl = calculate_left_lower_bound(persistent_current, set_read_current, alpha)
+    max_ichl = calculate_left_upper_bound(persistent_current, set_read_current, alpha)
+    min_ichr = calculate_right_lower_bound(persistent_current, set_read_current, alpha)
+    max_ichr = calculate_right_upper_bound(persistent_current, set_read_current, alpha)
 
     ichl_within_range = min_ichl < left_critical_current < max_ichl
     ichr_within_range = min_ichr < right_critical_current < max_ichr
@@ -104,15 +108,16 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         "Maximum Persistent Current": f"{persistent_current:.2f}",
         "Zero State Current [uA]": f"{zero_state_current:.2f}",
         "One State Current [uA]": f"{one_state_current:.2f}",
+        "Set Read Current [uA]": f"{set_read_current:.2f}",
         "Ideal Read Current [uA]": f"{ideal_read_current:.2f}",
         "Ideal Read Margin [uA]": f"{ideal_read_margin:.2f}",
         "Non-inverting Operation": f"{noninverting_operation}",
         "ICHL within range": f"{ichl_within_range}",
         "ICHR within range": f"{ichr_within_range}",
-        "minimum ICHL [uA]": f"{min_ichl:.2f}",
-        "maximum ICHL [uA]": f"{max_ichl:.2f}",
-        "minimum ICHR [uA]": f"{min_ichr:.2f}",
-        "maximum ICHR [uA]": f"{max_ichr:.2f}",
+        "minimum ICHL [uA] (set read)": f"{min_ichl:.2f}",
+        "maximum ICHL [uA] (set read)": f"{max_ichl:.2f}",
+        "minimum ICHR [uA] (set read)": f"{min_ichr:.2f}",
+        "maximum ICHR [uA] (set read)": f"{max_ichr:.2f}",
     }
     param_dict = {
         # **set_param_dict,
@@ -144,10 +149,11 @@ def plot_read_margin(
         0,
     )
 
+    zz = np.maximum(data_dict["one_state_currents"], data_dict["zero_state_currents"])
     plt.pcolor(
         left_critical_currents_mesh,
         write_currents_mesh,
-        data_dict["one_state_currents"],
+        zz,
         linewidth=0.5,
         shading="auto",
     )
@@ -156,7 +162,9 @@ def plot_read_margin(
     plt.ylabel("Write Current [uA]")
     # plt.title("Read Margin")
     plt.gca().invert_xaxis()
-    plt.colorbar()
+    cbar = plt.colorbar()
+    cbar.set_ticks([np.min(zz), np.max(zz)])
+
     # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
@@ -173,16 +181,18 @@ def plot_read_margin(
 if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
-    HTRON_SLOPE = -2.6  # uA / uA
-    HTRON_INTERCEPT = 1000  # uA
+    HTRON_SLOPE = -2.69  # uA / uA
+    HTRON_INTERCEPT = 1030  # uA
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.30
-    ALPHA = 1 - 0.36
+    WIDTH_RIGHT = 0.3
+    ALPHA = 1 - 0.37
 
     IRETRAP = 0.9
-    IREAD = 344
-    IDXX = 50
-    IDXY = 35
+    IREAD = 175
+    # IDXX = 50
+    # IDXY = 35
+    IDXX = 20
+    IDXY = 20
     N = 100
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = (
@@ -281,12 +291,12 @@ if __name__ == "__main__":
 
     # Plot the persistent current
     fig, ax = plt.subplots()
-    ax, max_persistent_current, regions = plot_persistent_current(
+    ax, max_persistent_currents, regions = plot_persistent_current(
         ax,
         data_dict,
         plot_regions=False,
     )
-    data_dict["persistent_currents"] = max_persistent_current
+    data_dict["persistent_currents"] = max_persistent_currents
 
     ax = plot_point(
         ax,
@@ -309,14 +319,14 @@ if __name__ == "__main__":
     zero_state_currents = calculate_zero_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
-        max_persistent_current,
+        max_persistent_currents,
         ALPHA,
         IRETRAP,
     )
     one_state_currents = calculate_one_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
-        max_persistent_current,
+        max_persistent_currents,
         ALPHA,
         IRETRAP,
     )

@@ -199,6 +199,16 @@ def plot_read_current(
     plt.colorbar()
     # ax.set_xlim(right=0)
 
+    # Add contour at 200 uA
+    plt.contour(
+        left_critical_currents_mesh,
+        write_currents_mesh,
+        read_currents,
+        levels=[set_read_current - 10, set_read_current, set_read_current + 10],
+        colors="black",
+        linestyles=["dashed", "solid", "dashed"],
+    )
+
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
