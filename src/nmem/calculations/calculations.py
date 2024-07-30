@@ -152,11 +152,9 @@ def calculate_zero_state_current(
     zero_state_current : np.ndarray
         The current that causes the channel to switch in state 0.
     """
-
-    zero_state_current = np.maximum(
-        (left_critical_currents - persistent_currents) / alpha,
-        right_critical_currents + left_critical_currents * iretrap,
-    )
+    current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
+    current_to_switch_right = right_critical_currents + left_critical_currents * iretrap
+    zero_state_current = np.maximum(current_to_switch_left, current_to_switch_right)
 
     # State currents are positive
     zero_state_current = np.where(zero_state_current < 0, 0, zero_state_current)
@@ -191,10 +189,9 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
-    one_state_currents = np.maximum(
-        (right_critical_currents - persistent_currents) / (1 - alpha),
-        left_critical_currents + right_critical_currents * iretrap,
-    )
+    current_to_switch_right = (left_critical_currents + persistent_currents) / alpha
+    current_to_switch_left = right_critical_currents - left_critical_currents * iretrap
+    one_state_currents = np.maximum(current_to_switch_right, current_to_switch_left)
     # one_state_current = left_critical_currents + (right_critical_currents * iretrap)
 
     # State currents are positive
@@ -252,17 +249,22 @@ def calculate_persistent_current(
     )
 
     # Limit the persistent current by the maximum critical current of the left branch
-    # with no enable current. This is the maximum persistent current.
-    left_persistent_switch = np.abs(persistent_current) > max_left_critical_current
+    # with the enable current active. This is the maximum persistent current.
+    left_persistent_switch = persistent_current > left_critical_currents_mesh
     persistent_current = np.where(
         left_persistent_switch,
-        max_left_critical_current,
+        left_critical_currents_mesh,
         persistent_current,
     )
 
     # Limit persistent current to positive values.
     persistent_current = np.where(persistent_current < 0, 0, persistent_current)
 
+    # Regions where the critical current is negative are invalid.
+    # Set the persistent current to zero in these regions.
+    persistent_current = np.where(
+        left_critical_currents_mesh < 0, 0, persistent_current
+    )
     regions = {
         "left_switch": condition_a,
         "both_switch": condition_b,
@@ -318,8 +320,8 @@ def calculate_read_currents(data_dict: dict):
         iretrap,
     )
 
-    read_currents = (zero_state_current + one_state_current) / 2
-    read_margins = np.abs(zero_state_current - one_state_current) / 2
+    read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
+    read_margins = calculate_ideal_read_margin(zero_state_current, one_state_current)
     return read_currents, read_margins
 
 
@@ -370,7 +372,7 @@ if __name__ == "__main__":
     left_critical_currents_mesh, write_currents_mesh = np.meshgrid(
         np.linspace(0, 100, 100), np.linspace(50, 250, 100)
     )
-    SCALE = 2
+    SCALE = 1
     data_dict = {
         "left_critical_currents_mesh": left_critical_currents_mesh * SCALE,
         "right_critical_currents_mesh": left_critical_currents_mesh * 3 * SCALE,

@@ -3,8 +3,6 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 from nmem.calculations.calculations import (
-    calculate_channel_current_one,
-    calculate_channel_current_zero,
     calculate_ideal_read_current,
     calculate_ideal_read_margin,
     calculate_left_branch_current,
@@ -140,30 +138,27 @@ def plot_read_margin(
     read_margins = data_dict["read_margins"]
     read_currents = data_dict["read_currents"]
     set_read_current = data_dict["set_read_current"]
-
-    set_read_current_array = np.ones_like(read_margins) * set_read_current
     read_currents_new = np.where(
-        (read_currents > (set_read_current_array - 50))
-        * (read_currents < (set_read_current_array + 50)),
-        1,
+        (read_currents < (set_read_current + read_margins))
+        & (read_currents > (set_read_current - read_margins)),
+        read_currents,
         0,
     )
 
-    zz = np.maximum(data_dict["one_state_currents"], data_dict["zero_state_currents"])
     plt.pcolor(
         left_critical_currents_mesh,
         write_currents_mesh,
-        zz,
+        read_currents_new,
         linewidth=0.5,
         shading="auto",
     )
 
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
-    # plt.title("Read Margin")
+    plt.title("Read Margin")
     plt.gca().invert_xaxis()
     cbar = plt.colorbar()
-    cbar.set_ticks([np.min(zz), np.max(zz)])
+    # cbar.set_ticks(np.linspace(np.min(read_margins), np.max(read_margins), 5))
 
     # ax.set_xlim(right=0)
 
@@ -182,18 +177,18 @@ if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
     HTRON_SLOPE = -2.69  # uA / uA
-    HTRON_INTERCEPT = 1030  # uA
+    HTRON_INTERCEPT = 1000  # uA
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.3
     ALPHA = 1 - 0.37
 
     IRETRAP = 0.9
-    IREAD = 175
-    # IDXX = 50
-    # IDXY = 35
-    IDXX = 20
-    IDXY = 20
-    N = 100
+    IREAD = 60
+    IDXX = 25
+    IDXY = 17
+    # IDXX = 20
+    # IDXY = 20
+    N = 50
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = (
         "SPG806_nMem_ICE_writeEnable_sweep_square11_D6_D1_2023-12-13 02-06-48.mat"
@@ -297,6 +292,8 @@ if __name__ == "__main__":
         plot_regions=False,
     )
     data_dict["persistent_currents"] = max_persistent_currents
+    data_dict["inverting_region"] = regions["both_switch"]
+    data_dict["noninverting_region"] = regions["left_switch"]
 
     ax = plot_point(
         ax,
@@ -339,6 +336,10 @@ if __name__ == "__main__":
         marker="*",
         color="red",
         markersize=15,
+    )
+
+    data_dict["ideal_read_margins"] = calculate_ideal_read_margin(
+        zero_state_currents, one_state_currents
     )
 
     # Plot the read margin

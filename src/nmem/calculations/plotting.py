@@ -117,14 +117,12 @@ def plot_persistent_current(
     if plot_regions:
         mask_list = [
             regions["left_switch"],
-            regions["right_switch"],
-            regions["right_retrap"],
+            regions["both_switch"],
             regions["left_persistent_switch"],
         ]
         mask_names = [
             "left_switch",
-            "right_switch",
-            "right_retrap",
+            "both_switch",
             "left_persistent_switch",
         ]
         c = plot_mask_region(c, mask_list, mask_names)
@@ -199,7 +197,7 @@ def plot_read_current(
     plt.colorbar()
     # ax.set_xlim(right=0)
 
-    # Add contour at 200 uA
+    # Add contour at set_read_current
     plt.contour(
         left_critical_currents_mesh,
         write_currents_mesh,
