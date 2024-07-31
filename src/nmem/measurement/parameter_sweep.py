@@ -16,41 +16,43 @@ import nmem.measurement.functions as nm
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
+CONFIG = r"SPG806_config_ICE.yml"
+
+HORIZONTAL_SCALE = {
+    0: 5e-7,
+    1: 1e-6,
+    2: 2e-6,
+    3: 5e-6,
+    4: 1e-5,
+    5: 2e-5,
+    6: 5e-5,
+    7: 1e-4,
+    8: 2e-4,
+    9: 5e-4,
+}
+
+SAMPLE_RATE = {
+    0: 512e6,
+    1: 256e6,
+    2: 128e6,
+    3: 512e5,
+    4: 256e5,
+    5: 128e5,
+    6: 512e4,
+    7: 256e4,
+    8: 128e4,
+    9: 512e3,
+}
+
+NUM_MEAS = 100
+FREQ_IDX = 1
+REAL_TIME = 1
+
 
 if __name__ == "__main__":
-    config = r"SPG806_config_ICE.yml"
 
-    hor_scale_dict = {
-        0: 5e-7,
-        1: 1e-6,
-        2: 2e-6,
-        3: 5e-6,
-        4: 1e-5,
-        5: 2e-5,
-        6: 5e-5,
-        7: 1e-4,
-        8: 2e-4,
-        9: 5e-4,
-    }
+    b = nt.nTron(CONFIG)
 
-    sample_rate_dict = {
-        0: 512e6,
-        1: 256e6,
-        2: 128e6,
-        3: 512e5,
-        4: 256e5,
-        5: 128e5,
-        6: 512e4,
-        7: 256e4,
-        8: 128e4,
-        9: 512e3,
-    }
-
-    b = nt.nTron(config)
-
-    NUM_MEAS = 500
-    FREQ_IDX = 4
-    REAL_TIME = 1
 
     if REAL_TIME == 0:
         b.inst.scope.set_sample_mode("Sequence")
@@ -71,20 +73,21 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 308e-6,
+        "write_current": 340E-6,
         "enable_write_current": 285e-6,
-        "read_current": 580e-6,  # 1
-        "enable_read_current": 238e-6,  # 2
+        "read_current": 450e-6,  # 1
+        "enable_read_current": 285e-6,  # 2
         # "enable_voltage": 0.0,
         # "channel_voltage": 0.0,
         # "channel_voltage_read": 0.0,
         # "wr_ratio": 0.438,
         # "ewr_ratio": 1.56,
+        "threshold_bert": 0.15,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
-        "sample_rate": sample_rate_dict[FREQ_IDX],
-        "hor_scale": hor_scale_dict[FREQ_IDX],
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
+        "hor_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "num_samples_scope": 5e3,
         "realtime": REAL_TIME,
         "x": 0,
@@ -102,15 +105,15 @@ if __name__ == "__main__":
 
     t1 = time.time()
     parameter_x = "write_current"
-    # measurement_settings["x"] = [372e-6]
-    measurement_settings["x"] = np.linspace(300e-6, 380e-6, 11)
+    # measurement_settings["x"] = [280e-6]
+    measurement_settings["x"] = np.linspace(0e-6, 350e-6, 21)
 
-    parameter_y = "enable_read_current"
-    measurement_settings["y"] = [238e-6]
-    # measurement_settings["y"] = np.linspace(220e-6, 260e-6, 21)
+    parameter_y = "read_current"
+    measurement_settings["y"] = [315e-6]
+    # measurement_settings["y"] = np.linspace(300e-6, 400e-6, 21)
 
     b, measurement_settings, save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
     )
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
     save_dict["time_str"] = time_str

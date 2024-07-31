@@ -10,11 +10,11 @@ from time import sleep
 
 import matplotlib as mpl
 import numpy as np
-import tqdm
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from scipy.optimize import curve_fit
 from scipy.stats import norm
+from tqdm import tqdm
 
 # %% Functionss
 
@@ -167,7 +167,6 @@ def calculate_voltage(measurement_settings: dict):
         ewr_ratio = 0
     else:
         ewr_ratio = enable_write_current / enable_read_current
-    
 
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
@@ -621,6 +620,7 @@ def plot_waveforms_bert(data_dict, measurement_settings):
 
     ax3 = plot_trend(ax3, t0, label="READ 0", color="C0")
     ax3 = plot_trend(ax3, t1, label="READ 1", color="C2")
+    ax3.hlines(measurement_settings["threshold_bert"], 0, len(t0), color="C0")
     plt.ylim([0, 0.5])
     # plt.ylabel('read current (uA)')
     plt.xlabel("sample")
@@ -835,8 +835,7 @@ def run_realtime(b, num_meas=100):
     while b.inst.scope.get_num_sweeps() < num_meas:
         sleep(0.1)
         n = b.inst.scope.get_num_sweeps()
-        pbar.update(n)
-        print(f"sampling...{n} / {num_meas}")
+        pbar.update(n - pbar.n)
 
     b.inst.scope.set_trigger_mode("Stop")
 
@@ -846,15 +845,27 @@ def run_realtime(b, num_meas=100):
     return t0, t1
 
 
-def run_realtime_bert(b, num_meas=100):
+def run_realtime_bert(b, measurement_settings: dict):
+
+    if measurement_settings["num_meas"]:
+        num_meas = measurement_settings["num_meas"]
+    else:
+        num_meas = 100
+
+    if measurement_settings["threshold_bert"]:
+        threshold = measurement_settings["threshold_bert"]
+    else:
+        threshold = 150e-3
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
     b.inst.scope.clear_sweeps()
     sleep(0.1)
-    while b.inst.scope.get_num_sweeps() < num_meas:
-        sleep(0.1)
-        n = b.inst.scope.get_num_sweeps()
-        print(f"sampling...{n} / {num_meas}")
+    with tqdm(total=num_meas) as pbar:
+        while b.inst.scope.get_num_sweeps() < num_meas:
+            sleep(0.1)
+            n = b.inst.scope.get_num_sweeps()
+            pbar.update(n - pbar.n)
+            # print(f"sampling...{n} / {num_meas}")
 
     b.inst.scope.set_trigger_mode("Stop")
 
@@ -872,9 +883,8 @@ def run_realtime_bert(b, num_meas=100):
     if len(t1) < num_meas:
         t1.resize(num_meas, refcheck=False)
 
-    ERROR_THRESHOLD = 200e-3
-    w0r1 = (t0 > ERROR_THRESHOLD).sum()
-    w1r0 = (t1 < ERROR_THRESHOLD).sum()
+    w0r1 = (t0 > threshold).sum()
+    w1r0 = (t1 < threshold).sum()
 
     errnorm_w0r1 = w0r1 / (num_meas * 2)
     errnorm_w1r0 = w1r0 / (num_meas * 2)
@@ -1163,6 +1173,11 @@ def run_measurement(
     if channel_voltage > 1.5:
         raise ValueError("channel voltage too high")
 
+    if channel_voltage == 0:
+        bitmsg_channel = "N" * len(bitmsg_channel)
+    if enable_voltage == 0:
+        bitmsg_enable = "N" * len(bitmsg_enable)
+
     write_sequence(b, bitmsg_channel, 1, measurement_settings, rramp=rramp)
     b.inst.awg.set_vpp(channel_voltage, 1)
     b.inst.awg.set_arb_sample_rate(sample_rate, 1)
@@ -1185,7 +1200,7 @@ def run_measurement(
     if realtime == 1:
         if bert:
             t0, t1, W0R1, W1R0, errnorm_W0R1, errnorm_W1R0 = run_realtime_bert(
-                b, num_meas
+                b, measurement_settings
             )
             data0, data1, data2, data3 = get_traces(b, scope_samples)
             full_dict = {}
@@ -1291,7 +1306,14 @@ def write_dict_to_file(file_path, save_dict):
         for key, value in save_dict.items():
             file.write(f"{key}: {value}\n")
 
-def run_sweep(b, measurement_settings: dict, parameter_x: str, parameter_y:str):
+
+def run_sweep(
+    b,
+    measurement_settings: dict,
+    parameter_x: str,
+    parameter_y: str,
+    plot_measurement=False,
+):
     save_dict = {}
     for y in measurement_settings["y"]:
         for x in measurement_settings["x"]:
@@ -1299,9 +1321,9 @@ def run_sweep(b, measurement_settings: dict, parameter_x: str, parameter_y:str):
             measurement_settings[parameter_y] = y
 
             measurement_settings = calculate_voltage(measurement_settings)
-
+            print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
             data_dict, full_dict = run_measurement(
-                b, measurement_settings, plot=True, rramp=False, bert=True
+                b, measurement_settings, plot=plot_measurement, rramp=False, bert=True
             )
 
             data_dict.update(measurement_settings)
@@ -1357,7 +1379,7 @@ def run_read_sweep(b, measurement_settings):
             measurement_settings["enable_read_current"] = enable_read_current
             measurement_settings = calculate_voltage(measurement_settings)
             data_dict, full_dict = run_measurement(
-                b, measurement_settings, plot=True, rramp=False, bert=True
+                b, measurement_settings, plot=False, rramp=False, bert=True
             )
 
             data_dict.update(measurement_settings)
