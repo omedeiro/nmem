@@ -210,6 +210,7 @@ def calculate_persistent_current(
     write_currents_mesh = data_dict["write_currents_mesh"]
     alpha = data_dict["alpha"]
     max_left_critical_current = data_dict["max_left_critical_current"]
+    max_right_critical_current = data_dict["max_right_critical_current"]
     iretrap = data_dict["iretrap"]
 
     # Assuming no persistent current in the loop
@@ -242,18 +243,30 @@ def calculate_persistent_current(
     condition_b = (left_critical_currents_mesh < left_branch_current) & (
         write_currents_mesh > right_critical_currents_mesh
     )
+    new_left_branch_current = (
+        write_currents_mesh - right_critical_currents_mesh * iretrap
+    )
+
     persistent_current = np.where(
         condition_b,
-        write_currents_mesh - right_critical_currents_mesh * iretrap,
+        new_left_branch_current,
+        persistent_current,
+    )
+    # CONDITION C
+    # -----------
+    # If CONDITION B is true then both branches are switched.
+    condition_c = condition_b & (new_left_branch_current > left_critical_currents_mesh)
+    persistent_current = np.where(
+        condition_c,
+        write_currents_mesh - left_critical_currents_mesh * iretrap,
         persistent_current,
     )
 
     # Limit the persistent current by the maximum critical current of the left branch
     # with the enable current active. This is the maximum persistent current.
-    left_persistent_switch = persistent_current > left_critical_currents_mesh
     persistent_current = np.where(
-        left_persistent_switch,
-        left_critical_currents_mesh,
+        persistent_current > max_left_critical_current,
+        0,
         persistent_current,
     )
 
@@ -268,7 +281,7 @@ def calculate_persistent_current(
     regions = {
         "left_switch": condition_a,
         "both_switch": condition_b,
-        "left_persistent_switch": left_persistent_switch,
+        "left_retrap": condition_c,
     }
 
     return persistent_current, regions

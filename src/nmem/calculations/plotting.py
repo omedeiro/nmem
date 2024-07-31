@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from cycler import cycler
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -82,7 +83,7 @@ def plot_mask_region(
     c,
     mask_list: list,
     mask_names: list,
-    colors=["r", "g", "b", "y"],
+    colors=["r", "g", "b", "k"],
     edge_color_array=None,
 ):
     edge_color_array = None
@@ -114,24 +115,31 @@ def plot_persistent_current(
         linewidth=0.5,
     )
 
-    if plot_regions:
-        mask_list = [
-            regions["left_switch"],
-            regions["both_switch"],
-            regions["left_persistent_switch"],
-        ]
-        mask_names = [
-            "left_switch",
-            "both_switch",
-            "left_persistent_switch",
-        ]
-        c = plot_mask_region(c, mask_list, mask_names)
-
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
     plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
     plt.colorbar()
+
+    if plot_regions:
+        color_cycler = cycler(colors=["red", "orange", "magenta", "skyblue"])
+        for (name, region), colors in zip(regions.items(), color_cycler):
+            region_plot = plt.contour(
+                left_critical_currents_mesh,
+                write_currents_mesh,
+                region,
+                levels=[0],
+                **colors,
+            )
+            plt.clabel(
+                region_plot,
+                inline=True,
+                fontsize=8,
+                fmt=name,
+                inline_spacing=0,
+                rightside_up=True,
+            )
+
     # ax.set_xlim(right=0)
 
     # plt.text(

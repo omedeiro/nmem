@@ -176,14 +176,14 @@ def plot_read_margin(
 if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
-    HTRON_SLOPE = -2.69  # uA / uA
-    HTRON_INTERCEPT = 1000  # uA
+    HTRON_SLOPE = -3.5  # uA / uA
+    HTRON_INTERCEPT = 1400  # uA
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.3
-    ALPHA = 1 - 0.37
+    ALPHA = 1 - 0.35
 
     IRETRAP = 0.9
-    IREAD = 60
+    IREAD = 108
     IDXX = 25
     IDXY = 17
     # IDXX = 20
@@ -247,7 +247,6 @@ if __name__ == "__main__":
     right_critical_currents_mesh = (
         left_critical_currents_mesh * (1 - width_ratio) / width_ratio
     )
-
     # Create the data dictionary
     data_dict = {
         "left_critical_currents": left_critical_currents,
@@ -289,7 +288,7 @@ if __name__ == "__main__":
     ax, max_persistent_currents, regions = plot_persistent_current(
         ax,
         data_dict,
-        plot_regions=False,
+        plot_regions=True,
     )
     data_dict["persistent_currents"] = max_persistent_currents
     data_dict["inverting_region"] = regions["both_switch"]
