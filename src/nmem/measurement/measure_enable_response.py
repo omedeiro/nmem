@@ -59,7 +59,7 @@ if __name__ == "__main__":
         "enable_write_phase": 0,
         "enable_read_phase": 30,
         "bitmsg_channel": "N01NRNNNRN",
-        "bitmsg_enable": "NNNNENNNEN",
+        "bitmsg_enable": "NNNNENNNEE",
     }
 
     t1 = time.time()

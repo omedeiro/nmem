@@ -1385,8 +1385,8 @@ def run_sweep(
     plot_measurement=False,
 ):
     save_dict = {}
-    for y in measurement_settings["y"]:
-        for x in measurement_settings["x"]:
+    for x in measurement_settings["x"]:
+        for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
 

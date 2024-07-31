@@ -50,9 +50,7 @@ REAL_TIME = 1
 
 
 if __name__ == "__main__":
-
     b = nt.nTron(CONFIG)
-
 
     if REAL_TIME == 0:
         b.inst.scope.set_sample_mode("Sequence")
@@ -73,9 +71,9 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 340E-6,
-        "enable_write_current": 285e-6,
-        "read_current": 450e-6,  # 1
+        "write_current": 320e-6,
+        "enable_write_current": 315e-6,
+        "read_current": 375e-6,  # 1
         "enable_read_current": 285e-6,  # 2
         # "enable_voltage": 0.0,
         # "channel_voltage": 0.0,
@@ -99,18 +97,18 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "N0NNR1NNRN",
-        "bitmsg_enable": "NWNNEWNNEN",
+        "bitmsg_channel": "N0RRR1RRRN",
+        "bitmsg_enable": "NWNNEWNNEE",
     }
 
     t1 = time.time()
-    parameter_x = "write_current"
-    # measurement_settings["x"] = [280e-6]
-    measurement_settings["x"] = np.linspace(0e-6, 350e-6, 21)
+    parameter_x = "enable_write_current"
+    measurement_settings["x"] = [285e-6]
+    # measurement_settings["x"] = np.linspace(300e-6, 335e-6, 21)
 
-    parameter_y = "read_current"
-    measurement_settings["y"] = [315e-6]
-    # measurement_settings["y"] = np.linspace(300e-6, 400e-6, 21)
+    parameter_y = "write_current"
+    # measurement_settings["y"] = [200e-6]
+    measurement_settings["y"] = np.linspace(200e-6, 370e-6, 11)
 
     b, measurement_settings, save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
