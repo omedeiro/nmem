@@ -12,7 +12,6 @@ plt.rcParams["figure.figsize"] = [10, 12]
 
 
 if __name__ == "__main__":
-
     b = nt.nTron(CONFIG)
     REAL_TIME = 1
     NUM_MEAS = 500
@@ -45,7 +44,7 @@ if __name__ == "__main__":
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
-        "threshold_bert": 0.15,
+        "threshold_bert": 0.09,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "hor_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "num_samples_scope": 5e3,
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     }
 
     t1 = time.time()
-    parameter_x = "enable_write_current"
+    parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([10e-6])
     measurement_settings["x"] = np.linspace(200e-6, 400e-6, 5)
 
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     measurement_settings["y"] = np.linspace(200e-6, 700e-6, 21)
 
     b, measurement_settings, save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
     )
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
     save_dict["time_str"] = time_str

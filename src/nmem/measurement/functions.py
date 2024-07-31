@@ -12,6 +12,7 @@ import matplotlib as mpl
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
+from qnnpy.functions.ntron import nTron
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
@@ -25,7 +26,7 @@ def create_waveforms(
     height: int = 1,
     phase: int = 0,
     ramp: bool = False,
-):
+) -> np.ndarray:
     """
     Create waveforms with specified parameters.
 
@@ -57,7 +58,7 @@ def create_waveforms(
     return waveform
 
 
-def write_waveforms(b, write_string, chan):
+def write_waveforms(b: nTron, write_string: str, chan: int):
     name = "CHAN"
     sequence = f'"{name}",{write_string}'
     n = str(len(sequence))
@@ -74,11 +75,18 @@ def write_waveforms(b, write_string, chan):
     sleep(1)
 
 
-def load_waveforms(b, measurement_settings, chan=1, rramp=True):
+def load_waveforms(
+    b: nTron,
+    measurement_settings: dict,
+    chan: int = 1,
+    rramp: bool = True,
+):
     ww = measurement_settings["write_width"]
     rw = measurement_settings["read_width"]
 
-    wr_ratio = measurement_settings["wr_ratio"]
+    wr_ratio = (
+        measurement_settings["write_current"] / measurement_settings["read_current"]
+    )
 
     eww = measurement_settings["enable_write_width"]
     erw = measurement_settings["enable_read_width"]
@@ -86,7 +94,10 @@ def load_waveforms(b, measurement_settings, chan=1, rramp=True):
     ew_phase = measurement_settings["enable_write_phase"]
     er_phase = measurement_settings["enable_read_phase"]
 
-    ewr_ratio = measurement_settings["ewr_ratio"]
+    ewr_ratio = (
+        measurement_settings["enable_write_current"]
+        / measurement_settings["enable_read_current"]
+    )
 
     num_samples = measurement_settings["num_samples"]
 
@@ -134,7 +145,7 @@ def load_waveforms(b, measurement_settings, chan=1, rramp=True):
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
 
-def voltage2current(v: float, c: float):
+def voltage2current(v: float, c: float) -> float:
     if c == 1:
         current = v / 0.1 * 169.6 / 1e6
     if c == 2:
@@ -142,7 +153,7 @@ def voltage2current(v: float, c: float):
     return current
 
 
-def calculate_voltage(measurement_settings: dict):
+def calculate_voltage(measurement_settings: dict) -> dict:
     enable_write_current = measurement_settings["enable_write_current"]
     write_current = measurement_settings["write_current"]
 
@@ -174,23 +185,28 @@ def calculate_voltage(measurement_settings: dict):
     return measurement_settings
 
 
-def gauss(x, mu, sigma, A):
+def gauss(x: float, mu: float, sigma: float, A: float):
     return A * np.exp(-((x - mu) ** 2) / 2 / sigma**2)
 
 
-def bimodal(x, mu1, sigma1, A1, mu2, sigma2, A2):
+def bimodal(
+    x: float, mu1: float, sigma1: float, A1: float, mu2: float, sigma2: float, A2: float
+):
     return gauss(x, mu1, sigma1, A1) + gauss(x, mu2, sigma2, A2)
 
 
 def bimodal_fit(
-    x, y, expected, bounds=((500, 2, 1e-6, 500, -30, 1e-6), (1200, 30, 1, 1200, 30, 1))
-):
+    x: np.ndarray,
+    y: np.ndarray,
+    expected: tuple,
+    bounds: tuple = ((500, 2, 1e-6, 500, -30, 1e-6), (1200, 30, 1, 1200, 30, 1)),
+) -> tuple:
     y = np.nan_to_num(y, posinf=0.0, neginf=0.0)
     params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
     return params, cov
 
 
-def get_param_mean(param):
+def get_param_mean(param: np.ndarray) -> np.ndarray:
     if round(param[2], 5) > round(param[5], 5):
         prm = param[0:2]
     else:
@@ -198,23 +214,29 @@ def get_param_mean(param):
     return prm
 
 
-def plot_histogram(ax: Axes, y, label, color, previous_params=[0]):
-    mean, std = norm.fit(y)
-    # y = y[y < 1100]
+def plot_histogram(
+    ax: Axes, y: np.ndarray, label: str, color: str, previous_params: list = [0]
+) -> tuple:
     y = y[y > 300]
 
     if len(previous_params) == 1:
         ax, param, full_params = plot_hist_bimodal(ax, y, label=f"{label}", color=color)
 
     else:
-        expected = (800, 8, 0.05, 1000, 8, 0.05)
+        # expected = (800, 8, 0.05, 1000, 8, 0.05)
         ax, param, full_params = plot_hist_bimodal(
             ax, y, label=f"{label}", color=color, expected=previous_params
         )
     return ax, param, full_params
 
 
-def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.05)):
+def plot_hist_bimodal(
+    ax: Axes,
+    y: np.ndarray,
+    label: str,
+    color: str,
+    expected: tuple = (700, 10, 0.01, 1040, 10, 0.05),
+):
     binwidth = 4
     h, edges, _ = ax.hist(
         y,
@@ -313,7 +335,7 @@ def plot_hist_bimodal(ax, y, label, color, expected=(700, 10, 0.01, 1040, 10, 0.
 #     return ax, param
 
 
-def reject_outliers(data, m=2):
+def reject_outliers(data: np.ndarray, m: float = 2.0):
     ind = abs(data - np.mean(data)) < m * np.std(data)
     if len(ind[ind is False]) < 50:
         data = data[ind]
@@ -324,7 +346,9 @@ def reject_outliers(data, m=2):
     return data, rejectInd
 
 
-def plot_waveforms(data_dict, measurement_settings, previous_params=[0]):
+def plot_waveforms(
+    data_dict: dict, measurement_settings: dict, previous_params: list = [0]
+):
     i0 = data_dict["i0"]
     i1 = data_dict["i1"]
     bitmsg_channel = measurement_settings["bitmsg_channel"]
@@ -489,7 +513,15 @@ def plot_waveforms(data_dict, measurement_settings, previous_params=[0]):
     return distance, full_params0, full_params1
 
 
-def plot_trend(ax, y, label, color, x=None, params=None, ind=None, m=1):
+def plot_trend(
+    ax: Axes,
+    y: np.ndarray,
+    label: str,
+    color: str,
+    x: np.ndarray = None,
+    params: tuple = None,
+    m: float = 1,
+):
     if x is None:
         x = np.arange(0, len(y), 1)
 
@@ -533,7 +565,7 @@ def plot_trend(ax, y, label, color, x=None, params=None, ind=None, m=1):
 #     plt.show()
 
 
-def plot_ber(x, y, ber):
+def plot_ber(x: np.ndarray, y: np.ndarray, ber: np.ndarray):
     dx = x[1] - x[0]
     xstart = x[0]
     xstop = x[-1]
@@ -559,7 +591,7 @@ def plot_ber(x, y, ber):
     plt.colorbar()
 
 
-def plot_waveforms_bert(data_dict, measurement_settings):
+def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     data0 = data_dict["trace_chan_in"]
     data1 = data_dict["trace_chan_out"]
     data2 = data_dict["trace_enab"]
@@ -655,7 +687,15 @@ def plot_waveforms_bert(data_dict, measurement_settings):
     # ax4 = plt.subplot()
 
 
-def plot_parameter(data_dict, x_name, y_name, xindex=0, yindex=0, ax=None, **kwargs):
+def plot_parameter(
+    data_dict: dict,
+    x_name: str,
+    y_name: str,
+    xindex: int = 0,
+    yindex: int = 0,
+    ax: Axes = None,
+    **kwargs,
+):
     x_length = data_dict["x"].shape[1]
     y_length = data_dict["y"].shape[1]
 
@@ -695,7 +735,13 @@ def plot_parameter(data_dict, x_name, y_name, xindex=0, yindex=0, ax=None, **kwa
 
 
 def plot_array(
-    data_dict, c_name, x_name="x", y_name="y", ax=None, cmap=None, norm=True
+    data_dict: dict,
+    c_name: str,
+    x_name: str = "x",
+    y_name: str = "y",
+    ax: Axes = None,
+    cmap=None,
+    norm=True,
 ):
     if not ax:
         fig, ax = plt.subplots()
@@ -787,7 +833,7 @@ def get_traces(b, scope_samples=5000):
     return data0, data1, data2, data3
 
 
-def get_traces_sequence(b, num_meas=100, num_samples=5000):
+def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
     data_dict = []
     for c in ["C1", "C2", "C4", "F4"]:
         x, y = b.inst.scope.get_wf_data(channel=c)
@@ -826,7 +872,7 @@ def get_traces_sequence(b, num_meas=100, num_samples=5000):
     return data0, data1, data2, data3
 
 
-def run_realtime(b, num_meas=100):
+def run_realtime(b: nTron, num_meas: int = 100):
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
     b.inst.scope.clear_sweeps()
@@ -845,8 +891,7 @@ def run_realtime(b, num_meas=100):
     return t0, t1
 
 
-def run_realtime_bert(b, measurement_settings: dict):
-
+def run_realtime_bert(b: nTron, measurement_settings: dict):
     if measurement_settings["num_meas"]:
         num_meas = measurement_settings["num_meas"]
     else:
@@ -893,7 +938,7 @@ def run_realtime_bert(b, measurement_settings: dict):
     return t0, t1, w0r1, w1r0, errnorm_w0r1, errnorm_w1r0
 
 
-def run_sequence_bert(b, num_meas=100):
+def run_sequence_bert(b: nTron, num_meas: int = 100):
     b.inst.scope.clear_sweeps()
     sleep(0.1)
     b.inst.scope.set_trigger_mode("Single")
@@ -927,7 +972,7 @@ def run_sequence_bert(b, num_meas=100):
     return t0, t1, w0r1, w1r0, errnorm_w0r1, errnorm_w1r0
 
 
-def run_sequence(b, num_meas=100, num_samples=5e3):
+def run_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5e3):
     b.inst.scope.clear_sweeps()
     sleep(0.1)
     b.inst.scope.set_trigger_mode("Single")
@@ -964,7 +1009,7 @@ def run_sequence(b, num_meas=100, num_samples=5e3):
     return t0, t1, full_dict
 
 
-def run_sequence_v1(b, num_meas=100):
+def run_sequence_v1(b: nTron, num_meas: int = 100):
     b.inst.scope.set_trigger_mode("Stop")
     sleep(0.1)
 
@@ -986,7 +1031,13 @@ def run_sequence_v1(b, num_meas=100):
     return t0, t1
 
 
-def calculate_currents(t0, t1, measurement_settings, total_points, sample_time):
+def calculate_currents(
+    t0: np.ndarray,
+    t1: np.ndarray,
+    measurement_settings: dict,
+    total_points: int,
+    sample_time: float,
+):
     num_meas = measurement_settings["num_meas"]
     read_current = measurement_settings["read_current"]
 
@@ -1031,7 +1082,7 @@ def calculate_currents(t0, t1, measurement_settings, total_points, sample_time):
     return t0, t1, i0, i1, distance, x, y0, y1
 
 
-def calculate_error_rate(t0, t1, num_meas):
+def calculate_error_rate(t0: np.ndarray, t1: np.ndarray, num_meas: int):
     w0r1 = len(np.argwhere(t0 > 0))
     w1r0 = num_meas - len(np.argwhere(t1 > 0))
 
@@ -1039,7 +1090,9 @@ def calculate_error_rate(t0, t1, num_meas):
     return ber, w0r1, w1r0
 
 
-def write_sequence(b, message, channel, measurement_settings, rramp=True):
+def write_sequence(
+    b: nTron, message: str, channel: int, measurement_settings: dict, rramp: bool = True
+):
     write1 = '"INT:\WRITE1.ARB"'
     write0 = '"INT:\WRITE0.ARB"'
     read = '"INT:\READ.ARB"'
@@ -1077,7 +1130,13 @@ def write_sequence(b, message, channel, measurement_settings, rramp=True):
     write_waveforms(b, write_string, channel)
 
 
-def setup_scope(b, sample_time, horscale, scope_sample_rate, measurement_settings):
+def setup_scope(
+    b: nTron,
+    sample_time: float,
+    horscale: float,
+    scope_sample_rate: float,
+    measurement_settings: dict,
+):
     b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
 
     b.inst.scope.set_horizontal_scale(horscale, -horscale * 5)
@@ -1108,7 +1167,13 @@ def setup_scope(b, sample_time, horscale, scope_sample_rate, measurement_setting
     b.inst.scope.set_math_trend_values("F2", num_meas * 2)
 
 
-def setup_scope_bert(b, sample_time, horscale, scope_sample_rate, measurement_settings):
+def setup_scope_bert(
+    b: nTron,
+    sample_time: float,
+    horscale: float,
+    scope_sample_rate: float,
+    measurement_settings: dict,
+):
     b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
 
     b.inst.scope.set_horizontal_scale(horscale, -horscale * 5)
@@ -1142,7 +1207,12 @@ def setup_scope_bert(b, sample_time, horscale, scope_sample_rate, measurement_se
 
 
 def run_measurement(
-    b, measurement_settings, previous_params=[0], plot=False, rramp=True, bert=False
+    b: nTron,
+    measurement_settings: dict,
+    previous_params: list = [0],
+    plot: bool = False,
+    bert: bool = False,
+    rramp: bool = True,
 ):
     bitmsg_channel = measurement_settings["bitmsg_channel"]
     bitmsg_enable = measurement_settings["bitmsg_enable"]
@@ -1293,7 +1363,7 @@ def run_measurement(
     return data_dict, full_dict
 
 
-def update_dict(dict1, dict2):
+def update_dict(dict1: dict, dict2: dict):
     result_dict = {}
     for key in dict1.keys():
         result_dict[key] = np.dstack([dict1[key], dict2[key]])
@@ -1301,14 +1371,14 @@ def update_dict(dict1, dict2):
     return result_dict
 
 
-def write_dict_to_file(file_path, save_dict):
+def write_dict_to_file(file_path: str, save_dict: dict):
     with open(f"{file_path}_measurement_settings.txt", "w") as file:
         for key, value in save_dict.items():
             file.write(f"{key}: {value}\n")
 
 
 def run_sweep(
-    b,
+    b: nTron,
     measurement_settings: dict,
     parameter_x: str,
     parameter_y: str,
@@ -1342,7 +1412,7 @@ def run_sweep(
     return b, measurement_settings, save_dict
 
 
-def run_write_sweep(b, measurement_settings):
+def run_write_sweep(b: nTron, measurement_settings: dict):
     save_dict = {}
     for write_current in measurement_settings["y"]:
         for enable_write_current in measurement_settings["x"]:
@@ -1371,7 +1441,7 @@ def run_write_sweep(b, measurement_settings):
     return b, measurement_settings, save_dict
 
 
-def run_read_sweep(b, measurement_settings):
+def run_read_sweep(b: nTron, measurement_settings: dict):
     save_dict = {}
     for read_current in measurement_settings["y"]:
         for enable_read_current in measurement_settings["x"]:
@@ -1398,7 +1468,9 @@ def run_read_sweep(b, measurement_settings):
     return b, measurement_settings, save_dict
 
 
-def plot_ber_sweep(save_dict, measurement_settings, file_path, A, B, C):
+def plot_ber_sweep(
+    save_dict: dict, measurement_settings: dict, file_path: str, A: str, B: str, C: str
+):
     x = measurement_settings["x"]
     y = measurement_settings["y"]
     if len(x) > 1 and len(y) > 1:
