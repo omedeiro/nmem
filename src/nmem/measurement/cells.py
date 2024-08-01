@@ -11,4 +11,10 @@ CELLS = {
         "enable_write_current": 315e-6,
         "enable_read_current": 285e-6,
     },
+    "C3": {
+        "write_current": 105e-6,
+        "read_current": 436e-6,
+        "enable_write_current": 343e-6,
+        "enable_read_current": 285e-6,
+    },
 }

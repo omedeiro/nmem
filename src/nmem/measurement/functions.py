@@ -804,7 +804,7 @@ def plot_array(
     return ax
 
 
-def get_traces(b, scope_samples=5000):
+def get_traces(b: nTron, scope_samples: int = 5000):
     # b.inst.scope.set_sample_mode('Realtime')
     sleep(1)
     b.inst.scope.set_trigger_mode("Single")
@@ -915,28 +915,39 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
 
     b.inst.scope.set_trigger_mode("Stop")
 
-    t1 = b.inst.scope.get_wf_data("F6")
-    t0 = b.inst.scope.get_wf_data("F5")
+    # This assumes that the measurements are always zero then one.
+    read_zero_top = b.inst.scope.get_wf_data("F5")
+    read_one_top = b.inst.scope.get_wf_data("F6")
 
-    t1 = t1[1][0:num_meas]
-    t0 = t0[1][0:num_meas]
+    read_zero_top = read_zero_top[1][0:num_meas]
+    read_one_top = read_one_top[1][0:num_meas]
 
-    t1 = t1.flatten()
-    t0 = t0.flatten()
+    read_zero_top = read_zero_top.flatten()
+    read_one_top = read_one_top.flatten()
 
-    if len(t0) < num_meas:
-        t0.resize(num_meas, refcheck=False)
-    if len(t1) < num_meas:
-        t1.resize(num_meas, refcheck=False)
+    if len(read_zero_top) < num_meas:
+        read_zero_top.resize(num_meas, refcheck=False)
+    if len(read_one_top) < num_meas:
+        read_one_top.resize(num_meas, refcheck=False)
 
-    w0r1 = (t0 < threshold).sum()  # READ 1: below threshold (no voltage)
-    w1r0 = (t1 > threshold).sum()  # READ 0: above threshold (voltage)
+    # READ 1: below threshold (no voltage)
+    write_0_read_1 = (read_zero_top < threshold).sum()
 
-    errnorm_w0r1 = w0r1 / (num_meas * 2)
-    errnorm_w1r0 = w1r0 / (num_meas * 2)
+    # READ 0: above threshold (voltage)
+    write_1_read_0 = (read_one_top > threshold).sum()
 
-    print(f"W0R1 {w0r1}, W1R0 {w1r0}")
-    return t0, t1, w0r1, w1r0, errnorm_w0r1, errnorm_w1r0
+    write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
+    write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
+
+    print(f"w0r1: {write_0_read_1}, w1r0: {write_1_read_0}")
+    return (
+        read_zero_top,
+        read_one_top,
+        write_0_read_1,
+        write_1_read_0,
+        write_0_read_1_norm,
+        write_1_read_0_norm,
+    )
 
 
 def run_sequence_bert(b: nTron, num_meas: int = 100):
