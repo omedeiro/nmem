@@ -14,14 +14,8 @@ plt.rcParams["figure.figsize"] = [10, 12]
 if __name__ == "__main__":
     b = nt.nTron(CONFIG)
     REAL_TIME = 1
-    NUM_MEAS = 500
+    NUM_MEAS = 100
     FREQ_IDX = 1
-
-    if REAL_TIME == 0:
-        b.inst.scope.set_sample_mode("Sequence")
-        b.inst.scope.set_segments(NUM_MEAS)
-    else:
-        b.inst.scope.set_sample_mode("Realtime")
 
     sample_name = [
         b.sample_name,
@@ -44,10 +38,12 @@ if __name__ == "__main__":
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
-        "threshold_bert": 0.09,
+        "threshold_bert": 0.15,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "hor_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
         "num_samples_scope": 5e3,
+        "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
         "realtime": REAL_TIME,
         "x": 0,
         "y": 0,
@@ -66,7 +62,6 @@ if __name__ == "__main__":
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([10e-6])
     measurement_settings["x"] = np.linspace(200e-6, 400e-6, 5)
-
     parameter_y = "read_current"
     # measurement_settings["y"] = [315e-6]
     measurement_settings["y"] = np.linspace(200e-6, 700e-6, 21)

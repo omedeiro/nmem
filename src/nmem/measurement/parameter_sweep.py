@@ -44,7 +44,7 @@ SAMPLE_RATE = {
     9: 512e3,
 }
 
-NUM_MEAS = 100
+NUM_MEAS = 500
 FREQ_IDX = 1
 REAL_TIME = 1
 
@@ -71,22 +71,19 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 320e-6,
-        "enable_write_current": 315e-6,
-        "read_current": 375e-6,  # 1
+        "write_current": 230e-6,
+        "enable_write_current": 350e-6,
+        "read_current": 450e-6,  # 1
         "enable_read_current": 285e-6,  # 2
-        # "enable_voltage": 0.0,
-        # "channel_voltage": 0.0,
-        # "channel_voltage_read": 0.0,
-        # "wr_ratio": 0.438,
-        # "ewr_ratio": 1.56,
         "threshold_bert": 0.15,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "hor_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
         "num_samples_scope": 5e3,
+        "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
         "realtime": REAL_TIME,
         "x": 0,
         "y": 0,
@@ -97,18 +94,18 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "N0RRR1RRRN",
-        "bitmsg_enable": "NWNNEWNNEE",
+        "bitmsg_channel": "NNN0RNN1RN",
+        "bitmsg_enable": "NNNWENNWEE",
     }
 
     t1 = time.time()
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = [285e-6]
-    # measurement_settings["x"] = np.linspace(300e-6, 335e-6, 21)
+    measurement_settings["x"] = [350e-6]
+    # measurement_settings["x"] = np.linspace(285e-6, 350e-6, 11)
 
-    parameter_y = "write_current"
-    # measurement_settings["y"] = [200e-6]
-    measurement_settings["y"] = np.linspace(200e-6, 370e-6, 11)
+    parameter_y = "read_current"
+    # measurement_settings["y"] = [300e-6]
+    measurement_settings["y"] = np.linspace(440e-6, 500e-6, 11)
 
     b, measurement_settings, save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
@@ -125,9 +122,7 @@ if __name__ == "__main__":
     )
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
-    # b.inst.scope.save_screenshot(
-    #     f"{file_path}_scope_screenshot.png", white_background=False
-    # )
+
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 

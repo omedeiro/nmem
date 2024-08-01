@@ -214,6 +214,17 @@ def get_param_mean(param: np.ndarray) -> np.ndarray:
     return prm
 
 
+def reject_outliers(data: np.ndarray, m: float = 2.0):
+    ind = abs(data - np.mean(data)) < m * np.std(data)
+    if len(ind[ind is False]) < 50:
+        data = data[ind]
+        print(f"Samples rejected {len(ind[ind is False])}")
+        rejectInd = np.invert(ind)
+    else:
+        rejectInd = None
+    return data, rejectInd
+
+
 def plot_histogram(
     ax: Axes, y: np.ndarray, label: str, color: str, previous_params: list = [0]
 ) -> tuple:
@@ -333,17 +344,6 @@ def plot_hist_bimodal(
 #     pdf = norm.pdf(x, *param)*h.sum()*binwidth
 #     ax.plot(x, pdf, color = 'g', linewidth=1)
 #     return ax, param
-
-
-def reject_outliers(data: np.ndarray, m: float = 2.0):
-    ind = abs(data - np.mean(data)) < m * np.std(data)
-    if len(ind[ind is False]) < 50:
-        data = data[ind]
-        print(f"Samples rejected {len(ind[ind is False])}")
-        rejectInd = np.invert(ind)
-    else:
-        rejectInd = None
-    return data, rejectInd
 
 
 def plot_waveforms(
@@ -525,7 +525,7 @@ def plot_trend(
     if x is None:
         x = np.arange(0, len(y), 1)
 
-    ax.plot(x, y, ls="none", marker="o", label=None, color=color)
+    ax.plot(x, y, ls="none", marker="o", label=label, color=color)
     if len(x) > 1:
         if params is not None:
             ax.plot(
@@ -615,7 +615,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylim((-700, 700))
     plt.ylabel("volage (mV)")
     ax1.legend(loc=4)
-    plt.xlim((0, measurement_settings["hor_scale"] * 10 * 1e6))
+    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
 
     ax1a = plt.subplot(412)
     ax1a.plot(
@@ -644,7 +644,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylim((0, 300))
     ax2.legend(loc=1)
     plt.ylabel("volage (mV)")
-    plt.xlim((0, measurement_settings["hor_scale"] * 10 * 1e6))
+    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
 
     ax3 = plt.subplot(413)
     t0 = data_dict["t0"]
@@ -656,6 +656,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylim([0, 0.5])
     # plt.ylabel('read current (uA)')
     plt.xlabel("sample")
+    ax3.legend()
 
     channel_voltage = measurement_settings["channel_voltage"]
     enable_voltage = measurement_settings["enable_voltage"]
@@ -754,7 +755,7 @@ def plot_array(
 
     c = data_dict[c_name][0].flatten()
 
-    ctotal = c.reshape((len(x), len(y)))
+    ctotal = c.reshape((len(y), len(x)), order="F")
 
     dx = x[1] - x[0]
     xstart = x[0]
@@ -767,7 +768,7 @@ def plot_array(
         cmap = plt.get_cmap("RdBu", 100).reversed()
 
     plt.imshow(
-        np.reshape(ctotal, (len(y), len(x))),
+        ctotal,
         extent=[
             (-0.5 * dx + xstart),
             (0.5 * dx + xstop),
@@ -928,8 +929,8 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
     if len(t1) < num_meas:
         t1.resize(num_meas, refcheck=False)
 
-    w0r1 = (t0 > threshold).sum()
-    w1r0 = (t1 < threshold).sum()
+    w0r1 = (t0 < threshold).sum()  # READ 1: below threshold (no voltage)
+    w1r0 = (t1 > threshold).sum()  # READ 0: above threshold (voltage)
 
     errnorm_w0r1 = w0r1 / (num_meas * 2)
     errnorm_w1r0 = w1r0 / (num_meas * 2)
@@ -1169,14 +1170,15 @@ def setup_scope(
 
 def setup_scope_bert(
     b: nTron,
-    sample_time: float,
-    horscale: float,
-    scope_sample_rate: float,
     measurement_settings: dict,
 ):
+    horizontal_scale = measurement_settings["horizontal_scale"]
+    sample_time = measurement_settings["sample_time"]
+    scope_sample_rate = measurement_settings["scope_sample_rate"]
+
     b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
 
-    b.inst.scope.set_horizontal_scale(horscale, -horscale * 5)
+    b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
     num_meas = measurement_settings["num_meas"]
@@ -1197,8 +1199,8 @@ def setup_scope_bert(
     div1 = 4.5
     div2 = 8.5
 
-    b.inst.scope.set_measurement_gate("P3", div1 + 0.1, div1 + 0.5)
-    b.inst.scope.set_measurement_gate("P4", div2 + 0.1, div2 + 0.5)
+    b.inst.scope.set_measurement_gate("P3", div1 + 0.1, div1 + 0.3)
+    b.inst.scope.set_measurement_gate("P4", div2 + 0.1, div2 + 0.3)
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -1214,12 +1216,13 @@ def run_measurement(
     bert: bool = False,
     rramp: bool = True,
 ):
+    measurement_settings = calculate_voltage(measurement_settings)
     bitmsg_channel = measurement_settings["bitmsg_channel"]
     bitmsg_enable = measurement_settings["bitmsg_enable"]
     total_points = measurement_settings["num_samples"] * len(bitmsg_channel)
     sample_rate = measurement_settings["sample_rate"]
-    horscale = measurement_settings["hor_scale"]
-    sample_time = horscale * 10  # 10 divisions
+    horscale = measurement_settings["horizontal_scale"]
+    sample_time = measurement_settings["sample_time"]
 
     scope_samples = int(measurement_settings["num_samples_scope"])
     scope_sample_rate = scope_samples / sample_time
@@ -1227,9 +1230,7 @@ def run_measurement(
     num_meas = measurement_settings["num_meas"]
 
     if bert:
-        setup_scope_bert(
-            b, sample_time, horscale, scope_sample_rate, measurement_settings
-        )
+        setup_scope_bert(b, measurement_settings)
     else:
         setup_scope(b, sample_time, horscale, scope_sample_rate, measurement_settings)
 
@@ -1389,9 +1390,8 @@ def run_sweep(
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
-
-            measurement_settings = calculate_voltage(measurement_settings)
             print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
+
             data_dict, full_dict = run_measurement(
                 b, measurement_settings, plot=plot_measurement, rramp=False, bert=True
             )
