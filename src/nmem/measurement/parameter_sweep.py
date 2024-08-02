@@ -44,7 +44,7 @@ SAMPLE_RATE = {
     9: 512e3,
 }
 
-NUM_MEAS = 1000
+NUM_MEAS = 100
 FREQ_IDX = 1
 REAL_TIME = 1
 
@@ -71,10 +71,10 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 105e-6,
-        "enable_write_current": 343e-6,
-        "read_current": 435e-6,  # 1
-        "enable_read_current": 285e-6,  # 2
+        "write_current": 150e-6,
+        "read_current": 690e-6,
+        "enable_write_current": 335e-6,
+        "enable_read_current": 225e-6,
         "threshold_bert": 0.15,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
@@ -94,18 +94,18 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "N01RR10RRN",
-        "bitmsg_enable": "NWNNEWNNEE",
+        "bitmsg_channel": "N0NRR1NRRN",
+        "bitmsg_enable": "NWWNEWWNEE",
     }
 
     t1 = time.time()
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = [343e-6]
-    # measurement_settings["x"] = np.linspace(285e-6, 350e-6, 11)
+    measurement_settings["x"] = [200e-6]
+    # measurement_settings["x"] = np.linspace(200e-6, 250e-6, 6)
 
     parameter_y = "write_current"
-    measurement_settings["y"] = [105e-6]
-    # measurement_settings["y"] = np.linspace(100e-6, 150e-6, 11)
+    measurement_settings["y"] = [150e-6]
+    # measurement_settings["y"] = np.linspace(500e-6, 720e-6, 6)
 
     b, measurement_settings, save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
