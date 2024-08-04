@@ -6,10 +6,10 @@ CELLS = {
         "enable_read_current": 110e-6,
     },
     "B2": {
-        "write_current": 226e-6,
-        "read_current": 480e-6,
-        "enable_write_current": 350e-6,
-        "enable_read_current": 250e-6,
+        "write_current": 30e-6,
+        "read_current": 680e-6,
+        "enable_write_current": 282.5e-6,
+        "enable_read_current": 220e-6,
     },
     "C3": {
         "write_current": 390e-6,
