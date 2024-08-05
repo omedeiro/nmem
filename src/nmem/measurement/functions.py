@@ -181,7 +181,7 @@ def calculate_voltage(measurement_settings: dict) -> dict:
 
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
-    print(f" ewr_ratio {ewr_ratio}, wr_ratio {wr_ratio}")
+    print(f" ewr_ratio {ewr_ratio:.2f}, wr_ratio {wr_ratio:.2f}")
     return measurement_settings
 
 
@@ -356,18 +356,17 @@ def plot_waveforms(
 
     traces = 1
     if traces == 1:
-        data0 = data_dict["trace_chan_in"]
-        data1 = data_dict["trace_chan_out"]
-        data2 = data_dict["trace_enab"]
-        data3 = data_dict["trace_diff"]
+        trace_chan_in = data_dict["trace_chan_in"]
+        trace_chan_out = data_dict["trace_chan_out"]
+        trace_enab = data_dict["trace_enab"]
 
-        numpoints = int((len(data0[1]) - 1) / 2)
+        numpoints = int((len(trace_chan_in[1]) - 1) / 2)
 
         ax0 = plt.subplot(411)
         ax0.plot(
-            data0[0] * 1e6,
-            data0[1] * 1e3 / 50 - 6,
-            label=f"peak current = {max(data0[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(data0[1][0:1000]*1e3):.1f}mV",
+            trace_chan_in[0] * 1e6,
+            trace_chan_in[1] * 1e3 / 50 - 6,
+            label=f"peak current = {max(trace_chan_in[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(trace_chan_in[1][0:1000]*1e3):.1f}mV",
             color="C7",
         )
         ax0.legend(loc=3)
@@ -378,34 +377,41 @@ def plot_waveforms(
         if half is True:
             ax1 = plt.subplot(412)
             ax1.plot(
-                (data1[0][numpoints + 1 : numpoints * 2 + 1] - data1[0][numpoints])
+                (
+                    trace_chan_out[0][numpoints + 1 : numpoints * 2 + 1]
+                    - trace_chan_out[0][numpoints]
+                )
                 * 1e6,
-                data1[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
+                trace_chan_out[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
                 label="WRITE 0",
                 color="C0",
             )
             ax1.plot(
-                data1[0][0:numpoints] * 1e6,
-                data1[1][0:numpoints] * 1e3,
+                trace_chan_out[0][0:numpoints] * 1e6,
+                trace_chan_out[1][0:numpoints] * 1e3,
                 label="WRITE 1",
                 color="C2",
             )
         else:
             ax1 = ax0.twinx()
-            ax1.plot(data1[0] * 1e6, data1[1] * 1e3, label="channel", color="C4")
+            ax1.plot(
+                trace_chan_out[0] * 1e6,
+                trace_chan_out[1] * 1e3,
+                label="channel",
+                color="C4",
+            )
             plt.ylim((-700, 700))
             plt.ylabel("volage (mV)")
             ax1.legend(loc=4)
 
         ax1a = plt.subplot(412)
         ax1a.plot(
-            np.array([data1[0][0], data1[0][-1]]) * 1e6,
+            np.array([trace_chan_out[0][0], trace_chan_out[0][-1]]) * 1e6,
             np.tile(measurement_settings["threshold_read"], 2) * 1e3,
             linestyle="dashed",
             color="C0",
         )
         # print(max(data3[0]))
-        ax1a.plot(data3[0] * 1e6, data3[1] * 1e3, label="difference", color="C5")
         ax1a.legend(loc=2)
 
         plt.xlabel("time (us)")
@@ -416,23 +422,28 @@ def plot_waveforms(
         ax2 = ax1a.twinx()
         if half is True:
             ax2.plot(
-                data2[0][0:numpoints] * 1e6,
-                data2[1][0:numpoints] * 1e3,
+                trace_enab[0][0:numpoints] * 1e6,
+                trace_enab[1][0:numpoints] * 1e3,
                 label="enable",
                 color="C1",
             )
             ax2.plot(
-                (data2[0][numpoints + 1 : numpoints * 2 + 1] - data2[0][numpoints])
+                (
+                    trace_enab[0][numpoints + 1 : numpoints * 2 + 1]
+                    - trace_enab[0][numpoints]
+                )
                 * 1e6,
-                data2[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
+                trace_enab[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
                 label="enable1",
                 color="C1",
             )
         else:
-            ax2.plot(data2[0] * 1e6, data2[1] * 1e3, label="enable", color="C1")
+            ax2.plot(
+                trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1"
+            )
 
         ax2.plot(
-            np.array([data1[0][0], data1[0][-1]]) * 1e6,
+            np.array([trace_chan_out[0][0], trace_chan_out[0][-1]]) * 1e6,
             np.tile(measurement_settings["threshold_enab"], 2) * 1e3,
             linestyle="dashed",
             color="C0",
@@ -592,63 +603,11 @@ def plot_ber(x: np.ndarray, y: np.ndarray, ber: np.ndarray):
 
 
 def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
-    data0 = data_dict["trace_chan_in"]
-    data1 = data_dict["trace_chan_out"]
-    data2 = data_dict["trace_enab"]
-    data3 = data_dict["trace_diff"]
-
-    numpoints = int((len(data0[1]) - 1) / 2)
-
-    ax0 = plt.subplot(411)
-    ax0.plot(
-        data0[0] * 1e6,
-        data0[1] * 1e3 / 50,
-        label=f"peak current = {max(data0[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(data0[1][0:1000]*1e3):.1f}mV",
-        color="C7",
-    )
-    ax0.legend(loc=1)
-    plt.ylabel("splitter current (mA)")
-
-    ax1 = plt.subplot(412)
-    ax1.plot(data1[0] * 1e6, data1[1] * 1e3, label="channel", color="C4")
-    plt.xlabel("time (us)")
-    plt.ylabel("volage (mV)")
-    ax1.legend(loc=1)
-    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
-
-    ax2 = plt.subplot(413)
-    # ax1a.plot(
-    #     np.array([data1[0][0], data1[0][-1]]) * 1e6,
-    #     np.tile(measurement_settings["threshold_read"], 2) * 1e3,
-    #     linestyle="dashed",
-    #     color="C0",
-    # )
-    # # print(max(data3[0]))
-    # ax1a.plot(data3[0] * 1e6, data3[1] * 1e3, label="difference", color="C5")
-    # ax1a.legend(loc=2)
-
-    # plt.ylabel("volage (mV)")
-    # plt.ylim((-700, 700))
-
-    # ax2 = ax1a.twinx()
-
-    ax2.plot(data2[0] * 1e6, data2[1] * 1e3, label="enable", color="C1")
-    ax2.legend(loc=1)
-    plt.xlabel("time (us)")
-    plt.ylabel("volage (mV)")
-    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
-
-    ax3 = plt.subplot(414)
-    t0 = data_dict["t0"]
-    t1 = data_dict["t1"]
-
-    ax3 = plot_trend(ax3, t0, label="READ 0", color="C0")
-    ax3 = plot_trend(ax3, t1, label="READ 1", color="C2")
-    ax3.hlines(measurement_settings["threshold_bert"], 0, len(t0), color="C0")
-    plt.ylim([0, 0.5])
-    # plt.ylabel('read current (uA)')
-    plt.xlabel("sample")
-    ax3.legend()
+    trace_chan_in = data_dict["trace_chan_in"]
+    trace_chan_out = data_dict["trace_chan_out"]
+    trace_enab = data_dict["trace_enab"]
+    read_zero_top = data_dict["read_zero_top"]
+    read_one_top = data_dict["read_one_top"]
 
     channel_voltage = measurement_settings["channel_voltage"]
     enable_voltage = measurement_settings["enable_voltage"]
@@ -658,9 +617,47 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     enable_write_current = measurement_settings["enable_write_current"]
     bitmsg_channel = measurement_settings["bitmsg_channel"]
     bitmsg_enable = measurement_settings["bitmsg_enable"]
-
     measurement_name = measurement_settings["measurement_name"]
     sample_name = measurement_settings["sample_name"]
+
+    numpoints = int((len(trace_chan_in[1]) - 1) / 2)
+
+    ax0 = plt.subplot(411)
+    ax0.plot(
+        trace_chan_in[0] * 1e6,
+        trace_chan_in[1] * 1e3 / 50,
+        label=f"peak current = {max(trace_chan_in[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(trace_chan_in[1][0:1000]*1e3):.1f}mV",
+        color="C7",
+    )
+    ax0.legend(loc=1)
+    plt.ylabel("splitter current (mA)")
+
+    ax1 = plt.subplot(412)
+    ax1.plot(
+        trace_chan_out[0] * 1e6, trace_chan_out[1] * 1e3, label="channel", color="C4"
+    )
+    plt.xlabel("time (us)")
+    plt.ylabel("volage (mV)")
+    ax1.legend(loc=1)
+    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+
+    ax2 = plt.subplot(413)
+    ax2.plot(trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1")
+    ax2.legend(loc=1)
+    plt.xlabel("time (us)")
+    plt.ylabel("volage (mV)")
+    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+
+    ax3 = plt.subplot(414)
+    ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color="C0")
+    ax3 = plot_trend(ax3, read_one_top, label="READ 1", color="C2")
+    ax3.hlines(
+        measurement_settings["threshold_bert"], 0, len(read_zero_top), color="C0"
+    )
+    plt.ylim([0, 0.5])
+    # plt.ylabel('read current (uA)')
+    plt.xlabel("sample")
+    ax3.legend()
 
     plt.suptitle(
         f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
@@ -792,17 +789,15 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     sleep(1)
     b.inst.scope.set_trigger_mode("Single")
     sleep(0.1)
-    data0 = b.inst.scope.get_wf_data("C1")
+    trace_chan_in = b.inst.scope.get_wf_data("C1")
     sleep(0.1)
-    data1 = b.inst.scope.get_wf_data("C2")
+    trace_chan_out = b.inst.scope.get_wf_data("C2")
     sleep(0.1)
-    data2 = b.inst.scope.get_wf_data("C4")
-    sleep(0.1)
-    data3 = b.inst.scope.get_wf_data("F4")
+    trace_enab = b.inst.scope.get_wf_data("C4")
 
-    data0 = np.resize(data0, (2, scope_samples))
-    data1 = np.resize(data1, (2, scope_samples))
-    data2 = np.resize(data2, (2, scope_samples))
+    trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
+    trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
+    trace_enab = np.resize(trace_enab, (2, scope_samples))
 
     b.inst.scope.set_trigger_mode("Normal")
     sleep(1e-2)
@@ -814,7 +809,11 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     except Exception:
         sleep(1e-4)
 
-    return data0, data1, data2, data3
+    return (
+        trace_chan_in,
+        trace_chan_out,
+        trace_enab,
+    )
 
 
 def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
@@ -929,8 +928,6 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
         read_one_top,
         write_0_read_1,
         write_1_read_0,
-        write_0_read_1_norm,
-        write_1_read_0_norm,
     )
 
 
@@ -1228,9 +1225,7 @@ def setup_scope_bert(
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
-    previous_params: list = [0],
     plot: bool = False,
-    bert: bool = False,
     ramp_read: bool = True,
 ):
     measurement_settings = calculate_voltage(measurement_settings)
@@ -1240,20 +1235,16 @@ def run_measurement(
     sample_rate = measurement_settings["sample_rate"]
     horscale = measurement_settings["horizontal_scale"]
     sample_time = measurement_settings["sample_time"]
-
+    channel_voltage = measurement_settings["channel_voltage"]
+    enable_voltage = measurement_settings["enable_voltage"]
     scope_samples = int(measurement_settings["num_samples_scope"])
     scope_sample_rate = scope_samples / sample_time
 
     num_meas = measurement_settings["num_meas"]
 
-    if bert:
-        setup_scope_bert(b, measurement_settings)
-    else:
-        setup_scope(b, sample_time, horscale, scope_sample_rate, measurement_settings)
+    setup_scope_bert(b, measurement_settings)
 
     ######################################################
-    channel_voltage = measurement_settings["channel_voltage"]
-    enable_voltage = measurement_settings["enable_voltage"]
 
     if enable_voltage > 200e-3:
         raise ValueError("enable voltage too high")
@@ -1276,108 +1267,41 @@ def run_measurement(
 
     b.inst.awg.set_arb_sync()
     sleep(1)
-    ######################################################
 
     b.inst.awg.set_output(True, 1)
     b.inst.awg.set_output(True, 2)
 
     b.inst.scope.clear_sweeps()
-    ###################################################
 
-    if measurement_settings["realtime"]:
-        if bert:
-            t0, t1, W0R1, W1R0, errnorm_W0R1, errnorm_W1R0 = run_realtime_bert(
-                b, measurement_settings
-            )
-            data0, data1, data2, data3 = get_traces(b, scope_samples)
-            full_dict = {}
-        else:
-            t0, t1 = run_realtime(b, num_meas)
-            data0, data1, data2, data3 = get_traces(b, scope_samples)
-            full_dict = {}
-    else:
-        b.inst.scope.set_sample_mode("Sequence")
-        if bert:
-            t0, t1, W0R1, W1R0, errnorm_W0R1, errnorm_W1R0 = run_sequence_bert(
-                b, num_meas
-            )
-            data0, data1, data2, data3 = get_traces_sequence(b, num_meas, scope_samples)
-            full_dict = {}
-        else:
-            # b.inst.scope.set_sample_mode('Sequence')
-            t0, t1, full_dict = run_sequence(b, num_meas)
-            j = 10  # random selection
-            try:
-                data0 = np.array([full_dict["C1x"][j], full_dict["C1y"][j]])
-                data1 = np.array([full_dict["C2x"][j], full_dict["C2y"][j]])
-                data2 = np.array([full_dict["C4x"][j], full_dict["C4y"][j]])
-            except Exception:
-                data0, data1, data2, data3 = get_traces(b, scope_samples)
-                # data0 = []
-                # data1 = []
-                # data2 = []
-                # b.inst.scope.set_sample_mode('Sequence')
+    (
+        read_zero_top,
+        read_one_top,
+        write_0_read_1,
+        write_1_read_0,
+    ) = run_realtime_bert(b, measurement_settings)
+
+    trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-    if bert:
-        ber = (W1R0 + W0R1) / (2 * num_meas)
-        print(f"ber: {ber}")
-        data_dict = {
-            "trace_chan_in": data0,
-            "trace_chan_out": data1,
-            "trace_enab": data2,
-            "trace_diff": data3,
-            "W1R0": W1R0,
-            "W0R1": W0R1,
-            "errnorm_W1R0": errnorm_W1R0,
-            "errnorm_W0R1": errnorm_W0R1,
-            "t0": t0,
-            "t1": t1,
-            "ber": ber,
-        }
+    bit_error_rate = (write_0_read_1 + write_1_read_0) / (2 * num_meas)
+    print(f"ber: {bit_error_rate}")
+    DATA_DICT = {
+        "trace_chan_in": trace_chan_in,
+        "trace_chan_out": trace_chan_out,
+        "trace_enab": trace_enab,
+        "write_0_read_1": write_0_read_1,
+        "write_1_read_0": write_1_read_0,
+        "read_zero_top": read_zero_top,
+        "read_one_top": read_one_top,
+        "bit_error_rate": bit_error_rate,
+    }
 
-    else:
-        t0, t1, i0, i1, distance, x, y0, y1 = calculate_currents(
-            t0, t1, measurement_settings, total_points, sample_time
-        )
-
-        data_dict = {
-            "trace_chan_in": data0,
-            "trace_chan_out": data1,
-            "trace_enab": data2,
-            "trace_diff": data3,
-            "t0": t0,
-            "t1": t1,
-            "i0": i0,
-            "i1": i1,
-            "distance": distance,
-            "ber": ber,
-        }
-
-    ###################################################################
     if plot is True:
-        if bert:
-            plot_waveforms_bert(data_dict, measurement_settings)
-        else:
-            bidistance, param0, param1 = plot_waveforms(
-                data_dict, measurement_settings, previous_params
-            )
-            print(f"distance: {bidistance}")
-            data_dict.update({"bidistance": bidistance})
-            data_dict.update({"param0": param0})
-            data_dict.update({"param1": param1})
-    else:
-        bidistance = 0
+        plot_waveforms_bert(DATA_DICT, measurement_settings)
 
-    # print(f"channel_voltage:{channel_voltage*1e3:.1f}mV, enable_voltage:{enable_voltage*1e3:.1f}mV")
-
-    # print(f'length i0 {len(i0)}, length i1 {len(i1)}')
-
-    full_dict.update(data_dict)
-
-    return data_dict, full_dict
+    return DATA_DICT
 
 
 def update_dict(dict1: dict, dict2: dict):
@@ -1408,80 +1332,19 @@ def run_sweep(
             measurement_settings[parameter_y] = y
             print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
 
-            data_dict, full_dict = run_measurement(
+            data_dict = run_measurement(
                 b,
                 measurement_settings,
                 plot=plot_measurement,
                 ramp_read=False,
-                bert=True,
             )
 
             data_dict.update(measurement_settings)
 
-            full_dict.update(measurement_settings)
-
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
-                save_dict_full = full_dict
             else:
                 save_dict = update_dict(save_dict, data_dict)
-                save_dict_full = update_dict(save_dict_full, full_dict)
-
-            b.properties["measurement_settings"] = measurement_settings
-
-    return b, measurement_settings, save_dict
-
-
-def run_write_sweep(b: nTron, measurement_settings: dict):
-    save_dict = {}
-    for write_current in measurement_settings["y"]:
-        for enable_write_current in measurement_settings["x"]:
-            measurement_settings["write_current"] = write_current
-            measurement_settings["enable_write_current"] = enable_write_current
-
-            measurement_settings = calculate_voltage(measurement_settings)
-
-            data_dict, full_dict = run_measurement(
-                b, measurement_settings, plot=True, ramp_read=False, bert=True
-            )
-
-            data_dict.update(measurement_settings)
-
-            full_dict.update(measurement_settings)
-
-            if len(save_dict.items()) == 0:
-                save_dict = data_dict
-                save_dict_full = full_dict
-            else:
-                save_dict = update_dict(save_dict, data_dict)
-                save_dict_full = update_dict(save_dict_full, full_dict)
-
-            b.properties["measurement_settings"] = measurement_settings
-
-    return b, measurement_settings, save_dict
-
-
-def run_read_sweep(b: nTron, measurement_settings: dict):
-    save_dict = {}
-    for read_current in measurement_settings["y"]:
-        for enable_read_current in measurement_settings["x"]:
-            measurement_settings["read_current"] = read_current
-            measurement_settings["enable_read_current"] = enable_read_current
-            measurement_settings = calculate_voltage(measurement_settings)
-            data_dict, full_dict = run_measurement(
-                b, measurement_settings, plot=False, ramp_read=False, bert=True
-            )
-
-            data_dict.update(measurement_settings)
-
-            full_dict.update(measurement_settings)
-
-            if len(save_dict.items()) == 0:
-                save_dict = data_dict
-                save_dict_full = full_dict
-            else:
-                save_dict = update_dict(save_dict, data_dict)
-                save_dict_full = update_dict(save_dict_full, full_dict)
 
             b.properties["measurement_settings"] = measurement_settings
 

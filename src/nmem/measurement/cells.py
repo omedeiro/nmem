@@ -10,6 +10,8 @@ CELLS = {
         "read_current": 680e-6,
         "enable_write_current": 282.5e-6,
         "enable_read_current": 220e-6,
+        "slope": -3.360,
+        "intercept": 1453.865,
     },
     "C3": {
         "write_current": 390e-6,

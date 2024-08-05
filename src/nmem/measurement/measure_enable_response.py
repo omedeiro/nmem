@@ -61,13 +61,13 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([10e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 400e-6, 5)
+    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 7)
     parameter_y = "read_current"
     # measurement_settings["y"] = [315e-6]
-    measurement_settings["y"] = np.linspace(200e-6, 700e-6, 21)
+    measurement_settings["y"] = np.linspace(400e-6, 750e-6, 21)
 
     b, measurement_settings, save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
     save_dict["time_str"] = time_str
