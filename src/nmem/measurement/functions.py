@@ -502,17 +502,10 @@ def plot_waveforms(
     enable_write_current = measurement_settings["enable_write_current"]
 
     plt.suptitle(
-        f"Write Current:{write_current*1e6:.1f}uA, Read Current:{read_current*1e6:.0f}uA, " \
-        "\n enable_write_current:{enable_write_current*1e6:.1f}uA, enable_read_current:{enable_read_current*1e6:.1f}uA"\
+        f"Write Current:{write_current*1e6:.1f}uA, Read Current:{read_current*1e6:.0f}uA, "
+        "\n enable_write_current:{enable_write_current*1e6:.1f}uA, enable_read_current:{enable_read_current*1e6:.1f}uA"
         "\n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
     )
-
-    # fig = plt.gcf()
-    # ax5 = fig.add_axes([.38, .35, .18, .12])
-    # ax5.plot(xp, pdf0, color = 'r')
-    # ax5.plot(xp, pdf1, color = 'r')
-    # ax5.set_yscale('log')
-    # ax5.tick_params(axis='both', which='major', labelsize=15)
 
     plt.tight_layout()
 

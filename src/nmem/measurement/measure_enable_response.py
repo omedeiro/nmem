@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
-        "threshold_bert": 0.15,
+        "threshold_bert": 0.2,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
@@ -59,10 +59,10 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(100e-6, 300e-6, 11)
+    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 11)
     parameter_y = "read_current"
     # measurement_settings["y"] = [315e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 750e-6, 21)
+    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 21)
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=False

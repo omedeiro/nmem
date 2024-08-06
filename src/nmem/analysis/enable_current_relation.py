@@ -60,11 +60,12 @@ def enable_current_relation(data, enable_current):
     plt.yticks(np.linspace(ystart, ystop, len(y)))
     cbar = plt.colorbar()
 
-def find_peak(data:dict):
+
+def find_peak(data: dict):
     x = data["x"][0][:, 1] * 1e6
     y = data["y"][0][:, 0] * 1e6
 
-    w0r1 = 100-data["write_0_read_1"][0].flatten()
+    w0r1 = 100 - data["write_0_read_1"][0].flatten()
     w1r0 = data["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
@@ -72,9 +73,8 @@ def find_peak(data:dict):
     dx = x[1] - x[0]
     dy = y[1] - y[0]
 
-    mid = np.where((ztotal > 50) * (ztotal < 200), ztotal, 0)
+    mid = np.where((ztotal > 0) * (ztotal < 200), ztotal, 0)
     mid_idx = np.where(mid > 0)
-
 
     plt.scatter(x[mid_idx[1]], y[mid_idx[0]])
 
@@ -104,6 +104,7 @@ def find_peak(data:dict):
     print(p)
     plt.text(x[0], y[0], f"{p}", fontsize=12, color="red", backgroundcolor="white")
     return z
+
 
 if __name__ == "__main__":
     # data = "data\SPG806_20240804_measure_enable_response_D6_A4_2024-08-04 18-59-58.mat"
