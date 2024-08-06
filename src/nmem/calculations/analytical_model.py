@@ -165,9 +165,7 @@ def plot_read_margin(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels(
-        [f"{ic*(1-width_ratio)/width_ratio:.0f}" for ic in ax.get_xticks()]
-    )
+    ax2.set_xticklabels([f"{ic*width_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     return
@@ -176,11 +174,11 @@ def plot_read_margin(
 if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
-    HTRON_SLOPE = -3.5  # uA / uA
-    HTRON_INTERCEPT = 1400  # uA
+    HTRON_SLOPE = -3.36  # uA / uA
+    HTRON_INTERCEPT = 1454 -450 # uA
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.3
-    ALPHA = 1 - 0.35
+    WIDTH_RIGHT = 0.35
+    ALPHA = 1 - 0.2
 
     IRETRAP = 0.9
     IREAD = 108
@@ -190,9 +188,7 @@ if __name__ == "__main__":
     # IDXY = 20
     N = 50
     FILE_PATH = "/home/omedeiro/"
-    FILE_NAME = (
-        "SPG806_nMem_ICE_writeEnable_sweep_square11_D6_D1_2023-12-13 02-06-48.mat"
-    )
+    FILE_NAME = "SPG806_20240804_nMem_ICE_ber_D6_A4_2024-08-04 16-38-50.mat"
     EDGE_FITS = [
         {"p1": 2.818, "p2": -226.1},
         {"p1": 2.818, "p2": -165.1},
@@ -200,9 +196,9 @@ if __name__ == "__main__":
         {"p1": 6.272, "p2": -353.8},
     ]
 
-    width_ratio = WIDTH_LEFT / (WIDTH_LEFT + WIDTH_RIGHT)
-    max_left_critical_current = HTRON_INTERCEPT * width_ratio
-    max_right_critical_current = HTRON_INTERCEPT * (1 - width_ratio)
+    width_ratio = WIDTH_RIGHT / WIDTH_LEFT
+    max_left_critical_current = HTRON_INTERCEPT / width_ratio
+    max_right_critical_current = HTRON_INTERCEPT
 
     matlab_data_dict = import_matlab_data(FILE_PATH + "/" + FILE_NAME)
 
@@ -211,7 +207,9 @@ if __name__ == "__main__":
     write_currents_measured = np.transpose(matlab_data_dict["y"][:, :, 1]) * 1e6
     ber = matlab_data_dict["ber"]
     ber_2D = np.reshape(
-        ber, (len(write_currents_measured), len(enable_write_currents_measured))
+        ber,
+        (len(write_currents_measured), len(enable_write_currents_measured)),
+        order="F",
     )
 
     # Define the write and enable write currents
@@ -223,30 +221,25 @@ if __name__ == "__main__":
     )
 
     # Calculate the channel critical current
-    channel_critical_current_enabled = htron_critical_current(
+    channel_current_enabled = htron_critical_current(
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents
     )
-    channel_critical_current_enabled_measured = htron_critical_current(
+    channel_current_enabled_measured = htron_critical_current(
         HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents_measured
     )
 
     # Define the critical currents for the left and right branches
-    left_critical_currents_measured = (
-        channel_critical_current_enabled_measured * width_ratio
-    )
-    right_critical_currents_measured = channel_critical_current_enabled_measured * (
-        1 - width_ratio
-    )
-    left_critical_currents = channel_critical_current_enabled * width_ratio
-    right_critical_currents = channel_critical_current_enabled * (1 - width_ratio)
+    left_critical_currents_measured = channel_current_enabled_measured / width_ratio
+    right_critical_currents_measured = channel_current_enabled_measured
+
+    left_critical_currents = channel_current_enabled / width_ratio
+    right_critical_currents = channel_current_enabled
 
     # Create the meshgrid for the critical currents
     [left_critical_currents_mesh, write_currents_mesh] = np.meshgrid(
         left_critical_currents, write_currents
     )
-    right_critical_currents_mesh = (
-        left_critical_currents_mesh * (1 - width_ratio) / width_ratio
-    )
+    right_critical_currents_mesh = left_critical_currents_mesh * width_ratio
     # Create the data dictionary
     data_dict = {
         "left_critical_currents": left_critical_currents,
@@ -270,18 +263,18 @@ if __name__ == "__main__":
 
     # Plot experimental data
     fig, ax = plt.subplots()
-    ax = plot_htron_sweep_scaled(
-        ax, left_critical_currents_measured, write_currents_measured, ber_2D
+    ax = plot_htron_sweep(
+        ax, write_currents_measured, enable_write_currents_measured, ber_2D
     )
-    ax = plot_point(
-        ax,
-        left_critical_currents[IDXX],
-        write_currents[IDXY],
-        marker="*",
-        color="red",
-        markersize=15,
-    )
-    plt.gca().invert_xaxis()
+    # ax = plot_point(
+    #     ax,
+    #     left_critical_currents[IDXX],
+    #     write_currents[IDXY],
+    #     marker="*",
+    #     color="red",
+    #     markersize=15,
+    # )
+    # ax.invert_xaxis()
 
     # Plot the persistent current
     fig, ax = plt.subplots()
