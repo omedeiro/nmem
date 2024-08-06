@@ -7,6 +7,11 @@ def htron_critical_current(
     channel_current = heater_current * slope + intercept
     return channel_current
 
+def htron_heater_current(
+    slope: float, intercept: float, channel_current: float
+) -> float:
+    heater_current = (channel_current - intercept) / slope
+    return heater_current
 
 def calculate_right_branch_inductance(
     alpha: float, left_branch_inductance: float
