@@ -502,7 +502,9 @@ def plot_waveforms(
     enable_write_current = measurement_settings["enable_write_current"]
 
     plt.suptitle(
-        f"Write Current:{write_current*1e6:.1f}uA, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
+        f"Write Current:{write_current*1e6:.1f}uA, Read Current:{read_current*1e6:.0f}uA, " \
+        "\n enable_write_current:{enable_write_current*1e6:.1f}uA, enable_read_current:{enable_read_current*1e6:.1f}uA"\
+        "\n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
     )
 
     # fig = plt.gcf()
@@ -789,11 +791,11 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     sleep(1)
     b.inst.scope.set_trigger_mode("Single")
     sleep(0.1)
-    trace_chan_in = b.inst.scope.get_wf_data("C1")
+    trace_chan_in: np.ndarray = b.inst.scope.get_wf_data("C1")
     sleep(0.1)
-    trace_chan_out = b.inst.scope.get_wf_data("C2")
+    trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
     sleep(0.1)
-    trace_enab = b.inst.scope.get_wf_data("C4")
+    trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
 
     trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
     trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
@@ -928,6 +930,8 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
         read_one_top,
         write_0_read_1,
         write_1_read_0,
+        write_0_read_1_norm,
+        write_1_read_0_norm,
     )
 
 
@@ -1225,6 +1229,7 @@ def setup_scope_bert(
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
+    save_traces: bool = False,
     plot: bool = False,
     ramp_read: bool = True,
 ):
@@ -1278,6 +1283,8 @@ def run_measurement(
         read_one_top,
         write_0_read_1,
         write_1_read_0,
+        write_0_read_1_norm,
+        write_1_read_0_norm,
     ) = run_realtime_bert(b, measurement_settings)
 
     trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
@@ -1293,6 +1300,8 @@ def run_measurement(
         "trace_enab": trace_enab,
         "write_0_read_1": write_0_read_1,
         "write_1_read_0": write_1_read_0,
+        "write_0_read_1_norm": write_0_read_1_norm,
+        "write_1_read_0_norm": write_1_read_0_norm,
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
         "bit_error_rate": bit_error_rate,
@@ -1323,6 +1332,7 @@ def run_sweep(
     measurement_settings: dict,
     parameter_x: str,
     parameter_y: str,
+    save_traces: bool = False,
     plot_measurement=False,
 ):
     save_dict = {}
@@ -1335,6 +1345,7 @@ def run_sweep(
             data_dict = run_measurement(
                 b,
                 measurement_settings,
+                save_traces,
                 plot=plot_measurement,
                 ramp_read=False,
             )
@@ -1346,25 +1357,41 @@ def run_sweep(
             else:
                 save_dict = update_dict(save_dict, data_dict)
 
-            b.properties["measurement_settings"] = measurement_settings
-
-    return b, measurement_settings, save_dict
+    final_dict = {
+        **measurement_settings,
+        **save_dict,
+    }
+    return save_dict
 
 
 def plot_ber_sweep(
     save_dict: dict, measurement_settings: dict, file_path: str, A: str, B: str, C: str
-):
+) -> None:
     x = measurement_settings["x"]
     y = measurement_settings["y"]
     if len(x) > 1 and len(y) > 1:
         ax = plot_array(save_dict, C, A, B)
         plt.savefig(file_path + "_0.png")
 
-        plot_array(save_dict, "W0R1", A, B, cmap=plt.get_cmap("Reds", 100), norm=False)
+        plot_array(
+            save_dict,
+            "write_0_read_1",
+            A,
+            B,
+            cmap=plt.get_cmap("Reds", 100),
+            norm=False,
+        )
         plt.savefig(file_path + "_1.png")
 
         plt.show()
-        plot_array(save_dict, "W1R0", A, B, cmap=plt.get_cmap("Blues", 100), norm=False)
+        plot_array(
+            save_dict,
+            "write_1_read_0",
+            A,
+            B,
+            cmap=plt.get_cmap("Blues", 100),
+            norm=False,
+        )
         plt.savefig(file_path + "_2.png")
 
         plt.show()
@@ -1372,19 +1399,19 @@ def plot_ber_sweep(
     if len(x) == 1 and len(y) > 1:
         ax = plot_parameter(save_dict, B, C, color="#808080")
         ax = plot_parameter(
-            save_dict, B, "errnorm_W0R1", ax=ax, color=(0.68, 0.12, 0.1)
+            save_dict, B, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
         )
         ax = plot_parameter(
-            save_dict, B, "errnorm_W1R0", ax=ax, color=(0.16, 0.21, 0.47)
+            save_dict, B, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
         )
         plt.savefig(file_path + "_3.png")
 
     if len(y) == 1 and len(x) > 1:
         ax = plot_parameter(save_dict, A, C, color="#808080")
         ax = plot_parameter(
-            save_dict, A, "errnorm_W0R1", ax=ax, color=(0.68, 0.12, 0.1)
+            save_dict, A, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
         )
         ax = plot_parameter(
-            save_dict, A, "errnorm_W1R0", ax=ax, color=(0.16, 0.21, 0.47)
+            save_dict, A, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
         )
         plt.savefig(file_path + "_4.png")

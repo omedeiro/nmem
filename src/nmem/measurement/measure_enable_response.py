@@ -30,10 +30,9 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 205e-6,
-        "read_current": 590e-6,
-        "enable_voltage": 0.0,
-        "enable_write_current": 132e-6,
+        "write_current": 0e-6,
+        "read_current": 600e-6,
+        "enable_write_current": 0e-6,
         "enable_read_current": 150e-6,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
@@ -44,7 +43,6 @@ if __name__ == "__main__":
         "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
         "num_samples_scope": 5e3,
         "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
-        "realtime": REAL_TIME,
         "x": 0,
         "y": 0,
         "num_samples": 2**8,
@@ -54,19 +52,19 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "N01NRNNNRN",
-        "bitmsg_enable": "NNNNENNNEE",
+        "bitmsg_channel": "0NNNRNNNRN",
+        "bitmsg_enable": "NENNENNNEE",
     }
 
     t1 = time.time()
     parameter_x = "enable_read_current"
-    # measurement_settings["x"] = np.array([10e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 7)
+    # measurement_settings["x"] = np.array([280e-6])
+    measurement_settings["x"] = np.linspace(100e-6, 300e-6, 11)
     parameter_y = "read_current"
     # measurement_settings["y"] = [315e-6]
-    measurement_settings["y"] = np.linspace(400e-6, 750e-6, 21)
+    measurement_settings["y"] = np.linspace(300e-6, 750e-6, 21)
 
-    b, measurement_settings, save_dict = nm.run_sweep(
+    save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
@@ -77,7 +75,7 @@ if __name__ == "__main__":
         file_path,
         parameter_x,
         parameter_y,
-        "ber",
+        "bit_error_rate",
     )
 
     t2 = time.time()

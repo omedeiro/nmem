@@ -64,8 +64,8 @@ def find_peak(data:dict):
     x = data["x"][0][:, 1] * 1e6
     y = data["y"][0][:, 0] * 1e6
 
-    w0r1 = 100-data["W0R1"][0].flatten()
-    w1r0 = data["W1R0"][0].flatten()
+    w0r1 = 100-data["write_0_read_1"][0].flatten()
+    w1r0 = data["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
 
@@ -106,11 +106,13 @@ def find_peak(data:dict):
     return z
 
 if __name__ == "__main__":
-    data = "data\SPG806_20240804_measure_enable_response_D6_A4_2024-08-04 18-59-58.mat"
+    # data = "data\SPG806_20240804_measure_enable_response_D6_A4_2024-08-04 18-59-58.mat"
+    data = "data\SPG806_20240805_measure_enable_response_D6_A4_2024-08-05 20-26-52.mat"
+
     enable_current = 0.0
     # enable_current_relation(data, enable_current)
     data_dict = sio.loadmat(data)
-    # find_peak(data_dict)
+    find_peak(data_dict)
 
     for key in data_dict.keys():
         if isinstance(data_dict[key], np.ndarray):
