@@ -175,14 +175,14 @@ if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
     HTRON_SLOPE = -3.36  # uA / uA
-    HTRON_INTERCEPT = 1454 -450 # uA
+    HTRON_INTERCEPT = 1454-480 # uA
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.35
-    ALPHA = 1 - 0.2
+    WIDTH_RIGHT = 0.30
+    ALPHA = 1 - 0.3
 
     IRETRAP = 0.9
-    IREAD = 108
-    IDXX = 25
+    IREAD = 89
+    IDXX = 35
     IDXY = 17
     # IDXX = 20
     # IDXY = 20
@@ -266,14 +266,14 @@ if __name__ == "__main__":
     ax = plot_htron_sweep(
         ax, write_currents_measured, enable_write_currents_measured, ber_2D
     )
-    # ax = plot_point(
-    #     ax,
-    #     left_critical_currents[IDXX],
-    #     write_currents[IDXY],
-    #     marker="*",
-    #     color="red",
-    #     markersize=15,
-    # )
+    ax = plot_point(
+        ax,
+        enable_write_currents_measured[int(IDXX/N*len(enable_write_currents_measured))],
+        write_currents_measured[int(IDXY/N*len(write_currents_measured))],
+        marker="*",
+        color="red",
+        markersize=15,
+    )
     # ax.invert_xaxis()
 
     # Plot the persistent current
