@@ -52,14 +52,14 @@ if __name__ == "__main__":
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        "bitmsg_channel": "0NNNRNNNRN",
+        "bitmsg_channel": "NNNNRNNNRN",
         "bitmsg_enable": "NENNENNNEE",
     }
 
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 11)
+    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 5)
     parameter_y = "read_current"
     # measurement_settings["y"] = [315e-6]
     measurement_settings["y"] = np.linspace(300e-6, 800e-6, 21)
@@ -78,8 +78,7 @@ if __name__ == "__main__":
         "bit_error_rate",
     )
 
-    t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+
     b.inst.scope.save_screenshot(
         f"{file_path}_scope_screenshot.png", white_background=False
     )
@@ -87,3 +86,5 @@ if __name__ == "__main__":
     b.inst.awg.set_output(False, 2)
 
     nm.write_dict_to_file(file_path, save_dict)
+    t2 = time.time()
+    print(f"run time {(t2-t1)/60:.2f} minutes")

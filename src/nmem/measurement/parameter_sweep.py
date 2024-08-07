@@ -65,11 +65,11 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
-        "write_current": 50e-6,
-        "read_current": 515e-6,
-        "enable_write_current": 210e-6,
-        "enable_read_current": 150e-6,
-        "threshold_bert": 0.15,
+        "write_current": 100e-6,
+        "read_current": 570e-6,
+        "enable_write_current": 282.5e-6,
+        "enable_read_current": 230e-6,
+        "threshold_bert": 0.2,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
@@ -89,20 +89,20 @@ if __name__ == "__main__":
         "enable_read_phase": 30,
         # "bitmsg_channel": "NNN0RNN1RN",
         # "bitmsg_enable": "NNNWENNWEE",
-        "bitmsg_channel": "N0RRR1RRRN",
+        "bitmsg_channel": "N0NNR1NNRN",
         "bitmsg_enable": "NWNNEWNNEE",
     }
 
-    parameter_x = "enable_read_current"
-    measurement_settings["x"] = [175e-6]
-    # measurement_settings["x"] = np.linspace(150e-6, 200e-6, 21)
+    parameter_x = "enable_write_current"
+    # measurement_settings["x"] = [240e-6]
+    measurement_settings["x"] = np.linspace(320e-6, 400e-6, 11)
 
     parameter_y = "write_current"
-    # measurement_settings["y"] = [100e-6]
-    measurement_settings["y"] = np.linspace(70e-6, 130e-6, 11)
+    measurement_settings["y"] = [100e-6]
+    # measurement_settings["y"] = np.linspace(0e-6, 200e-6, 21)
 
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
     b.properties["measurement_settings"] = measurement_settings
 
