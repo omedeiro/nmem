@@ -12,8 +12,8 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -0,
-        "intercept": 0,
+        "slope": -2.356,
+        "intercept": 1050,
     },
     "A3": {
         "write_current": 0e-6,
@@ -52,8 +52,8 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -3.837,
-        "intercept": 1524.9,
+        "slope": -3.482,
+        "intercept": 1461,
     },
     "B4": {
         "write_current": 0e-6,
