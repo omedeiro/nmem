@@ -81,9 +81,9 @@ CELLS = {
     },
     "C3": {
         "write_current": 30e-6,
-        "read_current": 390e-6,
-        "enable_write_current": 365e-6,
-        "enable_read_current": 296e-6,
+        "read_current": 377e-6,
+        "enable_write_current": 370e-6,
+        "enable_read_current": 295.6e-6,
         "slope": -4.76,
         "intercept": 1841,
     },
