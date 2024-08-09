@@ -17,6 +17,8 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
+from nmem.calculations.calculations import htron_critical_current, htron_heater_current
+
 # %% Functionss
 
 
@@ -181,7 +183,6 @@ def calculate_voltage(measurement_settings: dict) -> dict:
 
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
-    print(f" ewr_ratio {ewr_ratio:.2f}, wr_ratio {wr_ratio:.2f}")
     return measurement_settings
 
 
@@ -917,7 +918,6 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
 
-    print(f"w0r1: {write_0_read_1}, w1r0: {write_1_read_0}")
     return (
         read_zero_top,
         read_one_top,
@@ -1079,14 +1079,6 @@ def calculate_currents(
 
         ydiff = np.subtract(y0, y1)
 
-        minber0 = y0[ydiff == min(ydiff)]
-        minber1 = y1[ydiff == min(ydiff)]
-        optimal_index = [i for i, x in enumerate(ydiff) if x == min(ydiff)]
-        # plt.plot(x, y0)
-        # plt.plot(x, y1)
-        # plt.show()
-
-        # print(minber0)
     return time_zero, time_one, current_zero, current_one, distance, x, y0, y1
 
 
@@ -1226,19 +1218,18 @@ def run_measurement(
     plot: bool = False,
     ramp_read: bool = True,
 ):
-    measurement_settings = calculate_voltage(measurement_settings)
-    bitmsg_channel = measurement_settings["bitmsg_channel"]
-    bitmsg_enable = measurement_settings["bitmsg_enable"]
-    total_points = measurement_settings["num_samples"] * len(bitmsg_channel)
-    sample_rate = measurement_settings["sample_rate"]
-    horscale = measurement_settings["horizontal_scale"]
-    sample_time = measurement_settings["sample_time"]
-    channel_voltage = measurement_settings["channel_voltage"]
-    enable_voltage = measurement_settings["enable_voltage"]
-    scope_samples = int(measurement_settings["num_samples_scope"])
+    bitmsg_channel: str = measurement_settings["bitmsg_channel"]
+    bitmsg_enable: str = measurement_settings["bitmsg_enable"]
+    total_points: int = measurement_settings["num_samples"] * len(bitmsg_channel)
+    sample_rate: float = measurement_settings["sample_rate"]
+    horscale: float = measurement_settings["horizontal_scale"]
+    sample_time: float = measurement_settings["sample_time"]
+    channel_voltage: float = measurement_settings["channel_voltage"]
+    enable_voltage: float = measurement_settings["enable_voltage"]
+    scope_samples: int = int(measurement_settings["num_samples_scope"])
     scope_sample_rate = scope_samples / sample_time
 
-    num_meas = measurement_settings["num_meas"]
+    num_meas: int = measurement_settings["num_meas"]
 
     setup_scope_bert(b, measurement_settings)
 
@@ -1286,7 +1277,6 @@ def run_measurement(
     b.inst.awg.set_output(False, 2)
 
     bit_error_rate = (write_0_read_1 + write_1_read_0) / (2 * num_meas)
-    print(f"ber: {bit_error_rate}")
     DATA_DICT = {
         "trace_chan_in": trace_chan_in,
         "trace_chan_out": trace_chan_out,
@@ -1309,7 +1299,10 @@ def run_measurement(
 def update_dict(dict1: dict, dict2: dict):
     result_dict = {}
     for key in dict1.keys():
-        result_dict[key] = np.dstack([dict1[key], dict2[key]])
+        try:
+            result_dict[key] = np.dstack([dict1[key], dict2[key]])
+        except Exception:
+            print(f"could not stack {key}")
 
     return result_dict
 
@@ -1334,6 +1327,7 @@ def run_sweep(
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
             print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
+            measurement_settings = calculate_voltage(measurement_settings)
 
             data_dict = run_measurement(
                 b,
@@ -1342,6 +1336,80 @@ def run_sweep(
                 plot=plot_measurement,
                 ramp_read=False,
             )
+
+            data_dict.update(measurement_settings)
+
+            if len(save_dict.items()) == 0:
+                save_dict = data_dict
+            else:
+                save_dict = update_dict(save_dict, data_dict)
+
+    final_dict = {
+        **measurement_settings,
+        **save_dict,
+    }
+    return save_dict
+
+
+def run_sweep_subset(
+    b: nTron,
+    measurement_settings: dict,
+    parameter_x: str,
+    parameter_y: str,
+    save_traces: bool = False,
+    plot_measurement=False,
+):
+    save_dict = {}
+    for idx, x in enumerate(measurement_settings["x"]):
+        for y in measurement_settings["y"]:
+            measurement_settings[parameter_x] = x
+            measurement_settings[parameter_y] = y
+            measurement_settings = calculate_voltage(measurement_settings)
+            if (
+                y > measurement_settings["y_subset"][idx][0]
+                and y < measurement_settings["y_subset"][idx][-1]
+            ):
+                data_dict = run_measurement(
+                    b,
+                    measurement_settings,
+                    save_traces,
+                    plot=plot_measurement,
+                    ramp_read=False,
+                )
+                data_dict.update(measurement_settings)
+                print(f"bit_error_rate: {data_dict['bit_error_rate']:.2g}")
+                print(f"write_0_read_1: {data_dict['write_0_read_1']:.0g}")
+                print(f"write_1_read_0: {data_dict['write_1_read_0']:.0g}")
+                print("-")
+                print(f"write_current: {data_dict['write_current']:.1g}")
+                print(f"read_current: {data_dict['read_current']:.1g}")
+                print(f"enable_write_current: {data_dict['enable_write_current']:1g}")
+                print(f"enable_read_current: {data_dict['enable_read_current']:1g}")
+                print("-")
+                print(f"wr_ratio: {data_dict['wr_ratio']}")
+                print(f"ewr_ratio: {data_dict['ewr_ratio']}")
+                print("-----------------")
+            else:
+                data_dict = {
+                    "trace_chan_in": np.empty(
+                        (2, measurement_settings["num_samples_scope"])
+                    ),
+                    "trace_chan_out": np.empty(
+                        (2, measurement_settings["num_samples_scope"])
+                    ),
+                    "trace_enab": np.empty(
+                        (2, measurement_settings["num_samples_scope"])
+                    ),
+                    "write_0_read_1": np.nan,
+                    "write_1_read_0": np.nan,
+                    "write_0_read_1_norm": np.nan,
+                    "write_1_read_0_norm": np.nan,
+                    "read_zero_top": np.empty((1, measurement_settings["num_meas"])),
+                    "read_one_top": np.empty((1, measurement_settings["num_meas"])),
+                    "channel_voltage": np.nan,
+                    "enable_voltage": np.nan,
+                    "bit_error_rate": np.nan,
+                }
 
             data_dict.update(measurement_settings)
 
