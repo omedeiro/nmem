@@ -6,9 +6,30 @@ import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
+from nmem.analysis.enable_current_relation import find_peak
+from nmem.calculations.calculations import htron_critical_current, htron_heater_current
+from nmem.measurement.cells import CELLS
 from nmem.measurement.parameter_sweep import CONFIG, HORIZONTAL_SCALE, SAMPLE_RATE
 
 plt.rcParams["figure.figsize"] = [10, 12]
+
+
+def construct_currents(
+    heater_currents: np.ndarray,
+    slope: float,
+    intercept: float,
+    margin: float,
+    num_points: int = 4,
+):
+    bias_current_array = np.zeros((len(heater_currents), num_points))
+    for heater_current in heater_currents:
+        critical_current = htron_critical_current(heater_current, slope, intercept)
+        bias_currents = np.linspace(
+            critical_current * (1 - margin), critical_current * (1 + margin), num_points
+        )
+        bias_current_array[heater_currents == heater_current] = bias_currents
+
+    return bias_current_array
 
 
 if __name__ == "__main__":
@@ -41,8 +62,8 @@ if __name__ == "__main__":
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
-        "num_samples_scope": 5e3,
-        "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
+        "num_samples_scope": int(5000),
+        "scope_sample_rate": int(5000) / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
         "x": 0,
         "y": 0,
         "num_samples": 2**8,
@@ -59,12 +80,20 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 5)
+    measurement_settings["x"] = np.linspace(200e-6, 400e-6, 15)
     parameter_y = "read_current"
-    # measurement_settings["y"] = [315e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 21)
+    # measurement_settings["y"] = [400e-6]
+    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 41)
 
-    save_dict = nm.run_sweep(
+    measurement_settings["x_subset"] = measurement_settings["x"]
+    measurement_settings["y_subset"] = construct_currents(
+        measurement_settings["x"],
+        CELLS["D3"]["slope"],
+        CELLS["D3"]["intercept"] * 1e-6,
+        0.1,
+    )
+
+    save_dict = nm.run_sweep_subset(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
@@ -78,13 +107,12 @@ if __name__ == "__main__":
         "bit_error_rate",
     )
 
-
     b.inst.scope.save_screenshot(
         f"{file_path}_scope_screenshot.png", white_background=False
     )
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
-
+    find_peak(save_dict)
     nm.write_dict_to_file(file_path, save_dict)
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
