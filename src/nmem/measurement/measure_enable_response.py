@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
 from nmem.analysis.enable_current_relation import find_peak
-from nmem.calculations.calculations import htron_critical_current, htron_heater_current
+from nmem.calculations.calculations import htron_critical_current
 from nmem.measurement.cells import CELLS
 from nmem.measurement.parameter_sweep import CONFIG, HORIZONTAL_SCALE, SAMPLE_RATE
 
@@ -37,12 +37,12 @@ if __name__ == "__main__":
     REAL_TIME = 1
     NUM_MEAS = 100
     FREQ_IDX = 1
-
+    current_cell = b.properties["Save File"]["cell"]
     sample_name = [
         b.sample_name,
         b.device_type,
         b.device_name,
-        b.properties["Save File"]["cell"],
+        current_cell,
     ]
     sample_name = str("-".join(sample_name))
     date_str = time.strftime("%Y%m%d")
@@ -80,16 +80,16 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 400e-6, 15)
+    measurement_settings["x"] = np.linspace(200e-6, 400e-6, 11)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 41)
+    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 61)
 
     measurement_settings["x_subset"] = measurement_settings["x"]
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
-        CELLS["D3"]["slope"],
-        CELLS["D3"]["intercept"] * 1e-6,
+        CELLS[current_cell]["slope"],
+        CELLS[current_cell]["intercept"] * 1e-6,
         0.1,
     )
 

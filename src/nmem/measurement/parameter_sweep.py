@@ -13,6 +13,8 @@ import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
+from nmem.measurement.cells import CELLS
+from nmem.calculations.calculations import htron_critical_current, htron_heater_current
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
@@ -51,12 +53,12 @@ FREQ_IDX = 1
 if __name__ == "__main__":
     t1 = time.time()
     b = nt.nTron(CONFIG)
-
+    current_cell = b.properties["Save File"]["cell"]
     sample_name = [
         b.sample_name,
         b.device_type,
         b.device_name,
-        b.properties["Save File"]["cell"],
+        current_cell,
     ]
     sample_name = str("-".join(sample_name))
     date_str = time.strftime("%Y%m%d")
@@ -66,10 +68,10 @@ if __name__ == "__main__":
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "write_current": 100e-6,
-        "read_current": 570e-6,
-        "enable_write_current": 282.5e-6,
-        "enable_read_current": 230e-6,
-        "threshold_bert": 0.2,
+        "read_current": 375e-6,
+        "enable_write_current": 350e-6,
+        "enable_read_current": 295.6e-6,
+        "threshold_bert": 0.15,
         "num_meas": NUM_MEAS,
         "threshold_read": 100e-3,
         "threshold_enab": 15e-3,
@@ -91,18 +93,27 @@ if __name__ == "__main__":
         # "bitmsg_enable": "NNNWENNWEE",
         "bitmsg_channel": "N0NNR1NNRN",
         "bitmsg_enable": "NWNNEWNNEE",
+        "CELLS": CELLS,
     }
 
     parameter_x = "enable_write_current"
-    # measurement_settings["x"] = [240e-6]
-    measurement_settings["x"] = np.linspace(320e-6, 400e-6, 11)
+    measurement_settings["x"] = [350e-6]
+    # measurement_settings["x"] = np.linspace(340e-6, 385e-6, 11)
 
-    parameter_y = "write_current"
-    measurement_settings["y"] = [100e-6]
-    # measurement_settings["y"] = np.linspace(0e-6, 200e-6, 21)
+    parameter_y = "read_current"
+    measurement_settings["y"] = [375e-6]
+    read_critical_current = htron_critical_current(
+        measurement_settings["enable_read_current"],
+        CELLS[current_cell]["slope"],
+        CELLS[current_cell]["intercept"] * 1e-6,
+    )
+    margin = 0.1
+    # measurement_settings["y"] = np.linspace(
+    #     read_critical_current * 0.8, read_critical_current * 1.01, 11
+    # )
 
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
     )
     b.properties["measurement_settings"] = measurement_settings
 

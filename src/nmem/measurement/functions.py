@@ -10,6 +10,7 @@ from time import sleep
 
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from qnnpy.functions.ntron import nTron
@@ -17,7 +18,10 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.calculations.calculations import htron_critical_current, htron_heater_current
+from nmem.calculations.calculations import (
+    htron_critical_current,
+    calculate_heater_power,
+)
 
 # %% Functionss
 
@@ -1327,6 +1331,21 @@ def run_sweep(
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
             print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
+
+            cell = b.properties["Save File"]["cell"]
+            slope = measurement_settings["CELLS"][cell]["slope"]
+            intercept = measurement_settings["CELLS"][cell]["intercept"]
+            write_critical_current = htron_critical_current(
+                measurement_settings["enable_write_current"] * 1e6, slope, intercept
+            )
+            read_critical_current = htron_critical_current(
+                measurement_settings["enable_read_current"] * 1e6, slope, intercept
+            )
+            # print(f"Write Current: {measurement_settings['write_current']:.2f}")
+            # print(f"Write Critical Current: {write_critical_current:.2f}")
+            # print(f"Read Current: {measurement_settings['read_current']:.2f}")
+            # print(f"Read Critical Current: {read_critical_current:.2f}")
+
             measurement_settings = calculate_voltage(measurement_settings)
 
             data_dict = run_measurement(
@@ -1338,6 +1357,35 @@ def run_sweep(
             )
 
             data_dict.update(measurement_settings)
+            enable_write_power = calculate_heater_power(
+                measurement_settings["enable_write_current"],
+                measurement_settings["CELLS"][cell]["resistance_cryo"],
+            )
+            enable_read_power = calculate_heater_power(
+                measurement_settings["enable_read_current"],
+                measurement_settings["CELLS"][cell]["resistance_cryo"],
+            )
+            param_dict = {
+                "Write Current": [measurement_settings["write_current"] * 1e6],
+                "Write Critical Current": [write_critical_current],
+                "Write Bias Fraction": [
+                    measurement_settings["write_current"] * 1e6 / write_critical_current
+                ],
+                "Read Current": [measurement_settings["read_current"] * 1e6],
+                "Read Critical Current": [read_critical_current],
+                "Read Bias Fraction": [
+                    measurement_settings["read_current"] * 1e6 / read_critical_current
+                ],
+                "Bit Error Rate": [data_dict["bit_error_rate"]],
+                "Write 0 Read 1": [data_dict["write_0_read_1"]],
+                "Write 1 Read 0": [data_dict["write_1_read_0"]],
+                "Enable Write Power [uW]": [enable_write_power * 1e6],
+                "Enable Read Power [uW]": [enable_read_power * 1e6],
+            }
+            pd.set_option("display.float_format", "{:.3f}".format)
+            param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
+            param_df.columns = ["Value"]
+            print(param_df)
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
@@ -1377,14 +1425,18 @@ def run_sweep_subset(
                     ramp_read=False,
                 )
                 data_dict.update(measurement_settings)
-                print(f"bit_error_rate: {data_dict['bit_error_rate']:.2g}")
-                print(f"write_0_read_1: {data_dict['write_0_read_1']:.0g}")
-                print(f"write_1_read_0: {data_dict['write_1_read_0']:.0g}")
+                print(f"bit_error_rate: {data_dict['bit_error_rate']}")
+                print(f"write_0_read_1: {data_dict['write_0_read_1']}")
+                print(f"write_1_read_0: {data_dict['write_1_read_0']}")
                 print("-")
-                print(f"write_current: {data_dict['write_current']:.1g}")
-                print(f"read_current: {data_dict['read_current']:.1g}")
-                print(f"enable_write_current: {data_dict['enable_write_current']:1g}")
-                print(f"enable_read_current: {data_dict['enable_read_current']:1g}")
+                print(f"write_current [uA]: {data_dict['write_current']*1e6:.2f}")
+                print(f"read_current [uA]: {data_dict['read_current']*1e6:.2f}")
+                print(
+                    f"enable_write_current [uA]: {data_dict['enable_write_current']*1e6:.2f}"
+                )
+                print(
+                    f"enable_read_current [uA]: {data_dict['enable_read_current']*1e6:.2f}"
+                )
                 print("-")
                 print(f"wr_ratio: {data_dict['wr_ratio']}")
                 print(f"ewr_ratio: {data_dict['ewr_ratio']}")
