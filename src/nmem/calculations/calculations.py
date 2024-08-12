@@ -18,6 +18,9 @@ def htron_heater_current(
     heater_current = (channel_current - intercept) / slope
     return heater_current
 
+def calculate_heater_power(heater_current:float, heater_resistance:float)->float:
+    return heater_current**2 * heater_resistance
+
 
 def calculate_right_branch_inductance(
     alpha: float, left_branch_inductance: float
