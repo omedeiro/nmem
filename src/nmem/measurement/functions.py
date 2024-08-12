@@ -19,8 +19,8 @@ from scipy.stats import norm
 from tqdm import tqdm
 
 from nmem.calculations.calculations import (
-    htron_critical_current,
     calculate_heater_power,
+    htron_critical_current,
 )
 
 # %% Functionss
