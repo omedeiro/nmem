@@ -16,9 +16,7 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.calculations.plotting import (
-    plot_edge_fits,
     plot_htron_sweep,
-    plot_htron_sweep_scaled,
     plot_persistent_current,
     plot_point,
     plot_read_current,
