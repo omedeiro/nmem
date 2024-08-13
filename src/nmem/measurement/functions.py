@@ -78,8 +78,6 @@ def write_waveforms(b: nTron, write_string: str, chan: int):
 
     b.inst.awg.set_arb_sync()
 
-    sleep(1)
-
 
 def load_waveforms(
     b: nTron,
@@ -654,7 +652,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax3.hlines(
         measurement_settings["threshold_bert"], 0, len(read_zero_top), color="C0"
     )
-    plt.ylim([0, 0.5])
+    plt.ylim([0, 0.6])
     # plt.ylabel('read current (uA)')
     plt.xlabel("sample")
     ax3.legend()
@@ -711,7 +709,7 @@ def plot_parameter(
     # plt.suptitle(
     #     f'{sample_name[0]} -- {measurement_name[0]} \n {time_str}')
 
-    print(f"min {y_name} at {x_name} = {x[y.argmin()]}")
+    print(f"min {y_name} at {x_name} = {x[y.argmin()]:3.2e}")
     return ax
 
 
@@ -1145,6 +1143,18 @@ def setup_scope(
     scope_sample_rate: float,
     measurement_settings: dict,
 ):
+    """Setup the scope for the measurement.
+
+    Args:
+        b (nTron): nTron object
+        sample_time (float): time of each sample
+        horscale (float): horizontal scale
+        scope_sample_rate (float): sample rate of the scope
+        measurement_settings (dict): measurement settings
+
+    Returns:
+        None
+    """
     b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
 
     b.inst.scope.set_horizontal_scale(horscale, -horscale * 5)
@@ -1330,8 +1340,6 @@ def run_sweep(
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
-            print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
-
             cell = b.properties["Save File"]["cell"]
             slope = measurement_settings["CELLS"][cell]["slope"]
             intercept = measurement_settings["CELLS"][cell]["intercept"]
@@ -1341,6 +1349,7 @@ def run_sweep(
             read_critical_current = htron_critical_current(
                 measurement_settings["enable_read_current"] * 1e6, slope, intercept
             )
+            max_heater_current = -intercept / slope
             # print(f"Write Current: {measurement_settings['write_current']:.2f}")
             # print(f"Write Critical Current: {write_critical_current:.2f}")
             # print(f"Read Current: {measurement_settings['read_current']:.2f}")
@@ -1371,11 +1380,19 @@ def run_sweep(
                 "Write Bias Fraction": [
                     measurement_settings["write_current"] * 1e6 / write_critical_current
                 ],
+                "Write Enable Fraction": [
+                    measurement_settings["enable_write_current"]*1e6 / max_heater_current
+                ],
                 "Read Current": [measurement_settings["read_current"] * 1e6],
                 "Read Critical Current": [read_critical_current],
                 "Read Bias Fraction": [
                     measurement_settings["read_current"] * 1e6 / read_critical_current
                 ],
+                "Read Enable Fraction": [
+                    measurement_settings["enable_read_current"]*1e6 / max_heater_current
+                ],
+                "Write / Read Ratio": [data_dict["wr_ratio"]],
+                "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
                 "Bit Error Rate": [data_dict["bit_error_rate"]],
                 "Write 0 Read 1": [data_dict["write_0_read_1"]],
                 "Write 1 Read 0": [data_dict["write_1_read_0"]],
@@ -1385,7 +1402,9 @@ def run_sweep(
             pd.set_option("display.float_format", "{:.3f}".format)
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
             param_df.columns = ["Value"]
+            print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
             print(param_df)
+            print("-------------------------------")
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
