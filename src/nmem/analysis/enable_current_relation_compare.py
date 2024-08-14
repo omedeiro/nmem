@@ -47,6 +47,7 @@ if __name__ == "__main__":
     write_array = np.zeros((4,4))
     read_array = np.zeros((4,4))
     resistance_array = np.zeros((4,4))
+    bit_error_array = np.zeros((4,4))
     for c in CELLS:
         write_current = CELLS[c]["write_current"] * 1e6
         read_current = CELLS[c]["read_current"] * 1e6
@@ -55,6 +56,7 @@ if __name__ == "__main__":
         slope = CELLS[c]["slope"]
         intercept = CELLS[c]["intercept"]
         resistance = CELLS[c]["resistance_cryo"]
+        bit_error_rate = CELLS[c].get("min_bit_error_rate", 0)
         if intercept != 0:
             write_critical_current = htron_critical_current(
                 enable_write_current, slope, intercept
@@ -77,7 +79,7 @@ if __name__ == "__main__":
             write_array[y, x] = write_current/write_critical_current
             read_array[y, x] = read_current/read_critical_current
             resistance_array[y, x] = resistance
-            
+            bit_error_array[y, x] = bit_error_rate
             print(f"Cell: {c}")
             print(f"Write Current: {write_current:.2f}")
             print(f"Write Critical Current: {write_critical_current:.2f}")
@@ -99,3 +101,4 @@ if __name__ == "__main__":
     plot_array(xloc, yloc, intercept_array, "Intercept [$\mu$A]")
     plot_array(xloc, yloc, resistance_array, "Resistance [$\Omega$]")
     plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
+    plot_array(xloc, yloc, bit_error_array, "Bit Error Rate")
