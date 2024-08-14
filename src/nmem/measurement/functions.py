@@ -688,8 +688,8 @@ def plot_parameter(
     plt.xlabel(x_name)
     plt.ylabel(y_name)
     plt.legend()
-    measurement_name = data_dict["measurement_name"].flatten()
-    sample_name = data_dict["sample_name"].flatten()
+    measurement_name = data_dict["measurement_name"]
+    sample_name = data_dict["sample_name"]
 
     time_str = data_dict["time_str"]
 
@@ -699,8 +699,8 @@ def plot_parameter(
     write_current = data_dict["write_current"].flatten()
     enable_read_current = data_dict["enable_read_current"].flatten()
     enable_write_current = data_dict["enable_write_current"].flatten()
-    bitmsg_channel = data_dict["bitmsg_channel"].flatten()
-    bitmsg_enable = data_dict["bitmsg_enable"].flatten()
+    bitmsg_channel = data_dict["bitmsg_channel"]
+    bitmsg_enable = data_dict["bitmsg_enable"]
 
     plt.suptitle(
         f"{sample_name[0]} -- {measurement_name[0]} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel[0]}, Channel_enable: {bitmsg_enable[0]}"
@@ -724,9 +724,6 @@ def plot_array(
 ):
     if not ax:
         fig, ax = plt.subplots()
-
-    x_length = data_dict[x_name].shape[1]
-    y_length = data_dict[y_name].shape[1]
 
     x = data_dict["x"][0][:, 0] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
@@ -773,8 +770,8 @@ def plot_array(
         cbar = plt.colorbar()
     cbar.ax.set_ylabel(c_name, rotation=270)
     plt.contour(xv, yv, np.reshape(ctotal, (len(y), len(x))).T, [0.05, 0.1])
-    measurement_name = data_dict["measurement_name"].flatten()
-    sample_name = data_dict["sample_name"].flatten()
+    measurement_name = data_dict["measurement_name"]
+    sample_name = data_dict["sample_name"]
     time_str = data_dict["time_str"]
 
     plt.suptitle(f"{sample_name[0]} -- {measurement_name[0]} \n {time_str}")
@@ -1232,17 +1229,12 @@ def run_measurement(
     plot: bool = False,
     ramp_read: bool = True,
 ):
-    bitmsg_channel: str = measurement_settings["bitmsg_channel"]
-    bitmsg_enable: str = measurement_settings["bitmsg_enable"]
-    total_points: int = measurement_settings["num_samples"] * len(bitmsg_channel)
-    sample_rate: float = measurement_settings["sample_rate"]
-    horscale: float = measurement_settings["horizontal_scale"]
-    sample_time: float = measurement_settings["sample_time"]
-    channel_voltage: float = measurement_settings["channel_voltage"]
-    enable_voltage: float = measurement_settings["enable_voltage"]
-    scope_samples: int = int(measurement_settings["num_samples_scope"])
-    scope_sample_rate = scope_samples / sample_time
-
+    bitmsg_channel: str = measurement_settings.get("bitmsg_channel")
+    bitmsg_enable: str = measurement_settings.get("bitmsg_enable")
+    sample_rate: float = measurement_settings.get("sample_rate")
+    channel_voltage: float = measurement_settings.get("channel_voltage")
+    enable_voltage: float = measurement_settings.get("enable_voltage")
+    scope_samples: int = int(measurement_settings.get("scope_samples"))
     num_meas: int = measurement_settings["num_meas"]
 
     setup_scope_bert(b, measurement_settings)
@@ -1312,12 +1304,18 @@ def run_measurement(
 
 def update_dict(dict1: dict, dict2: dict):
     result_dict = {}
-    for key in dict1.keys():
-        try:
-            result_dict[key] = np.dstack([dict1[key], dict2[key]])
-        except Exception:
-            print(f"could not stack {key}")
 
+    for key in dict1.keys():
+        if (
+            isinstance(dict1[key], float)
+            or isinstance(dict1[key], np.ndarray)
+        ):
+            try:
+                result_dict[key] = np.dstack([dict1[key], dict2[key]])
+            except Exception:
+                print(f"could not stack {key}")
+        else:
+            result_dict[key] = dict1[key]
     return result_dict
 
 
@@ -1381,7 +1379,9 @@ def run_sweep(
                     measurement_settings["write_current"] * 1e6 / write_critical_current
                 ],
                 "Write Enable Fraction": [
-                    measurement_settings["enable_write_current"]*1e6 / max_heater_current
+                    measurement_settings["enable_write_current"]
+                    * 1e6
+                    / max_heater_current
                 ],
                 "Read Current": [measurement_settings["read_current"] * 1e6],
                 "Read Critical Current": [read_critical_current],
@@ -1389,7 +1389,9 @@ def run_sweep(
                     measurement_settings["read_current"] * 1e6 / read_critical_current
                 ],
                 "Read Enable Fraction": [
-                    measurement_settings["enable_read_current"]*1e6 / max_heater_current
+                    measurement_settings["enable_read_current"]
+                    * 1e6
+                    / max_heater_current
                 ],
                 "Write / Read Ratio": [data_dict["wr_ratio"]],
                 "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
