@@ -51,6 +51,7 @@ if __name__ == "__main__":
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
+        "cell": current_cell,
         "write_current": 0e-6,
         "read_current": 600e-6,
         "enable_write_current": 0e-6,
@@ -80,22 +81,25 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 400e-6, 11)
+    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 9)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 800e-6, 61)
+    measurement_settings["y"] = np.linspace(300e-6, 900e-6, 61)
 
     measurement_settings["x_subset"] = measurement_settings["x"]
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
         CELLS[current_cell]["intercept"] * 1e-6,
-        0.1,
+        0.12,
     )
 
     save_dict = nm.run_sweep_subset(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
+    save_dict["trace_chan_in"] = save_dict["trace_chan_in"][:, :, 1]
+    save_dict["trace_chan_out"] = save_dict["trace_chan_out"][:, :, 1]
+    save_dict["trace_enab"] = save_dict["trace_enab"][:, :, 1]
     file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
     save_dict["time_str"] = time_str
     nm.plot_ber_sweep(
@@ -107,12 +111,11 @@ if __name__ == "__main__":
         "bit_error_rate",
     )
 
-    b.inst.scope.save_screenshot(
-        f"{file_path}_scope_screenshot.png", white_background=False
-    )
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
-    find_peak(save_dict)
+
     nm.write_dict_to_file(file_path, save_dict)
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
+
+    find_peak(save_dict)
