@@ -556,7 +556,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
     C1 = 45
-    C2 = 125
+    C2 = 135
     ax0 = plt.subplot(411)
     ax0.plot(
         trace_chan_in[0] * 1e6,
@@ -1120,8 +1120,9 @@ def run_measurement(
     measurement_settings: dict,
     save_traces: bool = True,
     plot: bool = False,
-    ramp_read: bool = True,
+    ramp_read: bool = False,
 ):
+    measurement_settings = calculate_voltage(measurement_settings)
     bitmsg_channel: str = measurement_settings.get("bitmsg_channel")
     bitmsg_enable: str = measurement_settings.get("bitmsg_enable")
     sample_rate: float = measurement_settings.get("sample_rate")
@@ -1245,8 +1246,6 @@ def run_sweep(
             # print(f"Read Current: {measurement_settings['read_current']:.2f}")
             # print(f"Read Critical Current: {read_critical_current:.2f}")
 
-            measurement_settings = calculate_voltage(measurement_settings)
-
             data_dict = run_measurement(
                 b,
                 measurement_settings,
@@ -1265,8 +1264,8 @@ def run_sweep(
                 measurement_settings["CELLS"][cell]["resistance_cryo"],
             )
             param_dict = {
-                "Write Current": [measurement_settings["write_current"] * 1e6],
-                "Write Critical Current": [write_critical_current],
+                "Write Current [uA]": [measurement_settings["write_current"] * 1e6],
+                "Write Critical Current [uA]": [write_critical_current],
                 "Write Bias Fraction": [
                     measurement_settings["write_current"] * 1e6 / write_critical_current
                 ],
@@ -1275,8 +1274,8 @@ def run_sweep(
                     * 1e6
                     / max_heater_current
                 ],
-                "Read Current": [measurement_settings["read_current"] * 1e6],
-                "Read Critical Current": [read_critical_current],
+                "Read Current [uA]": [measurement_settings["read_current"] * 1e6],
+                "Read Critical Current [uA]": [read_critical_current],
                 "Read Bias Fraction": [
                     measurement_settings["read_current"] * 1e6 / read_critical_current
                 ],
@@ -1285,13 +1284,14 @@ def run_sweep(
                     * 1e6
                     / max_heater_current
                 ],
+                "Max Heater Current [uA]": [max_heater_current],
                 "Write / Read Ratio": [data_dict["wr_ratio"]],
                 "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
-                "Bit Error Rate": [data_dict["bit_error_rate"]],
-                "Write 0 Read 1": [data_dict["write_0_read_1"]],
-                "Write 1 Read 0": [data_dict["write_1_read_0"]],
                 "Enable Write Power [uW]": [enable_write_power * 1e6],
                 "Enable Read Power [uW]": [enable_read_power * 1e6],
+                "Write 0 Read 1": [data_dict["write_0_read_1"]],
+                "Write 1 Read 0": [data_dict["write_1_read_0"]],
+                "Bit Error Rate": [data_dict["bit_error_rate"]],
             }
             pd.set_option("display.float_format", "{:.3f}".format)
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
