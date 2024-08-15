@@ -28,7 +28,7 @@ def plot_text_labels(xloc, yloc, ztotal):
 
 def plot_array(xloc, yloc, ztotal, title):
     fig, ax = plt.subplots()
-    im = ax.imshow(ztotal, cmap="cividis")
+    im = ax.imshow(ztotal, cmap="viridis")
     plt.title(title)
     plt.xticks(range(4), ["A", "B", "C", "D"])
     plt.yticks(range(4), ["1", "2", "3", "4"])
