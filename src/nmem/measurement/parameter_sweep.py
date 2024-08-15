@@ -47,7 +47,7 @@ SAMPLE_RATE = {
     9: 512e3,
 }
 
-NUM_MEAS = 500
+NUM_MEAS = 1000
 NUM_DIVISIONS = 10
 NUM_SAMPLES = 5e3
 NUM_POINTS = 2**8
@@ -71,12 +71,12 @@ if __name__ == "__main__":
 
     waveform_settings = {
         "num_points": 256,
-        "write_width": 100,
-        "read_width": 100,  #
+        "write_width": 90,
+        "read_width": 90,  #
         "enable_write_width": 30,
         "enable_read_width": 30,
         "enable_write_phase": 0,
-        "enable_read_phase": 30,
+        "enable_read_phase": 0,
     }
 
     measurement_settings = {
@@ -92,43 +92,43 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
         "x": 0,
         "y": 0,
-        "write_current": 70e-6,
-        "read_current": 463e-6,
-        "enable_write_current": 290e-6,
-        "enable_read_current": 290e-6,
-        "threshold_bert": 0.2,
+        "write_current": 80.1e-6,
+        "read_current": 408e-6,
+        "enable_write_current": 354.5e-6,
+        "enable_read_current": 286e-6,
+        "threshold_bert": 0.15,
         "bitmsg_channel": "N0NNR1NNRN",
         "bitmsg_enable": "NWNNEWNNEW",
     }
 
     parameter_x = "enable_read_current"
-    measurement_settings["x"] = np.array([290e-6])
+    measurement_settings["x"] = np.array([286e-6])
     # measurement_settings["x"] = np.linspace(150e-6, 250e-6, 9)
 
     read_sweep = False
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings["y"] = [375e-6]
+        # measurement_settings["y"] = [368e-6]
         read_critical_current = htron_critical_current(
             measurement_settings["enable_read_current"],
             CELLS[current_cell]["slope"],
             CELLS[current_cell]["intercept"] * 1e-6,
         )
         measurement_settings["y"] = np.linspace(
-            read_critical_current * 0.85, read_critical_current * 1.1, 11
+            read_critical_current * 0.80, read_critical_current * 0.92, 21
         )
     else:
         parameter_y = "write_current"
-        # measurement_settings["y"] = [120e-6]
+        measurement_settings["y"] = [80.1e-6]
         # measurement_settings["y"] = np.linspace(10e-6, 230e-6, 11)
-        write_critical_current = htron_critical_current(
-            measurement_settings["enable_write_current"],
-            CELLS[current_cell]["slope"],
-            CELLS[current_cell]["intercept"] * 1e-6,
-        )
-        measurement_settings["y"] = np.linspace(
-            write_critical_current * 0.1, write_critical_current * 0.9, 11
-        )
+        # write_critical_current = htron_critical_current(
+        #     measurement_settings["enable_write_current"],
+        #     CELLS[current_cell]["slope"],
+        #     CELLS[current_cell]["intercept"] * 1e-6,
+        # )
+        # measurement_settings["y"] = np.linspace(
+        #     write_critical_current * 0.1, write_critical_current * 0.65, 7
+        # )
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
