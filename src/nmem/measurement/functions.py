@@ -103,7 +103,7 @@ def load_waveforms(
         / measurement_settings["enable_read_current"]
     )
 
-    num_samples = measurement_settings["num_samples"]
+    num_points = measurement_settings.get("num_points", 256)
 
     if wr_ratio >= 1:
         write_0 = create_waveforms(width=ww, height=-1)
@@ -123,14 +123,12 @@ def load_waveforms(
 
     null_wave = create_waveforms(height=0)
 
-    b.inst.awg.set_arb_wf(write_0, name="WRITE0", num_samples=num_samples, chan=chan)
-    b.inst.awg.set_arb_wf(write_1, name="WRITE1", num_samples=num_samples, chan=chan)
-    b.inst.awg.set_arb_wf(read_wave, name="READ", num_samples=num_samples, chan=chan)
-    b.inst.awg.set_arb_wf(
-        enable_write, name="ENABW", num_samples=num_samples, chan=chan
-    )
-    b.inst.awg.set_arb_wf(enable_read, name="ENABR", num_samples=num_samples, chan=chan)
-    b.inst.awg.set_arb_wf(null_wave, name="WNULL", num_samples=num_samples, chan=chan)
+    b.inst.awg.set_arb_wf(write_0, name="WRITE0", num_samples=num_points, chan=chan)
+    b.inst.awg.set_arb_wf(write_1, name="WRITE1", num_samples=num_points, chan=chan)
+    b.inst.awg.set_arb_wf(read_wave, name="READ", num_samples=num_points, chan=chan)
+    b.inst.awg.set_arb_wf(enable_write, name="ENABW", num_samples=num_points, chan=chan)
+    b.inst.awg.set_arb_wf(enable_read, name="ENABR", num_samples=num_points, chan=chan)
+    b.inst.awg.set_arb_wf(null_wave, name="WNULL", num_samples=num_points, chan=chan)
 
     b.inst.awg.write(f"SOURce{chan}:DATA:VOLatile:CLEar")
 
@@ -357,104 +355,41 @@ def plot_waveforms(
     bitmsg_channel = measurement_settings["bitmsg_channel"]
     bitmsg_enable = measurement_settings["bitmsg_enable"]
 
-    traces = 1
-    if traces == 1:
-        trace_chan_in = data_dict["trace_chan_in"]
-        trace_chan_out = data_dict["trace_chan_out"]
-        trace_enab = data_dict["trace_enab"]
+    trace_chan_in = data_dict["trace_chan_in"]
+    trace_chan_out = data_dict["trace_chan_out"]
+    trace_enab = data_dict["trace_enab"]
 
-        numpoints = int((len(trace_chan_in[1]) - 1) / 2)
+    numpoints = int((len(trace_chan_in[1]) - 1) / 2)
 
-        ax0 = plt.subplot(411)
-        ax0.plot(
-            trace_chan_in[0] * 1e6,
-            trace_chan_in[1] * 1e3 / 50 - 6,
-            label=f"peak current = {max(trace_chan_in[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(trace_chan_in[1][0:1000]*1e3):.1f}mV",
-            color="C7",
-        )
-        ax0.legend(loc=3)
-        plt.ylim((-12, 12))
-        plt.ylabel("splitter current (mA)")
+    ax0 = plt.subplot(411)
+    # ax0.plot(
+    #     trace_chan_in[0] * 1e6,
+    #     trace_chan_in[1] * 1e3 / 50 - 6,
+    #     label=f"peak current = {max(trace_chan_in[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(trace_chan_in[1][0:1000]*1e3):.1f}mV",
+    #     color="C7",
+    # )
+    # ax0.legend(loc=3)
+    # plt.ylim((-12, 12))
+    # plt.ylabel("splitter current (mA)")
 
-        half = False
-        if half is True:
-            ax1 = plt.subplot(412)
-            ax1.plot(
-                (
-                    trace_chan_out[0][numpoints + 1 : numpoints * 2 + 1]
-                    - trace_chan_out[0][numpoints]
-                )
-                * 1e6,
-                trace_chan_out[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
-                label="WRITE 0",
-                color="C0",
-            )
-            ax1.plot(
-                trace_chan_out[0][0:numpoints] * 1e6,
-                trace_chan_out[1][0:numpoints] * 1e3,
-                label="WRITE 1",
-                color="C2",
-            )
-        else:
-            ax1 = ax0.twinx()
-            ax1.plot(
-                trace_chan_out[0] * 1e6,
-                trace_chan_out[1] * 1e3,
-                label="channel",
-                color="C4",
-            )
-            plt.ylim((-700, 700))
-            plt.ylabel("volage (mV)")
-            ax1.legend(loc=4)
+    # ax1 = ax0.twinx()
+    ax1.plot(
+        trace_chan_out[0] * 1e6,
+        trace_chan_out[1] * 1e3,
+        label="channel",
+        color="C4",
+    )
+    ax1.legend(loc=4)
+    plt.ylim((-700, 700))
+    plt.ylabel("volage (mV)")
 
-        ax1a = plt.subplot(412)
-        ax1a.plot(
-            np.array([trace_chan_out[0][0], trace_chan_out[0][-1]]) * 1e6,
-            np.tile(measurement_settings["threshold_read"], 2) * 1e3,
-            linestyle="dashed",
-            color="C0",
-        )
-        # print(max(data3[0]))
-        ax1a.legend(loc=2)
-
-        plt.xlabel("time (us)")
-        plt.ylabel("volage (mV)")
-        plt.ylim((-700, 700))
-        plt.xlim((0, 10))
-
-        ax2 = ax1a.twinx()
-        if half is True:
-            ax2.plot(
-                trace_enab[0][0:numpoints] * 1e6,
-                trace_enab[1][0:numpoints] * 1e3,
-                label="enable",
-                color="C1",
-            )
-            ax2.plot(
-                (
-                    trace_enab[0][numpoints + 1 : numpoints * 2 + 1]
-                    - trace_enab[0][numpoints]
-                )
-                * 1e6,
-                trace_enab[1][numpoints + 1 : numpoints * 2 + 1] * 1e3,
-                label="enable1",
-                color="C1",
-            )
-        else:
-            ax2.plot(
-                trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1"
-            )
-
-        ax2.plot(
-            np.array([trace_chan_out[0][0], trace_chan_out[0][-1]]) * 1e6,
-            np.tile(measurement_settings["threshold_enab"], 2) * 1e3,
-            linestyle="dashed",
-            color="C0",
-        )
-        plt.ylim((0, 300))
-        ax2.legend(loc=1)
-        plt.ylabel("volage (mV)")
-        plt.xlim((0, 10))
+    ax2 = plt.subplot(412)
+    ax2.plot(trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1")
+    ax2.legend(loc=1)
+    plt.ylabel("volage (mV)")
+    plt.xlabel("time (us)")
+    plt.ylim((0, 300))
+    plt.xlim((0, 10))
 
     ax3 = plt.subplot(413)
     y0 = i0[i0 > 0] * 1e6
@@ -619,41 +554,53 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     sample_name = measurement_settings["sample_name"]
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
-
+    cmap = plt.cm.viridis(np.linspace(0, 1, 200))
+    C1 = 45
+    C2 = 125
     ax0 = plt.subplot(411)
     ax0.plot(
         trace_chan_in[0] * 1e6,
-        trace_chan_in[1] * 1e3 / 50,
-        label=f"peak current = {max(trace_chan_in[1][0:1000]*1e3/50):.1f}mA peak voltage = {max(trace_chan_in[1][0:1000]*1e3):.1f}mV",
-        color="C7",
+        trace_chan_in[1] * 1e3,
+        label="input signal",
+        color=cmap[C1, :],
     )
     ax0.legend(loc=1)
-    plt.ylabel("splitter current (mA)")
+    plt.ylabel("voltage (mV)")
+    plt.xlabel("time (us)")
+    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.ylim((-200, 500))
 
-    ax1 = plt.subplot(412)
+    ax1 = plt.subplot(413)
     ax1.plot(
-        trace_chan_out[0] * 1e6, trace_chan_out[1] * 1e3, label="channel", color="C4"
+        trace_chan_out[0] * 1e6,
+        trace_chan_out[1] * 1e3,
+        label="channel",
+        color=cmap[C1, :],
     )
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     ax1.legend(loc=1)
     plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.ylim((-200, 500))
 
-    ax2 = plt.subplot(413)
-    ax2.plot(trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1")
+    ax2 = plt.subplot(412)
+    ax2.plot(
+        trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color=cmap[C1, :]
+    )
     ax2.legend(loc=1)
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.ylim((-200, 500))
 
     ax3 = plt.subplot(414)
-    ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color="C0")
-    ax3 = plot_trend(ax3, read_one_top, label="READ 1", color="C2")
+    ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color=cmap[C1, :])
+    ax3 = plot_trend(ax3, read_one_top, label="READ 1", color=cmap[C2, :])
     ax3.hlines(
-        measurement_settings["threshold_bert"], 0, len(read_zero_top), color="C0"
+        measurement_settings["threshold_bert"], 0, len(read_zero_top), color="grey"
     )
     plt.ylim([0, 0.6])
-    # plt.ylabel('read current (uA)')
+    plt.ylabel("read voltage (V)")
     plt.xlabel("sample")
     ax3.legend()
 
@@ -703,7 +650,7 @@ def plot_parameter(
     bitmsg_enable = data_dict["bitmsg_enable"]
 
     plt.suptitle(
-        f"{sample_name[0]} -- {measurement_name[0]} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel[0]}, Channel_enable: {bitmsg_enable[0]}"
+        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
     )
 
     # plt.suptitle(
@@ -727,8 +674,7 @@ def plot_array(
 
     x = data_dict["x"][0][:, 0] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
-
-    c = data_dict[c_name][0].flatten()
+    c = data_dict[c_name]
 
     ctotal = c.reshape((len(y), len(x)), order="F")
 
@@ -774,7 +720,7 @@ def plot_array(
     sample_name = data_dict["sample_name"]
     time_str = data_dict["time_str"]
 
-    plt.suptitle(f"{sample_name[0]} -- {measurement_name[0]} \n {time_str}")
+    plt.suptitle(f"{sample_name} -- {measurement_name} \n {time_str}")
 
     return ax
 
@@ -875,10 +821,7 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
     else:
         num_meas = 100
 
-    if measurement_settings["threshold_bert"]:
-        threshold = measurement_settings["threshold_bert"]
-    else:
-        threshold = 150e-3
+    threshold = measurement_settings.get("threshold_bert", 150e-3)
 
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
@@ -955,10 +898,8 @@ def run_sequence_bert(b: nTron, measurement_settings: dict):
     if len(read_one_top) < num_meas:
         read_one_top.resize(num_meas, refcheck=False)
 
-    if measurement_settings["threshold_bert"]:
-        threshold = measurement_settings["threshold_bert"]
-    else:
-        threshold = 150e-3
+    threshold = measurement_settings.get("threshold_bert", 150e-3)
+
     # READ 1: below threshold (no voltage)
     write_0_read_1 = (read_zero_top < threshold).sum()
 
@@ -1133,58 +1074,11 @@ def write_sequence(
     write_waveforms(b, write_string, channel)
 
 
-def setup_scope(
-    b: nTron,
-    sample_time: float,
-    horscale: float,
-    scope_sample_rate: float,
-    measurement_settings: dict,
-):
-    """Setup the scope for the measurement.
-
-    Args:
-        b (nTron): nTron object
-        sample_time (float): time of each sample
-        horscale (float): horizontal scale
-        scope_sample_rate (float): sample rate of the scope
-        measurement_settings (dict): measurement settings
-
-    Returns:
-        None
-    """
-    b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
-
-    b.inst.scope.set_horizontal_scale(horscale, -horscale * 5)
-    b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
-
-    num_meas = measurement_settings["num_meas"]
-    b.inst.scope.set_measurement_clock_level(
-        "P1", "1", "Absolute", measurement_settings["threshold_enab"]
-    )
-    b.inst.scope.set_measurement_clock_level(
-        "P2", "1", "Absolute", measurement_settings["threshold_enab"]
-    )
-
-    b.inst.scope.set_measurement_clock_level(
-        "P1", "2", "Absolute", measurement_settings["threshold_read"]
-    )
-    b.inst.scope.set_measurement_clock_level(
-        "P2", "2", "Absolute", measurement_settings["threshold_read"]
-    )
-
-    div1 = 4.5
-    div2 = 8.5
-
-    b.inst.scope.set_measurement_gate("P1", div1 - 0.5, div1 + 0.85)
-    b.inst.scope.set_measurement_gate("P2", div2 - 0.5, div2 + 0.85)
-
-    b.inst.scope.set_math_trend_values("F1", num_meas * 2)
-    b.inst.scope.set_math_trend_values("F2", num_meas * 2)
-
-
 def setup_scope_bert(
     b: nTron,
     measurement_settings: dict,
+    division_zero: float = 4.5,
+    division_one: float = 8.5,
 ):
     horizontal_scale = measurement_settings["horizontal_scale"]
     sample_time = measurement_settings["sample_time"]
@@ -1195,26 +1089,18 @@ def setup_scope_bert(
     b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
+    threshold_read = measurement_settings.get("threshold_read", 100e-3)
+    threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
+
     num_meas = measurement_settings["num_meas"]
-    b.inst.scope.set_measurement_clock_level(
-        "P1", "1", "Absolute", measurement_settings["threshold_enab"]
-    )
-    b.inst.scope.set_measurement_clock_level(
-        "P2", "1", "Absolute", measurement_settings["threshold_enab"]
-    )
+    b.inst.scope.set_measurement_clock_level("P1", "1", "Absolute", threshold_enab)
+    b.inst.scope.set_measurement_clock_level("P2", "1", "Absolute", threshold_enab)
 
-    b.inst.scope.set_measurement_clock_level(
-        "P1", "2", "Absolute", measurement_settings["threshold_read"]
-    )
-    b.inst.scope.set_measurement_clock_level(
-        "P2", "2", "Absolute", measurement_settings["threshold_read"]
-    )
+    b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
+    b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    div1 = 4.5
-    div2 = 8.5
-
-    b.inst.scope.set_measurement_gate("P3", div1 + 0.1, div1 + 0.3)
-    b.inst.scope.set_measurement_gate("P4", div2 + 0.1, div2 + 0.3)
+    b.inst.scope.set_measurement_gate("P3", division_zero + 0.1, division_zero + 0.3)
+    b.inst.scope.set_measurement_gate("P4", division_one + 0.1, division_one + 0.3)
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -1222,10 +1108,17 @@ def setup_scope_bert(
     b.inst.scope.set_math_vertical_scale("F6", 100e-3, 300e-3)
 
 
+def calculate_bit_error_rate(
+    write_1_read_0_errors: int, write_0_read_1_errors: int, num_meas: int
+):
+    bit_error_rate = (write_0_read_1_errors + write_1_read_0_errors) / (2 * num_meas)
+    return bit_error_rate
+
+
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
-    save_traces: bool = False,
+    save_traces: bool = True,
     plot: bool = False,
     ramp_read: bool = True,
 ):
@@ -1234,10 +1127,8 @@ def run_measurement(
     sample_rate: float = measurement_settings.get("sample_rate")
     channel_voltage: float = measurement_settings.get("channel_voltage")
     enable_voltage: float = measurement_settings.get("enable_voltage")
-    scope_samples: int = int(measurement_settings.get("scope_samples"))
-    num_meas: int = measurement_settings["num_meas"]
-
-    setup_scope_bert(b, measurement_settings)
+    scope_samples: int = int(measurement_settings.get("num_samples_scope"))
+    num_meas: int = measurement_settings.get("num_meas")
 
     ######################################################
 
@@ -1282,7 +1173,8 @@ def run_measurement(
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-    bit_error_rate = (write_0_read_1 + write_1_read_0) / (2 * num_meas)
+    bit_error_rate = calculate_bit_error_rate(write_1_read_0, write_0_read_1, num_meas)
+
     DATA_DICT = {
         "trace_chan_in": trace_chan_in,
         "trace_chan_out": trace_chan_out,
@@ -1296,7 +1188,7 @@ def run_measurement(
         "bit_error_rate": bit_error_rate,
     }
 
-    if plot is True:
+    if plot:
         plot_waveforms_bert(DATA_DICT, measurement_settings)
 
     return DATA_DICT
@@ -1306,10 +1198,7 @@ def update_dict(dict1: dict, dict2: dict):
     result_dict = {}
 
     for key in dict1.keys():
-        if (
-            isinstance(dict1[key], float)
-            or isinstance(dict1[key], np.ndarray)
-        ):
+        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
             try:
                 result_dict[key] = np.dstack([dict1[key], dict2[key]])
             except Exception:
@@ -1334,6 +1223,9 @@ def run_sweep(
     plot_measurement=False,
 ):
     save_dict = {}
+
+    setup_scope_bert(b, measurement_settings)
+
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x

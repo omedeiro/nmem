@@ -20,6 +20,8 @@ plt.rcParams["figure.figsize"] = [10, 12]
 
 CONFIG = r"SPG806_config_ICE.yml"
 
+
+FREQ_IDX = 1
 HORIZONTAL_SCALE = {
     0: 5e-7,
     1: 1e-6,
@@ -32,7 +34,6 @@ HORIZONTAL_SCALE = {
     8: 2e-4,
     9: 5e-4,
 }
-
 SAMPLE_RATE = {
     0: 512e6,
     1: 256e6,
@@ -47,7 +48,11 @@ SAMPLE_RATE = {
 }
 
 NUM_MEAS = 500
-FREQ_IDX = 1
+NUM_DIVISIONS = 10
+NUM_SAMPLES = 5e3
+NUM_POINTS = 2**8
+ENABLE_WIDTH = 100e-9
+BIAS_WIDTH = 300e-9
 
 
 if __name__ == "__main__":
@@ -64,52 +69,66 @@ if __name__ == "__main__":
     date_str = time.strftime("%Y%m%d")
     measurement_name = f"{date_str}_nMem_ICE_ber"
 
-    measurement_settings = {
-        "measurement_name": measurement_name,
-        "sample_name": sample_name,
-        "write_current": 40e-6,
-        "read_current": 375e-6,
-        "enable_write_current": 350e-6,
-        "enable_read_current": 295.6e-6,
-        "threshold_bert": 0.15,
-        "num_meas": NUM_MEAS,
-        "threshold_read": 100e-3,
-        "threshold_enab": 15e-3,
-        "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
-        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
-        "num_samples_scope": 5e3,
-        "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
-        "x": 0,
-        "y": 0,
-        "num_samples": 2**8,
+    waveform_settings = {
+        "num_points": 256,
         "write_width": 100,
         "read_width": 100,  #
         "enable_write_width": 30,
         "enable_read_width": 30,
         "enable_write_phase": 0,
         "enable_read_phase": 30,
-        # "bitmsg_channel": "NNN0RNN1RN",
-        # "bitmsg_enable": "NNNWENNWEE",
-        "bitmsg_channel": "N0NNR1NNRN",
-        "bitmsg_enable": "NWNNEWNNEE",
-        "CELLS": CELLS,
     }
 
-    parameter_x = "enable_write_current"
-    measurement_settings["x"] = [370e-6]
-    # measurement_settings["x"] = np.linspace(340e-6, 385e-6, 11)
+    measurement_settings = {
+        **waveform_settings,
+        "measurement_name": measurement_name,
+        "sample_name": sample_name,
+        "CELLS": CELLS,
+        "num_meas": NUM_MEAS,
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
+        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+        "num_samples_scope": NUM_SAMPLES,
+        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+        "x": 0,
+        "y": 0,
+        "write_current": 70e-6,
+        "read_current": 463e-6,
+        "enable_write_current": 290e-6,
+        "enable_read_current": 290e-6,
+        "threshold_bert": 0.2,
+        "bitmsg_channel": "N0NNR1NNRN",
+        "bitmsg_enable": "NWNNEWNNEW",
+    }
 
-    parameter_y = "read_current"
-    # measurement_settings["y"] = [375e-6]
-    read_critical_current = htron_critical_current(
-        measurement_settings["enable_read_current"],
-        CELLS[current_cell]["slope"],
-        CELLS[current_cell]["intercept"] * 1e-6,
-    )
-    measurement_settings["y"] = np.linspace(
-        read_critical_current * 0.8, read_critical_current * 1.01, 11
-    )
+    parameter_x = "enable_read_current"
+    measurement_settings["x"] = np.array([290e-6])
+    # measurement_settings["x"] = np.linspace(150e-6, 250e-6, 9)
+
+    read_sweep = False
+    if read_sweep:
+        parameter_y = "read_current"
+        # measurement_settings["y"] = [375e-6]
+        read_critical_current = htron_critical_current(
+            measurement_settings["enable_read_current"],
+            CELLS[current_cell]["slope"],
+            CELLS[current_cell]["intercept"] * 1e-6,
+        )
+        measurement_settings["y"] = np.linspace(
+            read_critical_current * 0.85, read_critical_current * 1.1, 11
+        )
+    else:
+        parameter_y = "write_current"
+        # measurement_settings["y"] = [120e-6]
+        # measurement_settings["y"] = np.linspace(10e-6, 230e-6, 11)
+        write_critical_current = htron_critical_current(
+            measurement_settings["enable_write_current"],
+            CELLS[current_cell]["slope"],
+            CELLS[current_cell]["intercept"] * 1e-6,
+        )
+        measurement_settings["y"] = np.linspace(
+            write_critical_current * 0.1, write_critical_current * 0.9, 11
+        )
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
