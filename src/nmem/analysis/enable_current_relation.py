@@ -20,13 +20,16 @@ def find_peak(data_dict: dict):
     diff = np.diff(ztotal, axis=0)
 
     xfit, yfit = find_enable_relation(data_dict)
+    xfit = xfit[:-1]
+    yfit = yfit[:-1]
+
     plt.scatter(xfit, yfit)
 
     # Plot a fit line to the scatter points
     plot_fit(xfit, yfit)
 
     plt.imshow(
-        diff,
+        ztotal,
         extent=[
             (-0.5 * dx + x[0]),
             (0.5 * dx + x[-1]),
@@ -35,6 +38,7 @@ def find_peak(data_dict: dict):
         ],
         aspect="auto",
         origin="lower",
+        cmap="viridis",
     )
     plt.xticks(np.linspace(x[0], x[-1], len(x)))
     plt.yticks(np.linspace(y[0], y[-1], len(y)))
@@ -42,6 +46,7 @@ def find_peak(data_dict: dict):
     plt.ylabel("Channel Current [$\mu$A]")
     plt.title(f"Cell {data_dict['cell']}")
     cbar = plt.colorbar()
+    cbar.set_label("Counts")
     return ztotal
 
 
@@ -96,12 +101,39 @@ def plot_fit(xfit, yfit):
 
 if __name__ == "__main__":
     files = os.listdir("data")
-    for file in files:
+    markers = ["o", "s", "D", "^"]
+    colors = plt.cm.viridis(np.linspace(0, 1, 5))
+    colors = np.flipud(colors)
+    for file in [files[-5]]:
         datafile = os.path.join("data", file)
         cell = file.split("_")[-2]
+        column = ord(cell[0]) - ord("A") - 1
+        row = int(cell[1]) - 1
+
         measurement_dict = sio.loadmat(datafile)
         measurement_dict["cell"] = cell
         xfit, yfit = find_enable_relation(measurement_dict)
-        plot_fit(xfit, yfit)
+        xfit_sorted = np.sort(xfit)
+        yfit_sorted = yfit[np.argsort(xfit)]
+
+        plt.plot(
+            xfit_sorted,
+            yfit_sorted,
+            "-",
+            marker=markers[column],
+            color=colors[row+1, :],
+            label=cell,
+        )
+        y = measurement_dict["y"][0][:, 0] * 1e6
+        dy = y[1] - y[0]
+        yerr = np.ones_like(yfit) * dy
         find_peak(measurement_dict)
-        plt.show()
+    plt.xticks(np.linspace(200, 300, 3))
+    plt.yticks(np.linspace(300, 900, 3))
+    plt.xlim(180, 320)
+    plt.ylim(280, 920)
+    plt.xlabel("Enable Current [$\mu$A]")
+    plt.ylabel("Channel Current [$\mu$A]")
+    plt.title("Enable Current Relation")
+    plt.grid()
+    plt.show()
