@@ -81,17 +81,17 @@ if __name__ == "__main__":
     t1 = time.time()
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 9)
+    measurement_settings["x"] = np.linspace(240e-6, 300e-6, 11)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 900e-6, 61)
+    measurement_settings["y"] = np.linspace(250e-6, 650e-6, 81)
 
     measurement_settings["x_subset"] = measurement_settings["x"]
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
         CELLS[current_cell]["intercept"] * 1e-6,
-        0.12,
+        0.1,
     )
 
     save_dict = nm.run_sweep_subset(
