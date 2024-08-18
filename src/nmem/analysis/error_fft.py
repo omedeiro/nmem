@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-import matplotlib.pyplot as plt
 
 datafile = r"SPG806_20240816_nMem_ICE_ber_D6_A4_C3_2024-08-16 08-44-17.mat"
 

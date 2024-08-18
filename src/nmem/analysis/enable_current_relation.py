@@ -1,7 +1,8 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-import os
 
 
 def find_peak(data_dict: dict):
