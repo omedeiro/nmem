@@ -147,30 +147,38 @@ def load_waveforms(
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
 
-def voltage2current(v: float, c: float) -> float:
-    if c == 1:
-        current = v / 0.1 * 169.6 / 1e6
-    if c == 2:
-        current = v * (0.778 / 235.5)
+SPICE_VIN = 0.1
+SPICE_IDUT = 101.236e-6
+HEATER_RESISTANCE = 253.3
+SPICE_VHEATER = 78.126e-3
+
+
+def voltage2current(voltage: float, channel: int) -> float:
+    if channel == 1:
+        current = SPICE_IDUT * (voltage / SPICE_VIN)
+    if channel == 2:
+        current = voltage * (SPICE_VHEATER / SPICE_VIN) / HEATER_RESISTANCE
     return current
 
 
+def current2voltage(current: float, channel: int) -> float:
+    if channel == 1:
+        voltage = SPICE_VIN * (current / SPICE_IDUT)
+    if channel == 2:
+        voltage = current * HEATER_RESISTANCE / (SPICE_VHEATER / SPICE_VIN)
+    return voltage
+
+
 def calculate_voltage(measurement_settings: dict) -> dict:
-    enable_write_current = measurement_settings["enable_write_current"]
-    write_current = measurement_settings["write_current"]
+    enable_write_current = measurement_settings.get("enable_write_current")
+    write_current = measurement_settings.get("write_current")
+    read_current = measurement_settings.get("read_current")
+    enable_read_current = measurement_settings.get("enable_read_current")
 
-    read_current = measurement_settings["read_current"]
-    enable_read_current = measurement_settings["enable_read_current"]
-
-    enable_peak = max(enable_write_current, enable_read_current)
-    enable_voltage = enable_peak / (0.778 / 235.5)
-    channel_voltage = 0.1 / 169.6 * (read_current + write_current) * 1e6
-    channel_voltage_read = 0.1 / 169.6 * (read_current) * 1e6
-
-    measurement_settings["channel_voltage"] = channel_voltage
-    measurement_settings["channel_voltage_read"] = channel_voltage_read
-    measurement_settings["enable_voltage"] = enable_voltage
-
+    enable_peak_current = max(enable_write_current, enable_read_current)
+    enable_voltage = current2voltage(enable_peak_current, channel=2)
+    channel_voltage = current2voltage(read_current + write_current, channel=1)
+    channel_voltage_read = current2voltage(read_current, channel=1)
     if read_current == 0:
         wr_ratio = 0
     else:
@@ -181,8 +189,12 @@ def calculate_voltage(measurement_settings: dict) -> dict:
     else:
         ewr_ratio = enable_write_current / enable_read_current
 
+    measurement_settings["channel_voltage"] = channel_voltage
+    measurement_settings["channel_voltage_read"] = channel_voltage_read
+    measurement_settings["enable_voltage"] = enable_voltage
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
+    measurement_settings["threshold_bert"] = channel_voltage / 2
     return measurement_settings
 
 
@@ -361,7 +373,7 @@ def plot_waveforms(
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
 
-    ax0 = plt.subplot(411)
+    ax1 = plt.subplot(411)
     # ax0.plot(
     #     trace_chan_in[0] * 1e6,
     #     trace_chan_in[1] * 1e3 / 50 - 6,
@@ -536,22 +548,24 @@ def plot_ber(x: np.ndarray, y: np.ndarray, ber: np.ndarray):
 
 
 def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
-    trace_chan_in = data_dict["trace_chan_in"]
-    trace_chan_out = data_dict["trace_chan_out"]
-    trace_enab = data_dict["trace_enab"]
-    read_zero_top = data_dict["read_zero_top"]
-    read_one_top = data_dict["read_one_top"]
+    trace_chan_in = data_dict.get("trace_chan_in", [0, 0])
+    trace_chan_out = data_dict.get("trace_chan_out", [0, 0])
+    trace_enab = data_dict.get("trace_enab", [0, 0])
+    read_zero_top = data_dict.get("read_zero_top", [0, 0])
+    read_one_top = data_dict.get("read_one_top", [0, 0])
 
-    channel_voltage = measurement_settings["channel_voltage"]
-    enable_voltage = measurement_settings["enable_voltage"]
-    read_current = measurement_settings["read_current"]
-    write_current = measurement_settings["write_current"]
-    enable_read_current = measurement_settings["enable_read_current"]
-    enable_write_current = measurement_settings["enable_write_current"]
-    bitmsg_channel = measurement_settings["bitmsg_channel"]
-    bitmsg_enable = measurement_settings["bitmsg_enable"]
-    measurement_name = measurement_settings["measurement_name"]
-    sample_name = measurement_settings["sample_name"]
+    channel_voltage = measurement_settings.get("channel_voltage", 0)
+    enable_voltage = measurement_settings.get("enable_voltage", 0)
+    read_current = measurement_settings.get("read_current", 0)
+    write_current = measurement_settings.get("write_current", 0)
+    enable_read_current = measurement_settings.get("enable_read_current", 0)
+    enable_write_current = measurement_settings.get("enable_write_current", 0)
+    bitmsg_channel = measurement_settings.get("bitmsg_channel", 0)
+    bitmsg_enable = measurement_settings.get("bitmsg_enable", 0)
+    measurement_name = measurement_settings.get("measurement_name", 0)
+    sample_name = measurement_settings.get("sample_name", 0)
+    horizontal_scale = measurement_settings.get("horizontal_scale", 0)
+    threshold_bert = measurement_settings.get("threshold_bert")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
@@ -567,7 +581,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax0.legend(loc=1)
     plt.ylabel("voltage (mV)")
     plt.xlabel("time (us)")
-    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.xlim((0, horizontal_scale * 10 * 1e6))
     plt.ylim((-200, 500))
 
     ax1 = plt.subplot(413)
@@ -577,10 +591,13 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
         label="channel",
         color=cmap[C1, :],
     )
+    ax1.hlines(
+        threshold_bert * 1e3, 0, len(trace_chan_in[0]), color="r", label="threshold"
+    )
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     ax1.legend(loc=1)
-    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.xlim((0, horizontal_scale * 10 * 1e6))
     plt.ylim((-200, 500))
 
     ax2 = plt.subplot(412)
@@ -590,15 +607,13 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax2.legend(loc=1)
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
-    plt.xlim((0, measurement_settings["horizontal_scale"] * 10 * 1e6))
+    plt.xlim((0, horizontal_scale * 10 * 1e6))
     plt.ylim((-200, 500))
 
     ax3 = plt.subplot(414)
     ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color=cmap[C1, :])
     ax3 = plot_trend(ax3, read_one_top, label="READ 1", color=cmap[C2, :])
-    ax3.hlines(
-        measurement_settings["threshold_bert"], 0, len(read_zero_top), color="grey"
-    )
+    ax3.hlines(threshold_bert, 0, len(read_zero_top), color="r", label="threshold")
     plt.ylim([0, 0.6])
     plt.ylabel("read voltage (V)")
     plt.xlabel("sample")
@@ -815,6 +830,20 @@ def run_realtime(b: nTron, num_meas: int = 100):
     return t0, t1
 
 
+def calculate_threshold(read_zero_top, read_one_top):
+    # Find the difference between the highest and lowest values in the read top arrays
+    read_one_top_max = read_one_top.max()
+    read_one_top_min = read_one_top.min()
+    read_zero_top_max = read_zero_top.max()
+    read_zero_top_min = read_zero_top.min()
+
+    max_total = max(read_one_top_max, read_zero_top_max)
+    min_total = min(read_one_top_min, read_zero_top_min)
+    threshold = (max_total + min_total) / 2
+
+    return threshold
+
+
 def run_realtime_bert(b: nTron, measurement_settings: dict):
     if measurement_settings["num_meas"]:
         num_meas = measurement_settings["num_meas"]
@@ -851,6 +880,17 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
     if len(read_one_top) < num_meas:
         read_one_top.resize(num_meas, refcheck=False)
 
+    # Find the difference between the highest and lowest values in the read top arrays
+    difference = read_one_top - read_zero_top
+    max_diff = difference.max()
+    if max_diff > 0.05:
+        print(f"Max difference: {max_diff*1e3:.2f} mV")
+        threshold = calculate_threshold(read_zero_top, read_one_top)
+        measurement_settings["threshold_bert"] = threshold
+        print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
+    else:
+        print(f"Max difference: {max_diff*1e3:.2f} mV")
+        print(f"Default Threshold: {threshold*1e3:.2f} mV")
     # READ 1: below threshold (no voltage)
     write_0_read_1 = (read_zero_top < threshold).sum()
 
@@ -867,6 +907,7 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
         write_1_read_0,
         write_0_read_1_norm,
         write_1_read_0_norm,
+        measurement_settings,
     )
 
 
@@ -1083,16 +1124,15 @@ def setup_scope_bert(
     horizontal_scale = measurement_settings["horizontal_scale"]
     sample_time = measurement_settings["sample_time"]
     scope_sample_rate = measurement_settings["scope_sample_rate"]
+    threshold_read = measurement_settings.get("threshold_read", 100e-3)
+    threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
+    num_meas = measurement_settings.get("num_meas")
 
     b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
 
     b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
-    threshold_read = measurement_settings.get("threshold_read", 100e-3)
-    threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
-
-    num_meas = measurement_settings["num_meas"]
     b.inst.scope.set_measurement_clock_level("P1", "1", "Absolute", threshold_enab)
     b.inst.scope.set_measurement_clock_level("P2", "1", "Absolute", threshold_enab)
 
@@ -1167,6 +1207,7 @@ def run_measurement(
         write_1_read_0,
         write_0_read_1_norm,
         write_1_read_0_norm,
+        measurement_settings,
     ) = run_realtime_bert(b, measurement_settings)
 
     trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
@@ -1326,6 +1367,7 @@ def run_sweep_subset(
             measurement_settings[parameter_x] = x
             measurement_settings[parameter_y] = y
             measurement_settings = calculate_voltage(measurement_settings)
+
             if (
                 y > measurement_settings["y_subset"][idx][0]
                 and y < measurement_settings["y_subset"][idx][-1]
@@ -1338,6 +1380,7 @@ def run_sweep_subset(
                     ramp_read=False,
                 )
                 data_dict.update(measurement_settings)
+                print(f"threshold_bert: {measurement_settings['threshold_bert']:.2e}")
                 print(f"bit_error_rate: {data_dict['bit_error_rate']}")
                 print(f"write_0_read_1: {data_dict['write_0_read_1']}")
                 print(f"write_1_read_0: {data_dict['write_1_read_0']}")
