@@ -22,8 +22,226 @@ from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
+from nmem.measurement.cells import CELLS
+
+SPICE_VIN = 0.1
+SPICE_IDUT = 45.189e-6
+HEATER_RESISTANCE = 253.3
+SPICE_VHEATER = 78.126e-3
+
 
 # %% Functionss
+
+
+def gauss(x: float, mu: float, sigma: float, A: float):
+    return A * np.exp(-((x - mu) ** 2) / 2 / sigma**2)
+
+
+def bimodal(
+    x: float, mu1: float, sigma1: float, A1: float, mu2: float, sigma2: float, A2: float
+):
+    return gauss(x, mu1, sigma1, A1) + gauss(x, mu2, sigma2, A2)
+
+
+def bimodal_fit(
+    x: np.ndarray,
+    y: np.ndarray,
+    expected: tuple,
+    bounds: tuple = ((500, 2, 1e-6, 500, -30, 1e-6), (1200, 30, 1, 1200, 30, 1)),
+) -> tuple:
+    y = np.nan_to_num(y, posinf=0.0, neginf=0.0)
+    params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
+    return params, cov
+
+
+def get_param_mean(param: np.ndarray) -> np.ndarray:
+    if round(param[2], 5) > round(param[5], 5):
+        prm = param[0:2]
+    else:
+        prm = param[3:5]
+    return prm
+
+
+def reject_outliers(data: np.ndarray, m: float = 2.0):
+    ind = abs(data - np.mean(data)) < m * np.std(data)
+    if len(ind[ind is False]) < 50:
+        data = data[ind]
+        print(f"Samples rejected {len(ind[ind is False])}")
+        rejectInd = np.invert(ind)
+    else:
+        rejectInd = None
+    return data, rejectInd
+
+
+def update_dict(dict1: dict, dict2: dict):
+    result_dict = {}
+
+    for key in dict1.keys():
+        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
+            try:
+                result_dict[key] = np.dstack([dict1[key], dict2[key]])
+            except Exception:
+                print(f"could not stack {key}")
+        else:
+            result_dict[key] = dict1[key]
+    return result_dict
+
+
+def write_dict_to_file(file_path: str, save_dict: dict):
+    with open(f"{file_path}_measurement_settings.txt", "w") as file:
+        for key, value in save_dict.items():
+            file.write(f"{key}: {value}\n")
+
+
+def voltage2current(voltage: float, channel: int) -> float:
+    if channel == 1:
+        current = SPICE_IDUT * (voltage / SPICE_VIN)
+    if channel == 2:
+        current = voltage * (SPICE_VHEATER / SPICE_VIN) / HEATER_RESISTANCE
+    return current
+
+
+def current2voltage(current: float, channel: int) -> float:
+    if channel == 1:
+        voltage = SPICE_VIN * (current / SPICE_IDUT)
+    if channel == 2:
+        voltage = current * HEATER_RESISTANCE / (SPICE_VHEATER / SPICE_VIN)
+    return voltage
+
+
+def calculate_voltage(measurement_settings: dict) -> dict:
+    enable_write_current = measurement_settings.get("enable_write_current")
+    write_current = measurement_settings.get("write_current")
+    read_current = measurement_settings.get("read_current")
+    enable_read_current = measurement_settings.get("enable_read_current")
+
+    enable_peak_current = max(enable_write_current, enable_read_current)
+    enable_voltage = current2voltage(enable_peak_current, channel=2)
+    channel_voltage = current2voltage(read_current + write_current, channel=1)
+    channel_voltage_read = current2voltage(read_current, channel=1)
+
+    if read_current == 0:
+        wr_ratio = 0
+    else:
+        wr_ratio = write_current / read_current
+
+    if enable_read_current == 0:
+        ewr_ratio = 0
+    else:
+        ewr_ratio = enable_write_current / enable_read_current
+
+    measurement_settings["channel_voltage"] = channel_voltage
+    measurement_settings["channel_voltage_read"] = channel_voltage_read
+    measurement_settings["enable_voltage"] = enable_voltage
+    measurement_settings["wr_ratio"] = wr_ratio
+    measurement_settings["ewr_ratio"] = ewr_ratio
+    measurement_settings["threshold_bert"] = channel_voltage_read / 5
+    return measurement_settings
+
+
+def calculate_threshold(read_zero_top, read_one_top):
+    # Find the difference between the highest and lowest values in the read top arrays
+    read_one_top_max = read_one_top.max()
+    read_one_top_min = read_one_top.min()
+    read_zero_top_max = read_zero_top.max()
+    read_zero_top_min = read_zero_top.min()
+
+    max_total = max(read_one_top_max, read_zero_top_max)
+    min_total = min(read_one_top_min, read_zero_top_min)
+    threshold = (max_total + min_total) / 2
+
+    return threshold
+
+
+def calculate_currents(
+    time_zero: np.ndarray,
+    time_one: np.ndarray,
+    measurement_settings: dict,
+    total_points: int,
+    sample_time: float,
+):
+    num_meas = measurement_settings["num_meas"]
+    read_current = measurement_settings["read_current"]
+
+    time_one = time_one[1][0:num_meas]
+    time_zero = time_zero[1][0:num_meas]
+
+    time_one = time_one.flatten()
+    time_zero = time_zero.flatten()
+
+    if len(time_zero) < num_meas:
+        time_zero.resize(num_meas, refcheck=False)
+    if len(time_one) < num_meas:
+        time_one.resize(num_meas, refcheck=False)
+
+    read_time = (measurement_settings["read_width"] / total_points) * sample_time
+
+    current_zero = time_zero / read_time * read_current
+    current_one = time_one / read_time * read_current
+
+    mean0, std0 = norm.fit(current_zero * 1e6)
+    mean1, std1 = norm.fit(current_one * 1e6)
+
+    distance = mean0 - mean1  # in microamps
+
+    if len(current_zero) != 0 and len(current_one) != 0:
+        x = np.linspace(mean0, mean1, 100)
+
+        y0 = norm.pdf(x, mean0, std0)
+
+        y1 = norm.pdf(x, mean1, std1)
+
+        ydiff = np.subtract(y0, y1)
+
+    return time_zero, time_one, current_zero, current_one, distance, x, y0, y1
+
+
+def calculate_error_rate(t0: np.ndarray, t1: np.ndarray, num_meas: int):
+    w0r1 = len(np.argwhere(t0 > 0))
+    w1r0 = num_meas - len(np.argwhere(t1 > 0))
+
+    ber = (w0r1 + w1r0) / (2 * num_meas)
+    return ber, w0r1, w1r0
+
+
+def calculate_bit_error_rate(
+    write_1_read_0_errors: int, write_0_read_1_errors: int, num_meas: int
+):
+    bit_error_rate = (write_0_read_1_errors + write_1_read_0_errors) / (2 * num_meas)
+    return bit_error_rate
+
+
+def setup_scope_bert(
+    b: nTron,
+    measurement_settings: dict,
+    division_zero: float = 4.5,
+    division_one: float = 8.5,
+):
+    horizontal_scale = measurement_settings["horizontal_scale"]
+    sample_time = measurement_settings["sample_time"]
+    scope_sample_rate = measurement_settings["scope_sample_rate"]
+    threshold_read = measurement_settings.get("threshold_read", 100e-3)
+    threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
+    num_meas = measurement_settings.get("num_meas")
+
+    b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
+
+    b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
+    b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
+
+    b.inst.scope.set_measurement_clock_level("P1", "1", "Absolute", threshold_enab)
+    b.inst.scope.set_measurement_clock_level("P2", "1", "Absolute", threshold_enab)
+
+    b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
+    b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
+
+    b.inst.scope.set_measurement_gate("P3", division_zero + 0.1, division_zero + 0.3)
+    b.inst.scope.set_measurement_gate("P4", division_one + 0.1, division_one + 0.3)
+
+    b.inst.scope.set_math_trend_values("F5", num_meas * 2)
+    b.inst.scope.set_math_trend_values("F6", num_meas * 2)
+    b.inst.scope.set_math_vertical_scale("F5", 100e-3, 300e-3)
+    b.inst.scope.set_math_vertical_scale("F6", 100e-3, 300e-3)
 
 
 def create_waveforms(
@@ -147,95 +365,119 @@ def load_waveforms(
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
 
-SPICE_VIN = 0.1
-SPICE_IDUT = 101.236e-6
-HEATER_RESISTANCE = 253.3
-SPICE_VHEATER = 78.126e-3
-
-
-def voltage2current(voltage: float, channel: int) -> float:
-    if channel == 1:
-        current = SPICE_IDUT * (voltage / SPICE_VIN)
-    if channel == 2:
-        current = voltage * (SPICE_VHEATER / SPICE_VIN) / HEATER_RESISTANCE
-    return current
-
-
-def current2voltage(current: float, channel: int) -> float:
-    if channel == 1:
-        voltage = SPICE_VIN * (current / SPICE_IDUT)
-    if channel == 2:
-        voltage = current * HEATER_RESISTANCE / (SPICE_VHEATER / SPICE_VIN)
-    return voltage
-
-
-def calculate_voltage(measurement_settings: dict) -> dict:
-    enable_write_current = measurement_settings.get("enable_write_current")
-    write_current = measurement_settings.get("write_current")
-    read_current = measurement_settings.get("read_current")
-    enable_read_current = measurement_settings.get("enable_read_current")
-
-    enable_peak_current = max(enable_write_current, enable_read_current)
-    enable_voltage = current2voltage(enable_peak_current, channel=2)
-    channel_voltage = current2voltage(read_current + write_current, channel=1)
-    channel_voltage_read = current2voltage(read_current, channel=1)
-    if read_current == 0:
-        wr_ratio = 0
-    else:
-        wr_ratio = write_current / read_current
-
-    if enable_read_current == 0:
-        ewr_ratio = 0
-    else:
-        ewr_ratio = enable_write_current / enable_read_current
-
-    measurement_settings["channel_voltage"] = channel_voltage
-    measurement_settings["channel_voltage_read"] = channel_voltage_read
-    measurement_settings["enable_voltage"] = enable_voltage
-    measurement_settings["wr_ratio"] = wr_ratio
-    measurement_settings["ewr_ratio"] = ewr_ratio
-    measurement_settings["threshold_bert"] = channel_voltage / 2
-    return measurement_settings
-
-
-def gauss(x: float, mu: float, sigma: float, A: float):
-    return A * np.exp(-((x - mu) ** 2) / 2 / sigma**2)
-
-
-def bimodal(
-    x: float, mu1: float, sigma1: float, A1: float, mu2: float, sigma2: float, A2: float
+def write_sequence(
+    b: nTron,
+    message: str,
+    channel: int,
+    measurement_settings: dict,
+    ramp_read: bool = True,
 ):
-    return gauss(x, mu1, sigma1, A1) + gauss(x, mu2, sigma2, A2)
+    write1 = '"INT:\WRITE1.ARB"'
+    write0 = '"INT:\WRITE0.ARB"'
+    read = '"INT:\READ.ARB"'
+    enabw = '"INT:\ENABW.ARB"'
+    enabr = '"INT:\ENABR.ARB"'
+    wnull = '"INT:\WNULL.ARB"'
+
+    write_string = []
+    start_flag = True
+    for c in message:
+        if start_flag is True:
+            suffix = ",0,once,highAtStartGoLow,50"
+        else:
+            suffix = ",0,once,maintain,50"
+
+        if c == "0":
+            write_string.append(write0 + suffix)
+        if c == "1":
+            write_string.append(write1 + suffix)
+        if c == "W":
+            write_string.append(enabw + suffix)
+        if c == "N":
+            write_string.append(wnull + suffix)
+        if c == "E":
+            write_string.append(enabr + suffix)
+        if c == "R":
+            write_string.append(read + suffix)
+
+        start_flag = False
+
+    write_string = ",".join(write_string)
+    # print(write_string)
+
+    load_waveforms(b, measurement_settings, chan=channel, ramp_read=ramp_read)
+    write_waveforms(b, write_string, channel)
 
 
-def bimodal_fit(
-    x: np.ndarray,
-    y: np.ndarray,
-    expected: tuple,
-    bounds: tuple = ((500, 2, 1e-6, 500, -30, 1e-6), (1200, 30, 1, 1200, 30, 1)),
-) -> tuple:
-    y = np.nan_to_num(y, posinf=0.0, neginf=0.0)
-    params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
-    return params, cov
+def get_traces(b: nTron, scope_samples: int = 5000):
+    # b.inst.scope.set_sample_mode('Realtime')
+    sleep(1)
+    b.inst.scope.set_trigger_mode("Single")
+    sleep(0.1)
+    trace_chan_in: np.ndarray = b.inst.scope.get_wf_data("C1")
+    sleep(0.1)
+    trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
+    sleep(0.1)
+    trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
+
+    trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
+    trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
+    trace_enab = np.resize(trace_enab, (2, scope_samples))
+
+    b.inst.scope.set_trigger_mode("Normal")
+    sleep(1e-2)
+
+    try:
+        time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
+        b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
+        b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
+    except Exception:
+        sleep(1e-4)
+
+    return (
+        trace_chan_in,
+        trace_chan_out,
+        trace_enab,
+    )
 
 
-def get_param_mean(param: np.ndarray) -> np.ndarray:
-    if round(param[2], 5) > round(param[5], 5):
-        prm = param[0:2]
-    else:
-        prm = param[3:5]
-    return prm
+def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
+    data_dict = []
+    for c in ["C1", "C2", "C4", "F4"]:
+        x, y = b.inst.scope.get_wf_data(channel=c)
+        interval = abs(x[0] - x[1])
+        xlist = []
+        ylist = []
+        totdp = np.int64(np.size(x) / num_meas)
 
+        for j in range(1):
+            xx = x[0 + j * totdp : totdp + j * totdp] - totdp * interval * j
+            yy = y[0 + j * totdp : totdp + j * totdp]
 
-def reject_outliers(data: np.ndarray, m: float = 2.0):
-    ind = abs(data - np.mean(data)) < m * np.std(data)
-    if len(ind[ind is False]) < 50:
-        data = data[ind]
-        print(f"Samples rejected {len(ind[ind is False])}")
-        rejectInd = np.invert(ind)
-    else:
-        rejectInd = None
-    return data, rejectInd
+            xlist.append(xx[0 : int(num_samples)])
+            ylist.append(yy[0 : int(num_samples)])
+
+        trace_dict = [xlist, ylist]
+        data_dict.append(trace_dict)
+
+    data0 = data_dict[0]
+    data1 = data_dict[1]
+    data2 = data_dict[2]
+    data3 = data_dict[3]
+
+    data0 = np.resize(data0, (2, num_samples))
+    data1 = np.resize(data1, (2, num_samples))
+    data2 = np.resize(data2, (2, num_samples))
+    data3 = np.resize(data3, (2, num_samples))
+
+    try:
+        time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
+        b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
+        b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
+    except Exception:
+        sleep(1e-4)
+
+    return data0, data1, data2, data3
 
 
 def plot_histogram(
@@ -582,7 +824,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylabel("voltage (mV)")
     plt.xlabel("time (us)")
     plt.xlim((0, horizontal_scale * 10 * 1e6))
-    plt.ylim((-200, 500))
+    plt.ylim((-200, 700))
 
     ax1 = plt.subplot(413)
     ax1.plot(
@@ -598,7 +840,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylabel("volage (mV)")
     ax1.legend(loc=1)
     plt.xlim((0, horizontal_scale * 10 * 1e6))
-    plt.ylim((-200, 500))
+    plt.ylim((-200, 1000))
 
     ax2 = plt.subplot(412)
     ax2.plot(
@@ -608,7 +850,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     plt.xlim((0, horizontal_scale * 10 * 1e6))
-    plt.ylim((-200, 500))
+    plt.ylim((-50, 200))
 
     ax3 = plt.subplot(414)
     ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color=cmap[C1, :])
@@ -740,77 +982,6 @@ def plot_array(
     return ax
 
 
-def get_traces(b: nTron, scope_samples: int = 5000):
-    # b.inst.scope.set_sample_mode('Realtime')
-    sleep(1)
-    b.inst.scope.set_trigger_mode("Single")
-    sleep(0.1)
-    trace_chan_in: np.ndarray = b.inst.scope.get_wf_data("C1")
-    sleep(0.1)
-    trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
-    sleep(0.1)
-    trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
-
-    trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
-    trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
-    trace_enab = np.resize(trace_enab, (2, scope_samples))
-
-    b.inst.scope.set_trigger_mode("Normal")
-    sleep(1e-2)
-
-    try:
-        time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
-        b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
-        b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    except Exception:
-        sleep(1e-4)
-
-    return (
-        trace_chan_in,
-        trace_chan_out,
-        trace_enab,
-    )
-
-
-def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
-    data_dict = []
-    for c in ["C1", "C2", "C4", "F4"]:
-        x, y = b.inst.scope.get_wf_data(channel=c)
-        interval = abs(x[0] - x[1])
-        xlist = []
-        ylist = []
-        totdp = np.int64(np.size(x) / num_meas)
-
-        for j in range(1):
-            xx = x[0 + j * totdp : totdp + j * totdp] - totdp * interval * j
-            yy = y[0 + j * totdp : totdp + j * totdp]
-
-            xlist.append(xx[0 : int(num_samples)])
-            ylist.append(yy[0 : int(num_samples)])
-
-        trace_dict = [xlist, ylist]
-        data_dict.append(trace_dict)
-
-    data0 = data_dict[0]
-    data1 = data_dict[1]
-    data2 = data_dict[2]
-    data3 = data_dict[3]
-
-    data0 = np.resize(data0, (2, num_samples))
-    data1 = np.resize(data1, (2, num_samples))
-    data2 = np.resize(data2, (2, num_samples))
-    data3 = np.resize(data3, (2, num_samples))
-
-    try:
-        time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
-        b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
-        b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    except Exception:
-        sleep(1e-4)
-
-    return data0, data1, data2, data3
-
-
 def run_realtime(b: nTron, num_meas: int = 100):
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
@@ -828,20 +999,6 @@ def run_realtime(b: nTron, num_meas: int = 100):
     t0 = b.inst.scope.get_wf_data("F2")
     pbar.close()
     return t0, t1
-
-
-def calculate_threshold(read_zero_top, read_one_top):
-    # Find the difference between the highest and lowest values in the read top arrays
-    read_one_top_max = read_one_top.max()
-    read_one_top_min = read_one_top.min()
-    read_zero_top_max = read_zero_top.max()
-    read_zero_top_min = read_zero_top.min()
-
-    max_total = max(read_one_top_max, read_zero_top_max)
-    min_total = min(read_one_top_min, read_zero_top_min)
-    threshold = (max_total + min_total) / 2
-
-    return threshold
 
 
 def run_realtime_bert(b: nTron, measurement_settings: dict):
@@ -1020,141 +1177,6 @@ def run_sequence_v1(b: nTron, num_meas: int = 100):
     return t0, t1
 
 
-def calculate_currents(
-    time_zero: np.ndarray,
-    time_one: np.ndarray,
-    measurement_settings: dict,
-    total_points: int,
-    sample_time: float,
-):
-    num_meas = measurement_settings["num_meas"]
-    read_current = measurement_settings["read_current"]
-
-    time_one = time_one[1][0:num_meas]
-    time_zero = time_zero[1][0:num_meas]
-
-    time_one = time_one.flatten()
-    time_zero = time_zero.flatten()
-
-    if len(time_zero) < num_meas:
-        time_zero.resize(num_meas, refcheck=False)
-    if len(time_one) < num_meas:
-        time_one.resize(num_meas, refcheck=False)
-
-    read_time = (measurement_settings["read_width"] / total_points) * sample_time
-
-    current_zero = time_zero / read_time * read_current
-    current_one = time_one / read_time * read_current
-
-    mean0, std0 = norm.fit(current_zero * 1e6)
-    mean1, std1 = norm.fit(current_one * 1e6)
-
-    distance = mean0 - mean1  # in microamps
-
-    if len(current_zero) != 0 and len(current_one) != 0:
-        x = np.linspace(mean0, mean1, 100)
-
-        y0 = norm.pdf(x, mean0, std0)
-
-        y1 = norm.pdf(x, mean1, std1)
-
-        ydiff = np.subtract(y0, y1)
-
-    return time_zero, time_one, current_zero, current_one, distance, x, y0, y1
-
-
-def calculate_error_rate(t0: np.ndarray, t1: np.ndarray, num_meas: int):
-    w0r1 = len(np.argwhere(t0 > 0))
-    w1r0 = num_meas - len(np.argwhere(t1 > 0))
-
-    ber = (w0r1 + w1r0) / (2 * num_meas)
-    return ber, w0r1, w1r0
-
-
-def write_sequence(
-    b: nTron,
-    message: str,
-    channel: int,
-    measurement_settings: dict,
-    ramp_read: bool = True,
-):
-    write1 = '"INT:\WRITE1.ARB"'
-    write0 = '"INT:\WRITE0.ARB"'
-    read = '"INT:\READ.ARB"'
-    enabw = '"INT:\ENABW.ARB"'
-    enabr = '"INT:\ENABR.ARB"'
-    wnull = '"INT:\WNULL.ARB"'
-
-    write_string = []
-    start_flag = True
-    for c in message:
-        if start_flag is True:
-            suffix = ",0,once,highAtStartGoLow,50"
-        else:
-            suffix = ",0,once,maintain,50"
-
-        if c == "0":
-            write_string.append(write0 + suffix)
-        if c == "1":
-            write_string.append(write1 + suffix)
-        if c == "W":
-            write_string.append(enabw + suffix)
-        if c == "N":
-            write_string.append(wnull + suffix)
-        if c == "E":
-            write_string.append(enabr + suffix)
-        if c == "R":
-            write_string.append(read + suffix)
-
-        start_flag = False
-
-    write_string = ",".join(write_string)
-    # print(write_string)
-
-    load_waveforms(b, measurement_settings, chan=channel, ramp_read=ramp_read)
-    write_waveforms(b, write_string, channel)
-
-
-def setup_scope_bert(
-    b: nTron,
-    measurement_settings: dict,
-    division_zero: float = 4.5,
-    division_one: float = 8.5,
-):
-    horizontal_scale = measurement_settings["horizontal_scale"]
-    sample_time = measurement_settings["sample_time"]
-    scope_sample_rate = measurement_settings["scope_sample_rate"]
-    threshold_read = measurement_settings.get("threshold_read", 100e-3)
-    threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
-    num_meas = measurement_settings.get("num_meas")
-
-    b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
-
-    b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
-    b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
-
-    b.inst.scope.set_measurement_clock_level("P1", "1", "Absolute", threshold_enab)
-    b.inst.scope.set_measurement_clock_level("P2", "1", "Absolute", threshold_enab)
-
-    b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
-    b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
-
-    b.inst.scope.set_measurement_gate("P3", division_zero + 0.1, division_zero + 0.3)
-    b.inst.scope.set_measurement_gate("P4", division_one + 0.1, division_one + 0.3)
-
-    b.inst.scope.set_math_trend_values("F5", num_meas * 2)
-    b.inst.scope.set_math_trend_values("F6", num_meas * 2)
-    b.inst.scope.set_math_vertical_scale("F5", 100e-3, 300e-3)
-    b.inst.scope.set_math_vertical_scale("F6", 100e-3, 300e-3)
-
-
-def calculate_bit_error_rate(
-    write_1_read_0_errors: int, write_0_read_1_errors: int, num_meas: int
-):
-    bit_error_rate = (write_0_read_1_errors + write_1_read_0_errors) / (2 * num_meas)
-    return bit_error_rate
-
-
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
@@ -1176,7 +1198,7 @@ def run_measurement(
     if enable_voltage > 200e-3:
         raise ValueError("enable voltage too high")
 
-    if channel_voltage > 1.5:
+    if channel_voltage > 2.5:
         raise ValueError("channel voltage too high")
 
     if channel_voltage == 0:
@@ -1234,26 +1256,6 @@ def run_measurement(
         plot_waveforms_bert(DATA_DICT, measurement_settings)
 
     return DATA_DICT
-
-
-def update_dict(dict1: dict, dict2: dict):
-    result_dict = {}
-
-    for key in dict1.keys():
-        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
-            try:
-                result_dict[key] = np.dstack([dict1[key], dict2[key]])
-            except Exception:
-                print(f"could not stack {key}")
-        else:
-            result_dict[key] = dict1[key]
-    return result_dict
-
-
-def write_dict_to_file(file_path: str, save_dict: dict):
-    with open(f"{file_path}_measurement_settings.txt", "w") as file:
-        for key, value in save_dict.items():
-            file.write(f"{key}: {value}\n")
 
 
 def run_sweep(
