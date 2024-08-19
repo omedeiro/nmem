@@ -5,15 +5,19 @@ Created on Sat Dec  9 16:17:34 2023
 @author: omedeiro
 """
 
+import os
 import time
+from functools import partial
 
 import numpy as np
 import qnnpy.functions.functions as qf
 import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
-import scipy.optimize as opt
+from skopt import gp_minimize
+from skopt.plots import plot_convergence, plot_evaluations, plot_objective
+from skopt.space import Integer, Real
+
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import htron_critical_current
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [10, 12]
@@ -55,140 +59,86 @@ ENABLE_WIDTH = 100e-9
 BIAS_WIDTH = 300e-9
 
 
-def optimize_bias_currents(x, meas_dict: dict):
-    meas_dict["write_current"] = x[0]
-    meas_dict["read_current"] = x[1]
+def objective_bias(x, meas_dict: dict):
+    meas_dict["write_current"] = x[0] * 1e-6
+    meas_dict["read_current"] = x[1] * 1e-6
+    meas_dict["enable_write_current"] = x[2] * 1e-6
+    meas_dict["enable_read_current"] = x[3] * 1e-6
     print(x)
-    data_dict = nm.run_measurement(b, meas_dict, plot=True)
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors)
-    return errors
-
-
-def optimize_read_widths(x, meas_dict: dict):
-    meas_dict["read_width"] = x[0]
-    meas_dict["enable_read_width"] = x[1]
-    meas_dict["enable_read_phase"] = x[2]
-    print(x)
-    data_dict = nm.run_measurement(b, meas_dict, plot=True)
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors)
-    return errors
-
-
-def optimize_write_widths(x, meas_dict: dict):
-    meas_dict["write_width"] = x[0]
-    meas_dict["enable_write_width"] = x[1]
-    meas_dict["enable_write_phase"] = x[2]
-    print(x)
-    data_dict = nm.run_measurement(b, meas_dict, plot=True)
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors)
-    return errors
-
-
-def optimize_pulse_phase(x, meas_dict: dict):
-    meas_dict["enable_write_phase"] = x[0]
-    meas_dict["enable_read_phase"] = x[1]
-    print(x)
-    data_dict = nm.run_measurement(b, meas_dict, plot=True)
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors)
-    return errors
-
-
-def optimize_read(x, meas_dict: dict):
-    meas_dict["read_current"] = x[0] * meas_dict["opt_scale"][0]
-    meas_dict["enable_read_current"] = x[1] * meas_dict["opt_scale"][1]
+    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
     print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
     print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
     data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
     errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors, (errors / (NUM_MEAS * 2)))
+    print(errors / (NUM_MEAS * 2))
     return errors / (NUM_MEAS * 2)
 
 
-def optimize_write(x, meas_dict: dict):
-    meas_dict["write_current"] = x[0] * meas_dict["opt_scale"][0]
-    meas_dict["enable_write_current"] = x[1] * meas_dict["opt_scale"][1]
+def objective_waveform(x, meas_dict: dict):
+    meas_dict["write_width"] = x[0]
+    meas_dict["read_width"] = x[1]
+    meas_dict["enable_write_width"] = x[2]
+    meas_dict["enable_read_width"] = x[3]
+    meas_dict["enable_write_phase"] = x[4]
+    meas_dict["enable_read_phase"] = x[5]
     print(x)
+    print(f"Write Width: {meas_dict['write_width']:.2f}")
+    print(f"Read Width: {meas_dict['read_width']:.2f}")
+    print(f"Enable Write Width: {meas_dict['enable_write_width']:.2f}")
+    print(f"Enable Read Width: {meas_dict['enable_read_width']:.2f}")
+    print(f"Enable Write Phase: {meas_dict['enable_write_phase']:.2f}")
+    print(f"Enable Read Phase: {meas_dict['enable_read_phase']:.2f}")
     data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
     errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
-    print(errors)
+    print(errors / (NUM_MEAS * 2))
     return errors / (NUM_MEAS * 2)
 
 
 def run_optimize(meas_dict: dict):
-    # x0 = np.array([75.9e-6, 375e-6, 355e-6, 295e-6])
-    x0 = np.array([75.9e-6, 375e-6])
-
-    # x0_pulse = np.array([90, 90, 30, 30, 0, 0])
-    # bounds_pulse = [(50, 150), (50, 150), (20, 60), (20, 60), (-20, 20), (-20, 20)]
-
-    # opt_result = opt.minimize(
-    #     optimize_bias_currents,
-    #     x0=x0,
-    #     args=(meas_dict),
-    #     bounds=[(0, 100e-6), (250e-6, 400e-6)],
-    #     options={"disp": True, "maxiter": 10},
-    #     # method="Nelder-Mead",
-    #     method="L-BFGS-B",
-    # )
-
-    x0_read = np.array([375e-6, 295e-6])
-    bounds_read = [(200e-6, 500e-6), (250e-6, 400e-6)]
-    meas_dict["opt_scale"] = [500e-6, 400e-6]
-    x0_read = x0_read / meas_dict["opt_scale"]
-    bounds_read = [(200e-6 / 500e-6, 1), (250e-6 / 400e-6, 1)]
-    opt_result = opt.minimize(
-        optimize_read,
-        x0=x0_read,
-        args=(meas_dict),
-        bounds=bounds_read,
-        options={"disp": True, "maxiter": 10},
-        # method="Nelder-Mead",
-        method="L-BFGS-B",
+    space = [
+        Real(10, 200, name="write_current"),
+        Real(350, 600, name="read_current"),
+        Real(250, 380, name="enable_write_current"),
+        Real(250, 380, name="enable_read_current"),
+    ]
+    # space = [
+    #     Integer(50, 200, name="write_width"),
+    #     Integer(50, 150, name="read_width"),
+    #     Integer(10, 50, name="enable_write_width"),
+    #     Integer(10, 50, name="enable_read_width"),
+    #     Integer(-50, 50, name="enable_write_phase"),
+    #     Integer(-50, 50, name="enable_read_phase"),
+    # ]
+    nm.setup_scope_bert(b, meas_dict)
+    opt_result = gp_minimize(
+        partial(objective_bias, meas_dict=meas_dict),
+        space,
+        n_calls=100,
+        verbose=True,
+        x0=[
+            65,
+            425,
+            250,
+            250,
+        ],
+        # x0=[
+        #     150,
+        #     100,
+        #     30,
+        #     30,
+        #     30,
+        #     30,
+        # ],
     )
 
-    # x0_write = np.array([75.9e-6, 355e-6])
-    # bounds_write = [(10e-6, 100e-6), (250e-6, 400e-6)]
-
-    # opt_result = opt.minimize(
-    #     optimize_write,
-    #     x0=x0_write,
-    #     args=(meas_dict),
-    #     bounds=bounds_write,
-    #     options={"disp": True, "maxiter": 10},
-    #     # method="Nelder-Mead",
-    #     method="L-BFGS-B",
-    # )
-
-    # x0_phase = np.array([0, 30])
-    # bounds_phase = [(-50, 50), (-50, 50)]
-
-    # opt_result = opt.minimize(
-    #     optimize_pulse_phase,
-    #     x0=x0_phase,
-    #     args=(meas_dict),
-    #     bounds=bounds_phase,
-    #     options={"disp": True, "maxiter": 10},
-    #     # method="Nelder-Mead",
-    #     method="L-BFGS-B",
-    # )
-
-    # x0_write_width = np.array([90, 30, 0])
-    # bounds_write_width = [(50, 150), (20, 60), (-20, 20)]
-
-    # opt_result = opt.minimize(
-    #     optimize_write_widths,
-    #     x0=x0_write_width,
-    #     args=(meas_dict),
-    #     bounds=bounds_write_width,
-    #     options={"disp": True, "maxiter": 10},
-    #     # method="Nelder-Mead",
-    #     method="L-BFGS-B",
-    # )
-    return opt_result
+    return opt_result, meas_dict
 
 
 if __name__ == "__main__":
@@ -207,12 +157,12 @@ if __name__ == "__main__":
 
     waveform_settings = {
         "num_points": 256,
-        "write_width": 90,
-        "read_width": 90,  #
-        "enable_write_width": 30,
-        "enable_read_width": 30,
-        "enable_write_phase": 0,
-        "enable_read_phase": 0,
+        "write_width": 60,
+        "read_width": 137,  #
+        "enable_write_width": 32,
+        "enable_read_width": 32,
+        "enable_write_phase": -18,
+        "enable_read_phase": 50,
     }
 
     measurement_settings = {
@@ -228,38 +178,36 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
         "x": 0,
         "y": 0,
-        "write_current": 80.1e-6,
-        "read_current": 408e-6,
-        "enable_write_current": 354.5e-6,
-        "enable_read_current": 286e-6,
-        "threshold_bert": 0.15,
+        "write_current": 65e-6,
+        "read_current": 425e-6,
+        "enable_write_current": 332e-6,
+        "enable_read_current": 265e-6,
+        "threshold_bert": 0.2,
         "bitmsg_channel": "N0RNR1NRRN",
         "bitmsg_enable": "NWNWEWWNEW",
     }
 
     parameter_x = "enable_read_current"
-    measurement_settings["x"] = np.array([295e-6])
+    measurement_settings["x"] = np.array([265e-6])
     # measurement_settings["x"] = np.linspace(150e-6, 250e-6, 9)
 
-    optimization = run_optimize(measurement_settings)
-    print(f"Optimization Result: {optimization.x}")
-    b.properties["measurement_settings"] = measurement_settings
+    opt_res, measurement_settings = run_optimize(measurement_settings)
+    file_path, time_str = qf.save(b.properties, measurement_name)
 
-    # file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
-    # save_dict["time_str"] = time_str
-    # nm.plot_ber_sweep(
-    #     save_dict,
-    #     measurement_settings,
-    #     file_path,
-    #     parameter_x,
-    #     parameter_y,
-    #     "bit_error_rate",
-    # )
+    plot_convergence(opt_res)
+    plt.savefig(file_path + "{measurement_name}_convergence.png")
+    plot_evaluations(opt_res)
+    plt.savefig(file_path + "{measurement_name}_evaluations.png")
+    plot_objective(opt_res)
+    plt.savefig(file_path + "{measurement_name}_objective.png")
+    print(f"optimal parameters: {opt_res.x}")
+    print(f"optimal function value: {opt_res.fun}")
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-    # nm.write_dict_to_file(file_path, measurement_settings)
+    nm.write_dict_to_file(file_path, measurement_settings)
+    nm.write_dict_to_file(file_path, dict(opt_res))
 
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
