@@ -1,3 +1,4 @@
+SPICE_DEVICE_CURRENT = 45.189e-6
 CELLS = {
     "A1": {
         "write_current": 30e-6,
@@ -181,19 +182,19 @@ CELLS = {
 
 HEATERS = {
     1: {
-        "resistance": 258.8,
+        "resistance_cryo": 258.8,
         "spice_input_voltage": 0.1,
         "spice_heater_voltage": 78.251e-3,
         "squares": 428,
     },
     2: {
-        "resistance": 281.8,
+        "resistance_cryo": 281.8,
         "spice_input_voltage": 0.1,
         "spice_heater_voltage": 78.727e-3,
         "squares": 387,
     },
     3: {
-        "resistance": 253.3,
+        "resistance_cryo": 253.3,
         "spice_input_voltage": 0.1,
         "spice_heater_voltage": 78.126e-3,
         "squares": 387,
