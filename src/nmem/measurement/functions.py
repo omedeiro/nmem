@@ -20,17 +20,9 @@ from tqdm import tqdm
 
 from nmem.calculations.calculations import (
     calculate_heater_power,
-    htron_critical_current,
+    calculate_critical_current,
 )
 from nmem.measurement.cells import CELLS
-
-SPICE_VIN = 0.1
-SPICE_IDUT = 45.189e-6
-HEATER_RESISTANCE = 253.3
-SPICE_VHEATER = 78.126e-3
-
-
-# %% Functionss
 
 
 def gauss(x: float, mu: float, sigma: float, A: float):
@@ -93,19 +85,42 @@ def write_dict_to_file(file_path: str, save_dict: dict):
             file.write(f"{key}: {value}\n")
 
 
-def voltage2current(voltage: float, channel: int) -> float:
+def voltage2current(voltage: float, channel: int, measurement_settings: dict) -> float:
+    cell = measurement_settings.get("cell")
+    spice_device_current = measurement_settings.get("spice_device_current")
+    spice_input_voltage = measurement_settings["HEATERS"][int(cell[1])].get(
+        "spice_input_voltage"
+    )
+    spice_heater_voltage = measurement_settings["HEATERS"][int(cell[1])].get(
+        "spice_heater_voltage"
+    )
+    heater_resistance = measurement_settings["CELLS"][cell].get("resistance_cryo")
     if channel == 1:
-        current = SPICE_IDUT * (voltage / SPICE_VIN)
+        current = spice_device_current * (voltage / spice_input_voltage)
     if channel == 2:
-        current = voltage * (SPICE_VHEATER / SPICE_VIN) / HEATER_RESISTANCE
+        current = (
+            voltage * (spice_heater_voltage / spice_input_voltage) / heater_resistance
+        )
     return current
 
 
-def current2voltage(current: float, channel: int) -> float:
+def current2voltage(current: float, channel: int, measurement_settings: dict) -> float:
+    cell = measurement_settings.get("cell")
+    spice_device_current = measurement_settings.get("spice_device_current")
+    spice_input_voltage = measurement_settings["HEATERS"][int(cell[1])].get(
+        "spice_input_voltage"
+    )
+    spice_heater_voltage = measurement_settings["HEATERS"][int(cell[1])].get(
+        "spice_heater_voltage"
+    )
+    heater_resistance = measurement_settings["CELLS"][cell].get("resistance_cryo")
+
     if channel == 1:
-        voltage = SPICE_VIN * (current / SPICE_IDUT)
+        voltage = spice_input_voltage * (current / spice_device_current)
     if channel == 2:
-        voltage = current * HEATER_RESISTANCE / (SPICE_VHEATER / SPICE_VIN)
+        voltage = (
+            current * heater_resistance / (spice_heater_voltage / spice_input_voltage)
+        )
     return voltage
 
 
@@ -116,9 +131,11 @@ def calculate_voltage(measurement_settings: dict) -> dict:
     enable_read_current = measurement_settings.get("enable_read_current")
 
     enable_peak_current = max(enable_write_current, enable_read_current)
-    enable_voltage = current2voltage(enable_peak_current, channel=2)
-    channel_voltage = current2voltage(read_current + write_current, channel=1)
-    channel_voltage_read = current2voltage(read_current, channel=1)
+    enable_voltage = current2voltage(enable_peak_current, 2, measurement_settings)
+    channel_voltage = current2voltage(
+        read_current + write_current, 1, measurement_settings
+    )
+    channel_voltage_read = current2voltage(read_current, 1, measurement_settings)
 
     if read_current == 0:
         wr_ratio = 0
@@ -135,7 +152,7 @@ def calculate_voltage(measurement_settings: dict) -> dict:
     measurement_settings["enable_voltage"] = enable_voltage
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
-    measurement_settings["threshold_bert"] = channel_voltage_read / 5
+    measurement_settings["threshold_bert"] = channel_voltage_read / 4.5
     return measurement_settings
 
 
@@ -824,7 +841,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylabel("voltage (mV)")
     plt.xlabel("time (us)")
     plt.xlim((0, horizontal_scale * 10 * 1e6))
-    plt.ylim((-200, 700))
+    plt.ylim((-200, 1200))
 
     ax1 = plt.subplot(413)
     ax1.plot(
@@ -840,7 +857,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylabel("volage (mV)")
     ax1.legend(loc=1)
     plt.xlim((0, horizontal_scale * 10 * 1e6))
-    plt.ylim((-200, 1000))
+    plt.ylim((-200, 700))
 
     ax2 = plt.subplot(412)
     ax2.plot(
@@ -1001,12 +1018,8 @@ def run_realtime(b: nTron, num_meas: int = 100):
     return t0, t1
 
 
-def run_realtime_bert(b: nTron, measurement_settings: dict):
-    if measurement_settings["num_meas"]:
-        num_meas = measurement_settings["num_meas"]
-    else:
-        num_meas = 100
-
+def run_realtime_bert(b: nTron, measurement_settings: dict) -> dict:
+    num_meas = measurement_settings.get("num_meas", 100)
     threshold = measurement_settings.get("threshold_bert", 150e-3)
 
     b.inst.scope.set_trigger_mode("Normal")
@@ -1048,24 +1061,25 @@ def run_realtime_bert(b: nTron, measurement_settings: dict):
     else:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
+
     # READ 1: below threshold (no voltage)
-    write_0_read_1 = (read_zero_top < threshold).sum()
+    write_0_read_1 = np.array([(read_zero_top < threshold).sum()])
 
     # READ 0: above threshold (voltage)
-    write_1_read_0 = (read_one_top > threshold).sum()
+    write_1_read_0 = np.array([(read_one_top > threshold).sum()])
 
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
 
-    return (
-        read_zero_top,
-        read_one_top,
-        write_0_read_1,
-        write_1_read_0,
-        write_0_read_1_norm,
-        write_1_read_0_norm,
-        measurement_settings,
-    )
+    result_dict = {
+        "write_0_read_1": write_0_read_1,
+        "write_1_read_0": write_1_read_0,
+        "write_0_read_1_norm": write_0_read_1_norm,
+        "write_1_read_0_norm": write_1_read_0_norm,
+        "read_zero_top": read_zero_top,
+        "read_one_top": read_one_top,
+    }
+    return result_dict
 
 
 def run_sequence_bert(b: nTron, measurement_settings: dict):
@@ -1222,33 +1236,22 @@ def run_measurement(
 
     b.inst.scope.clear_sweeps()
 
-    (
-        read_zero_top,
-        read_one_top,
-        write_0_read_1,
-        write_1_read_0,
-        write_0_read_1_norm,
-        write_1_read_0_norm,
-        measurement_settings,
-    ) = run_realtime_bert(b, measurement_settings)
+    meas_dict = run_realtime_bert(b, measurement_settings)
 
     trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-    bit_error_rate = calculate_bit_error_rate(write_1_read_0, write_0_read_1, num_meas)
+    bit_error_rate = calculate_bit_error_rate(
+        meas_dict["write_1_read_0"], meas_dict["write_0_read_1"], num_meas
+    )
 
     DATA_DICT = {
+        **meas_dict,
         "trace_chan_in": trace_chan_in,
         "trace_chan_out": trace_chan_out,
         "trace_enab": trace_enab,
-        "write_0_read_1": write_0_read_1,
-        "write_1_read_0": write_1_read_0,
-        "write_0_read_1_norm": write_0_read_1_norm,
-        "write_1_read_0_norm": write_1_read_0_norm,
-        "read_zero_top": read_zero_top,
-        "read_one_top": read_one_top,
         "bit_error_rate": bit_error_rate,
     }
 
@@ -1277,11 +1280,12 @@ def run_sweep(
             cell = b.properties["Save File"]["cell"]
             slope = measurement_settings["CELLS"][cell]["slope"]
             intercept = measurement_settings["CELLS"][cell]["intercept"]
-            write_critical_current = htron_critical_current(
-                measurement_settings["enable_write_current"] * 1e6, slope, intercept
+            cell_dict = measurement_settings["CELLS"][cell]
+            write_critical_current = calculate_critical_current(
+                measurement_settings["enable_write_current"] * 1e6, cell_dict
             )
-            read_critical_current = htron_critical_current(
-                measurement_settings["enable_read_current"] * 1e6, slope, intercept
+            read_critical_current = calculate_critical_current(
+                measurement_settings["enable_read_current"] * 1e6, cell_dict
             )
             max_heater_current = -intercept / slope
             # print(f"Write Current: {measurement_settings['write_current']:.2f}")
@@ -1336,6 +1340,7 @@ def run_sweep(
                 "Write 1 Read 0": [data_dict["write_1_read_0"]],
                 "Bit Error Rate": [data_dict["bit_error_rate"]],
             }
+
             pd.set_option("display.float_format", "{:.3f}".format)
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
             param_df.columns = ["Value"]
