@@ -18,7 +18,30 @@ def htron_heater_current(
     heater_current = (channel_current - intercept) / slope
     return heater_current
 
-def calculate_heater_power(heater_current:float, heater_resistance:float)->float:
+
+def calculate_critical_current(
+    heater_current: float,
+    cell_dict: dict,
+) -> float:
+    slope = cell_dict["slope"]
+    intercept = cell_dict["intercept"]
+    critical_current = htron_critical_current(heater_current, slope, intercept)
+    if critical_current > cell_dict.get("max_critical_current", np.inf) * 1e6:
+        return cell_dict["max_critical_current"]
+    else:
+        return critical_current
+
+
+def calculate_heater_current(
+    channel_current: float,
+    cell_dict: dict,
+) -> float:
+    slope = cell_dict["slope"]
+    intercept = cell_dict["intercept"]
+    return htron_heater_current(channel_current, slope, intercept)
+
+
+def calculate_heater_power(heater_current: float, heater_resistance: float) -> float:
     return heater_current**2 * heater_resistance
 
 
