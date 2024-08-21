@@ -5,7 +5,6 @@ Created on Sat Dec  9 16:17:34 2023
 @author: omedeiro
 """
 
-import os
 import time
 from functools import partial
 
@@ -18,7 +17,7 @@ from skopt.plots import plot_convergence, plot_evaluations, plot_objective
 from skopt.space import Integer, Real
 
 import nmem.measurement.functions as nm
-from nmem.measurement.cells import CELLS
+from nmem.measurement.cells import CELLS, HEATERS, SPICE_DEVICE_CURRENT
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
@@ -51,12 +50,27 @@ SAMPLE_RATE = {
     9: 512e3,
 }
 
-NUM_MEAS = 1000
+NUM_MEAS = 100
 NUM_DIVISIONS = 10
 NUM_SAMPLES = 5e3
 NUM_POINTS = 2**8
 ENABLE_WIDTH = 100e-9
 BIAS_WIDTH = 300e-9
+
+
+def objective_converse(x, meas_dict: dict):
+    meas_dict["write_current"] = x[0] * 1e-6
+    meas_dict["enable_read_current"] = x[1] * 1e-6
+    print(x)
+    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
+    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
+    data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
+    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
+    print(errors / (NUM_MEAS * 2))
+    return errors / (NUM_MEAS * 2)
 
 
 def objective_bias(x, meas_dict: dict):
@@ -69,13 +83,72 @@ def objective_bias(x, meas_dict: dict):
     print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
     print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
     print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
+    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
+    # print(np.abs((errors / (NUM_MEAS * 2)) - 1))
+
+    res = errors / (NUM_MEAS * 2)
+    # if res > 0.5:
+    # res = 1 - res
+    print(res)
+    return res
+
+
+def objective_fixed_write(x, meas_dict: dict):
+    meas_dict["read_current"] = x[0] * 1e-6
+    meas_dict["enable_write_current"] = x[1] * 1e-6
+    meas_dict["enable_read_current"] = x[2] * 1e-6
+    print(x)
+    print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
+    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
     data_dict = nm.run_measurement(b, meas_dict, plot=True)
 
     qf.save(b.properties, measurement_name, data_dict)
 
     errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
+    # print(np.abs((errors / (NUM_MEAS * 2)) - 1))
     print(errors / (NUM_MEAS * 2))
     return errors / (NUM_MEAS * 2)
+
+
+def objective_read(x, meas_dict: dict):
+    meas_dict["read_current"] = x[0] * 1e-6
+    meas_dict["enable_read_current"] = x[1] * 1e-6
+    print(x)
+    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
+    print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
+    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
+    data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
+    print(errors / (NUM_MEAS * 2))
+    return errors / (NUM_MEAS * 2)
+
+
+def objective_write(x, meas_dict: dict):
+    meas_dict["write_current"] = x[0] * 1e-6
+    meas_dict["enable_write_current"] = x[1] * 1e-6
+    print(x)
+    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
+    data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
+
+    res = errors / (NUM_MEAS * 2)
+    # if res > 0.5:
+    #     res = 1 - res
+    print(res)
+    return res
 
 
 def objective_waveform(x, meas_dict: dict):
@@ -92,21 +165,21 @@ def objective_waveform(x, meas_dict: dict):
     print(f"Enable Read Width: {meas_dict['enable_read_width']:.2f}")
     print(f"Enable Write Phase: {meas_dict['enable_write_phase']:.2f}")
     print(f"Enable Read Phase: {meas_dict['enable_read_phase']:.2f}")
-    data_dict = nm.run_measurement(b, meas_dict, plot=True)
+    data_dict = nm.run_measurement(b, meas_dict, plot=False)
 
     qf.save(b.properties, measurement_name, data_dict)
 
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
     print(errors / (NUM_MEAS * 2))
     return errors / (NUM_MEAS * 2)
 
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(10, 200, name="write_current"),
-        Real(350, 600, name="read_current"),
-        Real(250, 380, name="enable_write_current"),
-        Real(250, 380, name="enable_read_current"),
+        Real(10, 100, name="write_current"),
+        Real(640, 710, name="read_current"),
+        Real(180, 230, name="enable_write_current"),
+        Real(140, 200, name="enable_read_current"),
     ]
     # space = [
     #     Integer(50, 200, name="write_width"),
@@ -123,18 +196,18 @@ def run_optimize(meas_dict: dict):
         n_calls=100,
         verbose=True,
         x0=[
-            65,
-            425,
-            250,
-            250,
+            45,
+            688,
+            223,
+            171,
         ],
         # x0=[
-        #     150,
-        #     100,
-        #     30,
-        #     30,
-        #     30,
-        #     30,
+        #     180,
+        #     68,
+        #     50,
+        #     50,
+        #     -50,
+        #     -34,
         # ],
     )
 
@@ -157,39 +230,48 @@ if __name__ == "__main__":
 
     waveform_settings = {
         "num_points": 256,
-        "write_width": 60,
-        "read_width": 137,  #
-        "enable_write_width": 32,
-        "enable_read_width": 32,
-        "enable_write_phase": -18,
-        "enable_read_phase": 50,
+        "write_width": 180,
+        "read_width": 68,  #
+        "enable_write_width": 50,
+        "enable_read_width": 50,
+        "enable_write_phase": -50,
+        "enable_read_phase": -34,
     }
+
+    # waveform_settings = {
+    #     "num_points": 256,
+    #     "write_width": 90,
+    #     "read_width": 90,  #
+    #     "enable_write_width": 30,
+    #     "enable_read_width": 30,
+    #     "enable_write_phase": 0,
+    #     "enable_read_phase": 30,
+    # }
 
     measurement_settings = {
         **waveform_settings,
         "measurement_name": measurement_name,
         "sample_name": sample_name,
+        "cell": current_cell,
         "CELLS": CELLS,
+        "HEATERS": HEATERS,
         "num_meas": NUM_MEAS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
         "num_samples_scope": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+        "spice_device_current": SPICE_DEVICE_CURRENT,
         "x": 0,
         "y": 0,
-        "write_current": 65e-6,
-        "read_current": 425e-6,
-        "enable_write_current": 332e-6,
-        "enable_read_current": 265e-6,
+        "write_current": 45e-6,
+        "read_current": 688e-6,
+        "enable_write_current": 223e-6,
+        "enable_read_current": 162e-6,
         "threshold_bert": 0.2,
-        "bitmsg_channel": "N0RNR1NRRN",
-        "bitmsg_enable": "NWNWEWWNEW",
+        "bitmsg_channel": "N0RNR1RNRN",
+        "bitmsg_enable": "NWNWEWNWEW",
     }
-
-    parameter_x = "enable_read_current"
-    measurement_settings["x"] = np.array([265e-6])
-    # measurement_settings["x"] = np.linspace(150e-6, 250e-6, 9)
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name)
