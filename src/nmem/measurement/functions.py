@@ -113,7 +113,9 @@ def current2voltage(current: float, channel: int, measurement_settings: dict) ->
     spice_heater_voltage = measurement_settings["HEATERS"][int(cell[1])].get(
         "spice_heater_voltage"
     )
-    heater_resistance = measurement_settings["CELLS"][cell].get("resistance_cryo")
+    heater_resistance = measurement_settings["HEATERS"][int(cell[1])].get(
+        "resistance_cryo"
+    )
 
     if channel == 1:
         voltage = spice_input_voltage * (current / spice_device_current)
@@ -175,7 +177,7 @@ def calculate_currents(
     time_one: np.ndarray,
     measurement_settings: dict,
     total_points: int,
-    sample_time: float,
+    scope_timespan: float,
 ):
     num_meas = measurement_settings["num_meas"]
     read_current = measurement_settings["read_current"]
@@ -191,7 +193,7 @@ def calculate_currents(
     if len(time_one) < num_meas:
         time_one.resize(num_meas, refcheck=False)
 
-    read_time = (measurement_settings["read_width"] / total_points) * sample_time
+    read_time = (measurement_settings["read_width"] / total_points) * scope_timespan
 
     current_zero = time_zero / read_time * read_current
     current_one = time_one / read_time * read_current
@@ -234,16 +236,18 @@ def setup_scope_bert(
     division_zero: float = 4.5,
     division_one: float = 8.5,
 ):
-    horizontal_scale = measurement_settings["horizontal_scale"]
-    sample_time = measurement_settings["sample_time"]
+    scope_horizontal_scale = measurement_settings["scope_horizontal_scale"]
+    scope_timespan = measurement_settings["scope_timespan"]
     scope_sample_rate = measurement_settings["scope_sample_rate"]
     threshold_read = measurement_settings.get("threshold_read", 100e-3)
     threshold_enab = measurement_settings.get("threshold_enab", 15e-3)
     num_meas = measurement_settings.get("num_meas")
 
-    b.inst.scope.set_deskew("F3", min(sample_time / 200, 5e-6))
+    b.inst.scope.set_deskew("F3", min(scope_timespan / 200, 5e-6))
 
-    b.inst.scope.set_horizontal_scale(horizontal_scale, -horizontal_scale * 5)
+    b.inst.scope.set_horizontal_scale(
+        scope_horizontal_scale, -scope_horizontal_scale * 5
+    )
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
     b.inst.scope.set_measurement_clock_level("P1", "1", "Absolute", threshold_enab)
@@ -252,8 +256,8 @@ def setup_scope_bert(
     b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
     b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    b.inst.scope.set_measurement_gate("P3", division_zero + 0.1, division_zero + 0.3)
-    b.inst.scope.set_measurement_gate("P4", division_one + 0.1, division_one + 0.3)
+    b.inst.scope.set_measurement_gate("P3", division_zero, division_zero + 0.2)
+    b.inst.scope.set_measurement_gate("P4", division_one, division_one + 0.2)
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -288,6 +292,9 @@ def create_waveforms(
     half = np.floor(width / 2)
     start = int(middle - half)
     stop = int(start + width)
+
+    if start < 0:
+        start = 0
     if stop > num_samples:
         stop = int(num_samples)
 
@@ -295,6 +302,31 @@ def create_waveforms(
         waveform[start:stop] = np.linspace(0, height, int(np.floor(width)))
     else:
         waveform[start:stop] = height
+
+    return waveform
+
+
+def create_waveforms_edge(
+    num_samples: int = 256,
+    width: int = 30,
+    height: int = 1,
+    phase: int = 0,
+    edge: int = 5,
+) -> np.ndarray:
+    waveform = np.zeros(num_samples)
+    middle = np.floor(num_samples / 2) + phase
+    half = np.floor(width / 2)
+    start = int(middle - half)
+    stop = int(start + width)
+
+    if start < 0:
+        start = edge
+    if stop > num_samples:
+        stop = int(num_samples) - edge
+
+    waveform[start:stop] = height
+    waveform[start - edge : start] = np.linspace(0, height, edge)
+    waveform[stop : stop + edge] = np.linspace(height, 0, edge)
 
     return waveform
 
@@ -339,22 +371,32 @@ def load_waveforms(
     )
 
     num_points = measurement_settings.get("num_points", 256)
-
+    RISING_EDGE = 0
     if wr_ratio >= 1:
-        write_0 = create_waveforms(width=ww, height=-1)
-        write_1 = create_waveforms(width=ww, height=1)
-        read_wave = create_waveforms(width=rw, height=1 / wr_ratio, ramp=ramp_read)
+        write_0 = create_waveforms_edge(width=ww, height=-1, edge=RISING_EDGE)
+        write_1 = create_waveforms_edge(width=ww, height=1, edge=RISING_EDGE)
+        read_wave = create_waveforms_edge(
+            width=rw, height=1 / wr_ratio, edge=RISING_EDGE
+        )
     else:
-        write_0 = create_waveforms(width=ww, height=-wr_ratio)
-        write_1 = create_waveforms(width=ww, height=wr_ratio)
-        read_wave = create_waveforms(width=rw, height=1, ramp=ramp_read)
+        write_0 = create_waveforms_edge(width=ww, height=-wr_ratio, edge=RISING_EDGE)
+        write_1 = create_waveforms_edge(width=ww, height=wr_ratio, edge=RISING_EDGE)
+        read_wave = create_waveforms_edge(width=rw, height=1, edge=RISING_EDGE)
 
     if ewr_ratio >= 1:
-        enable_write = create_waveforms(width=eww, height=1, phase=ew_phase)
-        enable_read = create_waveforms(width=erw, height=1 / ewr_ratio, phase=er_phase)
+        enable_write = create_waveforms_edge(
+            width=eww, height=1, phase=ew_phase, edge=RISING_EDGE
+        )
+        enable_read = create_waveforms_edge(
+            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=RISING_EDGE
+        )
     else:
-        enable_write = create_waveforms(width=eww, height=ewr_ratio, phase=ew_phase)
-        enable_read = create_waveforms(width=erw, height=1, phase=er_phase)
+        enable_write = create_waveforms_edge(
+            width=eww, height=ewr_ratio, phase=ew_phase, edge=RISING_EDGE
+        )
+        enable_read = create_waveforms_edge(
+            width=erw, height=1, phase=er_phase, edge=RISING_EDGE
+        )
 
     null_wave = create_waveforms(height=0)
 
@@ -823,7 +865,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     bitmsg_enable = measurement_settings.get("bitmsg_enable", 0)
     measurement_name = measurement_settings.get("measurement_name", 0)
     sample_name = measurement_settings.get("sample_name", 0)
-    horizontal_scale = measurement_settings.get("horizontal_scale", 0)
+    scope_timespan = measurement_settings.get("scope_timespan", 0)
     threshold_bert = measurement_settings.get("threshold_bert")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
@@ -840,7 +882,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax0.legend(loc=1)
     plt.ylabel("voltage (mV)")
     plt.xlabel("time (us)")
-    plt.xlim((0, horizontal_scale * 10 * 1e6))
+    plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-200, 1200))
 
     ax1 = plt.subplot(413)
@@ -856,7 +898,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     ax1.legend(loc=1)
-    plt.xlim((0, horizontal_scale * 10 * 1e6))
+    plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-200, 700))
 
     ax2 = plt.subplot(412)
@@ -866,7 +908,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax2.legend(loc=1)
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
-    plt.xlim((0, horizontal_scale * 10 * 1e6))
+    plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-50, 200))
 
     ax3 = plt.subplot(414)
@@ -1204,7 +1246,7 @@ def run_measurement(
     sample_rate: float = measurement_settings.get("sample_rate")
     channel_voltage: float = measurement_settings.get("channel_voltage")
     enable_voltage: float = measurement_settings.get("enable_voltage")
-    scope_samples: int = int(measurement_settings.get("num_samples_scope"))
+    scope_samples: int = int(measurement_settings.get("scope_num_samples"))
     num_meas: int = measurement_settings.get("num_meas")
 
     ######################################################
@@ -1407,13 +1449,13 @@ def run_sweep_subset(
             else:
                 data_dict = {
                     "trace_chan_in": np.empty(
-                        (2, measurement_settings["num_samples_scope"])
+                        (2, measurement_settings["scope_num_samples"])
                     ),
                     "trace_chan_out": np.empty(
-                        (2, measurement_settings["num_samples_scope"])
+                        (2, measurement_settings["scope_num_samples"])
                     ),
                     "trace_enab": np.empty(
-                        (2, measurement_settings["num_samples_scope"])
+                        (2, measurement_settings["scope_num_samples"])
                     ),
                     "write_0_read_1": np.nan,
                     "write_1_read_0": np.nan,
