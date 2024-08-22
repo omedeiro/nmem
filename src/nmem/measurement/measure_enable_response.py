@@ -20,12 +20,17 @@ def construct_currents(
     intercept: float,
     margin: float,
     num_points: int = 4,
-):
+    max_critical_current: float = 771e-6,
+) -> np.ndarray:
     bias_current_array = np.zeros((len(heater_currents), num_points))
     for heater_current in heater_currents:
         critical_current = htron_critical_current(heater_current, slope, intercept)
+        if critical_current > max_critical_current:
+            critical_current = max_critical_current
         bias_currents = np.linspace(
-            critical_current * (1 - margin), critical_current * (1 + margin), num_points
+            critical_current * (1 - margin * 1.7),
+            critical_current * (1 + margin * 0.3),
+            num_points,
         )
         bias_current_array[heater_currents == heater_current] = bias_currents
 
@@ -48,7 +53,28 @@ if __name__ == "__main__":
     date_str = time.strftime("%Y%m%d")
     measurement_name = f"{date_str}_measure_enable_response"
 
+    waveform_settings = {
+        "num_points": 256,
+        "write_width": 180,
+        "read_width": 68,  #
+        "enable_write_width": 50,
+        "enable_read_width": 50,
+        "enable_write_phase": -50,
+        "enable_read_phase": -34,
+    }
+
+    # waveform_settings = {
+    #     "num_points": 256,
+    #     "write_width": 90,
+    #     "read_width": 90,  #
+    #     "enable_write_width": 30,
+    #     "enable_read_width": 30,
+    #     "enable_write_phase": 0,
+    #     "enable_read_phase": 30,
+    # }
+
     measurement_settings = {
+        **waveform_settings,
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "cell": current_cell,
@@ -67,25 +93,19 @@ if __name__ == "__main__":
         "scope_sample_rate": int(5000) / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
         "x": 0,
         "y": 0,
-        "num_samples": 2**8,
-        "write_width": 100,
-        "read_width": 100,  #
-        "enable_write_width": 30,
-        "enable_read_width": 30,
-        "enable_write_phase": 0,
-        "enable_read_phase": 30,
         "bitmsg_channel": "NNNNRNNNRN",
         "bitmsg_enable": "NENNENNNEE",
     }
 
     t1 = time.time()
     parameter_x = "enable_read_current"
-    # measurement_settings["x"] = np.array([280e-6])
-    measurement_settings["x"] = np.linspace(240e-6, 300e-6, 11)
+    # measurement_settings["x"] = np.array([0e-6])
+    measurement_settings["x"] = np.linspace(220e-6, 270e-6, 7)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(250e-6, 650e-6, 81)
-
+    measurement_settings["y"] = np.linspace(200e-6, 810e-6, 51)
+    print(f"Slope: {CELLS[current_cell]['slope']}")
+    print(f"Intercept: {CELLS[current_cell]['intercept']}")
     measurement_settings["x_subset"] = measurement_settings["x"]
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
