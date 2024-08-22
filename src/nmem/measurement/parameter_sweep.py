@@ -74,10 +74,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 45.213e-6,
-        "read_current": 675.9e-6,
-        "enable_write_current": 224.494e-6,
-        "enable_read_current": 179.9e-6,
+        "write_current": 180e-6,
+        "read_current": 478e-6,
+        "enable_write_current": 265e-6,
+        "enable_read_current": 240e-6,
     }
 
     scope_settings = {
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 5000
+    NUM_MEAS = 100
 
     measurement_settings = {
         **waveform_settings,
@@ -104,27 +104,27 @@ if __name__ == "__main__":
         "threshold_bert": 0.2,
     }
 
-    parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([224.494e-6])
-    # measurement_settings["x"] = np.linspace(260e-6, 350e-6, 11)
+    parameter_x = "enable_read_current"
+    measurement_settings["x"] = np.array([240e-6])
+    # measurement_settings["x"] = np.linspace(190e-6, 200e-6, 11)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
     # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 3)
 
-    read_sweep = False
+    read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        measurement_settings["y"] = np.array([688e-6])
-        # measurement_settings["y"] = np.linspace(610e-6, 650e-6, 11)
+        measurement_settings["y"] = np.array([478e-6])
+        # measurement_settings["y"] = np.linspace(610e-6, 640e-6, 11)
         # read_critical_current = calculate_critical_current(
         #     measurement_settings["enable_read_current"], CELLS[current_cell]
         # )
         # measurement_settings["y"] = np.linspace(
-        #     read_critical_current * 0.75, read_critical_current * 1.0, 11
+        #     read_critical_current * 0.7, read_critical_current * 0.85, 11
         # )
     else:
         parameter_y = "write_current"
-        measurement_settings["y"] = np.array([45.213e-6])
-        # measurement_settings["y"] = np.linspace(40e-6, 90e-6, 5)
+        # measurement_settings["y"] = np.array([88.61e-6])
+        measurement_settings["y"] = np.linspace(40e-6, 90e-6, 11)
         # write_critical_current = calculate_critical_current(
         #     measurement_settings["enable_write_current"], CELLS[current_cell]
         # )
