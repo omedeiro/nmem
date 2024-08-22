@@ -145,16 +145,16 @@ CELLS = {
         "max_critical_current": 750e-6,
     },
     "D2": {
-        "write_current": 180e-6,
-        "read_current": 478e-6,
-        "enable_write_current": 265e-6,
-        "enable_read_current": 240e-6,
+        "write_current": 176.86e-6,
+        "read_current": 484.9e-6,
+        "enable_write_current": 238.61e-6,
+        "enable_read_current": 236.9e-6,
         "slope": -4.035,
         "intercept": 1653.676,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
-        "min_bit_error_rate": 0.4,
-        "max_critical_current": 750e-6,
+        "min_bit_error_rate": 0.064,
+        "max_critical_current": 692e-6,
     },
     "D3": {
         "write_current": 87e-6,
@@ -231,7 +231,7 @@ SAMPLE_RATE = {
     8: 128e4,
     9: 512e3,
 }
-
+CONFIG = r"SPG806_config_ICE.yml"
 NUM_DIVISIONS = 10
 NUM_SAMPLES = int(2.5e3)
 SPICE_DEVICE_CURRENT = 45.189e-6
