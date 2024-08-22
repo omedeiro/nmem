@@ -67,8 +67,8 @@ def objective_bias(x, meas_dict: dict):
     # print(np.abs((errors / (NUM_MEAS * 2)) - 1))
 
     res = errors / (NUM_MEAS * 2)
-    # if res > 0.5:
-    # res = 1 - res
+    if res > 0.5:
+        res = 1 - res
     print(res)
     return res
 
@@ -85,10 +85,31 @@ def objective_fixed_write(x, meas_dict: dict):
 
     qf.save(b.properties, measurement_name, data_dict)
 
-    errors = data_dict["write_1_read_0"] + data_dict["write_0_read_1"]
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
     # print(np.abs((errors / (NUM_MEAS * 2)) - 1))
     print(errors / (NUM_MEAS * 2))
     return errors / (NUM_MEAS * 2)
+
+
+def objective_fixed_read(x, meas_dict: dict):
+    meas_dict["write_current"] = x[0] * 1e-6
+    meas_dict["enable_write_current"] = x[1] * 1e-6
+    meas_dict["enable_read_current"] = x[2] * 1e-6
+    print(x)
+    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
+    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
+    data_dict = nm.run_measurement(b, meas_dict, plot=True)
+
+    qf.save(b.properties, measurement_name, data_dict)
+
+    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
+    # print(np.abs((errors / (NUM_MEAS * 2)) - 1))
+    res = errors / (NUM_MEAS * 2)
+    if res > 0.5:
+        res = 1 - res
+    print(res)
+    return res
 
 
 def objective_read(x, meas_dict: dict):
@@ -152,37 +173,19 @@ def objective_waveform(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(40, 90, name="write_current"),
-        # Real(650, 720, name="read_current"),
-        Real(200, 255, name="enable_write_current"),
-        # Real(170, 190, name="enable_read_current"),
+        Real(175, 185, name="write_current"),
+        Real(470, 480, name="read_current"),
+        Real(260, 270, name="enable_write_current"),
+        Real(230, 250, name="enable_read_current"),
     ]
-    # space = [
-    #     Integer(60, 100, name="write_width"),
-    #     Integer(10, 100, name="read_width"),
-    #     Integer(10, 50, name="enable_write_width"),
-    #     Integer(10, 50, name="enable_read_width"),
-    #     Integer(-40, 20, name="enable_write_phase"),
-    #     Integer(-40, -10, name="enable_read_phase"),
-    # ]
+
     nm.setup_scope_bert(b, meas_dict)
     opt_result = gp_minimize(
-        partial(objective_write, meas_dict=meas_dict),
+        partial(objective_bias, meas_dict=meas_dict),
         space,
         n_calls=20,
         verbose=True,
-        x0=[
-            49,
-            228,
-        ],
-        # x0 = [
-        #     90,
-        #     82,
-        #     36,
-        #     33,
-        #     -12,
-        #     -35,
-        # ]
+        x0=meas_dict["opt_x0"],
     )
 
     return opt_result, meas_dict
@@ -220,10 +223,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 45.213e-6,
-        "read_current": 675.9e-6,
-        "enable_write_current": 224.494e-6,
-        "enable_read_current": 179.9e-6,
+        "write_current": 180e-6,
+        "read_current": 478e-6,
+        "enable_write_current": 265e-6,
+        "enable_read_current": 240e-6,
     }
 
     scope_settings = {
@@ -232,7 +235,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 500
+    NUM_MEAS = 2000
 
     measurement_settings = {
         **waveform_settings,
@@ -248,6 +251,7 @@ if __name__ == "__main__":
         "x": 0,
         "y": 0,
         "threshold_bert": 0.2,
+        "opt_x0": list(current_settings.values()),
     }
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
