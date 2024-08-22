@@ -8,8 +8,18 @@ from matplotlib import pyplot as plt
 import nmem.measurement.functions as nm
 from nmem.analysis.enable_current_relation import find_peak
 from nmem.calculations.calculations import htron_critical_current
-from nmem.measurement.cells import CELLS
-from nmem.measurement.parameter_sweep import CONFIG, HORIZONTAL_SCALE, SAMPLE_RATE
+from nmem.measurement.cells import (
+    CELLS,
+    FREQ_IDX,
+    HEATERS,
+    HORIZONTAL_SCALE,
+    NUM_DIVISIONS,
+    NUM_POINTS,
+    NUM_SAMPLES,
+    SAMPLE_RATE,
+    SPICE_DEVICE_CURRENT,
+)
+from nmem.measurement.parameter_sweep import CONFIG
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
@@ -39,9 +49,7 @@ def construct_currents(
 
 if __name__ == "__main__":
     b = nt.nTron(CONFIG)
-    REAL_TIME = 1
     NUM_MEAS = 100
-    FREQ_IDX = 1
     current_cell = b.properties["Save File"]["cell"]
     sample_name = [
         b.sample_name,
@@ -52,17 +60,6 @@ if __name__ == "__main__":
     sample_name = str("-".join(sample_name))
     date_str = time.strftime("%Y%m%d")
     measurement_name = f"{date_str}_measure_enable_response"
-
-    waveform_settings = {
-        "num_points": 256,
-        "write_width": 180,
-        "read_width": 68,  #
-        "enable_write_width": 50,
-        "enable_read_width": 50,
-        "enable_write_phase": -50,
-        "enable_read_phase": -34,
-    }
-
     # waveform_settings = {
     #     "num_points": 256,
     #     "write_width": 90,
@@ -73,28 +70,47 @@ if __name__ == "__main__":
     #     "enable_read_phase": 30,
     # }
 
-    measurement_settings = {
-        **waveform_settings,
-        "measurement_name": measurement_name,
-        "sample_name": sample_name,
-        "cell": current_cell,
+    waveform_settings = {
+        "num_points": NUM_POINTS,
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
+        "write_width": 90,
+        "read_width": 90,  #
+        "enable_write_width": 30,
+        "enable_read_width": 30,
+        "enable_write_phase": 0,
+        "enable_read_phase": 30,
+        "bitmsg_channel": "N0NNRNNNRN",
+        "bitmsg_enable": "NNNNENNNEW",
+    }
+
+    current_settings = {
         "write_current": 0e-6,
         "read_current": 600e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 150e-6,
+    }
+    scope_settings = {
+        "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+        "scope_num_samples": NUM_SAMPLES,
+        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+    }
+    NUM_MEAS = 100
+
+    measurement_settings = {
+        **waveform_settings,
+        **current_settings,
+        **scope_settings,
+        "measurement_name": measurement_name,
+        "sample_name": sample_name,
+        "cell": current_cell,
+        "CELLS": CELLS,
+        "HEATERS": HEATERS,
         "num_meas": NUM_MEAS,
-        "threshold_read": 100e-3,
-        "threshold_enab": 15e-3,
-        "threshold_bert": 0.2,
-        "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
-        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
-        "num_samples_scope": int(5000),
-        "scope_sample_rate": int(5000) / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
+        "spice_device_current": SPICE_DEVICE_CURRENT,
         "x": 0,
         "y": 0,
-        "bitmsg_channel": "NNNNRNNNRN",
-        "bitmsg_enable": "NENNENNNEE",
+        "threshold_bert": 0.2,
     }
 
     t1 = time.time()
@@ -103,7 +119,7 @@ if __name__ == "__main__":
     measurement_settings["x"] = np.linspace(220e-6, 270e-6, 7)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(200e-6, 810e-6, 51)
+    measurement_settings["y"] = np.linspace(300e-6, 820e-6, 61)
     print(f"Slope: {CELLS[current_cell]['slope']}")
     print(f"Intercept: {CELLS[current_cell]['intercept']}")
     measurement_settings["x_subset"] = measurement_settings["x"]
@@ -111,7 +127,7 @@ if __name__ == "__main__":
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
         CELLS[current_cell]["intercept"] * 1e-6,
-        0.1,
+        0.05,
     )
 
     save_dict = nm.run_sweep_subset(
