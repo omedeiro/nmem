@@ -1354,6 +1354,13 @@ def run_sweep(
             )
             param_dict = {
                 "Write Current [uA]": [measurement_settings["write_current"] * 1e6],
+                "Read Current [uA]": [measurement_settings["read_current"] * 1e6],
+                "Enable Write Current [uA]": [
+                    measurement_settings["enable_write_current"] * 1e6
+                ],
+                "Enable Read Current [uA]": [
+                    measurement_settings["enable_read_current"] * 1e6
+                ],
                 "Write Critical Current [uA]": [write_critical_current],
                 "Write Bias Fraction": [
                     measurement_settings["write_current"] * 1e6 / write_critical_current
@@ -1363,10 +1370,9 @@ def run_sweep(
                     * 1e6
                     / max_heater_current
                 ],
-                "Read Current [uA]": [measurement_settings["read_current"] * 1e6],
                 "Read Critical Current [uA]": [read_critical_current],
                 "Read Bias Fraction": [
-                    measurement_settings["read_current"] * 1e6 / read_critical_current
+                    (measurement_settings["read_current"] * 1e6) / read_critical_current
                 ],
                 "Read Enable Fraction": [
                     measurement_settings["enable_read_current"]
