@@ -63,15 +63,15 @@ if __name__ == "__main__":
     bit_error_array = np.zeros((4, 4))
     max_critical_current_array = np.zeros((4, 4))
     for c in CELLS:
-        write_current = CELLS[c]["write_current"] * 1e6 * 0.597
-        read_current = CELLS[c]["read_current"] * 1e6 * 0.597
-        enable_write_current = CELLS[c]["enable_write_current"] * 1e6 * 0.9
-        enable_read_current = CELLS[c]["enable_read_current"] * 1e6 * 0.9
-        slope = CELLS[c]["slope"] * 1.202
-        intercept = CELLS[c]["intercept"] * 1.0863
+        write_current = CELLS[c]["write_current"] * 1e6
+        read_current = CELLS[c]["read_current"] * 1e6
+        enable_write_current = CELLS[c]["enable_write_current"] * 1e6 
+        enable_read_current = CELLS[c]["enable_read_current"] * 1e6
+        slope = CELLS[c]["slope"]
+        intercept = CELLS[c]["intercept"]
         resistance = CELLS[c]["resistance_cryo"]
         bit_error_rate = CELLS[c].get("min_bit_error_rate", 0)
-        max_critical_current = CELLS[c].get("max_critical_current", 0) * 1e6 * 0.597
+        max_critical_current = CELLS[c].get("max_critical_current", 0) * 1e6
         if intercept != 0:
             write_critical_current = htron_critical_current(
                 enable_write_current, slope, intercept
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     plot_array(xloc, yloc, read_array, "Read Current Normalized")
     plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
     plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
-    plot_array(xloc, yloc, resistance_array, "Resistance [$\Omega$]")
+    # plot_array(xloc, yloc, resistance_array, "Resistance [$\Omega$]")
     plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
     plot_array(xloc, yloc, bit_error_array, "Bit Error Rate")
     plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
