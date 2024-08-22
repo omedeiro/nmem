@@ -13,51 +13,42 @@ import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import htron_critical_current
-from nmem.measurement.cells import CELLS
+from nmem.calculations.calculations import calculate_critical_current
+from nmem.measurement.cells import (
+    CELLS,
+    FREQ_IDX,
+    HEATERS,
+    HORIZONTAL_SCALE,
+    NUM_DIVISIONS,
+    NUM_POINTS,
+    NUM_SAMPLES,
+    SAMPLE_RATE,
+    SPICE_DEVICE_CURRENT,
+)
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
 CONFIG = r"SPG806_config_ICE.yml"
 
 
-FREQ_IDX = 1
-HORIZONTAL_SCALE = {
-    0: 5e-7,
-    1: 1e-6,
-    2: 2e-6,
-    3: 5e-6,
-    4: 1e-5,
-    5: 2e-5,
-    6: 5e-5,
-    7: 1e-4,
-    8: 2e-4,
-    9: 5e-4,
-}
-SAMPLE_RATE = {
-    0: 512e6,
-    1: 256e6,
-    2: 128e6,
-    3: 512e5,
-    4: 256e5,
-    5: 128e5,
-    6: 512e4,
-    7: 256e4,
-    8: 128e4,
-    9: 512e3,
-}
-
-NUM_MEAS = 1000
-NUM_DIVISIONS = 10
-NUM_SAMPLES = 5e3
-NUM_POINTS = 2**8
-ENABLE_WIDTH = 100e-9
-BIAS_WIDTH = 300e-9
-
-
 if __name__ == "__main__":
     t1 = time.time()
     b = nt.nTron(CONFIG)
+
+    b.inst.awg.write("SOURce1:FUNCtion:ARBitrary:FILTer OFF")
+    b.inst.awg.write("SOURce2:FUNCtion:ARBitrary:FILTer OFF")
+
+    current_cell = b.properties["Save File"]["cell"]
+    sample_name = [
+        b.sample_name,
+        b.device_type,
+        b.device_name,
+        current_cell,
+    ]
+    sample_name = str("-".join(sample_name))
+    date_str = time.strftime("%Y%m%d")
+    measurement_name = f"{date_str}_nMem_ICE_ber"
+
     current_cell = b.properties["Save File"]["cell"]
     sample_name = [
         b.sample_name,
@@ -70,64 +61,75 @@ if __name__ == "__main__":
     measurement_name = f"{date_str}_nMem_ICE_ber"
 
     waveform_settings = {
-        "num_points": 256,
+        "num_points": NUM_POINTS,
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "write_width": 90,
-        "read_width": 90,  #
-        "enable_write_width": 30,
-        "enable_read_width": 30,
-        "enable_write_phase": 0,
-        "enable_read_phase": 0,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": -12,
+        "enable_read_phase": -35,
+        "bitmsg_channel": "N0RNR1RNRN",
+        "bitmsg_enable": "NWNWEWNWEW",
     }
+
+    current_settings = {
+        "write_current": 45.213e-6,
+        "read_current": 675.9e-6,
+        "enable_write_current": 224.494e-6,
+        "enable_read_current": 179.9e-6,
+    }
+
+    scope_settings = {
+        "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+        "scope_num_samples": NUM_SAMPLES,
+        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+    }
+    NUM_MEAS = 5000
 
     measurement_settings = {
         **waveform_settings,
+        **current_settings,
+        **scope_settings,
         "measurement_name": measurement_name,
         "sample_name": sample_name,
+        "cell": current_cell,
         "CELLS": CELLS,
+        "HEATERS": HEATERS,
         "num_meas": NUM_MEAS,
-        "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
-        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
-        "num_samples_scope": NUM_SAMPLES,
-        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+        "spice_device_current": SPICE_DEVICE_CURRENT,
         "x": 0,
         "y": 0,
-        "write_current": 80.1e-6,
-        "read_current": 408e-6,
-        "enable_write_current": 354.5e-6,
-        "enable_read_current": 286e-6,
-        "threshold_bert": 0.15,
-        "bitmsg_channel": "N0NNR1NNRN",
-        "bitmsg_enable": "NWNNEWNNEW",
+        "threshold_bert": 0.2,
     }
 
-    parameter_x = "enable_read_current"
-    measurement_settings["x"] = np.array([286e-6])
-    # measurement_settings["x"] = np.linspace(150e-6, 250e-6, 9)
+    parameter_x = "enable_write_current"
+    measurement_settings["x"] = np.array([224.494e-6])
+    # measurement_settings["x"] = np.linspace(260e-6, 350e-6, 11)
+    measurement_settings[parameter_x] = measurement_settings["x"][0]
+    # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 3)
 
     read_sweep = False
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings["y"] = [368e-6]
-        read_critical_current = htron_critical_current(
-            measurement_settings["enable_read_current"],
-            CELLS[current_cell]["slope"],
-            CELLS[current_cell]["intercept"] * 1e-6,
-        )
-        measurement_settings["y"] = np.linspace(
-            read_critical_current * 0.80, read_critical_current * 0.92, 21
-        )
-    else:
-        parameter_y = "write_current"
-        measurement_settings["y"] = [80.1e-6]
-        # measurement_settings["y"] = np.linspace(10e-6, 230e-6, 11)
-        # write_critical_current = htron_critical_current(
-        #     measurement_settings["enable_write_current"],
-        #     CELLS[current_cell]["slope"],
-        #     CELLS[current_cell]["intercept"] * 1e-6,
+        measurement_settings["y"] = np.array([688e-6])
+        # measurement_settings["y"] = np.linspace(610e-6, 650e-6, 11)
+        # read_critical_current = calculate_critical_current(
+        #     measurement_settings["enable_read_current"], CELLS[current_cell]
         # )
         # measurement_settings["y"] = np.linspace(
-        #     write_critical_current * 0.1, write_critical_current * 0.65, 7
+        #     read_critical_current * 0.75, read_critical_current * 1.0, 11
+        # )
+    else:
+        parameter_y = "write_current"
+        measurement_settings["y"] = np.array([45.213e-6])
+        # measurement_settings["y"] = np.linspace(40e-6, 90e-6, 5)
+        # write_critical_current = calculate_critical_current(
+        #     measurement_settings["enable_write_current"], CELLS[current_cell]
+        # )
+        # measurement_settings["y"] = np.linspace(
+        #     write_critical_current * 0.05, write_critical_current * 0.6, 15
         # )
 
     save_dict = nm.run_sweep(

@@ -17,45 +17,21 @@ from skopt.plots import plot_convergence, plot_evaluations, plot_objective
 from skopt.space import Integer, Real
 
 import nmem.measurement.functions as nm
-from nmem.measurement.cells import CELLS, HEATERS, SPICE_DEVICE_CURRENT
+from nmem.measurement.cells import (
+    CELLS,
+    FREQ_IDX,
+    HEATERS,
+    HORIZONTAL_SCALE,
+    NUM_DIVISIONS,
+    NUM_POINTS,
+    NUM_SAMPLES,
+    SAMPLE_RATE,
+    SPICE_DEVICE_CURRENT,
+)
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
 CONFIG = r"SPG806_config_ICE.yml"
-
-
-FREQ_IDX = 1
-HORIZONTAL_SCALE = {
-    0: 5e-7,
-    1: 1e-6,
-    2: 2e-6,
-    3: 5e-6,
-    4: 1e-5,
-    5: 2e-5,
-    6: 5e-5,
-    7: 1e-4,
-    8: 2e-4,
-    9: 5e-4,
-}
-SAMPLE_RATE = {
-    0: 512e6,
-    1: 256e6,
-    2: 128e6,
-    3: 512e5,
-    4: 256e5,
-    5: 128e5,
-    6: 512e4,
-    7: 256e4,
-    8: 128e4,
-    9: 512e3,
-}
-
-NUM_MEAS = 100
-NUM_DIVISIONS = 10
-NUM_SAMPLES = 5e3
-NUM_POINTS = 2**8
-ENABLE_WIDTH = 100e-9
-BIAS_WIDTH = 300e-9
 
 
 def objective_converse(x, meas_dict: dict):
@@ -83,7 +59,7 @@ def objective_bias(x, meas_dict: dict):
     print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
     print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
     print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
-    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+    data_dict = nm.run_measurement(b, meas_dict, plot=True)
 
     qf.save(b.properties, measurement_name, data_dict)
 
@@ -176,39 +152,37 @@ def objective_waveform(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(10, 100, name="write_current"),
-        Real(640, 710, name="read_current"),
-        Real(180, 230, name="enable_write_current"),
-        Real(140, 200, name="enable_read_current"),
+        Real(40, 90, name="write_current"),
+        # Real(650, 720, name="read_current"),
+        Real(200, 255, name="enable_write_current"),
+        # Real(170, 190, name="enable_read_current"),
     ]
     # space = [
-    #     Integer(50, 200, name="write_width"),
-    #     Integer(50, 150, name="read_width"),
+    #     Integer(60, 100, name="write_width"),
+    #     Integer(10, 100, name="read_width"),
     #     Integer(10, 50, name="enable_write_width"),
     #     Integer(10, 50, name="enable_read_width"),
-    #     Integer(-50, 50, name="enable_write_phase"),
-    #     Integer(-50, 50, name="enable_read_phase"),
+    #     Integer(-40, 20, name="enable_write_phase"),
+    #     Integer(-40, -10, name="enable_read_phase"),
     # ]
     nm.setup_scope_bert(b, meas_dict)
     opt_result = gp_minimize(
-        partial(objective_bias, meas_dict=meas_dict),
+        partial(objective_write, meas_dict=meas_dict),
         space,
-        n_calls=100,
+        n_calls=20,
         verbose=True,
         x0=[
-            45,
-            688,
-            223,
-            171,
+            49,
+            228,
         ],
-        # x0=[
-        #     180,
-        #     68,
-        #     50,
-        #     50,
-        #     -50,
-        #     -34,
-        # ],
+        # x0 = [
+        #     90,
+        #     82,
+        #     36,
+        #     33,
+        #     -12,
+        #     -35,
+        # ]
     )
 
     return opt_result, meas_dict
@@ -217,6 +191,10 @@ def run_optimize(meas_dict: dict):
 if __name__ == "__main__":
     t1 = time.time()
     b = nt.nTron(CONFIG)
+
+    b.inst.awg.write("SOURce1:FUNCtion:ARBitrary:FILTer OFF")
+    b.inst.awg.write("SOURce2:FUNCtion:ARBitrary:FILTer OFF")
+
     current_cell = b.properties["Save File"]["cell"]
     sample_name = [
         b.sample_name,
@@ -229,48 +207,47 @@ if __name__ == "__main__":
     measurement_name = f"{date_str}_nMem_ICE_ber"
 
     waveform_settings = {
-        "num_points": 256,
-        "write_width": 180,
-        "read_width": 68,  #
-        "enable_write_width": 50,
-        "enable_read_width": 50,
-        "enable_write_phase": -50,
-        "enable_read_phase": -34,
+        "num_points": NUM_POINTS,
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": -12,
+        "enable_read_phase": -35,
+        "bitmsg_channel": "N0RNR1RNRN",
+        "bitmsg_enable": "NWNWEWNWEW",
     }
 
-    # waveform_settings = {
-    #     "num_points": 256,
-    #     "write_width": 90,
-    #     "read_width": 90,  #
-    #     "enable_write_width": 30,
-    #     "enable_read_width": 30,
-    #     "enable_write_phase": 0,
-    #     "enable_read_phase": 30,
-    # }
+    current_settings = {
+        "write_current": 45.213e-6,
+        "read_current": 675.9e-6,
+        "enable_write_current": 224.494e-6,
+        "enable_read_current": 179.9e-6,
+    }
+
+    scope_settings = {
+        "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+        "scope_num_samples": NUM_SAMPLES,
+        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+    }
+    NUM_MEAS = 500
 
     measurement_settings = {
         **waveform_settings,
+        **current_settings,
+        **scope_settings,
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "cell": current_cell,
         "CELLS": CELLS,
         "HEATERS": HEATERS,
         "num_meas": NUM_MEAS,
-        "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
-        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
-        "num_samples_scope": NUM_SAMPLES,
-        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
         "spice_device_current": SPICE_DEVICE_CURRENT,
         "x": 0,
         "y": 0,
-        "write_current": 45e-6,
-        "read_current": 688e-6,
-        "enable_write_current": 223e-6,
-        "enable_read_current": 162e-6,
         "threshold_bert": 0.2,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
     }
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
