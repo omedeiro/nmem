@@ -24,6 +24,8 @@ from nmem.calculations.plotting import (
     plot_read_current,
 )
 
+from nmem.measurement.cells import CELLS
+
 
 def import_matlab_data(file_path):
     data = sio.loadmat(file_path)
@@ -43,7 +45,7 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
     alpha = data_dict["alpha"]
     width_ratio = data_dict["width_ratio"]
     set_read_current = data_dict["set_read_current"]
-
+    max_critical_current = data_dict["max_critical_current"]
     # Initial Write
     left_branch_write_current = calculate_left_branch_current(alpha, write_current, 0)
     right_branch_write_current = calculate_right_branch_current(alpha, write_current, 0)
@@ -55,6 +57,7 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         persistent_current,
         alpha,
         iretrap,
+        max_critical_current,
     )
     one_state_current = calculate_one_state_current(
         left_critical_current,
@@ -62,6 +65,7 @@ def get_point_parameters(i: int, j: int, data_dict: dict):
         persistent_current,
         alpha,
         iretrap,
+        max_critical_current,
     )
 
     ideal_read_current = calculate_ideal_read_current(
@@ -174,16 +178,17 @@ def plot_read_margin(
 if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
-    HTRON_SLOPE = -3.36  # uA / uA
-    HTRON_INTERCEPT = 1454-480 # uA
+    HTRON_SLOPE = -4.371  # uA / uA
+    HTRON_INTERCEPT = 1726.201  # uA
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.30
+    WIDTH_RIGHT = 0.3
     ALPHA = 1 - 0.3
 
-    IRETRAP = 0.9
-    IREAD = 89
-    IDXX = 35
-    IDXY = 17
+    MAX_CRITICAL_CURRENT = 830
+    IRETRAP = 0.2
+    IREAD = 156
+    IDXX = 30
+    IDXY = 35
     # IDXX = 20
     # IDXY = 20
     N = 50
@@ -213,9 +218,7 @@ if __name__ == "__main__":
     )
 
     # Define the write and enable write currents
-    enable_write_currents = np.linspace(
-        enable_write_currents_measured[0], enable_write_currents_measured[-1], N
-    )
+    enable_write_currents = np.linspace(300, 400, N)
     write_currents = np.linspace(
         write_currents_measured[0], write_currents_measured[-1], N
     )
@@ -257,6 +260,7 @@ if __name__ == "__main__":
         "width_right": WIDTH_RIGHT,
         "width_ratio": width_ratio,
         "max_channel_critical_current": HTRON_INTERCEPT,
+        "max_critical_current": MAX_CRITICAL_CURRENT,
         "max_left_critical_current": max_left_critical_current,
         "max_right_critical_current": max_right_critical_current,
     }
@@ -268,8 +272,10 @@ if __name__ == "__main__":
     )
     ax = plot_point(
         ax,
-        enable_write_currents_measured[int(IDXX/N*len(enable_write_currents_measured))],
-        write_currents_measured[int(IDXY/N*len(write_currents_measured))],
+        enable_write_currents_measured[
+            int(IDXX / N * len(enable_write_currents_measured))
+        ],
+        write_currents_measured[int(IDXY / N * len(write_currents_measured))],
         marker="*",
         color="red",
         markersize=15,
@@ -311,6 +317,7 @@ if __name__ == "__main__":
         max_persistent_currents,
         ALPHA,
         IRETRAP,
+        MAX_CRITICAL_CURRENT,
     )
     one_state_currents = calculate_one_state_current(
         left_critical_currents_mesh,
@@ -318,6 +325,7 @@ if __name__ == "__main__":
         max_persistent_currents,
         ALPHA,
         IRETRAP,
+        MAX_CRITICAL_CURRENT,
     )
     data_dict["zero_state_currents"] = zero_state_currents
     data_dict["one_state_currents"] = one_state_currents
