@@ -65,7 +65,7 @@ if __name__ == "__main__":
     for c in CELLS:
         write_current = CELLS[c]["write_current"] * 1e6
         read_current = CELLS[c]["read_current"] * 1e6
-        enable_write_current = CELLS[c]["enable_write_current"] * 1e6 
+        enable_write_current = CELLS[c]["enable_write_current"] * 1e6
         enable_read_current = CELLS[c]["enable_read_current"] * 1e6
         slope = CELLS[c]["slope"]
         intercept = CELLS[c]["intercept"]
@@ -86,7 +86,8 @@ if __name__ == "__main__":
             yloc.append(y)
             slope_array[y, x] = slope
             intercept_array[y, x] = intercept
-            x_intercept_array[y, x] = -intercept / slope
+            max_heater_current = -intercept / slope
+            x_intercept_array[y, x] = max_heater_current
             write_array[y, x] = write_current / write_critical_current
             read_array[y, x] = read_current / read_critical_current
             resistance_array[y, x] = resistance
@@ -101,8 +102,14 @@ if __name__ == "__main__":
             print(f"Read Current: {read_current:.2f}")
             print(f"Read Critical Current: {read_critical_current:.2f}")
             print(f"Read Current Normalized: {read_current/read_critical_current:.2f}")
-            # print(f"Write Heater Current: {write_heater_current}")
-            # print(f"Read Heater Current: {read_heater_current}")
+            print(f"Write Heater Current: {write_heater_current}")
+            print(
+                f"Write Heater Current Normalized: {write_heater_current/max_heater_current}"
+            )
+            print(f"Read Heater Current: {read_heater_current}")
+            print(
+                f"Read Heater Current Normalized: {read_heater_current/max_heater_current}"
+            )
             print("\n")
 
     ztotal = write_array
