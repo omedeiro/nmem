@@ -21,8 +21,8 @@ def find_peak(data_dict: dict):
     diff = np.diff(ztotal, axis=0)
 
     xfit, yfit = find_enable_relation(data_dict)
-    xfit = xfit[:-1]
-    yfit = yfit[:-1]
+    # xfit = xfit[:-8]
+    # yfit = yfit[:-8]
 
     plt.scatter(xfit, yfit)
 
@@ -77,11 +77,15 @@ def find_enable_relation(data_dict: dict):
     ztotal = z.reshape((len(y), len(x)), order="F")
 
     # Find the maximum critical current using np.diff
-    diff = np.diff(ztotal, axis=0)
-    diff_fit = np.where(diff == 0, np.nan, diff)
-    mid_idx = np.where(diff_fit == np.nanmax(diff_fit, axis=0))
+    # diff = np.diff(ztotal, axis=0)
+    # diff_fit = np.where(diff == 0, np.nan, diff)
+    # mid_idx = np.where(diff_fit == np.nanmax(diff_fit, axis=0))
 
-    return x[mid_idx[1]], y[mid_idx[0]]
+    # Find the maximum critical current using total counts
+    mid_idx = np.where(ztotal == np.nanmax(ztotal, axis=0))
+    xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
+    yfit = y[mid_idx[0]][xfit_idx]
+    return xfit, yfit
 
 
 def plot_fit(xfit, yfit):
@@ -116,8 +120,8 @@ def plot_enable_current_relation(data_dict: dict):
     diff = np.diff(ztotal, axis=0)
 
     xfit, yfit = find_enable_relation(data_dict)
-    # xfit = xfit[:-1]
-    # yfit = yfit[:-1]
+    # xfit = xfit[:-8]
+    # yfit = yfit[:-8]
 
     plt.scatter(xfit, yfit)
 
@@ -154,7 +158,7 @@ if __name__ == "__main__":
     markers = ["o", "s", "D", "^"]
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     # colors = np.flipud(colors)
-    for file in files:
+    for file in [files[-1]]:
         datafile = os.path.join("data", file)
         cell = file.split("_")[-2]
         column = ord(cell[0]) - ord("A")
@@ -167,9 +171,9 @@ if __name__ == "__main__":
         yfit_sorted = yfit[np.argsort(xfit)] * 0.597
         print(f"Cell: {cell} max Ic = {yfit_sorted[0]}")
 
-        # plot_enable_current_relation(measurement_dict)
+        plot_enable_current_relation(measurement_dict)
         # plot_fit(xfit_sorted, yfit_sorted)
-        plt.plot(xfit_sorted, yfit_sorted, label=f"Cell {cell}", marker=markers[row], color=colors[column])
+        # plt.plot(xfit_sorted, yfit_sorted, label=f"Cell {cell}", marker=markers[row], color=colors[column])
         # w0r1 = 100 - measurement_dict["write_0_read_1"][0].flatten()
         # w1r0 = measurement_dict["write_1_read_0"][0].flatten()
         # z = w1r0 + w0r1
@@ -186,10 +190,10 @@ if __name__ == "__main__":
         #         label=f"enable current = {enable_current:.2f} $\mu$A",
         #         color=cmap[enable_current_index],
         #     )
-    plt.xlabel("Channel Current [$\mu$A]")
-    plt.ylabel("Counts")
-    ax = plt.gca()
-    ax.set_ylim(bottom=0)
-    plt.title(f"Cell {cell}")
-    plt.legend()
-    plt.show()
+    # plt.xlabel("Channel Current [$\mu$A]")
+    # plt.ylabel("Counts")
+    # ax = plt.gca()
+    # ax.set_ylim(bottom=0)
+    # plt.title(f"Cell {cell}")
+    # plt.legend()
+    # plt.show()
