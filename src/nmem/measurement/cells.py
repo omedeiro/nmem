@@ -1,4 +1,3 @@
-SPICE_DEVICE_CURRENT = 45.189e-6
 CELLS = {
     "A1": {
         "write_current": 30e-6,
@@ -56,16 +55,16 @@ CELLS = {
         "max_critical_current": 660e-6,
     },
     "B2": {
-        "write_current": 59.47e-6,
-        "read_current": 591e-6,
-        "enable_write_current": 228.37e-6,
-        "enable_read_current": 175.89e-6,
+        "write_current": 45.213e-6,
+        "read_current": 675.9e-6,
+        "enable_write_current": 224.494e-6,
+        "enable_read_current": 179.9e-6,
         "slope": -4.235,
         "intercept": 1492,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
         "max_critical_current": 908e-6,
-        "min_bit_error_rate": 0.004,
+        "min_bit_error_rate": 0.0034,
     },
     "B3": {
         "write_current": 40e-6,
@@ -203,3 +202,35 @@ HEATERS = {
         "squares": 428,
     },
 }
+
+
+FREQ_IDX = 2
+NUM_POINTS = 128
+HORIZONTAL_SCALE = {
+    0: 5e-7,
+    1: 1e-6,
+    2: 1e-6,
+    3: 5e-6,
+    4: 1e-5,
+    5: 2e-5,
+    6: 5e-5,
+    7: 1e-4,
+    8: 2e-4,
+    9: 5e-4,
+}
+SAMPLE_RATE = {
+    0: 512e6,
+    1: 256e6,
+    2: 128e6,
+    3: 512e5,
+    4: 256e5,
+    5: 128e5,
+    6: 512e4,
+    7: 256e4,
+    8: 128e4,
+    9: 512e3,
+}
+
+NUM_DIVISIONS = 10
+NUM_SAMPLES = 2.5e3
+SPICE_DEVICE_CURRENT = 45.189e-6
