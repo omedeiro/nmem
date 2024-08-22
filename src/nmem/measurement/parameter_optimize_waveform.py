@@ -53,7 +53,10 @@ def objective_waveform(x, meas_dict: dict):
     qf.save(b.properties, measurement_name, data_dict)
 
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
-    print(errors / (NUM_MEAS * 2))
+    res = errors / (NUM_MEAS * 2)
+    if res > 0.5:
+        res = 1 - res
+    print(res)
     return errors / (NUM_MEAS * 2)
 
 
