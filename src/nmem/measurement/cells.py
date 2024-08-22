@@ -104,11 +104,12 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -3.630,
-        "intercept": 1473.701,
+        "slope": -4.457,
+        "intercept": 1545.524,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
-        "max_critical_current": 740e-6,
+        "max_critical_current": 812e-6,
+        "min_bit_error_rate": 0.4,
     },
     "C3": {
         "write_current": 65e-6,
@@ -232,5 +233,5 @@ SAMPLE_RATE = {
 }
 
 NUM_DIVISIONS = 10
-NUM_SAMPLES = 2.5e3
+NUM_SAMPLES = int(2.5e3)
 SPICE_DEVICE_CURRENT = 45.189e-6
