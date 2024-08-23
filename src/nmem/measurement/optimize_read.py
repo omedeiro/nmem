@@ -57,8 +57,8 @@ def objective_read(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(520, 600, name="read_current"),
-        Real(200, 250, name="enable_read_current"),
+        Real(400, 620, name="read_current"),
+        Real(150, 260, name="enable_read_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
@@ -67,7 +67,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=100,
         verbose=True,
-        x0=[554, 228],
+        x0=[460, 170],
     )
 
     return opt_result, meas_dict
@@ -93,10 +93,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 41.067e-6,
-        "read_current": 554.363e-6,
-        "enable_write_current": 270.313e-6,
-        "enable_read_current": 228.495e-6,
+        "write_current": 20.002e-6,
+        "read_current": 487.976e-6,
+        "enable_write_current": 224.494e-6,
+        "enable_read_current": 179.9e-6,
     }
 
     scope_settings = {
@@ -105,20 +105,22 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 1000
+    NUM_MEAS = 100
 
-    measurement_settings = {
-        **waveform_settings,
-        **current_settings,
-        **scope_settings,
-        "CELLS": CELLS,
-        "HEATERS": HEATERS,
-        "num_meas": NUM_MEAS,
-        "spice_device_current": SPICE_DEVICE_CURRENT,
-        "x": 0,
-        "y": 0,
-        "threshold_bert": 0.2,
-    }
+    measurement_settings.update(
+        {
+            **waveform_settings,
+            **current_settings,
+            **scope_settings,
+            "CELLS": CELLS,
+            "HEATERS": HEATERS,
+            "num_meas": NUM_MEAS,
+            "spice_device_current": SPICE_DEVICE_CURRENT,
+            "x": 0,
+            "y": 0,
+            "threshold_bert": 0.2,
+        }
+    )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name)
