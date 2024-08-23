@@ -57,8 +57,8 @@ def objective_write(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(20, 160, name="write_current"),
-        Real(240, 280, name="enable_write_current"),
+        Real(20, 180, name="write_current"),
+        Real(200, 310, name="enable_write_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
@@ -67,7 +67,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=100,
         verbose=True,
-        x0=[38.77, 266.5],
+        x0=[40, 267],
     )
 
     return opt_result, meas_dict
@@ -91,10 +91,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 121.7e-6,
-        "read_current": 596.7e-6,
-        "enable_write_current": 296.2e-6,
-        "enable_read_current": 202.4e-6,
+        "write_current": 44.366e-6,
+        "read_current": 487.192e-6,
+        "enable_write_current": 255.575e-6,
+        "enable_read_current": 161.801e-6,
     }
 
     scope_settings = {
