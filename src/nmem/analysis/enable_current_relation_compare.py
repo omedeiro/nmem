@@ -23,14 +23,21 @@ def convert_location_to_coordinates(location):
     return column_number, row_number
 
 
-def plot_text_labels(xloc, yloc, ztotal):
+def plot_text_labels(xloc, yloc, ztotal, log=False):
     for x, y in zip(xloc, yloc):
+        text = f"{ztotal[y, x]:.1f}"
+        if log:
+            text = f"{ztotal[y, x]:.1e}"
+        txt_color = "black"
+        if ztotal[y, x] < 0.5*max(ztotal.flatten()):
+            txt_color = "white"
+
         plt.text(
             x,
             y,
-            f"{ztotal[y, x]:.2f}",
+            text,
             fontsize=12,
-            color="black",
+            color=txt_color,
             backgroundcolor="none",
             ha="center",
             va="center",
@@ -38,16 +45,22 @@ def plot_text_labels(xloc, yloc, ztotal):
         )
 
 
-def plot_array(xloc, yloc, ztotal, title):
+def plot_array(xloc, yloc, ztotal, title, log=False, norm=False):
     fig, ax = plt.subplots()
-    im = ax.imshow(ztotal, cmap="viridis")
+    if norm: 
+        im = ax.imshow(ztotal, cmap="viridis", vmin=0, vmax=1)
+    else:
+        im = ax.imshow(ztotal, cmap="viridis")
     plt.title(title)
     plt.xticks(range(4), ["A", "B", "C", "D"])
     plt.yticks(range(4), ["1", "2", "3", "4"])
     plt.xlabel("Column")
     plt.ylabel("Row")
     cbar = plt.colorbar(im)
-    plot_text_labels(xloc, yloc, ztotal)
+
+    plot_text_labels(xloc, yloc, ztotal, log)
+
+
     plt.show()
 
 
@@ -113,11 +126,11 @@ if __name__ == "__main__":
             print("\n")
 
     ztotal = write_array
-    plot_array(xloc, yloc, write_array, "Write Current Normalized")
-    plot_array(xloc, yloc, read_array, "Read Current Normalized")
+    plot_array(xloc, yloc, write_array, "Write Current Normalized", norm=True)
+    plot_array(xloc, yloc, read_array, "Read Current Normalized", norm=True)
     plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
     plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
     # plot_array(xloc, yloc, resistance_array, "Resistance [$\Omega$]")
     plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
-    plot_array(xloc, yloc, bit_error_array, "Bit Error Rate")
+    plot_array(xloc, yloc, bit_error_array, "Bit Error Rate", log=True)
     plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
