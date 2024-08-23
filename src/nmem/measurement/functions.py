@@ -5,6 +5,7 @@ Created on Fri Nov  3 14:01:31 2023
 @author: omedeiro
 """
 
+import time
 from datetime import datetime
 from time import sleep
 
@@ -19,8 +20,8 @@ from scipy.stats import norm
 from tqdm import tqdm
 
 from nmem.calculations.calculations import (
-    calculate_heater_power,
     calculate_critical_current,
+    calculate_heater_power,
 )
 from nmem.measurement.cells import CELLS
 
@@ -230,6 +231,32 @@ def calculate_bit_error_rate(
     return bit_error_rate
 
 
+def initilize_measurement(config: str, measurement_name: str) -> dict:
+    b = nTron(config)
+
+    b.inst.awg.write("SOURce1:FUNCtion:ARBitrary:FILTer OFF")
+    b.inst.awg.write("SOURce2:FUNCtion:ARBitrary:FILTer OFF")
+
+    current_cell = b.properties["Save File"]["cell"]
+    sample_name = [
+        b.sample_name,
+        b.device_type,
+        b.device_name,
+        current_cell,
+    ]
+    sample_name = str("-".join(sample_name))
+    date_str = time.strftime("%Y%m%d")
+    measurement_name = f"{date_str}_{measurement_name}"
+
+    measurement_settings = {
+        "measurement_name": measurement_name,
+        "sample_name": sample_name,
+        "cell": current_cell,
+    }
+
+    return measurement_settings, b
+
+
 def setup_scope_bert(
     b: nTron,
     measurement_settings: dict,
@@ -385,18 +412,16 @@ def load_waveforms(
 
     if ewr_ratio >= 1:
         enable_write = create_waveforms_edge(
-            width=eww, height=1, phase=ew_phase, edge=RISING_EDGE
+            width=eww, height=1, phase=ew_phase, edge=0
         )
         enable_read = create_waveforms_edge(
-            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=RISING_EDGE
+            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=0
         )
     else:
         enable_write = create_waveforms_edge(
-            width=eww, height=ewr_ratio, phase=ew_phase, edge=RISING_EDGE
+            width=eww, height=ewr_ratio, phase=ew_phase, edge=0
         )
-        enable_read = create_waveforms_edge(
-            width=erw, height=1, phase=er_phase, edge=RISING_EDGE
-        )
+        enable_read = create_waveforms_edge(width=erw, height=1, phase=er_phase, edge=0)
 
     null_wave = create_waveforms(height=0)
 
@@ -1362,18 +1387,12 @@ def run_sweep(
                     measurement_settings["enable_read_current"] * 1e6
                 ],
                 "Write Critical Current [uA]": [write_critical_current],
-                "Write Bias Fraction": [
-                    measurement_settings["write_current"] * 1e6 / write_critical_current
-                ],
                 "Write Enable Fraction": [
                     measurement_settings["enable_write_current"]
                     * 1e6
                     / max_heater_current
                 ],
                 "Read Critical Current [uA]": [read_critical_current],
-                "Read Bias Fraction": [
-                    (measurement_settings["read_current"] * 1e6) / read_critical_current
-                ],
                 "Read Enable Fraction": [
                     measurement_settings["enable_read_current"]
                     * 1e6
@@ -1388,7 +1407,25 @@ def run_sweep(
                 "Write 1 Read 0": [data_dict["write_1_read_0"]],
                 "Bit Error Rate": [data_dict["bit_error_rate"]],
             }
+            if measurement_settings["write_current"] > 0:
+                param_dict.update(
+                    {
+                        "Write Bias Fraction": [
+                            (measurement_settings["write_current"] * 1e6)
+                            / write_critical_current
+                        ],
+                    }
+                )
 
+            if measurement_settings["read_current"] > 0:
+                param_dict.update(
+                    {
+                        "Read Bias Fraction": [
+                            (measurement_settings["read_current"] * 1e6)
+                            / read_critical_current
+                        ],
+                    }
+                )
             pd.set_option("display.float_format", "{:.3f}".format)
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
             param_df.columns = ["Value"]

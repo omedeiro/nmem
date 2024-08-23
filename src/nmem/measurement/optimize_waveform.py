@@ -19,6 +19,7 @@ from skopt.space import Integer, Real
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
     CELLS,
+    CONFIG,
     FREQ_IDX,
     HEATERS,
     HORIZONTAL_SCALE,
@@ -30,8 +31,6 @@ from nmem.measurement.cells import (
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]
-
-CONFIG = r"SPG806_config_ICE.yml"
 
 
 def objective_waveform(x, meas_dict: dict):
@@ -54,18 +53,16 @@ def objective_waveform(x, meas_dict: dict):
 
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
     res = errors / (NUM_MEAS * 2)
-    if res > 0.5:
-        res = 1 - res
     print(res)
     return errors / (NUM_MEAS * 2)
 
 
 def run_optimize(meas_dict: dict):
     space = [
-        Integer(60, 100, name="write_width"),
+        Integer(50, 100, name="write_width"),
         Integer(10, 100, name="read_width"),
-        Integer(10, 50, name="enable_write_width"),
-        Integer(10, 50, name="enable_read_width"),
+        Integer(5, 60, name="enable_write_width"),
+        Integer(5, 60, name="enable_read_width"),
         Integer(-40, 20, name="enable_write_phase"),
         Integer(-40, -10, name="enable_read_phase"),
     ]
@@ -73,7 +70,7 @@ def run_optimize(meas_dict: dict):
     opt_result = gp_minimize(
         partial(objective_waveform, meas_dict=meas_dict),
         space,
-        n_calls=20,
+        n_calls=100,
         verbose=True,
         x0=meas_dict["opt_x0"],
     )
@@ -83,22 +80,8 @@ def run_optimize(meas_dict: dict):
 
 if __name__ == "__main__":
     t1 = time.time()
-    b = nt.nTron(CONFIG)
-
-    b.inst.awg.write("SOURce1:FUNCtion:ARBitrary:FILTer OFF")
-    b.inst.awg.write("SOURce2:FUNCtion:ARBitrary:FILTer OFF")
-
-    current_cell = b.properties["Save File"]["cell"]
-    sample_name = [
-        b.sample_name,
-        b.device_type,
-        b.device_name,
-        current_cell,
-    ]
-    sample_name = str("-".join(sample_name))
-    date_str = time.strftime("%Y%m%d")
-    measurement_name = f"{date_str}_nMem_ICE_ber"
-
+    measurement_name = "nMem_optimize_waveform"
+    measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     waveform_settings = {
         "write_width": 90,
         "read_width": 82,  #
@@ -110,10 +93,10 @@ if __name__ == "__main__":
     opt_x0 = list(waveform_settings.values())
 
     current_settings = {
-        "write_current": 184e-6,
-        "read_current": 477.5e-6,
-        "enable_write_current": 262.6e-6,
-        "enable_read_current": 239e-6,
+        "write_current": 121.7e-6,
+        "read_current": 596.7e-6,
+        "enable_write_current": 296.2e-6,
+        "enable_read_current": 202.4e-6,
     }
 
     scope_settings = {
@@ -122,28 +105,27 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 2000
+    NUM_MEAS = 100
 
-    measurement_settings = {
-        **waveform_settings,
-        **current_settings,
-        **scope_settings,
-        "num_points": NUM_POINTS,
-        "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
-        "measurement_name": measurement_name,
-        "sample_name": sample_name,
-        "cell": current_cell,
-        "CELLS": CELLS,
-        "HEATERS": HEATERS,
-        "num_meas": NUM_MEAS,
-        "spice_device_current": SPICE_DEVICE_CURRENT,
-        "x": 0,
-        "y": 0,
-        "threshold_bert": 0.2,
-        "opt_x0": opt_x0,
-    }
+    measurement_settings.update(
+        {
+            **waveform_settings,
+            **current_settings,
+            **scope_settings,
+            "CELLS": CELLS,
+            "HEATERS": HEATERS,
+            "num_meas": NUM_MEAS,
+            "spice_device_current": SPICE_DEVICE_CURRENT,
+            "x": 0,
+            "y": 0,
+            "threshold_bert": 0.2,
+            "num_points": NUM_POINTS,
+            "sample_rate": SAMPLE_RATE[FREQ_IDX],
+            "bitmsg_channel": "N0RNR1RNRN",
+            "bitmsg_enable": "NWNWEWNWEW",
+            "opt_x0": opt_x0,
+        }
+    )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name)
