@@ -1,14 +1,15 @@
 CELLS = {
     "A1": {
-        "write_current": 30e-6,
-        "read_current": 680e-6,
-        "enable_write_current": 282.5e-6,
-        "enable_read_current": 220e-6,
-        "slope": -2.543,
-        "intercept": 1026.786,
+        "write_current": 20.002e-6,
+        "read_current": 487.976e-6,
+        "enable_write_current": 249.494e-6,
+        "enable_read_current": 182.499e-6,
+        "slope": -2.807,
+        "intercept": 1062.75,
         "resistance": 559.2,
         "resistance_cryo": 258.8,
-        "max_critical_current": 520e-6,
+        "max_critical_current": 760e-6,
+        "min_bit_error_rate": 0.0058,
     },
     "A2": {
         "write_current": 0e-6,
