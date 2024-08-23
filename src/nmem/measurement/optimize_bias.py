@@ -61,17 +61,17 @@ def objective_bias(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(10, 200, name="write_current"),
-        Real(460, 690, name="read_current"),
-        Real(200, 300, name="enable_write_current"),
-        Real(200, 300, name="enable_read_current"),
+        Real(20, 60, name="write_current"),
+        Real(400, 550, name="read_current"),
+        Real(230, 270, name="enable_write_current"),
+        Real(160, 190, name="enable_read_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
     opt_result = gp_minimize(
         partial(objective_bias, meas_dict=meas_dict),
         space,
-        n_calls=100,
+        n_calls=40,
         verbose=True,
         x0=meas_dict["opt_x0"],
     )
@@ -82,7 +82,7 @@ def run_optimize(meas_dict: dict):
 if __name__ == "__main__":
     t1 = time.time()
 
-    measurement_name = f"nMem_optimize_bias"
+    measurement_name = "nMem_optimize_bias"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     waveform_settings = {
         "num_points": NUM_POINTS,
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 51.767e-6,
-        "read_current": 642.493e-6,
-        "enable_write_current": 288.723e-6,
-        "enable_read_current": 202.798e-6,
+        "write_current": 20.002e-6,
+        "read_current": 487.976e-6,
+        "enable_write_current": 249.494e-6,
+        "enable_read_current": 182.499e-6,
     }
 
     scope_settings = {
@@ -110,21 +110,23 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 2000
 
-    measurement_settings = {
-        **waveform_settings,
-        **current_settings,
-        **scope_settings,
-        "CELLS": CELLS,
-        "HEATERS": HEATERS,
-        "num_meas": NUM_MEAS,
-        "spice_device_current": SPICE_DEVICE_CURRENT,
-        "x": 0,
-        "y": 0,
-        "threshold_bert": 0.2,
-        "opt_x0": [current * 1e6 for current in current_settings.values()],
-    }
+    measurement_settings.update(
+        {
+            **waveform_settings,
+            **current_settings,
+            **scope_settings,
+            "CELLS": CELLS,
+            "HEATERS": HEATERS,
+            "num_meas": NUM_MEAS,
+            "spice_device_current": SPICE_DEVICE_CURRENT,
+            "x": 0,
+            "y": 0,
+            "threshold_bert": 0.2,
+            "opt_x0": [current * 1e6 for current in current_settings.values()],
+        }
+    )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_name)
