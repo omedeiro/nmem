@@ -98,7 +98,7 @@ CELLS = {
         "resistance": 559.2,
         "resistance_cryo": 258.8,
         "max_critical_current": 790e-6,
-        "min_bit_error_rate": 0.0008,
+        "min_bit_error_rate": 0.000845,
     },
     "C2": {
         "write_current": 0e-6,
