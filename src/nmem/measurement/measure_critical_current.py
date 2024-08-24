@@ -76,13 +76,13 @@ if __name__ == "__main__":
             "x": 0,
             "y": 0,
             "threshold_bert": 0.2,
-        }
+        }   
     )
     parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([0])
 
     parameter_y = "read_current"
-    measurement_settings["y"] = np.linspace(700e-6, 800e-6, 15)
+    measurement_settings["y"] = np.linspace(750e-6, 770e-6, 15)
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
