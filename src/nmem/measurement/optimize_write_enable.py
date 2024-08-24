@@ -91,22 +91,23 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 88,
+        "write_width": 22,
         "read_width": 30,  #
-        "enable_write_width": 38,
-        "enable_read_width": 50,
-        "enable_write_phase": 40,
-        "enable_read_phase": -5,
+        "enable_write_width": 21,
+        "enable_read_width": 54,
+        "enable_write_phase": 7,
+        "enable_read_phase": 14,
         "bitmsg_channel": "N0RNR1RNRN",
         "bitmsg_enable": "NWNWEWNWEW",
     }
 
     current_settings = {
-        "write_current": 201.227e-6,
-        "read_current": 672.497e-6,
-        "enable_write_current": 190.1611e-6,
-        "enable_read_current": 125.054e-6,
+        "write_current": 202.376e-6,
+        "read_current": 672.578e-6,
+        "enable_write_current": 214.965e-6,
+        "enable_read_current": 129.282e-6,
     }
+
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -132,7 +133,9 @@ if __name__ == "__main__":
     )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
-    file_path, time_str = qf.save(b.properties, measurement_name)
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"]
+    )   
 
     plot_convergence(opt_res)
     plt.savefig(file_path + f"{measurement_name}_convergence.png")

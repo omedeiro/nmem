@@ -34,25 +34,26 @@ if __name__ == "__main__":
     t1 = time.time()
     measurement_name = "nMem_parameter_sweep"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
+    current_cell = measurement_settings["cell"]
 
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
-        "enable_write_phase": -12,
-        "enable_read_phase": -35,
+        "write_width": 22,
+        "read_width": 30,  #
+        "enable_write_width": 21,
+        "enable_read_width": 54,
+        "enable_write_phase": 7,
+        "enable_read_phase": 14,
         "bitmsg_channel": "N0RNR1RNRN",
         "bitmsg_enable": "NWNWEWNWEW",
     }
 
     current_settings = {
-        "write_current": 20.002e-6,
-        "read_current": 487.976e-6,
-        "enable_write_current": 249.494e-6,
-        "enable_read_current": 182.499e-6,
+        "write_current": 202.376e-6,
+        "read_current": 672.578e-6,
+        "enable_write_current": 214.965e-6,
+        "enable_read_current": 129.282e-6,
     }
 
     scope_settings = {
@@ -61,7 +62,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 5000
+    NUM_MEAS = 20000
 
     measurement_settings.update(
         {
@@ -78,31 +79,35 @@ if __name__ == "__main__":
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([249.494e-6])
-    # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 5)
+    measurement_settings["x"] = np.array([222.035e-6])
+    # measurement_settings["x"] = np.linspace(230e-6, 250e-6, 11)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
     # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 3)
 
-    read_sweep = True
+    read_sweep = False
     if read_sweep:
         parameter_y = "read_current"
-        measurement_settings["y"] = np.array([487.976e-6])
+        # measurement_settings["y"] = np.array([516.379e-6])
         # measurement_settings["y"] = np.linspace(680e-6, 760e-6, 11)
-        # read_critical_current = calculate_critical_current(
-        #     measurement_settings["enable_read_current"], CELLS[current_cell]
-        # )
-        # measurement_settings["y"] = np.linspace(
-        #     read_critical_current * 0.6, read_critical_current * 0.7, 11
-        # )
+        read_critical_current = (
+            calculate_critical_current(
+                measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
+            )
+            * 1e-6
+        )
+        measurement_settings["y"] = np.linspace(
+            read_critical_current * 0.80, read_critical_current * 0.95, 11
+        )
     else:
         parameter_y = "write_current"
-        measurement_settings["y"] = np.array([30e-6])
-        # measurement_settings["y"] = np.linspace(40e-6, 90e-6, 11)
+        measurement_settings["y"] = np.array([201.216e-6])
+        # measurement_settings["y"] = np.linspace(0e-6, 90e-6, 11)
         # write_critical_current = calculate_critical_current(
-        #     measurement_settings["enable_write_current"], CELLS[current_cell]
-        # )
+        #     measurement_settings["enable_write_current"]*1e6, CELLS[current_cell]
+        # )*1e-6
+        # print(f"write_critical_current: {write_critical_current}")
         # measurement_settings["y"] = np.linspace(
-        #     write_critical_current * 0.05, write_critical_current * 0.6, 15
+        #     write_critical_current * 0.05, write_critical_current * 0.3, 15
         # )
 
     save_dict = nm.run_sweep(
@@ -110,7 +115,9 @@ if __name__ == "__main__":
     )
     b.properties["measurement_settings"] = measurement_settings
 
-    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"], save_dict
+    )
     save_dict["time_str"] = time_str
     nm.plot_ber_sweep(
         save_dict,

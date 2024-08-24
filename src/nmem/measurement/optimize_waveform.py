@@ -93,10 +93,10 @@ if __name__ == "__main__":
     opt_x0 = list(waveform_settings.values())
 
     current_settings = {
-        "write_current": 121.7e-6,
-        "read_current": 596.7e-6,
-        "enable_write_current": 296.2e-6,
-        "enable_read_current": 202.4e-6,
+        "write_current": 73e-6,
+        "read_current": 545e-6,
+        "enable_write_current": 248e-6,
+        "enable_read_current": 161e-6,
     }
 
     scope_settings = {
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 40
 
     measurement_settings.update(
         {
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
-    file_path, time_str = qf.save(b.properties, measurement_name)
+    file_path, time_str = qf.save(b.properties, measurement_settings["measurement_name"])
 
     plot_convergence(opt_res)
     plt.savefig(file_path + "{measurement_name}_convergence.png")
