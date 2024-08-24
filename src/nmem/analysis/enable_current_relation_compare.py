@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from nmem.calculations.calculations import htron_critical_current, htron_heater_current
+from nmem.calculations.calculations import (
+    htron_critical_current,
+    htron_heater_current,
+    calculate_heater_power,
+)
 from nmem.measurement.cells import CELLS
 
 
@@ -25,11 +29,11 @@ def convert_location_to_coordinates(location):
 
 def plot_text_labels(xloc, yloc, ztotal, log=False):
     for x, y in zip(xloc, yloc):
-        text = f"{ztotal[y, x]:.1f}"
+        text = f"{ztotal[y, x]:.2f}"
         if log:
             text = f"{ztotal[y, x]:.1e}"
         txt_color = "black"
-        if ztotal[y, x] < 0.5*max(ztotal.flatten()):
+        if ztotal[y, x] < 0.5 * max(ztotal.flatten()):
             txt_color = "white"
 
         plt.text(
@@ -45,12 +49,17 @@ def plot_text_labels(xloc, yloc, ztotal, log=False):
         )
 
 
-def plot_array(xloc, yloc, ztotal, title, log=False, norm=False):
+def plot_array(xloc, yloc, ztotal, title, log=False, norm=False, reverse=False):
     fig, ax = plt.subplots()
-    if norm: 
-        im = ax.imshow(ztotal, cmap="viridis", vmin=0, vmax=1)
+
+    cmap = plt.cm.get_cmap("viridis")
+    if reverse:
+        cmap = plt.cm.get_cmap("viridis").reversed()
+
+    if norm:
+        im = ax.imshow(ztotal, cmap=cmap, vmin=0, vmax=1)
     else:
-        im = ax.imshow(ztotal, cmap="viridis")
+        im = ax.imshow(ztotal, cmap=cmap)
     plt.title(title)
     plt.xticks(range(4), ["A", "B", "C", "D"])
     plt.yticks(range(4), ["1", "2", "3", "4"])
@@ -59,7 +68,6 @@ def plot_array(xloc, yloc, ztotal, title, log=False, norm=False):
     cbar = plt.colorbar(im)
 
     plot_text_labels(xloc, yloc, ztotal, log)
-
 
     plt.show()
 
@@ -71,10 +79,16 @@ if __name__ == "__main__":
     intercept_array = np.zeros((4, 4))
     x_intercept_array = np.zeros((4, 4))
     write_array = np.zeros((4, 4))
+    write_array_norm = np.zeros((4, 4))
     read_array = np.zeros((4, 4))
+    read_array_norm = np.zeros((4, 4))
     resistance_array = np.zeros((4, 4))
     bit_error_array = np.zeros((4, 4))
     max_critical_current_array = np.zeros((4, 4))
+    enable_write_array = np.zeros((4, 4))
+    enable_read_array = np.zeros((4, 4))
+    enable_write_power_array = np.zeros((4, 4))
+    enable_read_power_array = np.zeros((4, 4))
     for c in CELLS:
         write_current = CELLS[c]["write_current"] * 1e6
         read_current = CELLS[c]["read_current"] * 1e6
@@ -94,6 +108,12 @@ if __name__ == "__main__":
             )
             write_heater_current = htron_heater_current(write_current, slope, intercept)
             read_heater_current = htron_heater_current(read_current, slope, intercept)
+            enable_write_power = calculate_heater_power(
+                enable_write_current * 1e-6, resistance
+            )
+            enable_read_power = calculate_heater_power(
+                enable_read_current * 1e-6, resistance
+            )
             x, y = convert_location_to_coordinates(c)
             xloc.append(x)
             yloc.append(y)
@@ -101,11 +121,17 @@ if __name__ == "__main__":
             intercept_array[y, x] = intercept
             max_heater_current = -intercept / slope
             x_intercept_array[y, x] = max_heater_current
-            write_array[y, x] = write_current / write_critical_current
-            read_array[y, x] = read_current / read_critical_current
+            write_array[y, x] = write_current
+            write_array_norm[y, x] = write_current / write_critical_current
+            read_array[y, x] = read_current
+            read_array_norm[y, x] = read_current / read_critical_current
             resistance_array[y, x] = resistance
             bit_error_array[y, x] = bit_error_rate
             max_critical_current_array[y, x] = max_critical_current
+            enable_write_array[y, x] = enable_write_current
+            enable_read_array[y, x] = enable_read_current
+            enable_write_power_array[y, x] = enable_write_power
+            enable_read_power_array[y, x] = enable_read_power
             print(f"Cell: {c}")
             print(f"Write Current: {write_current:.2f}")
             print(f"Write Critical Current: {write_critical_current:.2f}")
@@ -126,11 +152,28 @@ if __name__ == "__main__":
             print("\n")
 
     ztotal = write_array
-    plot_array(xloc, yloc, write_array, "Write Current Normalized", norm=True)
-    plot_array(xloc, yloc, read_array, "Read Current Normalized", norm=True)
-    plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
-    plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
-    # plot_array(xloc, yloc, resistance_array, "Resistance [$\Omega$]")
-    plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
+    plot_array(xloc, yloc, ztotal, "Write Current [$\mu$A]")
+    # plot_array(xloc, yloc, write_array_norm, "Write Current Normalized", norm=True)
+    plot_array(xloc, yloc, read_array, "Read Current [$\mu$A]")
+    # plot_array(xloc, yloc, read_array_norm, "Read Current Normalized", norm=True)
+    # plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
+    # plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
+    # plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
     plot_array(xloc, yloc, bit_error_array, "Bit Error Rate", log=True)
-    plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
+    # plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
+    plot_array(xloc, yloc, enable_write_array, "Enable Write Current [$\mu$A]")
+    plot_array(xloc, yloc, enable_read_array, "Enable Read Current [$\mu$A]")
+    # plot_array(
+    #     xloc,
+    #     yloc,
+    #     enable_write_array / x_intercept_array,
+    #     "Enable Write Current Normalized",
+    # )
+    # plot_array(
+    #     xloc,
+    #     yloc,
+    #     enable_read_array / x_intercept_array,
+    #     "Enable Read Current Normalized",
+    # )
+    plot_array(xloc, yloc, enable_write_power_array * 1e6, "Enable Write Power [uW]")
+    plot_array(xloc, yloc, enable_read_power_array * 1e6, "Enable Read Power [uW]")
