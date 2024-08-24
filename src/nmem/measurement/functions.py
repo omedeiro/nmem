@@ -372,6 +372,7 @@ def write_waveforms(b: nTron, write_string: str, chan: int):
 
     b.inst.awg.set_arb_sync()
 
+RISING_EDGE = 15
 
 def load_waveforms(
     b: nTron,
@@ -398,7 +399,7 @@ def load_waveforms(
     )
 
     num_points = measurement_settings.get("num_points", 256)
-    RISING_EDGE = 0
+
     if wr_ratio >= 1:
         write_0 = create_waveforms_edge(width=ww, height=-1, edge=RISING_EDGE)
         write_1 = create_waveforms_edge(width=ww, height=1, edge=RISING_EDGE)
