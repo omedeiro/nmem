@@ -44,10 +44,10 @@ def objective_bias(x, meas_dict: dict):
     meas_dict["enable_write_current"] = x[2] * 1e-6
     meas_dict["enable_read_current"] = x[3] * 1e-6
     print(x)
-    print(f"Write Current: {meas_dict['write_current']*1e6:.2f}")
-    print(f"Read Current: {meas_dict['read_current']*1e6:.2f}")
-    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.2f}")
-    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.2f}")
+    print(f"Write Current: {meas_dict['write_current']*1e6:.3f}")
+    print(f"Read Current: {meas_dict['read_current']*1e6:.3f}")
+    print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.3f}")
+    print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.3f}")
     data_dict = nm.run_measurement(b, meas_dict, plot=False)
 
     qf.save(b.properties, measurement_name, data_dict)
@@ -55,23 +55,29 @@ def objective_bias(x, meas_dict: dict):
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
 
     res = errors / (NUM_MEAS * 2)
+    if res == 0.5:
+        res = 1
+
+    # if res > 0.5:
+    #     res = 1 - res
+
     print(res)
     return res
 
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(20, 60, name="write_current"),
-        Real(400, 550, name="read_current"),
-        Real(230, 270, name="enable_write_current"),
-        Real(160, 190, name="enable_read_current"),
+        Real(10, 210, name="write_current"),
+        Real(420, 680, name="read_current"),
+        Real(190, 330, name="enable_write_current"),
+        Real(120, 260, name="enable_read_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
     opt_result = gp_minimize(
         partial(objective_bias, meas_dict=meas_dict),
         space,
-        n_calls=40,
+        n_calls=NUM_CALLS,
         verbose=True,
         x0=meas_dict["opt_x0"],
     )
@@ -87,21 +93,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
-        "enable_write_phase": -12,
-        "enable_read_phase": -35,
+        "write_width": 22,
+        "read_width": 30,  #
+        "enable_write_width": 21,
+        "enable_read_width": 54,
+        "enable_write_phase": 7,
+        "enable_read_phase": 14,
         "bitmsg_channel": "N0RNR1RNRN",
         "bitmsg_enable": "NWNWEWNWEW",
     }
 
     current_settings = {
-        "write_current": 20.002e-6,
-        "read_current": 487.976e-6,
-        "enable_write_current": 249.494e-6,
-        "enable_read_current": 182.499e-6,
+        "write_current": 202.376e-6,
+        "read_current": 672.578e-6,
+        "enable_write_current": 214.965e-6,
+        "enable_read_current": 129.282e-6,
     }
 
     scope_settings = {
@@ -110,8 +116,8 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 2000
-
+    NUM_MEAS = 100
+    NUM_CALLS = 100
     measurement_settings.update(
         {
             **waveform_settings,
@@ -129,7 +135,9 @@ if __name__ == "__main__":
     )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
-    file_path, time_str = qf.save(b.properties, measurement_name)
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"]
+    )
 
     plot_convergence(opt_res)
     plt.savefig(file_path + f"{measurement_name}_convergence.png")
@@ -137,7 +145,16 @@ if __name__ == "__main__":
     plt.savefig(file_path + f"{measurement_name}_evaluations.png")
     plot_objective(opt_res)
     plt.savefig(file_path + f"{measurement_name}_objective.png")
+
+    plot_objective_2D(opt_res, "enable_write_current", "write_current")
+    plt.savefig(file_path + f"{measurement_name}_objective_2D_write.png")
+
+    plot_objective_2D(opt_res, "enable_read_current", "read_current")
+    plt.savefig(file_path + f"{measurement_name}_objective_2D_read.png")
+
     print(f"optimal parameters: {opt_res.x}")
+    for i, x in enumerate(opt_res.x):
+        print(f"{x:.3f}")
     print(f"optimal function value: {opt_res.fun}")
 
     b.inst.awg.set_output(False, 1)
