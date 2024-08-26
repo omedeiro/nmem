@@ -154,11 +154,11 @@ CELLS = {
         "read_current": 484.9e-6,
         "enable_write_current": 238.61e-6,
         "enable_read_current": 236.9e-6,
-        "slope": -4.035,
-        "intercept": 1653.676,
+        "slope": -4.455,
+        "intercept": 1629.205,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
-        "max_critical_current": 692e-6,
+        "max_critical_current": 810e-6,
         "min_bit_error_rate": 0.064,
     },
     "D3": {
@@ -240,3 +240,23 @@ CONFIG = r"SPG806_config_ICE.yml"
 NUM_DIVISIONS = 10
 NUM_SAMPLES = int(1e3)
 SPICE_DEVICE_CURRENT = 45.189e-6
+
+DEFAULT_WAVEFORM = {
+    "num_points": NUM_POINTS,
+    "sample_rate": SAMPLE_RATE[FREQ_IDX],
+    "write_width": 90,
+    "read_width": 90,  #
+    "enable_write_width": 30,
+    "enable_read_width": 30,
+    "enable_write_phase": 0,
+    "enable_read_phase": 30,
+    "bitmsg_channel": "N0RNR1RNRN",
+    "bitmsg_enable": "NWNWEWNWEW",
+}
+
+DEFAULT_SCOPE = {
+    "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+    "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+    "scope_num_samples": NUM_SAMPLES,
+    "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+}
