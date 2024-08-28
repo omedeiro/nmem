@@ -130,14 +130,16 @@ if __name__ == "__main__":
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_settings["measurement_name"])
     plot_convergence(opt_res)
-    plt.savefig(f"{file_path}_convergence.png", dpi=300, format="png")
-    plt.show()
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_convergence.png"
+    )
     plot_evaluations(opt_res)
-    plt.savefig(f"{file_path}_evaluations.png")
-    plt.show()
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_evaluations.png"
+    )
     plot_objective(opt_res)
-    plt.savefig(f"{file_path}_objective.png")
-    plt.show()
+    plt.savefig(file_path + f"{measurement_settings['measurement_name']}_objective.png")
+    
     print(f"optimal parameters: {opt_res.x}")
     for i, x in enumerate(opt_res.x):
         print(f"{x:.3f}")

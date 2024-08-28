@@ -63,8 +63,8 @@ def objective_write_enable(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(160, 220, name="write_current"),
-        Real(180, 230, name="enable_write_current"),
+        Real(10, 220, name="write_current"),
+        Real(120, 350, name="enable_write_current"),
         Integer(10, 100, name="write_width"),
         Integer(5, 60, name="enable_write_width"),
         Integer(-40, 40, name="enable_write_phase"),
@@ -76,7 +76,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=NUM_CALLS,
         verbose=True,
-        x0=[201, 190, 88, 38, -5],
+        x0=[68.58, 330.383, 35, 48, -33],
     )
 
     return opt_result, meas_dict
@@ -91,21 +91,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 22,
-        "read_width": 30,  #
-        "enable_write_width": 21,
-        "enable_read_width": 54,
-        "enable_write_phase": 7,
-        "enable_read_phase": 14,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0NNR1NNRN",
+        "bitmsg_enable": "NWNNEWNNEN",
     }
 
     current_settings = {
-        "write_current": 202.376e-6,
-        "read_current": 672.578e-6,
-        "enable_write_current": 214.965e-6,
-        "enable_read_current": 129.282e-6,
+        "write_current": 37.873e-6,
+        "read_current": 619.383e-6,
+        "enable_write_current": 290.221e-6,
+        "enable_read_current": 209.704e-6,
     }
 
 
@@ -135,14 +135,18 @@ if __name__ == "__main__":
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(
         b.properties, measurement_settings["measurement_name"]
-    )   
+    )
 
     plot_convergence(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_convergence.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_convergence.png"
+    )
     plot_evaluations(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_evaluations.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_evaluations.png"
+    )
     plot_objective(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_objective.png")
+    plt.savefig(file_path + f"{measurement_settings['measurement_name']}_objective.png")
     print(f"optimal parameters: {opt_res.x}")
     print(f"optimal function value: {opt_res.fun}")
 
