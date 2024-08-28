@@ -30,6 +30,32 @@ from nmem.measurement.cells import (
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
+def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
+    read_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        read_critical_current * 0.75, read_critical_current, num_points
+    )
+    return measurement_settings
+
+
+def write_sweep_scaled(measurement_settings, current_cell):
+    write_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        write_critical_current * 0.05, write_critical_current * 0.8, 15
+    )
+    return measurement_settings
+
+
 if __name__ == "__main__":
     t1 = time.time()
     measurement_name = "nMem_parameter_sweep"
@@ -39,21 +65,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 22,
-        "read_width": 30,  #
-        "enable_write_width": 21,
-        "enable_read_width": 54,
-        "enable_write_phase": 7,
-        "enable_read_phase": 14,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0NNR1NNRN",
+        "bitmsg_enable": "NWNNEWNNEN",
     }
 
     current_settings = {
-        "write_current": 202.376e-6,
-        "read_current": 672.578e-6,
-        "enable_write_current": 214.965e-6,
-        "enable_read_current": 129.282e-6,
+        "write_current": 37.873e-6,
+        "read_current": 619.383e-6,
+        "enable_write_current": 290.221e-6,
+        "enable_read_current": 209.704e-6,
     }
 
     scope_settings = {
@@ -62,7 +88,8 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 20000
+    NUM_MEAS = 100
+    NUM_POINTS = 21
 
     measurement_settings.update(
         {
@@ -75,43 +102,35 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "x": 0,
             "y": 0,
-            "threshold_bert": 0.2,
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([222.035e-6])
-    # measurement_settings["x"] = np.linspace(230e-6, 250e-6, 11)
-    measurement_settings[parameter_x] = measurement_settings["x"][0]
+    measurement_settings["x"] = np.linspace(
+        measurement_settings["enable_write_current"] * 0.95,
+        measurement_settings["enable_write_current"] * 1.1,
+        NUM_POINTS,
+    )
+    # measurement_settings["x"] = np.linspace(100e-6, 330e-6, 11)
+    # measurement_settings[parameter_x] = measurement_settings["x"][0]
     # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 3)
 
     read_sweep = False
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings["y"] = np.array([516.379e-6])
-        # measurement_settings["y"] = np.linspace(680e-6, 760e-6, 11)
-        read_critical_current = (
-            calculate_critical_current(
-                measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
-            )
-            * 1e-6
-        )
-        measurement_settings["y"] = np.linspace(
-            read_critical_current * 0.80, read_critical_current * 0.95, 11
+        measurement_settings = read_sweep_scaled(
+            measurement_settings, current_cell, NUM_POINTS
         )
     else:
         parameter_y = "write_current"
-        measurement_settings["y"] = np.array([201.216e-6])
-        # measurement_settings["y"] = np.linspace(0e-6, 90e-6, 11)
-        # write_critical_current = calculate_critical_current(
-        #     measurement_settings["enable_write_current"]*1e6, CELLS[current_cell]
-        # )*1e-6
-        # print(f"write_critical_current: {write_critical_current}")
+        # measurement_settings = write_sweep_scaled(measurement_settings, current_cell)
+        measurement_settings["y"] = np.array([37.873e-6])
         # measurement_settings["y"] = np.linspace(
-        #     write_critical_current * 0.05, write_critical_current * 0.3, 15
+        #     measurement_settings["write_current"] * 0.8,
+        #     measurement_settings["write_current"] * 1.2,
+        #     3,
         # )
-
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
     )
     b.properties["measurement_settings"] = measurement_settings
 
