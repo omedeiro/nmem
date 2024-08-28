@@ -63,11 +63,11 @@ def objective_read_enable(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(650, 690, name="read_current"),
-        Real(110, 130, name="enable_read_current"),
+        Real(400, 690, name="read_current"),
+        Real(110, 280, name="enable_read_current"),
         Integer(10, 100, name="read_width"),
         Integer(5, 60, name="enable_read_width"),
-        Integer(-40, 40, name="enable_read_phase"),
+        Integer(-50, 40, name="enable_read_phase"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
@@ -76,7 +76,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=NUM_CALLS,
         verbose=True,
-        x0=[672, 116, 82, 33, 0],
+        x0=[619, 209, 82, 33, -44],
     )
 
     return opt_result, meas_dict
@@ -91,23 +91,22 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 22,
-        "read_width": 30,  #
-        "enable_write_width": 21,
-        "enable_read_width": 54,
-        "enable_write_phase": 7,
-        "enable_read_phase": 14,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0NNR1RRRN",
+        "bitmsg_enable": "NWWWEWNNEW",
     }
 
     current_settings = {
-        "write_current": 202.376e-6,
-        "read_current": 672.578e-6,
-        "enable_write_current": 214.965e-6,
-        "enable_read_current": 129.282e-6,
+        "write_current": 37.873e-6,
+        "read_current": 619.383e-6,
+        "enable_write_current": 290.221e-6,
+        "enable_read_current": 209.704e-6,
     }
-
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -115,7 +114,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 1000
     NUM_CALLS = 40
     measurement_settings.update(
         {
