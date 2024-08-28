@@ -226,8 +226,10 @@ def calculate_error_rate(t0: np.ndarray, t1: np.ndarray, num_meas: int):
 
 def calculate_bit_error_rate(
     write_1_read_0_errors: int, write_0_read_1_errors: int, num_meas: int
-):
-    bit_error_rate = (write_0_read_1_errors + write_1_read_0_errors) / (2 * num_meas)
+) -> float:
+    bit_error_rate = float(
+        (write_0_read_1_errors + write_1_read_0_errors) / (2 * num_meas)
+    )
     return bit_error_rate
 
 
@@ -372,7 +374,9 @@ def write_waveforms(b: nTron, write_string: str, chan: int):
 
     b.inst.awg.set_arb_sync()
 
-RISING_EDGE = 15
+
+RISING_EDGE = 10
+
 
 def load_waveforms(
     b: nTron,
@@ -1130,6 +1134,10 @@ def run_realtime_bert(b: nTron, measurement_settings: dict) -> dict:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
+    threshold = measurement_settings.get("threshold_enforce", threshold)
+    measurement_settings["threshold_bert"] = threshold
+    print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
+
     # READ 1: below threshold (no voltage)
     write_0_read_1 = np.array([(read_zero_top < threshold).sum()])
 
@@ -1314,7 +1322,6 @@ def run_measurement(
     bit_error_rate = calculate_bit_error_rate(
         meas_dict["write_1_read_0"], meas_dict["write_0_read_1"], num_meas
     )
-
     DATA_DICT = {
         **meas_dict,
         "trace_chan_in": trace_chan_in,
@@ -1322,7 +1329,7 @@ def run_measurement(
         "trace_enab": trace_enab,
         "bit_error_rate": bit_error_rate,
     }
-
+    print(f"Bit Error Rate: {bit_error_rate:.2f}")
     if plot:
         plot_waveforms_bert(DATA_DICT, measurement_settings)
 
@@ -1412,8 +1419,8 @@ def run_sweep(
                 param_dict.update(
                     {
                         "Write Bias Fraction": [
-                            (measurement_settings["write_current"] * 1e6)
-                            / write_critical_current
+                            measurement_settings["write_current"]
+                            / (write_critical_current * 1e-6)
                         ],
                     }
                 )
@@ -1422,8 +1429,8 @@ def run_sweep(
                 param_dict.update(
                     {
                         "Read Bias Fraction": [
-                            (measurement_settings["read_current"] * 1e6)
-                            / read_critical_current
+                            measurement_settings["read_current"]
+                            / (read_critical_current * 1e-6)
                         ],
                     }
                 )
@@ -1431,8 +1438,8 @@ def run_sweep(
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
             param_df.columns = ["Value"]
             print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
-            print(param_df)
-            print("-------------------------------")
+            # print(param_df)
+            # print("-------------------------------")
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
