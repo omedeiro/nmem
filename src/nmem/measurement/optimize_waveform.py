@@ -13,7 +13,7 @@ import qnnpy.functions.functions as qf
 import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 from skopt import gp_minimize
-from skopt.plots import plot_convergence, plot_evaluations, plot_objective
+from skopt.plots import plot_convergence, plot_evaluations, plot_objective, plot_objective_2D
 from skopt.space import Integer, Real
 
 import nmem.measurement.functions as nm
@@ -59,18 +59,18 @@ def objective_waveform(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Integer(50, 100, name="write_width"),
-        Integer(10, 100, name="read_width"),
-        Integer(5, 60, name="enable_write_width"),
-        Integer(5, 60, name="enable_read_width"),
-        Integer(-40, 20, name="enable_write_phase"),
-        Integer(-40, -10, name="enable_read_phase"),
+        Integer(5, 70, name="write_width"),
+        Integer(5, 70, name="read_width"),
+        Integer(5, 70, name="enable_write_width"),
+        Integer(5, 70, name="enable_read_width"),
+        Integer(-50, 50, name="enable_write_phase"),
+        Integer(-50, 50, name="enable_read_phase"),
     ]
     nm.setup_scope_bert(b, meas_dict)
     opt_result = gp_minimize(
         partial(objective_waveform, meas_dict=meas_dict),
         space,
-        n_calls=100,
+        n_calls=NUM_CALLS,
         verbose=True,
         x0=meas_dict["opt_x0"],
     )
@@ -83,20 +83,20 @@ if __name__ == "__main__":
     measurement_name = "nMem_optimize_waveform"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     waveform_settings = {
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
-        "enable_write_phase": -12,
-        "enable_read_phase": -35,
+        "write_width": 60,
+        "read_width": 60,  #
+        "enable_write_width": 20,
+        "enable_read_width": 20,
+        "enable_write_phase": 0,
+        "enable_read_phase": -20,
     }
     opt_x0 = list(waveform_settings.values())
 
     current_settings = {
-        "write_current": 73e-6,
-        "read_current": 545e-6,
-        "enable_write_current": 248e-6,
-        "enable_read_current": 161e-6,
+        "write_current": 68.58e-6,
+        "read_current": 435.369e-6,
+        "enable_write_current": 330.383e-6,
+        "enable_read_current": 270e-6,
     }
 
     scope_settings = {
@@ -105,8 +105,8 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 40
-
+    NUM_MEAS = 2000
+    NUM_CALLS = 40
     measurement_settings.update(
         {
             **waveform_settings,
@@ -129,14 +129,18 @@ if __name__ == "__main__":
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(b.properties, measurement_settings["measurement_name"])
-
     plot_convergence(opt_res)
-    plt.savefig(file_path + "{measurement_name}_convergence.png")
+    plt.savefig(f"{file_path}_convergence.png", dpi=300, format="png")
+    plt.show()
     plot_evaluations(opt_res)
-    plt.savefig(file_path + "{measurement_name}_evaluations.png")
+    plt.savefig(f"{file_path}_evaluations.png")
+    plt.show()
     plot_objective(opt_res)
-    plt.savefig(file_path + "{measurement_name}_objective.png")
+    plt.savefig(f"{file_path}_objective.png")
+    plt.show()
     print(f"optimal parameters: {opt_res.x}")
+    for i, x in enumerate(opt_res.x):
+        print(f"{x:.3f}")
     print(f"optimal function value: {opt_res.fun}")
 
     b.inst.awg.set_output(False, 1)
