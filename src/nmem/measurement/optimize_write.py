@@ -59,8 +59,8 @@ def objective_write(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(160, 220, name="write_current"),
-        Real(140, 270, name="enable_write_current"),
+        Real(10, 240, name="write_current"),
+        Real(120, 330, name="enable_write_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
@@ -69,7 +69,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=NUM_CALLS,
         verbose=True,
-        x0=[193, 229],
+        x0=[37, 290],
     )
 
     return opt_result, meas_dict
@@ -79,25 +79,27 @@ if __name__ == "__main__":
     t1 = time.time()
     measurement_name = "nMem_optimize_write"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
+
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "write_width": 90,
-        "read_width": 10,  #
+        "read_width": 82,  #
         "enable_write_width": 36,
-        "enable_read_width": 5,
-        "enable_write_phase": -12,
-        "enable_read_phase": -40,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0NNR1NNRN",
+        "bitmsg_enable": "NWNNEWNNEN",
     }
 
     current_settings = {
-        "write_current": 193.910e-6,
-        "read_current": 672.212e-6,
-        "enable_write_current": 229.693e-6,
-        "enable_read_current": 116.99e-6,
+        "write_current": 37.873e-6,
+        "read_current": 619.383e-6,
+        "enable_write_current": 290.221e-6,
+        "enable_read_current": 209.704e-6,
     }
+
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -105,7 +107,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 5000
     NUM_CALLS = 40
     measurement_settings.update(
         {
