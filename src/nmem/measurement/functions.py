@@ -1329,7 +1329,7 @@ def run_measurement(
         "trace_enab": trace_enab,
         "bit_error_rate": bit_error_rate,
     }
-    print(f"Bit Error Rate: {bit_error_rate:.2f}")
+    print(f"Bit Error Rate: {bit_error_rate:.2e}")
     if plot:
         plot_waveforms_bert(DATA_DICT, measurement_settings)
 
