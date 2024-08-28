@@ -48,19 +48,22 @@ def objective_read(x, meas_dict: dict):
     print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.3f}")
     data_dict = nm.run_measurement(b, meas_dict, plot=False)
 
-    qf.save(b.properties, measurement_name, data_dict)
+    qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
     res = errors / (NUM_MEAS * 2)
-    if res == 0.5:
-        res = 1
+    # if res == 0.5:
+    #     res = 1
+    # elif res > 0.5:
+    #     res = 1 - res
+
     print(res)
     return res
 
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(420, 680, name="read_current"),
+        Real(420, 750, name="read_current"),
         Real(100, 260, name="enable_read_current"),
     ]
 
@@ -70,7 +73,7 @@ def run_optimize(meas_dict: dict):
         space,
         n_calls=NUM_CALLS,
         verbose=True,
-        x0=[672, 125],
+        x0=[619, 219],
     )
 
     return opt_result, meas_dict
@@ -85,21 +88,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 22,
-        "read_width": 30,  #
-        "enable_write_width": 21,
-        "enable_read_width": 54,
-        "enable_write_phase": 7,
-        "enable_read_phase": 14,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0RRR0RRRN",
+        "bitmsg_enable": "NWNNEWNNEN",
     }
 
     current_settings = {
-        "write_current": 202.376e-6,
-        "read_current": 672.578e-6,
-        "enable_write_current": 214.965e-6,
-        "enable_read_current": 129.282e-6,
+        "write_current": 30.160e-6,
+        "read_current": 640.192e-6,
+        "enable_write_current": 289.500e-6,
+        "enable_read_current": 212.843e-6,
     }
 
     scope_settings = {
@@ -126,14 +129,20 @@ if __name__ == "__main__":
     )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
-    file_path, time_str = qf.save(b.properties, measurement_settings["measurement_name"])
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"]
+    )
 
     plot_convergence(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_convergence.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_convergence.png"
+    )
     plot_evaluations(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_evaluations.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_evaluations.png"
+    )
     plot_objective(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_objective.png")
+    plt.savefig(file_path + f"{measurement_settings['measurement_name']}_objective.png")
     print(f"optimal parameters: {opt_res.x}")
     print(f"optimal function value: {opt_res.fun}")
 
