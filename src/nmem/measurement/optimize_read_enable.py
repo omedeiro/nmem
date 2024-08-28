@@ -135,11 +135,16 @@ if __name__ == "__main__":
     file_path, time_str = qf.save(b.properties, measurement_name)
 
     plot_convergence(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_convergence.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_convergence.png"
+    )
     plot_evaluations(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_evaluations.png")
+    plt.savefig(
+        file_path + f"{measurement_settings['measurement_name']}_evaluations.png"
+    )
     plot_objective(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_objective.png")
+    plt.savefig(file_path + f"{measurement_settings['measurement_name']}_objective.png")
+
     print(f"optimal parameters: {opt_res.x}")
     print(f"optimal function value: {opt_res.fun}")
 
