@@ -55,10 +55,9 @@ def objective_bias(x, meas_dict: dict):
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
 
     res = errors / (NUM_MEAS * 2)
-    if res == 0.5:
-        res = 1
-
-    # if res > 0.5:
+    # if res == 0.5:
+    #     res = 1
+    # elif res > 0.5:
     #     res = 1 - res
 
     print(res)
@@ -67,10 +66,10 @@ def objective_bias(x, meas_dict: dict):
 
 def run_optimize(meas_dict: dict):
     space = [
-        Real(10, 210, name="write_current"),
-        Real(420, 680, name="read_current"),
-        Real(190, 330, name="enable_write_current"),
-        Real(120, 260, name="enable_read_current"),
+        Real(10, 220, name="write_current"),
+        Real(400, 750, name="read_current"),
+        Real(120, 330, name="enable_write_current"),
+        Real(100, 280, name="enable_read_current"),
     ]
 
     nm.setup_scope_bert(b, meas_dict)
@@ -90,25 +89,28 @@ if __name__ == "__main__":
 
     measurement_name = "nMem_optimize_bias"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
+
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 22,
-        "read_width": 30,  #
-        "enable_write_width": 21,
-        "enable_read_width": 54,
-        "enable_write_phase": 7,
-        "enable_read_phase": 14,
-        "bitmsg_channel": "N0RNR1RNRN",
-        "bitmsg_enable": "NWNWEWNWEW",
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
+        "enable_write_phase": 0,
+        "enable_read_phase": -44,
+        "bitmsg_channel": "N0N0R1R1RN",
+        "bitmsg_enable": "NWWWEWNNEW",
     }
 
     current_settings = {
-        "write_current": 202.376e-6,
-        "read_current": 672.578e-6,
-        "enable_write_current": 214.965e-6,
-        "enable_read_current": 129.282e-6,
+        "write_current": 37.873e-6,
+        "read_current": 619.383e-6,
+        "enable_write_current": 290.221e-6,
+        "enable_read_current": 209.704e-6,
     }
+
+    opt_x0 = [current * 1e6 for current in current_settings.values()]
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -116,8 +118,8 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
-    NUM_CALLS = 100
+    NUM_MEAS = 5000
+    NUM_CALLS = 40
     measurement_settings.update(
         {
             **waveform_settings,
@@ -130,7 +132,7 @@ if __name__ == "__main__":
             "x": 0,
             "y": 0,
             "threshold_bert": 0.2,
-            "opt_x0": [current * 1e6 for current in current_settings.values()],
+            "opt_x0": opt_x0,
         }
     )
 
@@ -140,23 +142,24 @@ if __name__ == "__main__":
     )
 
     plot_convergence(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_convergence.png")
+    plt.savefig(f"{file_path}_convergence.png", dpi=300, format="png")
+    plt.show()
     plot_evaluations(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_evaluations.png")
+    plt.savefig(f"{file_path}_evaluations.png")
+    plt.show()
     plot_objective(opt_res)
-    plt.savefig(file_path + f"{measurement_name}_objective.png")
-
+    plt.savefig(f"{file_path}_objective.png")
+    plt.show()
     plot_objective_2D(opt_res, "enable_write_current", "write_current")
-    plt.savefig(file_path + f"{measurement_name}_objective_2D_write.png")
-
+    plt.savefig(f"{file_path}_objective_2D_write.png")
+    plt.show()
     plot_objective_2D(opt_res, "enable_read_current", "read_current")
-    plt.savefig(file_path + f"{measurement_name}_objective_2D_read.png")
-
+    plt.savefig(f"{file_path}_objective_2D_read.png", format="png")
+    plt.show()
     print(f"optimal parameters: {opt_res.x}")
     for i, x in enumerate(opt_res.x):
         print(f"{x:.3f}")
     print(f"optimal function value: {opt_res.fun}")
-
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
