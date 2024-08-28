@@ -92,16 +92,16 @@ CELLS = {
         "resistance_cryo": 0,
     },
     "C1": {
-        "write_current": 51.767e-6,
-        "read_current": 642.493e-6,
-        "enable_write_current": 288.723e-6,
-        "enable_read_current": 202.798e-6,
+        "write_current": 30.160e-6,
+        "read_current": 640.192e-6,
+        "enable_write_current": 289.500e-6,
+        "enable_read_current": 212.843e-6,
         "slope": -3.200,
         "intercept": 1402.778,
         "resistance": 559.2,
         "resistance_cryo": 258.8,
         "max_critical_current": 790e-6,
-        "min_bit_error_rate": 0.000845,
+        "min_bit_error_rate": 0.00065,
     },
     "C2": {
         "write_current": 69.605e-6,
@@ -259,4 +259,34 @@ DEFAULT_SCOPE = {
     "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
     "scope_num_samples": NUM_SAMPLES,
     "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+}
+
+DELAY_DICT = {
+    0: {
+        "delay": 1e-6,
+        "bit_error_rate": 3.5e-4,
+    },
+    1: {
+        "delay": 2e-6,
+        "bit_error_rate": 2.5e-4,
+    },
+    2: {
+        "delay": 3e-6,
+        "bit_error_rate": 3.0e-4,
+    },
+    3: {
+        "delay": 4e-6,
+        "bit_error_rate_0": 4.91e-1,
+        "bit_error_rate_1": 5.34e-1,
+    },
+    4: {
+        "delay": 5e-6,
+        "bit_error_rate_0": 5.13e-1,
+        "bit_error_rate_1": 5.39e-1,
+    },
+    5: {
+        "delay": 6e-6,
+        "bit_error_rate_0": 5.10e-1,
+        "bit_error_rate_1": 5.41e-1,
+    },
 }
