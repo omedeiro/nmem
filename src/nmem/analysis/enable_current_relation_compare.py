@@ -83,7 +83,7 @@ if __name__ == "__main__":
     read_array = np.zeros((4, 4))
     read_array_norm = np.zeros((4, 4))
     resistance_array = np.zeros((4, 4))
-    bit_error_array = np.zeros((4, 4))
+    bit_error_array = np.empty((4, 4))
     max_critical_current_array = np.zeros((4, 4))
     enable_write_array = np.zeros((4, 4))
     enable_read_array = np.zeros((4, 4))
@@ -97,8 +97,8 @@ if __name__ == "__main__":
         slope = CELLS[c]["slope"]
         intercept = CELLS[c]["intercept"]
         resistance = CELLS[c]["resistance_cryo"]
-        bit_error_rate = CELLS[c].get("min_bit_error_rate", 0)
-        max_critical_current = CELLS[c].get("max_critical_current", 0) * 1e6
+        bit_error_rate = CELLS[c].get("min_bit_error_rate", np.nan)
+        max_critical_current = CELLS[c].get("max_critical_current", np.nan) * 1e6
         if intercept != 0:
             write_critical_current = htron_critical_current(
                 enable_write_current, slope, intercept
@@ -153,9 +153,9 @@ if __name__ == "__main__":
 
     ztotal = write_array
     plot_array(xloc, yloc, ztotal, "Write Current [$\mu$A]")
-    # plot_array(xloc, yloc, write_array_norm, "Write Current Normalized", norm=True)
+    plot_array(xloc, yloc, write_array_norm, "Write Current Normalized")
     plot_array(xloc, yloc, read_array, "Read Current [$\mu$A]")
-    # plot_array(xloc, yloc, read_array_norm, "Read Current Normalized", norm=True)
+    plot_array(xloc, yloc, read_array_norm, "Read Current Normalized")
     # plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
     # plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
     # plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
@@ -163,17 +163,61 @@ if __name__ == "__main__":
     # plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
     plot_array(xloc, yloc, enable_write_array, "Enable Write Current [$\mu$A]")
     plot_array(xloc, yloc, enable_read_array, "Enable Read Current [$\mu$A]")
-    # plot_array(
-    #     xloc,
-    #     yloc,
-    #     enable_write_array / x_intercept_array,
-    #     "Enable Write Current Normalized",
-    # )
-    # plot_array(
-    #     xloc,
-    #     yloc,
-    #     enable_read_array / x_intercept_array,
-    #     "Enable Read Current Normalized",
-    # )
-    plot_array(xloc, yloc, enable_write_power_array * 1e6, "Enable Write Power [uW]")
-    plot_array(xloc, yloc, enable_read_power_array * 1e6, "Enable Read Power [uW]")
+    plot_array(
+        xloc,
+        yloc,
+        enable_write_array / x_intercept_array,
+        "Enable Write Current Normalized",
+    )
+    plot_array(
+        xloc,
+        yloc,
+        enable_read_array / x_intercept_array,
+        "Enable Read Current Normalized",
+    )
+    # plot_array(xloc, yloc, enable_write_power_array * 1e6, "Enable Write Power [uW]")
+    # plot_array(xloc, yloc, enable_read_power_array * 1e6, "Enable Read Power [uW]")
+
+    write_current_avg = np.mean(write_array[write_array > 0])
+    write_current_std = np.std(write_array[write_array > 0])
+    write_current_range = np.max(write_array[write_array > 0]) - np.min(
+        write_array[write_array > 0]
+    )
+    write_current_min = np.min(write_array[write_array > 0])
+    write_current_max = np.max(write_array[write_array > 0])
+    read_current_avg = np.mean(read_array[read_array > 0])
+    read_current_std = np.std(read_array[read_array > 0])
+    read_current_range = np.max(read_array[read_array > 0]) - np.min(
+        read_array[read_array > 0]
+    )
+    read_current_min = np.min(read_array[read_array > 0])
+    read_current_max = np.max(read_array[read_array > 0])
+
+    enable_write_avg = np.mean(enable_write_array[enable_write_array > 0])
+    enable_write_std = np.std(enable_write_array[enable_write_array > 0])
+    enable_write_min = np.min(enable_write_array[enable_write_array > 0])
+    enable_write_max = np.max(enable_write_array[enable_write_array > 0])
+    enable_read_avg = np.mean(enable_read_array[enable_read_array > 0])
+    enable_read_std = np.std(enable_read_array[enable_read_array > 0])
+    enable_read_min = np.min(enable_read_array[enable_read_array > 0])
+    enable_read_max = np.max(enable_read_array[enable_read_array > 0])
+
+    print(f"Write Current Average [uA]: {write_current_avg:.2f}")
+    print(f"Write Current Std [uA]: {write_current_std:.2f}")
+    print(f"Write Current Range [uA]: {write_current_range:.2f}")
+
+    print(f"Read Current Average [uA]: {read_current_avg:.2f}")
+    print(f"Read Current Std [uA]: {read_current_std:.2f}")
+    print(f"Read Current Range [uA]: {read_current_range:.2f}")
+
+    print(
+        f"Write Current Min, Max [uA]: {write_current_min:.2f}, {write_current_max:.2f}"
+    )
+    print(f"Read Current Min, Max [uA]: {read_current_min:.2f}, {read_current_max:.2f}")
+    print(f"Enable Write Average [uA]: {enable_write_avg:.2f}")
+    print(f"Enable Write Std [uA]: {enable_write_std:.2f}")
+    print(f"Enable Write Min, Max [uA]: {enable_write_min:.2f}, {enable_write_max:.2f}")
+
+    print(f"Enable Read Average [uA]: {enable_read_avg:.2f}")
+    print(f"Enable Read Std [uA]: {enable_read_std:.2f}")
+    print(f"Enable Read Min, Max [uA]: {enable_read_min:.2f}, {enable_read_max:.2f}")
