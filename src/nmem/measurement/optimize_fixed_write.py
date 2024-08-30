@@ -8,18 +8,15 @@ Created on Sat Dec  9 16:17:34 2023
 import time
 from functools import partial
 
-import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 from skopt import gp_minimize
 from skopt.plots import (
     plot_convergence,
     plot_evaluations,
     plot_objective,
-    plot_objective_2D,
 )
-from skopt.space import Integer, Real
+from skopt.space import Real
 
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (

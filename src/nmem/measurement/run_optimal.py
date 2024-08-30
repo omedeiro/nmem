@@ -7,23 +7,17 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 
-import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
     DEFAULT_SCOPE,
     FREQ_IDX,
     HEATERS,
-    HORIZONTAL_SCALE,
-    NUM_DIVISIONS,
     NUM_POINTS,
-    NUM_SAMPLES,
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
@@ -51,7 +45,7 @@ if __name__ == "__main__":
 
     current_settings = CELLS[current_cell]
 
-    NUM_MEAS = 20000
+    NUM_MEAS = 5000
 
     measurement_settings.update(
         {
