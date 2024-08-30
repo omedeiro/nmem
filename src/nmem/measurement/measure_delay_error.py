@@ -7,32 +7,29 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 
-import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
     DEFAULT_SCOPE,
     FREQ_IDX,
     HEATERS,
-    HORIZONTAL_SCALE,
-    NUM_DIVISIONS,
     NUM_POINTS,
-    NUM_SAMPLES,
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
+
+
+
 if __name__ == "__main__":
     t1 = time.time()
-    measurement_name = "nMem_parameter_sweep"
+    measurement_name = "nMem_delay_error"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
 
@@ -45,11 +42,23 @@ if __name__ == "__main__":
         "enable_read_width": 33,
         "enable_write_phase": 0,
         "enable_read_phase": -44,
-        "bitmsg_channel": "N0NNR1NNRN",
-        "bitmsg_enable": "NWNNEWNNEW",
+        "bitmsg_channel": "NNNNNNNNRN",
+        "bitmsg_enable": "NNNNNNNNEW",
+    }
+    current_settings = {
+        "write_current": 30e-6,
+        "read_current": 637e-6,
+        "enable_write_current": 288e-6,
+        "enable_read_current": 218e-6,
     }
 
-    current_settings = CELLS[current_cell]
+    i = 2
+    waveform_settings["bitmsg_channel"] = nm.replace_bit(
+        waveform_settings["bitmsg_channel"], i, "0"
+    )
+    waveform_settings["bitmsg_enable"] = nm.replace_bit(
+        waveform_settings["bitmsg_enable"], i, "W"
+    )
 
     NUM_MEAS = 5000
 
@@ -67,6 +76,7 @@ if __name__ == "__main__":
             "threshold_enforce": 0.3,
         }
     )
+
     nm.setup_scope_bert(b, measurement_settings)
     save_dict = nm.run_measurement(b, measurement_settings, plot=True)
     b.properties["measurement_settings"] = measurement_settings
@@ -79,7 +89,6 @@ if __name__ == "__main__":
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-  
     bit_error_rate = save_dict["write_1_read_0"][0] / NUM_MEAS
 
     save_dict["bit_error_rate"] = bit_error_rate
