@@ -104,6 +104,25 @@ def plot_fit(xfit, yfit):
     )
 
 
+def plot_slice(data_dict: dict):
+    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
+    w1r0 = data_dict["write_1_read_0"][0].flatten()
+    z = w1r0 + w0r1
+    ztotal = z.reshape(
+        (data_dict["y"][0].shape[0], data_dict["x"][0].shape[0]),
+        order="F",
+    )
+    cmap = plt.cm.viridis(np.linspace(0, 1, ztotal.shape[1]))
+    for enable_current_index in range(ztotal.shape[1]):
+        enable_current = data_dict["x"][0][enable_current_index, 1] * 1e6
+        plt.plot(
+            data_dict["y"][0][:, 0] * 1e6,
+            ztotal[:, enable_current_index],
+            label=f"enable current = {enable_current:.2f} $\mu$A",
+            color=cmap[enable_current_index],
+        )
+
+
 def plot_enable_current_relation(data_dict: dict):
     x = data_dict["x"][0][:, 1] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
@@ -158,7 +177,7 @@ if __name__ == "__main__":
     markers = ["o", "s", "D", "^"]
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     # colors = np.flipud(colors)
-    for file in [files[-1]]:
+    for file in files:
         datafile = os.path.join("data", file)
         cell = file.split("_")[-2]
         column = ord(cell[0]) - ord("A")
@@ -171,29 +190,18 @@ if __name__ == "__main__":
         yfit_sorted = yfit[np.argsort(xfit)] * 0.597
         print(f"Cell: {cell} max Ic = {yfit_sorted[0]}")
 
-        plot_enable_current_relation(measurement_dict)
-        # plot_fit(xfit_sorted, yfit_sorted)
-        # plt.plot(xfit_sorted, yfit_sorted, label=f"Cell {cell}", marker=markers[row], color=colors[column])
-        # w0r1 = 100 - measurement_dict["write_0_read_1"][0].flatten()
-        # w1r0 = measurement_dict["write_1_read_0"][0].flatten()
-        # z = w1r0 + w0r1
-        # ztotal = z.reshape(
-        #     (measurement_dict["y"][0].shape[0], measurement_dict["x"][0].shape[0]),
-        #     order="F",
-        # )
-        # cmap = plt.cm.viridis(np.linspace(0, 1, ztotal.shape[1]))
-        # for enable_current_index in range(ztotal.shape[1]):
-        #     enable_current = measurement_dict["x"][0][enable_current_index, 1] * 1e6
-        #     plt.plot(
-        #         measurement_dict["y"][0][:, 0]*1e6,
-        #         ztotal[:, enable_current_index],
-        #         label=f"enable current = {enable_current:.2f} $\mu$A",
-        #         color=cmap[enable_current_index],
-        #     )
-    # plt.xlabel("Channel Current [$\mu$A]")
-    # plt.ylabel("Counts")
-    # ax = plt.gca()
-    # ax.set_ylim(bottom=0)
-    # plt.title(f"Cell {cell}")
-    # plt.legend()
-    # plt.show()
+        plt.plot(
+            xfit_sorted,
+            yfit_sorted,
+            label=f"Cell {cell}",
+            marker=markers[row],
+            color=colors[column],
+        )
+
+    plt.xlabel("Enable Current [$\mu$A]")
+    plt.ylabel("Critical Current [$\mu$A]")
+    ax = plt.gca()
+    ax.set_ylim(bottom=0)
+    plt.title("Enable Current Relation")
+    plt.legend()
+    plt.show()
