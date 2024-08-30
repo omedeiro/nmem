@@ -23,7 +23,6 @@ from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
 )
-from nmem.measurement.cells import CELLS
 
 
 def gauss(x: float, mu: float, sigma: float, A: float):
@@ -496,6 +495,10 @@ def write_sequence(
 
     load_waveforms(b, measurement_settings, chan=channel, ramp_read=ramp_read)
     write_waveforms(b, write_string, channel)
+
+
+def replace_bit(bitmsg, i, bit):
+    return bitmsg[:i] + bit + bitmsg[i + 1 :]
 
 
 def get_traces(b: nTron, scope_samples: int = 5000):
