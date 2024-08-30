@@ -8,9 +8,7 @@ Created on Sat Dec  9 16:17:34 2023
 import time
 from functools import partial
 
-import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 from skopt import gp_minimize
 from skopt.plots import (
@@ -19,7 +17,7 @@ from skopt.plots import (
     plot_objective,
     plot_objective_2D,
 )
-from skopt.space import Integer, Real
+from skopt.space import Real
 
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
@@ -55,11 +53,6 @@ def objective_bias(x, meas_dict: dict):
     errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
 
     res = errors / (NUM_MEAS * 2)
-    # if res == 0.5:
-    #     res = 1
-    # elif res > 0.5:
-    #     res = 1 - res
-
     print(res)
     return res
 
@@ -99,15 +92,15 @@ if __name__ == "__main__":
         "enable_read_width": 33,
         "enable_write_phase": 0,
         "enable_read_phase": -44,
-        "bitmsg_channel": "N0N0R1R1RN",
-        "bitmsg_enable": "NWWWEWNNEW",
+        "bitmsg_channel": "N0RNR1RNRN",
+        "bitmsg_enable": "NWNWEWNWEN",
     }
 
     current_settings = {
-        "write_current": 37.873e-6,
-        "read_current": 619.383e-6,
-        "enable_write_current": 290.221e-6,
-        "enable_read_current": 209.704e-6,
+        "write_current": 26e-6,
+        "read_current": 617e-6,
+        "enable_write_current": 289e-6,
+        "enable_read_current": 219e-6,
     }
 
     opt_x0 = [current * 1e6 for current in current_settings.values()]
@@ -118,7 +111,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 5000
+    NUM_MEAS = 2000
     NUM_CALLS = 40
     measurement_settings.update(
         {
@@ -135,6 +128,21 @@ if __name__ == "__main__":
             "opt_x0": opt_x0,
         }
     )
+    # zero_bitidx = 1
+    # one_bitidx = 5
+
+    # measurement_settings["bitmsg_channel"] = nm.replace_bit(
+    #     measurement_settings["bitmsg_channel"], zero_bitidx, "0"
+    # )
+    # measurement_settings["bitmsg_channel"] = nm.replace_bit(
+    #     measurement_settings["bitmsg_channel"], one_bitidx, "1"
+    # )
+    # measurement_settings["bitmsg_enable"] = nm.replace_bit(
+    #     measurement_settings["bitmsg_enable"], zero_bitidx, "W"
+    # )
+    # measurement_settings["bitmsg_enable"] = nm.replace_bit(
+    #     measurement_settings["bitmsg_enable"], one_bitidx, "W"
+    # )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
     file_path, time_str = qf.save(
