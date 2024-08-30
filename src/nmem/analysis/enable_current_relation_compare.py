@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.calculations.calculations import (
+    calculate_heater_power,
     htron_critical_current,
     htron_heater_current,
-    calculate_heater_power,
 )
 from nmem.measurement.cells import CELLS
 
@@ -68,6 +69,42 @@ def plot_array(xloc, yloc, ztotal, title, log=False, norm=False, reverse=False):
     cbar = plt.colorbar(im)
 
     plot_text_labels(xloc, yloc, ztotal, log)
+
+    plt.show()
+
+
+def plot_normalization(
+    write_current_norm: np.ndarray,
+    read_current_norm: np.ndarray,
+    enable_write_current: np.ndarray,
+    enable_read_current: np.ndarray,
+):
+    # remove NaN from arrays
+    write_current_norm = write_current_norm[~np.isnan(write_current_norm)]
+    read_current_norm = read_current_norm[~np.isnan(read_current_norm)]
+    enable_write_current = enable_write_current[~np.isnan(enable_write_current)]
+    enable_read_current = enable_read_current[~np.isnan(enable_read_current)]
+
+    # remove zeros from arrays
+    write_current_norm = write_current_norm[write_current_norm != 0]
+    read_current_norm = read_current_norm[read_current_norm != 0]
+    enable_write_current = enable_write_current[enable_write_current != 0]
+    enable_read_current = enable_read_current[enable_read_current != 0]
+
+    fig, ax = plt.subplots()
+    ax.boxplot(write_current_norm.flatten(), positions=[0], widths=0.5)
+    ax.boxplot(read_current_norm.flatten(), positions=[1], widths=0.5)
+    ax.boxplot(enable_write_current.flatten(), positions=[2], widths=0.5)
+    ax.boxplot(enable_read_current.flatten(), positions=[3], widths=0.5)
+
+    ax.set_xticks([0, 1, 2, 3])
+    ax.set_xticklabels(
+        ["Write Current", "Read Current", "Enable\nWrite Current", "Enable\nRead Current"]
+    )
+    ax.set_xlabel("Input Type")
+    plt.xticks(rotation=45)
+    ax.set_ylabel("Normalized Current")
+    ax.set_yticks(np.linspace(0, 1, 11))
 
     plt.show()
 
@@ -202,22 +239,31 @@ if __name__ == "__main__":
     enable_read_min = np.min(enable_read_array[enable_read_array > 0])
     enable_read_max = np.max(enable_read_array[enable_read_array > 0])
 
-    print(f"Write Current Average [uA]: {write_current_avg:.2f}")
-    print(f"Write Current Std [uA]: {write_current_std:.2f}")
-    print(f"Write Current Range [uA]: {write_current_range:.2f}")
+    # print(f"Write Current Average [uA]: {write_current_avg:.2f}")
+    # print(f"Write Current Std [uA]: {write_current_std:.2f}")
+    # print(f"Write Current Range [uA]: {write_current_range:.2f}")
 
-    print(f"Read Current Average [uA]: {read_current_avg:.2f}")
-    print(f"Read Current Std [uA]: {read_current_std:.2f}")
-    print(f"Read Current Range [uA]: {read_current_range:.2f}")
+    # print(f"Read Current Average [uA]: {read_current_avg:.2f}")
+    # print(f"Read Current Std [uA]: {read_current_std:.2f}")
+    # print(f"Read Current Range [uA]: {read_current_range:.2f}")
 
-    print(
-        f"Write Current Min, Max [uA]: {write_current_min:.2f}, {write_current_max:.2f}"
+    # print(
+    #     f"Write Current Min, Max [uA]: {write_current_min:.2f}, {write_current_max:.2f}"
+    # )
+    # print(f"Read Current Min, Max [uA]: {read_current_min:.2f}, {read_current_max:.2f}")
+    # print(f"Enable Write Average [uA]: {enable_write_avg:.2f}")
+    # print(f"Enable Write Std [uA]: {enable_write_std:.2f}")
+    # print(f"Enable Write Min, Max [uA]: {enable_write_min:.2f}, {enable_write_max:.2f}")
+
+    # print(f"Enable Read Average [uA]: {enable_read_avg:.2f}")
+    # print(f"Enable Read Std [uA]: {enable_read_std:.2f}")
+    # print(f"Enable Read Min, Max [uA]: {enable_read_min:.2f}, {enable_read_max:.2f}")
+    enable_write_array_norm = enable_write_array / x_intercept_array
+    enable_read_array_norm = enable_read_array / x_intercept_array
+    print(f"Average bit error rate {np.mean(bit_error_array):.2e}")
+    plot_normalization(
+        write_array_norm,
+        read_array_norm,
+        enable_write_array_norm,
+        enable_read_array_norm,
     )
-    print(f"Read Current Min, Max [uA]: {read_current_min:.2f}, {read_current_max:.2f}")
-    print(f"Enable Write Average [uA]: {enable_write_avg:.2f}")
-    print(f"Enable Write Std [uA]: {enable_write_std:.2f}")
-    print(f"Enable Write Min, Max [uA]: {enable_write_min:.2f}, {enable_write_max:.2f}")
-
-    print(f"Enable Read Average [uA]: {enable_read_avg:.2f}")
-    print(f"Enable Read Std [uA]: {enable_read_std:.2f}")
-    print(f"Enable Read Min, Max [uA]: {enable_read_min:.2f}, {enable_read_max:.2f}")
