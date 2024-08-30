@@ -2,7 +2,6 @@ import time
 
 import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
@@ -38,8 +37,8 @@ def construct_currents(
             critical_current = max_critical_current
         bias_currents = np.array(
             [
-                critical_current * (1 - margin * 1.7),
-                critical_current * (1 + margin * 0.3),
+                critical_current * (1 - margin * 1.5),
+                critical_current * (1 + margin * 0.5),
             ]
         )
         bias_current_array[heater_currents == heater_current] = bias_currents
@@ -97,10 +96,10 @@ if __name__ == "__main__":
 
     parameter_x = "enable_read_current"
     # measurement_settings["x"] = np.array([0e-6])
-    measurement_settings["x"] = np.linspace(0e-6, 300e-6, 11)
+    measurement_settings["x"] = np.linspace(220e-6, 270e-6, 11)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(200e-6, 900e-6, 81)
+    measurement_settings["y"] = np.linspace(300e-6, 850e-6, 41)
     print(f"Slope: {CELLS[current_cell]['slope']}")
     print(f"Intercept: {CELLS[current_cell]['intercept']}")
     measurement_settings["x_subset"] = measurement_settings["x"]
@@ -118,7 +117,9 @@ if __name__ == "__main__":
     save_dict["trace_chan_in"] = save_dict["trace_chan_in"][:, :, 1]
     save_dict["trace_chan_out"] = save_dict["trace_chan_out"][:, :, 1]
     save_dict["trace_enab"] = save_dict["trace_enab"][:, :, 1]
-    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"], save_dict
+    )
     save_dict["time_str"] = time_str
     nm.plot_ber_sweep(
         save_dict,
