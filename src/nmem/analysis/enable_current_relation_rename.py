@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-
 plt.rcParams["figure.figsize"] = [5.5, 5.5]
 
 

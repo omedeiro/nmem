@@ -10,16 +10,14 @@ from functools import partial
 
 import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 from skopt import gp_minimize
 from skopt.plots import (
     plot_convergence,
     plot_evaluations,
     plot_objective,
-    plot_objective_2D,
 )
-from skopt.space import Integer, Real
+from skopt.space import Real
 
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
@@ -46,16 +44,31 @@ def objective_read(x, meas_dict: dict):
     print(f"Read Current: {meas_dict['read_current']*1e6:.3f}")
     print(f"Enable Write Current: {meas_dict['enable_write_current']*1e6:.3f}")
     print(f"Enable Read Current: {meas_dict['enable_read_current']*1e6:.3f}")
-    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+
+    idx = np.random.randint(0, 7)
+    bitidx = np.random.randint(0, 2)
+    bits = ["0", "1"]
+    total_errors = 0
+    for bit in bits:
+        meas_dict["bitmsg_channel"] = nm.replace_bit(meas_dict["bitmsg_channel"], idx, bit)
+        meas_dict["bitmsg_enable"] = nm.replace_bit(meas_dict["bitmsg_enable"], idx, "W")
+        data_dict = nm.run_measurement(b, meas_dict, plot=False)
+        if bit == "0":
+            errors = NUM_MEAS - data_dict["write_1_read_0"][0]
+        else:
+            errors = data_dict["write_1_read_0"][0]
+        total_errors += errors
 
     qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
-    errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
-    res = errors / (NUM_MEAS * 2)
-    # if res == 0.5:
-    #     res = 1
-    # elif res > 0.5:
-    #     res = 1 - res
+    # errors = data_dict["write_1_read_0"][0] + data_dict["write_0_read_1"][0]
+    
+    
+    res = total_errors / (2*NUM_MEAS)
+    
+    meas_dict["bitmsg_channel"] = "NNNNNNNNRN"
+    meas_dict["bitmsg_enable"] = "NNNNNNNNEW"
+
 
     print(res)
     return res
@@ -94,15 +107,15 @@ if __name__ == "__main__":
         "enable_read_width": 33,
         "enable_write_phase": 0,
         "enable_read_phase": -44,
-        "bitmsg_channel": "N0RRR0RRRN",
-        "bitmsg_enable": "NWNNEWNNEN",
+        "bitmsg_channel": "NNNNNNNNRN",
+        "bitmsg_enable": "NNNNNNNNEW",
     }
 
     current_settings = {
-        "write_current": 30.160e-6,
-        "read_current": 640.192e-6,
-        "enable_write_current": 289.500e-6,
-        "enable_read_current": 212.843e-6,
+        "write_current": 30e-6,
+        "read_current": 627e-6,
+        "enable_write_current": 288e-6,
+        "enable_read_current": 218e-6,
     }
 
     scope_settings = {
@@ -112,7 +125,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
     NUM_MEAS = 100
-    NUM_CALLS = 40
+    NUM_CALLS = 100
     measurement_settings.update(
         {
             **waveform_settings,
@@ -124,7 +137,7 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "x": 0,
             "y": 0,
-            "threshold_bert": 0.2,
+            "threshold_enforce": 0.35,
         }
     )
 

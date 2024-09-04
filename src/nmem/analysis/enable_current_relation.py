@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
+plt.rcParams["figure.figsize"] = [5.7, 5]
+plt.rcParams["font.size"] = 16
+
 
 def find_peak(data_dict: dict):
     x = data_dict["x"][0][:, 1] * 1e6
@@ -202,6 +205,6 @@ if __name__ == "__main__":
     plt.ylabel("Critical Current [$\mu$A]")
     ax = plt.gca()
     ax.set_ylim(bottom=0)
-    plt.title("Enable Current Relation")
-    plt.legend()
+    # plt.title("Enable Current Relation")
+    plt.legend(loc="lower left", ncol=2, frameon=False, fontsize=12)
     plt.show()

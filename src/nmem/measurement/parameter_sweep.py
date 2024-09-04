@@ -9,7 +9,6 @@ import time
 
 import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
@@ -38,12 +37,12 @@ def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        read_critical_current * 0.75, read_critical_current, num_points
+        read_critical_current * 0.885, read_critical_current * 0.905, num_points
     )
     return measurement_settings
 
 
-def write_sweep_scaled(measurement_settings, current_cell):
+def write_sweep_scaled(measurement_settings, current_cell, num_points=15):
     write_critical_current = (
         calculate_critical_current(
             measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
@@ -51,7 +50,7 @@ def write_sweep_scaled(measurement_settings, current_cell):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        write_critical_current * 0.05, write_critical_current * 0.8, 15
+        write_critical_current * 0.0, write_critical_current * 0.15, num_points
     )
     return measurement_settings
 
@@ -71,15 +70,15 @@ if __name__ == "__main__":
         "enable_read_width": 33,
         "enable_write_phase": 0,
         "enable_read_phase": -44,
-        "bitmsg_channel": "N0NNR1NNRN",
-        "bitmsg_enable": "NWNNEWNNEN",
+        "bitmsg_channel": "NN0NRN1NRN",
+        "bitmsg_enable": "NNWNENWNEN",
     }
 
     current_settings = {
-        "write_current": 37.873e-6,
-        "read_current": 619.383e-6,
-        "enable_write_current": 290.221e-6,
-        "enable_read_current": 209.704e-6,
+        "write_current": 26.040e-6,
+        "read_current": 617.649e-6,
+        "enable_write_current": 289.318e-6,
+        "enable_read_current": 219.679e-6,
     }
 
     scope_settings = {
@@ -88,7 +87,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 20000
     NUM_POINTS = 21
 
     measurement_settings.update(
@@ -105,16 +104,10 @@ if __name__ == "__main__":
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.linspace(
-        measurement_settings["enable_write_current"] * 0.95,
-        measurement_settings["enable_write_current"] * 1.1,
-        NUM_POINTS,
-    )
-    # measurement_settings["x"] = np.linspace(100e-6, 330e-6, 11)
-    # measurement_settings[parameter_x] = measurement_settings["x"][0]
-    # measurement_settings["x"] = np.linspace(260e-6, 290e-6, 3)
+    measurement_settings["x"] = np.array([289.318e-6])
+    measurement_settings[parameter_x] = measurement_settings["x"][0]
 
-    read_sweep = False
+    read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
@@ -122,15 +115,13 @@ if __name__ == "__main__":
         )
     else:
         parameter_y = "write_current"
-        # measurement_settings = write_sweep_scaled(measurement_settings, current_cell)
-        measurement_settings["y"] = np.array([37.873e-6])
-        # measurement_settings["y"] = np.linspace(
-        #     measurement_settings["write_current"] * 0.8,
-        #     measurement_settings["write_current"] * 1.2,
-        #     3,
-        # )
+        measurement_settings = write_sweep_scaled(
+            measurement_settings, current_cell, NUM_POINTS
+        )
+        # measurement_settings["y"] = np.array([29.108e-6])
+
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
+        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
     )
     b.properties["measurement_settings"] = measurement_settings
 
