@@ -199,7 +199,7 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
-    right_retrapping_current = max_critical_current * iretrap
+    right_retrapping_current = right_critical_currents * iretrap
     current_to_switch_left = left_critical_currents + right_retrapping_current
     current_to_switch_right = (left_critical_currents + persistent_currents) / alpha
     one_state_currents = np.maximum(current_to_switch_right, current_to_switch_left)
