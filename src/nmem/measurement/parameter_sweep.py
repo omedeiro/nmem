@@ -9,104 +9,125 @@ import time
 
 import numpy as np
 import qnnpy.functions.functions as qf
-import qnnpy.functions.ntron as nt
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
+from nmem.calculations.calculations import calculate_critical_current
+from nmem.measurement.cells import (
+    CELLS,
+    CONFIG,
+    FREQ_IDX,
+    HEATERS,
+    HORIZONTAL_SCALE,
+    NUM_DIVISIONS,
+    NUM_POINTS,
+    NUM_SAMPLES,
+    SAMPLE_RATE,
+    SPICE_DEVICE_CURRENT,
+)
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
-CONFIG = r"SPG806_config_ICE.yml"
 
-HORIZONTAL_SCALE = {
-    0: 5e-7,
-    1: 1e-6,
-    2: 2e-6,
-    3: 5e-6,
-    4: 1e-5,
-    5: 2e-5,
-    6: 5e-5,
-    7: 1e-4,
-    8: 2e-4,
-    9: 5e-4,
-}
+def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
+    read_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        read_critical_current * 0.885, read_critical_current * 0.905, num_points
+    )
+    return measurement_settings
 
-SAMPLE_RATE = {
-    0: 512e6,
-    1: 256e6,
-    2: 128e6,
-    3: 512e5,
-    4: 256e5,
-    5: 128e5,
-    6: 512e4,
-    7: 256e4,
-    8: 128e4,
-    9: 512e3,
-}
 
-NUM_MEAS = 500
-FREQ_IDX = 1
+def write_sweep_scaled(measurement_settings, current_cell, num_points=15):
+    write_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        write_critical_current * 0.0, write_critical_current * 0.15, num_points
+    )
+    return measurement_settings
 
 
 if __name__ == "__main__":
     t1 = time.time()
-    b = nt.nTron(CONFIG)
+    measurement_name = "nMem_parameter_sweep"
+    measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
+    current_cell = measurement_settings["cell"]
 
-    sample_name = [
-        b.sample_name,
-        b.device_type,
-        b.device_name,
-        b.properties["Save File"]["cell"],
-    ]
-    sample_name = str("-".join(sample_name))
-    date_str = time.strftime("%Y%m%d")
-    measurement_name = f"{date_str}_nMem_ICE_ber"
-
-    measurement_settings = {
-        "measurement_name": measurement_name,
-        "sample_name": sample_name,
-        "write_current": 50e-6,
-        "read_current": 515e-6,
-        "enable_write_current": 210e-6,
-        "enable_read_current": 150e-6,
-        "threshold_bert": 0.15,
-        "num_meas": NUM_MEAS,
-        "threshold_read": 100e-3,
-        "threshold_enab": 15e-3,
+    waveform_settings = {
+        "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
-        "sample_time": HORIZONTAL_SCALE[FREQ_IDX] * 10,  # 10 divisions
-        "num_samples_scope": 5e3,
-        "scope_sample_rate": 5e3 / (HORIZONTAL_SCALE[FREQ_IDX] * 10),
-        "x": 0,
-        "y": 0,
-        "num_samples": 2**8,
-        "write_width": 100,
-        "read_width": 100,  #
-        "enable_write_width": 30,
-        "enable_read_width": 30,
+        "write_width": 90,
+        "read_width": 82,  #
+        "enable_write_width": 36,
+        "enable_read_width": 33,
         "enable_write_phase": 0,
-        "enable_read_phase": 30,
-        # "bitmsg_channel": "NNN0RNN1RN",
-        # "bitmsg_enable": "NNNWENNWEE",
-        "bitmsg_channel": "N0RRR1RRRN",
-        "bitmsg_enable": "NWNNEWNNEE",
+        "enable_read_phase": -44,
+        "bitmsg_channel": "NN0NRN1NRN",
+        "bitmsg_enable": "NNWNENWNEN",
     }
 
-    parameter_x = "enable_read_current"
-    measurement_settings["x"] = [175e-6]
-    # measurement_settings["x"] = np.linspace(150e-6, 200e-6, 21)
+    current_settings = {
+        "write_current": 26.040e-6,
+        "read_current": 617.649e-6,
+        "enable_write_current": 289.318e-6,
+        "enable_read_current": 219.679e-6,
+    }
 
-    parameter_y = "write_current"
-    # measurement_settings["y"] = [100e-6]
-    measurement_settings["y"] = np.linspace(70e-6, 130e-6, 11)
+    scope_settings = {
+        "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
+        "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
+        "scope_num_samples": NUM_SAMPLES,
+        "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
+    }
+    NUM_MEAS = 20000
+    NUM_POINTS = 21
+
+    measurement_settings.update(
+        {
+            **waveform_settings,
+            **current_settings,
+            **scope_settings,
+            "CELLS": CELLS,
+            "HEATERS": HEATERS,
+            "num_meas": NUM_MEAS,
+            "spice_device_current": SPICE_DEVICE_CURRENT,
+            "x": 0,
+            "y": 0,
+        }
+    )
+    parameter_x = "enable_write_current"
+    measurement_settings["x"] = np.array([289.318e-6])
+    measurement_settings[parameter_x] = measurement_settings["x"][0]
+
+    read_sweep = True
+    if read_sweep:
+        parameter_y = "read_current"
+        measurement_settings = read_sweep_scaled(
+            measurement_settings, current_cell, NUM_POINTS
+        )
+    else:
+        parameter_y = "write_current"
+        measurement_settings = write_sweep_scaled(
+            measurement_settings, current_cell, NUM_POINTS
+        )
+        # measurement_settings["y"] = np.array([29.108e-6])
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
     )
     b.properties["measurement_settings"] = measurement_settings
 
-    file_path, time_str = qf.save(b.properties, measurement_name, save_dict)
+    file_path, time_str = qf.save(
+        b.properties, measurement_settings["measurement_name"], save_dict
+    )
     save_dict["time_str"] = time_str
     nm.plot_ber_sweep(
         save_dict,

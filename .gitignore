@@ -23,3 +23,6 @@ Thumbs.db
 # Distribution / packaging
 *.egg-info/
 dist/
+
+# Data
+*.mat

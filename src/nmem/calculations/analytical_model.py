@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+
 from nmem.calculations.calculations import (
     calculate_ideal_read_current,
     calculate_ideal_read_margin,
@@ -16,9 +17,7 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.calculations.plotting import (
-    plot_edge_fits,
     plot_htron_sweep,
-    plot_htron_sweep_scaled,
     plot_persistent_current,
     plot_point,
     plot_read_current,
@@ -175,7 +174,7 @@ if __name__ == "__main__":
     # HTRON_SLOPE = -2.69  # uA / uA
     # HTRON_INTERCEPT = 1257  # uA
     HTRON_SLOPE = -3.36  # uA / uA
-    HTRON_INTERCEPT = 1454-480 # uA
+    HTRON_INTERCEPT = 1454 - 480  # uA
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.30
     ALPHA = 1 - 0.3
@@ -222,10 +221,14 @@ if __name__ == "__main__":
 
     # Calculate the channel critical current
     channel_current_enabled = htron_critical_current(
-        HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents
+        enable_write_currents,
+        HTRON_SLOPE,
+        HTRON_INTERCEPT,
     )
     channel_current_enabled_measured = htron_critical_current(
-        HTRON_SLOPE, HTRON_INTERCEPT, enable_write_currents_measured
+        enable_write_currents_measured,
+        HTRON_SLOPE,
+        HTRON_INTERCEPT,
     )
 
     # Define the critical currents for the left and right branches
@@ -268,8 +271,10 @@ if __name__ == "__main__":
     )
     ax = plot_point(
         ax,
-        enable_write_currents_measured[int(IDXX/N*len(enable_write_currents_measured))],
-        write_currents_measured[int(IDXY/N*len(write_currents_measured))],
+        enable_write_currents_measured[
+            int(IDXX / N * len(enable_write_currents_measured))
+        ],
+        write_currents_measured[int(IDXY / N * len(write_currents_measured))],
         marker="*",
         color="red",
         markersize=15,

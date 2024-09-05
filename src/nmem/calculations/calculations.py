@@ -2,16 +2,83 @@ import numpy as np
 
 
 def htron_critical_current(
-    slope: float, intercept: float, heater_current: float
+    heater_current: float,
+    slope: float,
+    intercept: float,
 ) -> float:
+    """Calculate the critical current of the device.
+
+    Parameters
+    ----------
+    heater_current : float
+        The current through the heater I_H.
+    slope : float
+        The slope of linear enable response I_C(I_H) .
+    intercept : float
+        The y-intercept of the linear enable response in microamps.
+
+    Returns
+    -------
+    critical_current : float
+        The critical current of the device in microamps.
+    """
     channel_current = heater_current * slope + intercept
     return channel_current
 
+
 def htron_heater_current(
-    slope: float, intercept: float, channel_current: float
+    channel_current: float,
+    slope: float,
+    intercept: float,
 ) -> float:
     heater_current = (channel_current - intercept) / slope
     return heater_current
+
+
+def calculate_critical_current(
+    heater_current: float,
+    cell_dict: dict,
+) -> float:
+    """Calculate the critical current of the device.
+
+    Parameters
+    ----------
+    heater_current : float
+        The current through the heater I_H in microamps.
+    cell_dict : dict
+        A dictionary containing the following
+        - slope : float
+            The slope of linear enable response I_C(I_H) .
+            - intercept : float
+                The y-intercept of the linear enable response in microamps.
+            - max_critical_current : float
+                The maximum critical current of the device in microamps.
+
+    Returns
+    -------
+    critical_current : float
+        The critical current of the device in microamps."""
+    slope = cell_dict["slope"]
+    intercept = cell_dict["intercept"]
+    critical_current = htron_critical_current(heater_current, slope, intercept)
+    if critical_current > (cell_dict.get("max_critical_current", np.inf) * 1e6):
+        return cell_dict["max_critical_current"] * 1e6
+    else:
+        return critical_current
+
+
+def calculate_heater_current(
+    channel_current: float,
+    cell_dict: dict,
+) -> float:
+    slope = cell_dict["slope"]
+    intercept = cell_dict["intercept"]
+    return htron_heater_current(channel_current, slope, intercept)
+
+
+def calculate_heater_power(heater_current: float, heater_resistance: float) -> float:
+    return heater_current**2 * heater_resistance
+
 
 def calculate_right_branch_inductance(
     alpha: float, left_branch_inductance: float
