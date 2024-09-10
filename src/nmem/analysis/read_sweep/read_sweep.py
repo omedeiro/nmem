@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
 from nmem.analysis.analysis import (
     plot_hist,
     plot_measurement,
