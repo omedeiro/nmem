@@ -79,6 +79,7 @@ def calculate_heater_current(
 def calculate_heater_power(heater_current: float, heater_resistance: float) -> float:
     return heater_current**2 * heater_resistance
 
+
 def calculate_right_branch_inductance(
     alpha: float, left_branch_inductance: float
 ) -> float:
@@ -205,6 +206,7 @@ def calculate_zero_state_current(
     alpha: float,
     iretrap: float,
     max_critical_current: float,
+    width_ratio: float,
 ):
     """Calculate the current required to switch the device when in state 0
 
@@ -224,11 +226,13 @@ def calculate_zero_state_current(
     zero_state_current : np.ndarray
         The current that causes the channel to switch in state 0.
     """
-    left_retrapping_current = left_critical_currents * iretrap
+    left_retrapping_current = max_critical_current / width_ratio * iretrap
     current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
     current_to_switch_right = right_critical_currents + left_retrapping_current
-    zero_state_current = np.maximum(current_to_switch_left, current_to_switch_right)
-
+    zero_state_current = np.maximum(
+        current_to_switch_left, current_to_switch_right
+    )  # almost always current to switch right
+    # zero_state_current = current_to_switch_left
     # State currents are positive
     zero_state_current = np.where(zero_state_current < 0, 0, zero_state_current)
 
@@ -244,6 +248,7 @@ def calculate_one_state_current(
     alpha: float,
     iretrap: float,
     max_critical_current: float,
+    width_ratio: float,
 ):
     """Calculate the current required to switch the device to state 1.
 
@@ -263,11 +268,13 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
-    right_retrapping_current = right_critical_currents * iretrap
+    right_retrapping_current = max_critical_current * iretrap
     current_to_switch_left = left_critical_currents + right_retrapping_current
-    current_to_switch_right = (left_critical_currents + persistent_currents) / alpha
-    one_state_currents = np.maximum(current_to_switch_right, current_to_switch_left)
-
+    current_to_switch_right = (right_critical_currents - persistent_currents) / alpha
+    one_state_currents = np.maximum(
+        current_to_switch_left, current_to_switch_right
+    )  # almost always current to switch left
+    # one_state_currents = current_to_switch_right
     # State currents are positive
     one_state_currents = np.where(one_state_currents < 0, 0, one_state_currents)
 
@@ -298,7 +305,7 @@ def calculate_persistent_current(
         alpha, write_currents_mesh, persistent_current
     )
 
-    # CONDITION A
+    # CONDITION A - WRITE STATE
     # -----------
     # If the left branch current is greater than the
     # left critical current, the branch switches.
@@ -309,7 +316,7 @@ def calculate_persistent_current(
     )
     persistent_current = np.where(condition_a, write_currents_mesh, persistent_current)
 
-    # CONDITION B
+    # CONDITION B - WRITE INVERTING STATE
     # -----------
     # If the left branch switches and the redirected write current is enough
     # to switch the right branch, then both branches are switched.
@@ -332,20 +339,20 @@ def calculate_persistent_current(
     condition_c = condition_b & (new_left_branch_current > left_critical_currents_mesh)
     persistent_current = np.where(
         condition_c,
-        write_currents_mesh - left_critical_currents_mesh * iretrap,
+        right_critical_currents_mesh * iretrap,
         persistent_current,
     )
 
     # Limit the persistent current by the maximum critical current of the left branch
     # with the enable current active. This is the maximum persistent current.
-    persistent_current = np.where(
-        persistent_current > max_left_critical_current,
-        0,
-        persistent_current,
-    )
+    # persistent_current = np.where(
+    #     persistent_current > max_left_critical_current,
+    #     0,
+    #     persistent_current,
+    # )
 
     # Limit persistent current to positive values.
-    persistent_current = np.where(persistent_current < 0, 0, persistent_current)
+    # persistent_current = np.where(persistent_current < 0, 0, persistent_current)
 
     # Regions where the critical current is negative are invalid.
     # Set the persistent current to zero in these regions.
@@ -392,6 +399,7 @@ def calculate_read_currents(data_dict: dict):
     alpha = data_dict["alpha"]
     iretrap = data_dict["iretrap"]
     max_critical_current = data_dict["max_critical_current"]
+    width_ratio = data_dict["width_ratio"]
 
     zero_state_current = calculate_zero_state_current(
         left_critical_currents_mesh,
@@ -400,6 +408,7 @@ def calculate_read_currents(data_dict: dict):
         alpha,
         iretrap,
         max_critical_current,
+        width_ratio,
     )
     one_state_current = calculate_one_state_current(
         left_critical_currents_mesh,
@@ -408,6 +417,7 @@ def calculate_read_currents(data_dict: dict):
         alpha,
         iretrap,
         max_critical_current,
+        width_ratio,
     )
 
     read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
