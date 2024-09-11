@@ -13,6 +13,7 @@ from nmem.calculations.calculations import (
     calculate_right_lower_bound,
     calculate_right_upper_bound,
     calculate_zero_state_current,
+    calculate_persistent_current,
     htron_critical_current,
 )
 from nmem.calculations.plotting import (
@@ -161,20 +162,20 @@ if __name__ == "__main__":
 
     MAX_CRITICAL_CURRENT = CELLS[current_cell]["max_critical_current"]
     IRETRAP = 0.2
-    IREAD = 200
+    IREAD = 300
     IDXX = 30
     IDXY = 35
     N = 100
 
     width_ratio = WIDTH_RIGHT / WIDTH_LEFT
-    max_left_critical_current = HTRON_INTERCEPT / width_ratio
-    max_right_critical_current = HTRON_INTERCEPT
+    max_left_critical_current = MAX_CRITICAL_CURRENT / width_ratio
+    max_right_critical_current = MAX_CRITICAL_CURRENT
 
     # plot_experimental_data()
 
     # Define the write and enable write currents
     enable_write_currents = np.linspace(300, 450, N)
-    write_currents = np.linspace(00, 550, N)
+    write_currents = np.linspace(00, max_left_critical_current*1e6/ALPHA, N)
 
     # Calculate the channel critical current
     channel_current_enabled = htron_critical_current(
@@ -213,19 +214,24 @@ if __name__ == "__main__":
         "max_right_critical_current": max_right_critical_current,
     }
 
+    persistent_current, regions = calculate_persistent_current(data_dict)
+    data_dict["persistent_currents"] = persistent_current
+    data_dict["regions"] = regions
+
     # Plot the persistent current
     fig, ax = plt.subplots()
-    ax, data_dict = plot_persistent_current(
+    ax = plot_persistent_current(
         ax,
         data_dict,
-        plot_regions=False,
+        plot_regions=True,
         # data_point=(left_critical_currents[IDXX], write_currents[IDXY]),
     )
 
-    fig, ax = plt.subplots()
-    ax, data_dict = plot_read_current(ax, data_dict, contour=True)
 
-    zero_state_currents = calculate_zero_state_current(
+    fig, ax = plt.subplots()
+    ax = plot_read_current(ax, data_dict, contour=True, plot_regions=False)
+
+    zero_state_currents, _ = calculate_zero_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         data_dict["persistent_currents"],
@@ -234,7 +240,7 @@ if __name__ == "__main__":
         CELLS[current_cell]["max_critical_current"],
         width_ratio,
     )
-    one_state_currents = calculate_one_state_current(
+    one_state_currents, _ = calculate_one_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         data_dict["persistent_currents"],
@@ -252,8 +258,8 @@ if __name__ == "__main__":
     )
 
     # Plot the read margin
-    fig, ax = plt.subplots()
-    read_margin = plot_read_margin(ax, data_dict)
+    # fig, ax = plt.subplots()
+    # read_margin = plot_read_margin(ax, data_dict)
 
     # # Get the point parameters
     # param_df = get_point_parameters(IDXX, IDXY, data_dict)
