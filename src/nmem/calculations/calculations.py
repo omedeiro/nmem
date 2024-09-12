@@ -302,7 +302,7 @@ def calculate_persistent_current(
     right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
     write_currents_mesh = data_dict["write_currents_mesh"]
     alpha = data_dict["alpha"]
-
+    iretrap_enable = data_dict["iretrap_enable"]
     # Assuming no persistent current in the loop
     persistent_current = np.zeros_like(left_critical_currents_mesh)
 
@@ -330,7 +330,7 @@ def calculate_persistent_current(
     condition_b = (left_branch_current > left_critical_currents_mesh) & (
         write_currents_mesh > right_critical_currents_mesh
     )
-    new_left_branch_current = write_currents_mesh - right_critical_currents_mesh * 0.9
+    new_left_branch_current = write_currents_mesh - (right_critical_currents_mesh * iretrap_enable)
 
     persistent_current = np.where(
         condition_b,

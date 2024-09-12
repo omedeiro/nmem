@@ -162,6 +162,7 @@ if __name__ == "__main__":
 
     MAX_CRITICAL_CURRENT = CELLS[current_cell]["max_critical_current"]
     IRETRAP = 0.2
+    IRETRAP_ENABLE = 0.9
     IREAD = 300
     IDXX = 30
     IDXY = 35
@@ -175,7 +176,7 @@ if __name__ == "__main__":
 
     # Define the write and enable write currents
     enable_write_currents = np.linspace(300, 450, N)
-    write_currents = np.linspace(00, max_left_critical_current*1e6/ALPHA, N)
+    write_currents = np.linspace(00, max_left_critical_current * 1e6 / ALPHA, N)
 
     # Calculate the channel critical current
     channel_current_enabled = htron_critical_current(
@@ -204,6 +205,7 @@ if __name__ == "__main__":
         "enable_write_currents": enable_write_currents,
         "alpha": ALPHA,
         "iretrap": IRETRAP,
+        "iretrap_enable": IRETRAP_ENABLE,
         "set_read_current": IREAD,
         "width_left": WIDTH_LEFT,
         "width_right": WIDTH_RIGHT,
@@ -226,7 +228,6 @@ if __name__ == "__main__":
         plot_regions=True,
         # data_point=(left_critical_currents[IDXX], write_currents[IDXY]),
     )
-
 
     fig, ax = plt.subplots()
     ax = plot_read_current(ax, data_dict, contour=True, plot_regions=False)
