@@ -37,7 +37,7 @@ def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        read_critical_current * 0.885, read_critical_current * 0.905, num_points
+        read_critical_current * 0.8, read_critical_current * 0.95, num_points
     )
     return measurement_settings
 
@@ -64,21 +64,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
+        "write_width": 30,
+        "read_width": 30,  #
+        "enable_write_width": 30,
+        "enable_read_width": 35,
         "enable_write_phase": 0,
-        "enable_read_phase": -44,
-        "bitmsg_channel": "NN0NRN1NRN",
-        "bitmsg_enable": "NNWNENWNEN",
+        "enable_read_phase": -20,
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
     }
 
     current_settings = {
-        "write_current": 26.040e-6,
-        "read_current": 617.649e-6,
-        "enable_write_current": 289.318e-6,
-        "enable_read_current": 219.679e-6,
+        "write_current": 60.160e-6,
+        "read_current": 640.192e-6,
+        "enable_write_current": 289.500e-6,
+        "enable_read_current": 212.843e-6,
     }
 
     scope_settings = {
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 20000
+    NUM_MEAS = 200
     NUM_POINTS = 21
 
     measurement_settings.update(
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([289.318e-6])
+    measurement_settings["x"] = np.array([289.5e-6])
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
