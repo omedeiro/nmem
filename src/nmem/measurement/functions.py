@@ -948,7 +948,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     measurement_name = measurement_settings.get("measurement_name", 0)
     sample_name = measurement_settings.get("sample_name", 0)
     scope_timespan = measurement_settings.get("scope_timespan", 0)
-    threshold_bert = measurement_settings.get("threshold_bert")
+    threshold_bert = measurement_settings.get("threshold_enforced")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
@@ -1144,7 +1144,6 @@ def run_bitwise(b: nTron, measurement_settings: dict):
 
 def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dict:
     num_meas = measurement_settings.get("num_meas")
-    threshold = measurement_settings.get("threshold_bert", 150e-3)
 
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
@@ -1177,15 +1176,16 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
     # Find the difference between the highest and lowest values in the read top arrays
     difference = read_one_top - read_zero_top
     max_diff = difference.max()
-    if max_diff > 0.05:
+    if max_diff > 0.3:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         threshold = calculate_threshold(read_zero_top, read_one_top)
         print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
     else:
+        threshold = measurement_settings.get("threshold_enforced", 350e-3)
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
-    measurement_settings["threhsold_enforced"] = threshold
+    measurement_settings["threshold_enforced"] = threshold
     print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
 
     # READ 1: below threshold (no voltage)
@@ -1205,7 +1205,7 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
     }
-    return result_dict
+    return result_dict, measurement_settings
 
 
 def run_sequence_bert(b: nTron, measurement_settings: dict):
@@ -1375,7 +1375,7 @@ def run_measurement(
 
     b.inst.scope.clear_sweeps()
 
-    meas_dict = run_realtime_bert(b, measurement_settings)
+    meas_dict, measurement_settings = run_realtime_bert(b, measurement_settings)
 
     trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
 
@@ -1396,7 +1396,7 @@ def run_measurement(
     if plot:
         plot_waveforms_bert(DATA_DICT, measurement_settings)
 
-    return DATA_DICT
+    return DATA_DICT, measurement_settings
 
 
 def run_sweep(
@@ -1431,7 +1431,7 @@ def run_sweep(
             # print(f"Read Current: {measurement_settings['read_current']:.2f}")
             # print(f"Read Critical Current: {read_critical_current:.2f}")
 
-            data_dict = run_measurement(
+            data_dict, measurment_settings = run_measurement(
                 b,
                 measurement_settings,
                 save_traces,
