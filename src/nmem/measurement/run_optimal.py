@@ -61,7 +61,9 @@ if __name__ == "__main__":
         }
     )
     nm.setup_scope_bert(b, measurement_settings)
-    save_dict = nm.run_measurement(b, measurement_settings, plot=True)
+    save_dict, measurement_settings = nm.run_measurement(
+        b, measurement_settings, plot=True
+    )
     b.properties["measurement_settings"] = measurement_settings
 
     file_path, time_str = qf.save(
