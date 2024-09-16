@@ -260,21 +260,22 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
+        "write_width": 120,
         "read_width": 30,  #
         "enable_write_width": 30,
-        "enable_read_width": 35,
+        "enable_read_width": 120,
         "enable_write_phase": 0,
-        "enable_read_phase": -20,
+        "enable_read_phase": 0,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
+        "threshold_bert": 0.4,
     }
 
     current_settings = {
-        "write_current": 20.160e-6,
+        "write_current": 25e-6,
         "read_current": 640.192e-6,
-        "enable_write_current": 289.500e-6,
-        "enable_read_current": 212.843e-6,
+        "enable_write_current": 295e-6,
+        "enable_read_current": 215e-6,
     }
 
     NUM_MEAS = 1000
