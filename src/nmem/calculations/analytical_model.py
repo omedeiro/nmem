@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-
 from nmem.calculations.calculations import (
     calculate_ideal_read_current,
     calculate_ideal_read_margin,
@@ -22,8 +21,6 @@ from nmem.calculations.plotting import (
     plot_point,
     plot_read_current,
 )
-
-from nmem.measurement.cells import CELLS
 
 
 def import_matlab_data(file_path):

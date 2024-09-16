@@ -28,7 +28,6 @@ if __name__ == "__main__":
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
 
-
     waveform_settings = {
         "num_points": 64,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
@@ -42,17 +41,16 @@ if __name__ == "__main__":
         "bitmsg_enable": "WEWEWEWEWNNNNNNE",
     }
 
-
     current_settings = CELLS[current_cell]
 
     NUM_MEAS = 500
     scope_settings = {
-    "scope_horizontal_scale": 1e-6,
-    "scope_timespan": 1e-6*10,
-    "scope_num_samples": 1000,
-    "scope_sample_rate": 1e3 / (1e-6*10),
-}
-    
+        "scope_horizontal_scale": 1e-6,
+        "scope_timespan": 1e-6 * 10,
+        "scope_num_samples": 1000,
+        "scope_sample_rate": 1e3 / (1e-6 * 10),
+    }
+
     measurement_settings.update(
         {
             **waveform_settings,
@@ -67,8 +65,6 @@ if __name__ == "__main__":
         }
     )
 
-    
     nm.setup_scope_8bit_bert(b, measurement_settings)
 
     nm.run_bitwise_measurement(b, measurement_settings)
-

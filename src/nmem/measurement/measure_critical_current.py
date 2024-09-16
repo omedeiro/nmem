@@ -74,7 +74,7 @@ if __name__ == "__main__":
             "x": 0,
             "y": 0,
             "threshold_bert": 0.2,
-        }   
+        }
     )
     parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([0])

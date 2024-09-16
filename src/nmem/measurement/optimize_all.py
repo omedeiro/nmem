@@ -7,9 +7,11 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 from functools import partial
-from qnnpy.functions.ntron import nTron
+
+import numpy as np
 import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
+from qnnpy.functions.ntron import nTron
 from skopt import gp_minimize
 from skopt.plots import (
     plot_convergence,
@@ -17,7 +19,7 @@ from skopt.plots import (
     plot_objective,
 )
 from skopt.space import Integer, Real
-import numpy as np
+
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
     CELLS,
@@ -143,6 +145,7 @@ def optimize_read(meas_dict: dict):
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
+
 def optimize_read_pulse(meas_dict: dict):
     measurement_name = "nMem_optimize_read_pulse"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
@@ -155,6 +158,7 @@ def optimize_read_pulse(meas_dict: dict):
     x0 = [35, -20]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
+
 
 def optimize_write(meas_dict: dict):
     measurement_name = "nMem_optimize_write"
