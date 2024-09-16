@@ -154,7 +154,6 @@ def calculate_voltage(measurement_settings: dict) -> dict:
     measurement_settings["enable_voltage"] = enable_voltage
     measurement_settings["wr_ratio"] = wr_ratio
     measurement_settings["ewr_ratio"] = ewr_ratio
-    measurement_settings["threshold_bert"] = channel_voltage_read / 4.5
     return measurement_settings
 
 
@@ -284,8 +283,8 @@ def setup_scope_bert(
     # b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
     # b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    b.inst.scope.set_measurement_gate("P3", division_zero, division_zero + 0.2)
-    b.inst.scope.set_measurement_gate("P4", division_one, division_one + 0.2)
+    b.inst.scope.set_measurement_gate("P3", division_zero - 0.2, division_zero + 0.2)
+    b.inst.scope.set_measurement_gate("P4", division_one - 0.2, division_one + 0.2)
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -1181,14 +1180,12 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
     if max_diff > 0.05:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         threshold = calculate_threshold(read_zero_top, read_one_top)
-        measurement_settings["threshold_bert"] = threshold
         print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
     else:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
-    threshold = measurement_settings.get("threshold_enforce", threshold)
-    measurement_settings["threshold_bert"] = threshold
+    measurement_settings["threhsold_enforced"] = threshold
     print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
 
     # READ 1: below threshold (no voltage)
