@@ -7,7 +7,6 @@ plt.rcParams["font.size"] = 12
 
 
 def plot_write_sweep(data_dict: dict):
-    TRACE_INDEX = 10
     cmap = plt.get_cmap("Greens")
     colors = cmap(np.linspace(0.2, 1, len(data_dict)))
     for key, data in data_dict.items():

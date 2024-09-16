@@ -7,7 +7,6 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 
-import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
@@ -17,7 +16,6 @@ from nmem.measurement.cells import (
     DEFAULT_SCOPE,
     FREQ_IDX,
     HEATERS,
-    NUM_POINTS,
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
