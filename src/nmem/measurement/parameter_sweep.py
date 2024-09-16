@@ -29,7 +29,9 @@ from nmem.measurement.cells import (
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
+def read_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
     read_critical_current = (
         calculate_critical_current(
             measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
@@ -37,7 +39,7 @@ def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        read_critical_current * 0.8, read_critical_current * 0.95, num_points
+        read_critical_current * start, read_critical_current * end, num_points
     )
     return measurement_settings
 
@@ -64,21 +66,22 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
-        "read_width": 30,  #
-        "enable_write_width": 30,
-        "enable_read_width": 35,
+        "write_width": 120,
+        "read_width": 20,  #
+        "enable_write_width": 10,
+        "enable_read_width": 120,
         "enable_write_phase": 0,
-        "enable_read_phase": -20,
+        "enable_read_phase": 0,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
+        "threshold_bert": 0.4,
     }
 
     current_settings = {
-        "write_current": 60.160e-6,
+        "write_current": 55e-6,
         "read_current": 640.192e-6,
-        "enable_write_current": 289.500e-6,
-        "enable_read_current": 212.843e-6,
+        "enable_write_current": 320e-6,
+        "enable_read_current": 215e-6,
     }
 
     scope_settings = {
@@ -87,7 +90,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 200
+    NUM_MEAS = 1000
     NUM_POINTS = 21
 
     measurement_settings.update(
@@ -101,17 +104,18 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "x": 0,
             "y": 0,
+            "threshold_bert": 0.4,
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([289.5e-6])
+    measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, NUM_POINTS
+            measurement_settings, current_cell, NUM_POINTS, start=0.8, end=0.95
         )
     else:
         parameter_y = "write_current"
