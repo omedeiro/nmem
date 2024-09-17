@@ -66,21 +66,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 120,
-        "read_width": 30,  #
+        "write_width": 100,
+        "read_width": 50,  #
         "enable_write_width": 30,
         "enable_read_width": 120,
         "enable_write_phase": 0,
         "enable_read_phase": 0,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
+        "bitmsg_channel": "N0RNRN1RNR",
+        "bitmsg_enable": "WWNWEWWNWE",
         "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 30e-6,
+        "write_current": 25e-6,
         "read_current": 640.192e-6,
-        "enable_write_current": 340e-6,
+        "enable_write_current": 290e-6,
         "enable_read_current": 215e-6,
     }
 
