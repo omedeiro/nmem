@@ -621,6 +621,30 @@ def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
     return data0, data1, data2, data3
 
 
+def plot_message(ax: plt.Axes, message: str):
+    message_dict = {
+        "0": "Write 0",
+        "1": "Write 1",
+        "W": "Enable\nWrite",
+        "E": "Enable\nRead",
+        "R": "Read",
+        "N": "-",
+    }
+    plt.sca(ax)
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate(message):
+        plt.text(
+            i + 0.5,
+            axheight * 0.85,
+            message_dict[bit],
+            ha="center",
+            va="center",
+            fontsize=14,
+        )
+
+    return ax
+
+
 def plot_histogram(
     ax: Axes, y: np.ndarray, label: str, color: str, previous_params: list = [0]
 ) -> tuple:
@@ -961,11 +985,12 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
         label="input signal",
         color=cmap[C1, :],
     )
-    ax0.legend(loc=1)
+    ax0.legend(loc=4)
     plt.ylabel("voltage (mV)")
     plt.xlabel("time (us)")
     plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-200, 1200))
+    ax0 = plot_message(ax0, bitmsg_channel)
 
     ax1 = plt.subplot(413)
     ax1.plot(
@@ -979,19 +1004,21 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     )
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
-    ax1.legend(loc=1)
+    ax1.legend(loc=4)
     plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-200, 700))
+    ax1 = plot_message(ax1, bitmsg_channel)
 
     ax2 = plt.subplot(412)
     ax2.plot(
         trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color=cmap[C1, :]
     )
-    ax2.legend(loc=1)
+    ax2.legend(loc=4)
     plt.xlabel("time (us)")
     plt.ylabel("volage (mV)")
     plt.xlim((0, scope_timespan * 1e6))
     plt.ylim((-50, 200))
+    ax2 = plot_message(ax2, bitmsg_enable)
 
     ax3 = plt.subplot(414)
     ax3 = plot_trend(ax3, read_zero_top, label="READ 0", color=cmap[C1, :])
@@ -1000,7 +1027,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     plt.ylim([0, 0.6])
     plt.ylabel("read voltage (V)")
     plt.xlabel("sample")
-    ax3.legend()
+    ax3.legend(loc=4)
 
     plt.suptitle(
         f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
