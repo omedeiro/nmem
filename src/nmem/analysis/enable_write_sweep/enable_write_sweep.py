@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.ticker import MultipleLocator
+
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 14
 
@@ -306,13 +307,5 @@ if __name__ == "__main__":
         13: data13,
         14: data14,
     }
-    # fig, ax = plt.subplots()
-    # plot_enable_write_sweep_single(data_dict, index=3)
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_state_currents(data_dict)
-    # plt.show()
-
     plot_enable_write_sweep_grid(data_dict)
     plot_persistent_currents(data_dict)
