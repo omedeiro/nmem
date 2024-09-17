@@ -1,14 +1,78 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-
+from matplotlib.ticker import MultipleLocator
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 12
+plt.rcParams["font.size"] = 14
 
 
-def plot_enable_write_sweep(data_dict: dict):
+def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    plt.sca(ax)
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(data_dict)))
+
+    data_dict = {index: data_dict[index]}
+
+    for key, data in data_dict.items():
+        read_currents = data["y"][:, :, 0].flatten() * 1e6
+        ber = data["bit_error_rate"].flatten()
+        plt.plot(
+            read_currents,
+            ber,
+            label=f"$I_{{EW}}$ = {data['enable_write_current'][0,0,0]*1e6:.1f} $\mu$A",
+            color=colors[key],
+            marker=".",
+            markeredgecolor="k",
+        )
+
+        state0_current, state1_current = find_state_currents(data)
+        plt.plot(
+            read_currents[read_currents == state0_current],
+            ber[read_currents == state0_current],
+            color=colors[key],
+            marker="D",
+            markerfacecolor=colors[key],
+            markeredgecolor="k",
+            linewidth=1.5,
+        )
+        plt.plot(
+            read_currents[read_currents == state1_current],
+            ber[read_currents == state1_current],
+            color=colors[key],
+            marker="P",
+            markerfacecolor=colors[key],
+            markeredgecolor="k",
+            markersize=10,
+            linewidth=1.5,
+        )
+
+    ax = plt.gca()
+
+    plt.ylim(0, 1)
+    # plt.yscale("log")
+    # plt.xlabel("Read Current ($\mu$A)")
+    # plt.ylabel("Bit Error Rate")
+    plt.grid(True)
+
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position("top")
+    plt.legend(frameon=True, loc=2)
+    # plt.title("Enable Write Sweep")
+    return ax
+
+
+def plot_enable_write_sweep(data_dict: dict, index: int = None, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    plt.sca(ax)
+    cmap = plt.get_cmap("Spectral")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
+
+    if index is not None:
+        data_dict = {index: data_dict[index]}
+
     for key, data in data_dict.items():
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         ber = data["bit_error_rate"].flatten()
@@ -44,6 +108,56 @@ def plot_enable_write_sweep(data_dict: dict):
     plt.grid(True)
     plt.legend(frameon=False, bbox_to_anchor=(1, 1.25))
     plt.title("Enable Write Sweep")
+    return ax
+
+
+def plot_enable_write_sweep_grid(data_dict: dict):
+    fig, ax = plt.subplot_mosaic(
+        [["A", "B", "C", "D"], ["E", "E", "E", "E"]],
+        figsize=(16, 9),
+        tight_layout=True,
+        sharex=False,
+        sharey=False,
+    )
+    for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
+        ax[i] = plot_enable_write_sweep_single(data_dict, j, ax=ax[i])
+        if i == "A":
+            print(ax[i])
+            ax[i].set_ylabel("Bit Error Rate")
+            plt.legend(loc=2)
+        if i == "C":
+            plt.legend(loc=3)
+        if i == "D":
+            plt.legend(loc=3)
+
+        ax[i].set_xlabel("Read Current ($\mu$A)")
+
+    ax["E"] = plot_state_currents(data_dict, ax=ax["E"])
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_persistent_currents(data_dict: dict, ax=None):
+    persistent_currents = []
+    for key, data in data_dict.items():
+        state0_current, state1_current = find_state_currents(data)
+        persistent_currents.append(state1_current - state0_current)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6, 4))
+    plt.sca(ax)
+
+    plt.bar(
+        [data["enable_write_current"][0, 0, 0] * 1e6 for data in data_dict.values()],
+        persistent_currents,
+        width=2.5,
+    )
+    ax.xaxis.set_major_locator(MultipleLocator(20))
+    ax.xaxis.set_minor_locator(MultipleLocator(5))
+
+    plt.grid(True, axis="both", which="both")
+    plt.xlabel("Enable Write Current ($\mu$A)")
+    plt.ylabel("Diff. Between State Currents ($\mu$A)")
 
 
 def find_state_currents(data_dict: dict):
@@ -65,7 +179,10 @@ def find_state_currents(data_dict: dict):
     return state0_current, state1_current
 
 
-def plot_state_currents(data_dict: dict):
+def plot_state_currents(data_dict: dict, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    plt.sca(ax)
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(data_dict)))
     enable_write_currents = []
@@ -73,8 +190,8 @@ def plot_state_currents(data_dict: dict):
     state1_currents = []
     for key, data in data_dict.items():
         state0_current, state1_current = find_state_currents(data)
-        print(f"State 0 Current: {state0_current:.2f} µA")
-        print(f"State 1 Current: {state1_current:.2f} µA")
+        # print(f"State 0 Current: {state0_current:.2f} µA")
+        # print(f"State 1 Current: {state1_current:.2f} µA")
 
         enable_write_currents.append(data["enable_write_current"][0, 0, 0] * 1e6)
         state0_currents.append(state0_current)
@@ -117,10 +234,12 @@ def plot_state_currents(data_dict: dict):
         zorder=0,
     )
     plt.xlabel("Enable Write Current ($\mu$A)")
-    plt.ylabel("Read Current ($\mu$A)")
+    plt.ylabel("State Current ($\mu$A)")
     plt.grid(True)
     plt.legend(frameon=False)
-    plt.title("Enable Write Sweep")
+    # plt.title("Enable Write Sweep")
+
+    return ax
 
 
 if __name__ == "__main__":
@@ -187,10 +306,13 @@ if __name__ == "__main__":
         13: data13,
         14: data14,
     }
-    fig, ax = plt.subplots()
-    plot_enable_write_sweep(data_dict)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_enable_write_sweep_single(data_dict, index=3)
+    # plt.show()
 
-    fig, ax = plt.subplots()
-    plot_state_currents(data_dict)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_state_currents(data_dict)
+    # plt.show()
+
+    plot_enable_write_sweep_grid(data_dict)
+    plot_persistent_currents(data_dict)
