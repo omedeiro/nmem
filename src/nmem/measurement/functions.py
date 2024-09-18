@@ -1208,7 +1208,9 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         threshold = calculate_threshold(read_zero_top, read_one_top)
         print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
     else:
-        threshold = measurement_settings.get("threshold_enforced", 350e-3)
+        threshold = measurement_settings.get(
+            "threshold_bert", measurement_settings["threshold_enforced"]
+        )
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 

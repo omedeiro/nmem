@@ -66,14 +66,15 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 100,
-        "read_width": 50,  #
-        "enable_write_width": 30,
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 40,
         "enable_read_width": 120,
         "enable_write_phase": 0,
         "enable_read_phase": 0,
         "bitmsg_channel": "N0RNRN1RNR",
         "bitmsg_enable": "WWNWEWWNWE",
+        "threshold_bert": 0.4,
         "threshold_enforced": 0.4,
     }
 
@@ -90,8 +91,9 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 500
-    sweep_length = 21
+
+    NUM_MEAS = 1000
+    sweep_length = 15
 
     measurement_settings.update(
         {
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.8, end=0.95
+            measurement_settings, current_cell, sweep_length, start=0.84, end=0.91
         )
     else:
         parameter_y = "write_current"
