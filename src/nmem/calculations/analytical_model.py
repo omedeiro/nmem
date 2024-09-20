@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+
 from nmem.calculations.calculations import (
     calculate_ideal_read_current,
     calculate_ideal_read_margin,
