@@ -24,6 +24,8 @@ from nmem.calculations.calculations import (
     calculate_heater_power,
 )
 
+from nmem.measurement.cells import MITEQ_AMP_GAIN
+
 
 def gauss(x: float, mu: float, sigma: float, A: float):
     return A * np.exp(-((x - mu) ** 2) / 2 / sigma**2)
@@ -1529,9 +1531,41 @@ def run_sweep(
             pd.set_option("display.float_format", "{:.3f}".format)
             param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
             param_df.columns = ["Value"]
-            print(f"{parameter_x}: {x:.2e}, {parameter_y}: {y:.2e}")
-            # print(param_df)
-            # print("-------------------------------")
+
+            enable_write_power = calculate_heater_power(
+                measurement_settings["enable_write_current"],
+                measurement_settings["CELLS"][cell]["resistance_cryo"],
+            )
+            enable_read_power = calculate_heater_power(
+                measurement_settings["enable_read_current"],
+                measurement_settings["CELLS"][cell]["resistance_cryo"],
+            )
+            print(f"Enable Write Power [uW]: {enable_write_power*1e6:.2f}")
+            print(f"Enable Read Power [uW]: {enable_read_power*1e6:.2f}")
+
+            if data_dict["bit_error_rate"] < 0.01:
+                write_voltage_high = np.mean(data_dict["read_zero_top"][1])
+                write_voltage_low = np.mean(data_dict["read_one_top"][1])
+                print(f"Write Voltage High: {write_voltage_high:.2f}")
+                print(f"Write Voltage Low: {write_voltage_low:.2f}")
+
+                switch_voltage = write_voltage_high - write_voltage_low
+                switch_voltage_preamp = switch_voltage / 10 ** (MITEQ_AMP_GAIN / 20)
+                print(f"Switch Voltage Amp [mV]: {switch_voltage*1e3:.2f}")
+                print(f"Switch Voltage Preamp [mV]: {switch_voltage_preamp*1e3:.4f}")
+
+                switch_power = (
+                    switch_voltage_preamp * measurement_settings["read_current"]
+                )
+                print(f"Read Power [nW]: {switch_power*1e9:.2f}")
+                switch_impedance = (
+                    switch_voltage_preamp / measurement_settings["read_current"]
+                )
+                write_power = (
+                    switch_impedance * measurement_settings["write_current"] ** 2
+                )
+                print(f"Write Power [nW]: {write_power*1e9:.2f}")
+                print(f"Switch Impedance [Ohm]: {switch_impedance:.2f}")
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
