@@ -107,7 +107,7 @@ def plot_persistent_current(
     width_ratio = data_dict["width_ratio"]
 
     total_persistent_current, regions = calculate_persistent_current(data_dict)
-
+    regions = {"voltage": regions["voltage"]}
     c = plt.pcolormesh(
         left_critical_currents_mesh,
         write_currents_mesh,
@@ -118,12 +118,12 @@ def plot_persistent_current(
 
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
     plt.ylabel("Write Current [uA]")
-    plt.title("Maximum Persistent Current")
+    # plt.title("Maximum Persistent Current")
     plt.gca().invert_xaxis()
-    plt.colorbar()
-
+    cbar = plt.colorbar()
+    cbar.set_label("Maximum Persistent Current [uA]")
     if plot_regions:
-        color_cycler = cycler(colors=["red", "orange", "magenta", "skyblue"])
+        color_cycler = cycler(colors=["magenta", "skyblue"])
         for (name, region), colors in zip(regions.items(), color_cycler):
             region_plot = plt.contour(
                 left_critical_currents_mesh,
@@ -145,7 +145,7 @@ def plot_persistent_current(
     if data_point is not None:
         ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
 
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -189,7 +189,7 @@ def plot_zero_state_currents(
     if data_point is not None:
         ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
 
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -235,7 +235,7 @@ def plot_one_state_currents(
     if data_point is not None:
         ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
 
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -273,43 +273,75 @@ def plot_read_current(
     width_ratio = data_dict["width_ratio"]
     set_read_current = data_dict["set_read_current"]
 
-    read_currents, read_margins = calculate_read_currents(data_dict)
-
-    # read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
-    read_currents = np.where(persistent_currents == 0, 0, read_currents)
-
+    read_current_dict = calculate_read_currents(data_dict)
+    read_currents = read_current_dict["read_currents"]
+    read_margins = read_current_dict["read_margins"]
+    read_margins = np.where(read_currents < write_currents_mesh, 0, read_margins)
+    read_margins = np.where(persistent_currents == 0, 0, read_margins)
+    read_margins = np.where(
+        read_currents < read_current_dict["zero_state_currents"], 0, read_margins
+    )
     plt.pcolormesh(
-        left_critical_currents_mesh, write_currents_mesh, read_currents, linewidth=0.5
+        left_critical_currents_mesh,
+        write_currents_mesh,
+        read_margins,
+        linewidth=0.5,
     )
     plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("Read Current")
+    plt.ylabel("Set Read Current [uA]")
+    plt.title("Ideal Read Current Margin")
     plt.gca().invert_xaxis()
-    plt.colorbar()
-    ax.set_xlim(right=0)
+    cbar = plt.colorbar()
+    cbar.set_label("Read Current Margin [uA]")
+    # ax.set_xlim(right=0)
 
     if contour:
         # Add contour at set_read_current
         operating_regions = np.where(
-            (set_read_current > (read_currents - read_margins))
-            * (set_read_current < (read_currents + read_margins)),
+            (set_read_current > read_current_dict["zero_state_currents"])
+            * (set_read_current < read_current_dict["one_state_currents"]),
             1,
             0,
         )
-        operating_margin = plt.contour(
+        operating_regions = np.where(read_margins == 0, 0, operating_regions)
+
+        inverting_region = np.where(
+            (set_read_current < read_current_dict["zero_state_currents"])
+            * (set_read_current > read_current_dict["one_state_currents"]),
+            1,
+            0,
+        )
+        operating_margin = plt.contourf(
             left_critical_currents_mesh,
             write_currents_mesh,
             operating_regions,
             levels=[0.5, 1.5],
             colors="white",
-            linestyles=["dashed", "solid", "dashed"],
+            alpha=0.5,
+        )
+        plt.contour(
+            left_critical_currents_mesh,
+            write_currents_mesh,
+            operating_regions,
+            levels=[0.5, 1.5],
+            colors="white",
+            linestyles="solid",
+        )
+
+        plt.contour(
+            left_critical_currents_mesh,
+            write_currents_mesh,
+            read_current_dict["read_margins"],
+            levels=[set_read_current - 10, set_read_current, set_read_current + 10],
+            colors="white",
+            linestyles="dashed",
         )
 
         inv_region = plt.contour(
             left_critical_currents_mesh,
             write_currents_mesh,
-            data_dict["regions"]["inverting"],
-            levels=[0],
+            inverting_region,
+            levels=[0.5, 1.5],
             colors="black",
             linestyles="dashed",
         )
@@ -330,15 +362,15 @@ def plot_read_current(
     ax2.set_xlim(ax.get_xlim())
     ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
-    plt.show()
 
+    ax = plt.gca()
     if plot_regions:
         ax = plot_region_dict(
             ax, data_dict["regions"], left_critical_currents_mesh, write_currents_mesh
         )
 
     data_dict["read_currents"] = read_currents
-    data_dict["read_margins"] = read_margins
+    data_dict["read_margins"] = read_current_dict["read_margins"]
     return ax
 
 
@@ -362,6 +394,7 @@ def plot_region_dict(ax, regions: dict, x, y):
             inline_spacing=0,
             rightside_up=True,
         )
+    ax = plt.gca()
     return ax
 
 
@@ -388,14 +421,12 @@ def plot_read_margin(
     data_dict: dict,
     data_point: tuple = None,
 ):
-
     left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
     write_currents_mesh = data_dict["write_currents_mesh"]
     read_margins = data_dict["read_margins"]
     read_currents = data_dict["read_currents"]
     set_read_current = data_dict["set_read_current"]
     width_ratio = data_dict["width_ratio"]
-
 
     plt.pcolor(
         left_critical_currents_mesh,
@@ -414,7 +445,7 @@ def plot_read_margin(
     if data_point is not None:
         ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
 
-    ax.set_xlim(right=0)
+    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
