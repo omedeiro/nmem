@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Tuple
+
+import numpy as np
 
 
 def htron_critical_current(
@@ -205,9 +206,8 @@ def calculate_zero_state_current(
     right_critical_currents: np.ndarray,
     persistent_currents: np.ndarray,
     alpha: float,
-    iretrap: float,
-    max_critical_current: float,
-    width_ratio: float,
+    iretrap_enable: float,
+    maximum_current: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device when in state 0
 
@@ -227,9 +227,9 @@ def calculate_zero_state_current(
     zero_state_current : np.ndarray
         The current that causes the channel to switch in state 0.
     """
-    left_retrapping_current = (max_critical_current / width_ratio) * iretrap
+    left_retrapping_currents = left_critical_currents * iretrap_enable
     current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
-    current_to_switch_right = right_critical_currents + left_retrapping_current
+    current_to_switch_right = right_critical_currents + left_retrapping_currents
     zero_state_current = np.where(
         current_to_switch_left > current_to_switch_right,
         current_to_switch_left,
@@ -245,6 +245,10 @@ def calculate_zero_state_current(
     # State currents are only valid where the persistent current is non-zero
     zero_state_current = np.where(persistent_currents == 0, 0, zero_state_current)
 
+    max_state_current = maximum_current * 1e6
+    zero_state_current = np.where(
+        zero_state_current > max_state_current, max_state_current, zero_state_current
+    )
     return zero_state_current, zero_state_current_index
 
 
@@ -253,9 +257,8 @@ def calculate_one_state_current(
     right_critical_currents: np.ndarray,
     persistent_currents: np.ndarray,
     alpha: float,
-    iretrap: float,
-    max_critical_current: float,
-    width_ratio: float,
+    iretrap_enable: float,
+    maximum_current: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device to state 1.
 
@@ -275,9 +278,11 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
-    right_retrapping_current = max_critical_current * iretrap
-    current_to_switch_left = left_critical_currents + right_retrapping_current
-    current_to_switch_right = (right_critical_currents - persistent_currents) / alpha
+    right_retrapping_currents = right_critical_currents * iretrap_enable
+    current_to_switch_left = left_critical_currents + right_retrapping_currents
+    current_to_switch_right = (right_critical_currents - persistent_currents) / (
+        1 - alpha
+    )
 
     one_state_currents = np.where(
         current_to_switch_left > current_to_switch_right,
@@ -292,6 +297,11 @@ def calculate_one_state_current(
 
     # State currents are only valid where the persistent current is non-zero
     one_state_currents = np.where(persistent_currents == 0, 0, one_state_currents)
+
+    max_state_current = maximum_current * 1e6
+    one_state_currents = np.where(
+        one_state_currents > max_state_current, max_state_current, one_state_currents
+    )
     return one_state_currents, one_state_currents_index
 
 
@@ -330,12 +340,8 @@ def calculate_persistent_current(
     condition_b = (left_branch_current > left_critical_currents_mesh) & (
         write_currents_mesh > right_critical_currents_mesh
     )
-    new_left_branch_current = write_currents_mesh - (right_critical_currents_mesh * iretrap_enable)
-
-    persistent_current = np.where(
-        condition_b,
-        new_left_branch_current,
-        persistent_current,
+    new_left_branch_current = write_currents_mesh - (
+        right_critical_currents_mesh * iretrap_enable
     )
 
     # CONDITION C - WRITE INVERTING STATE
@@ -352,11 +358,8 @@ def calculate_persistent_current(
     # -----------
     # If CONDITION B is true and the new left branch current is greater than the left critical current, there will be an output voltage.
     # Ip is assumed to be the retrapping current
-    condition_d = (
-        condition_b
-        & (new_left_branch_current > left_critical_currents_mesh)
-        & ~condition_c
-    )
+    condition_d = condition_b & (new_left_branch_current > left_critical_currents_mesh)
+
     persistent_current = np.where(
         condition_d,
         left_critical_currents_mesh,
@@ -417,32 +420,36 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
     persistent_currents = data_dict["persistent_currents"]
     alpha = data_dict["alpha"]
-    iretrap = data_dict["iretrap"]
+    iretrap_enable = data_dict["iretrap_enable"]
     max_critical_current = data_dict["max_critical_current"]
-    width_ratio = data_dict["width_ratio"]
 
     zero_state_current, _ = calculate_zero_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         persistent_currents,
         alpha,
-        iretrap,
+        iretrap_enable,
         max_critical_current,
-        width_ratio,
     )
     one_state_current, _ = calculate_one_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         persistent_currents,
         alpha,
-        iretrap,
+        iretrap_enable,
         max_critical_current,
-        width_ratio,
     )
 
     read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
     read_margins = calculate_ideal_read_margin(zero_state_current, one_state_current)
-    return read_currents, read_margins
+
+    current_dict = {
+        "zero_state_currents": zero_state_current,
+        "one_state_currents": one_state_current,
+        "read_currents": read_currents,
+        "read_margins": read_margins,
+    }
+    return current_dict
 
 
 def calculate_ideal_read_current(
@@ -479,4 +486,3 @@ def calculate_right_lower_bound(
     persistent_current: float, read_current: float, alpha: float
 ) -> float:
     return np.max([persistent_current + read_current * (1 - alpha), 0])
-
