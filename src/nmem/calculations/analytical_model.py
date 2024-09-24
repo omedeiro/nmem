@@ -10,6 +10,7 @@ from nmem.calculations.calculations import (
     calculate_left_upper_bound,
     calculate_one_state_current,
     calculate_persistent_current,
+    calculate_read_currents,
     calculate_right_branch_current,
     calculate_right_lower_bound,
     calculate_right_upper_bound,
@@ -48,25 +49,33 @@ def persistent_current_plot(data_dict):
 
 def read_current_plot(data_dict, persistent_current=None):
     persistent_currents, regions = calculate_persistent_current(data_dict)
+    data_dict["persistent_currents"] = persistent_currents
     data_dict["regions"] = regions
     if persistent_current:
-        data_dict["persistent_currents"] = np.where(
-            data_dict["persistent_currents"] > 0, persistent_current, 0
+        data_dict["persistent_currents"] = (
+            np.ones_like(persistent_currents) * persistent_current
         )
-
     fig, ax = plt.subplots()
     ax = plot_read_current(ax, data_dict, contour=True, plot_regions=False)
+    plt.hlines(
+        data_dict["max_critical_current"] * 1e6,
+        ax.get_xlim()[0],
+        ax.get_xlim()[1],
+        color="red",
+        linestyle="--",
+    )
 
     plt.text(
-        0.25,
-        0.10,
-        f"$I_{{P}}$={persistent_current}$\mu$A",
+        0.15,
+        0.15,
+        f"$I_{{P}}$={persistent_current}$\mu$A\n$I_{{R}}$={data_dict['set_read_current']}$\mu$A",
         fontsize=24,
         color="white",
-        ha="center",
+        ha="left",
         va="center",
         transform=ax.transAxes,
     )
+    return data_dict
 
 
 def get_point_parameters(i: int, j: int, data_dict: dict):
@@ -261,6 +270,23 @@ def create_dict(
     return data_dict
 
 
+def plot_state(data_dict, state="zero"):
+    fig, ax = plt.subplots()
+    plt.pcolormesh(
+        data_dict["left_critical_currents_mesh"],
+        data_dict["write_currents_mesh"],
+        read_current_dict[f"{state}_state_currents"],
+    )
+    plt.contourf(
+        data_dict["left_critical_currents_mesh"],
+        data_dict["write_currents_mesh"],
+        read_current_dict[f"{state}_state_current_index"],
+        levels=[0.5, 1.5],
+        colors="white",
+        alpha=0.3,
+    )
+
+
 if __name__ == "__main__":
     current_cell = "C1"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
@@ -280,7 +306,7 @@ if __name__ == "__main__":
     MIN_ENABLE_CURRENT = 250
     MAX_ENABLE_CURRENT = 440
     MIN_WRITE_CURRENT = 0
-    MAX_WRITE_CURRENT = 600
+    MAX_WRITE_CURRENT = 820
 
     data_dict = create_dict(
         WIDTH_LEFT,
@@ -302,5 +328,7 @@ if __name__ == "__main__":
         MIN_WRITE_CURRENT,
     )
 
-    persistent_current_plot(data_dict)
-    read_current_plot(data_dict, persistent_current=20)
+    # persistent_current_plot(data_dict)
+    data_dict = read_current_plot(data_dict, persistent_current=20)
+
+    read_current_dict = calculate_read_currents(data_dict)
