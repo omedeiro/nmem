@@ -72,16 +72,16 @@ if __name__ == "__main__":
         "enable_read_width": 120,
         "enable_write_phase": 0,
         "enable_read_phase": 0,
-        "bitmsg_channel": "N0RNRN1RNR",
-        "bitmsg_enable": "WWNWEWWNWE",
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
         "threshold_bert": 0.4,
         "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 25e-6,
-        "read_current": 640.192e-6,
-        "enable_write_current": 290e-6,
+        "write_current": 14e-6,
+        "read_current": 630e-6,
+        "enable_write_current": 299.5e-6,
         "enable_read_current": 215e-6,
     }
 
@@ -92,8 +92,8 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 1000
-    sweep_length = 15
+    NUM_MEAS = 5000
+    sweep_length = 31
 
     measurement_settings.update(
         {
@@ -111,20 +111,21 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
+    # measurement_settings["x"] = np.linspace(270e-6, 300e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.84, end=0.91
+            measurement_settings, current_cell, sweep_length, start=0.80, end=0.90
         )
     else:
         parameter_y = "write_current"
-        measurement_settings = write_sweep_scaled(
-            measurement_settings, current_cell, sweep_length
-        )
-        # measurement_settings["y"] = np.array([29.108e-6])
+        # measurement_settings = write_sweep_scaled(
+        #     measurement_settings, current_cell, sweep_length
+        # )
+        measurement_settings["y"] = np.array([current_settings["write_current"]])
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
