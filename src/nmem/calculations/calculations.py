@@ -227,9 +227,12 @@ def calculate_zero_state_current(
     zero_state_current : np.ndarray
         The current that causes the channel to switch in state 0.
     """
+
     left_retrapping_currents = left_critical_currents * iretrap_enable
+
     current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
     current_to_switch_right = right_critical_currents + left_retrapping_currents
+
     zero_state_current = np.where(
         current_to_switch_left > current_to_switch_right,
         current_to_switch_left,
@@ -241,13 +244,10 @@ def calculate_zero_state_current(
 
     # State currents are positive
     zero_state_current = np.where(zero_state_current < 0, 0, zero_state_current)
-
-    # State currents are only valid where the persistent current is non-zero
-    zero_state_current = np.where(persistent_currents == 0, 0, zero_state_current)
-
-    max_state_current = maximum_current * 1e6
     zero_state_current = np.where(
-        zero_state_current > max_state_current, max_state_current, zero_state_current
+        zero_state_current > maximum_current * 1e6,
+        maximum_current * 1e6,
+        zero_state_current,
     )
     return zero_state_current, zero_state_current_index
 
@@ -279,6 +279,7 @@ def calculate_one_state_current(
         The current that causes the channel to switch in state 1."""
 
     right_retrapping_currents = right_critical_currents * iretrap_enable
+
     current_to_switch_left = left_critical_currents + right_retrapping_currents
     current_to_switch_right = (right_critical_currents - persistent_currents) / (
         1 - alpha
@@ -292,15 +293,13 @@ def calculate_one_state_current(
     one_state_currents_index = np.where(
         current_to_switch_left > current_to_switch_right, 0, 1
     )
+
     # State currents are positive
     one_state_currents = np.where(one_state_currents < 0, 0, one_state_currents)
-
-    # State currents are only valid where the persistent current is non-zero
-    one_state_currents = np.where(persistent_currents == 0, 0, one_state_currents)
-
-    max_state_current = maximum_current * 1e6
     one_state_currents = np.where(
-        one_state_currents > max_state_current, max_state_current, one_state_currents
+        one_state_currents > maximum_current * 1e6,
+        maximum_current * 1e6,
+        one_state_currents,
     )
     return one_state_currents, one_state_currents_index
 
@@ -423,7 +422,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     iretrap_enable = data_dict["iretrap_enable"]
     max_critical_current = data_dict["max_critical_current"]
 
-    zero_state_current, _ = calculate_zero_state_current(
+    zero_state_current, zero_state_current_index = calculate_zero_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         persistent_currents,
@@ -431,7 +430,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
         iretrap_enable,
         max_critical_current,
     )
-    one_state_current, _ = calculate_one_state_current(
+    one_state_current, one_state_current_index = calculate_one_state_current(
         left_critical_currents_mesh,
         right_critical_currents_mesh,
         persistent_currents,
@@ -448,6 +447,8 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
         "one_state_currents": one_state_current,
         "read_currents": read_currents,
         "read_margins": read_margins,
+        "zero_state_current_index": zero_state_current_index,
+        "one_state_current_index": one_state_current_index,
     }
     return current_dict
 
