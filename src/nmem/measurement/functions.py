@@ -23,7 +23,6 @@ from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
 )
-
 from nmem.measurement.cells import MITEQ_AMP_GAIN
 
 
