@@ -189,10 +189,11 @@ if __name__ == "__main__":
         measurement_dict = sio.loadmat(datafile)
         measurement_dict["cell"] = cell
         xfit, yfit = find_enable_relation(measurement_dict)
-        xfit_sorted = np.sort(xfit) * 0.9
-        yfit_sorted = yfit[np.argsort(xfit)] * 0.597
+        plot_fit(xfit, yfit)
+        xfit_sorted = np.sort(xfit)
+        yfit_sorted = yfit[np.argsort(xfit)]
         print(f"Cell: {cell} max Ic = {yfit_sorted[0]}")
-
+        print(f"Fit resutls: {np.polyfit(xfit, yfit, 1)}")
         plt.plot(
             xfit_sorted,
             yfit_sorted,
