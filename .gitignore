@@ -26,3 +26,6 @@ dist/
 
 # Data
 *.mat
+
+# Images
+*.png
