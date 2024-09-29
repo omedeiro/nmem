@@ -205,7 +205,6 @@ def calculate_zero_state_current(
     persistent_currents: np.ndarray,
     alpha: float,
     iretrap: float,
-    max_critical_current: float,
 ):
     """Calculate the current required to switch the device when in state 0
 
@@ -244,7 +243,6 @@ def calculate_one_state_current(
     persistent_currents: np.ndarray,
     alpha: float,
     iretrap: float,
-    max_critical_current: float,
 ):
     """Calculate the current required to switch the device to state 1.
 
@@ -392,7 +390,6 @@ def calculate_read_currents(data_dict: dict):
     persistent_currents = data_dict["persistent_currents"]
     alpha = data_dict["alpha"]
     iretrap = data_dict["iretrap"]
-    max_critical_current = data_dict["max_critical_current"]
 
     zero_state_current = calculate_zero_state_current(
         left_critical_currents_mesh,
@@ -400,7 +397,6 @@ def calculate_read_currents(data_dict: dict):
         persistent_currents,
         alpha,
         iretrap,
-        max_critical_current,
     )
     one_state_current = calculate_one_state_current(
         left_critical_currents_mesh,
@@ -408,7 +404,6 @@ def calculate_read_currents(data_dict: dict):
         persistent_currents,
         alpha,
         iretrap,
-        max_critical_current,
     )
 
     read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
