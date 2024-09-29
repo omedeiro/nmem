@@ -3,10 +3,28 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.collections import PolyCollection
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.ticker import MultipleLocator
+
 from nmem.measurement.cells import CELLS
+from nmem.calculations.calculations import (
+    calculate_zero_state_current,
+    calculate_one_state_current,
+)
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 12
+
+
+def calculate_right_critical_currents(
+    enable_write_currents, cell, width_ratio, iretrap
+):
+    channel_critical_current = (enable_write_currents * cell["slope"]) + cell[
+        "intercept"
+    ]
+    right_branch_critical_current = channel_critical_current * (
+        1 + ((1 / width_ratio) * iretrap)
+    )
+    return right_branch_critical_current
 
 
 def polygon_under_graph(x, y):
@@ -71,8 +89,13 @@ def find_operating_peaks(data_dict: dict):
     bit_error_rate = data_dict["bit_error_rate"].flatten()
     enable_write_currents = data_dict["x"][:, :, 0].flatten() * 1e6
 
-    nominal_peak = np.mean(enable_write_currents[bit_error_rate < 0.3])
-    inverting_peak = np.mean(enable_write_currents[bit_error_rate > 0.7])
+    right_critical_currents = calculate_right_critical_currents(
+        enable_write_currents, CELLS[CURRENT_CELL], WIDTH_RATIO, IRETRAP
+    )
+    left_critical_currents = right_critical_currents / WIDTH_RATIO
+
+    nominal_peak = np.mean(left_critical_currents[bit_error_rate < 0.3])
+    inverting_peak = np.mean(left_critical_currents[bit_error_rate > 0.7])
 
     return nominal_peak, inverting_peak
 
@@ -81,9 +104,13 @@ def find_operating_width(data_dict: dict):
     bit_error_rate = data_dict["bit_error_rate"].flatten()
     enable_write_currents = data_dict["x"][:, :, 0].flatten() * 1e6
 
-    nominal_peak = enable_write_currents[bit_error_rate < 0.4]
+    right_critical_currents = calculate_right_critical_currents(
+        enable_write_currents, CELLS[CURRENT_CELL], WIDTH_RATIO, IRETRAP
+    )
+    left_critical_currents = right_critical_currents / WIDTH_RATIO
+    nominal_peak = left_critical_currents[bit_error_rate < 0.4]
     nominal_width = nominal_peak[-1] - nominal_peak[0]
-    inverting_peak = enable_write_currents[bit_error_rate > 0.6]
+    inverting_peak = left_critical_currents[bit_error_rate > 0.6]
     inverting_width = inverting_peak[-1] - inverting_peak[0]
 
     return nominal_width, inverting_width
@@ -110,7 +137,10 @@ def get_operating_peaks(data_dict: dict):
 
 
 def plot_enable_write_sweep_single(
-    data_dict: dict, index: int, ax=None, find_peaks=False
+    data_dict: dict,
+    index: int,
+    ax=None,
+    find_peaks=False,
 ):
     if ax is None:
         fig, ax = plt.subplots()
@@ -123,11 +153,16 @@ def plot_enable_write_sweep_single(
     for key, data in data_dict.items():
         enable_write_currents = data["x"][:, :, 0].flatten() * 1e6
         current_cell = data["cell"][0]
-        left_critical_currents = (
-            enable_write_currents * CELLS[current_cell]["slope"]
-        ) + CELLS[current_cell]["intercept"]
-
+        right_critical_currents = calculate_right_critical_currents(
+            enable_write_currents, CELLS[current_cell], WIDTH_RATIO, IRETRAP
+        )
+        left_critical_currents = np.array(
+            [right_critical_currents / WIDTH_RATIO]
+        ).flatten()
+        print(enable_write_currents[16])
+        print(left_critical_currents[16])
         ber = data["bit_error_rate"].flatten()
+
         write_current = data["write_current"].flatten()[0] * 1e6
         plt.plot(
             left_critical_currents,
@@ -137,10 +172,10 @@ def plot_enable_write_sweep_single(
             marker=".",
             markeredgecolor="k",
         )
-    width_ratio = 3.0
     ax = plt.gca()
-
-    # plt.xlim(570, 650)
+    ax.xaxis.set_major_locator(MultipleLocator(50))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+    plt.xlim(left_critical_currents[-1], left_critical_currents[0])
     # plt.hlines([0.5], ax.get_xlim()[0], ax.get_xlim()[1], linestyle=":", color="lightgray")
     # plt.ylim(1e-4, 1)
     # plt.xticks(np.linspace(570, 650, 5))
@@ -148,16 +183,108 @@ def plot_enable_write_sweep_single(
 
     plt.xlabel("Left Critical Current ($\mu$A)")
     plt.ylabel("Bit Error Rate")
-    plt.grid(True)
+    plt.grid(True, which="both", axis="x")
+    plt.ylim(0, 1)
     plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     # plt.title("write_1_read_0_norm")
 
+    ax = plt.gca()
+    ax2 = ax.twiny()
+
+    ax2.set_xlabel("Right Critical Current ($\mu$A)")
+    ax2.set_xlim(
+        left_critical_currents[-1] * WIDTH_RATIO,
+        left_critical_currents[0] * WIDTH_RATIO,
+    )
+    ax2.xaxis.set_major_locator(MultipleLocator(50))
+    # ax2.xaxis.set_minor_locator(MultipleLocator(10))
     if find_peaks:
         nominal_peak, inverting_peak = find_operating_peaks(data_dict[index])
-        plt.axvline(nominal_peak, color="r", linestyle="--")
-        plt.axvline(inverting_peak, color="r", linestyle="--")
-        # print(f"Nominal peak: {nominal_peak:.1f} uA")
-        # print(f"Inverting peak: {inverting_peak:.1f} uA")
+        nominal_width, inverting_width = find_operating_width(data_dict[index])
+
+        # plt.axvline(nominal_peak+nominal_width/2, color="g", linestyle="--")
+        # plt.axvline(nominal_peak-nominal_width/2, color="g", linestyle="--")
+        # plt.axvline(inverting_peak+inverting_width/2, color="b", linestyle="--")
+        # plt.axvline(inverting_peak-inverting_width/2, color="b", linestyle="--")
+
+        # plt.axvline(nominal_peak+write_current/2, color="g", linestyle=":")
+        # plt.axvline(nominal_peak-write_current/2, color="g", linestyle=":")
+        # plt.axvline(inverting_peak+write_current/2, color="b", linestyle=":")
+        # plt.axvline(inverting_peak-write_current/2, color="b", linestyle=":")
+
+        # plt.axvline(center, color="c", linestyle="--")
+        # plt.axvline(center + write_current/2, color="k", linestyle=":")
+        # plt.axvline(center - write_current/2, color="k", linestyle=":")
+        # plt.axvline(iread_left, color="r", linestyle="--")
+
+        # plt.axvline(center - write_current, color="g", linestyle="--")
+        # plt.axvline(center + write_current, color="b", linestyle="--")
+
+        minichl = IREAD * ALPHA - write_current
+        maxichl = IREAD * ALPHA + write_current
+        minichr = IREAD * (1 - ALPHA) + write_current
+        maxichr = IREAD
+
+        minichl_half = IREAD * ALPHA - write_current / 2
+        maxichl_half = IREAD * ALPHA + write_current / 2
+        minichr_half = IREAD * (1 - ALPHA) + write_current / 2
+
+        irhl = maxichl * IRETRAP
+        irhr = maxichr * IRETRAP
+        retrap_left = IREAD - irhl
+        retrap_right = IREAD - irhr
+
+        limit_dict = {
+            "minichl": minichl,
+            # "maxichl": maxichl,
+            "minichr": minichr,
+            "maxichr": maxichr,
+            # "minichl_half": minichl_half,
+            # "maxichl_half": maxichl_half,
+            # "minichr_half": minichr_half,
+            # "retrap_left": retrap_left,
+            # "retrap_right": retrap_right,
+        }
+
+        for key, value in limit_dict.items():
+            if value > left_critical_currents[0]:
+                plt.sca(ax2)
+                plt.vlines(value, 0, 1, color="m", linestyle="--")
+            else:
+                plt.sca(ax)
+                plt.vlines(value, 0, 1, color="m", linestyle="-")
+
+            plt.text(value, 0.1, f"{key}", rotation=90, verticalalignment="bottom")
+            print(f"{key}: {value:.1f} uA")
+
+        # plt.axvline((IREAD / WIDTH_RATIO) - center*IRETRAP, color="c", linestyle="--")
+        # plt.axvline((IREAD / WIDTH_RATIO) * ALPHA + write_current, color="b", linestyle="--")
+
+        # plt.axvline((IREAD/WIDTH_RATIO)*ALPHA+write_current, color="g", linestyle="--")
+        # plt.axvline((IREAD/WIDTH_RATIO)-irhl, color="m", linestyle="--")
+        plt.text(
+            1.05,
+            0.8,
+            f"Retrapping ratio: {IRETRAP}",
+            fontsize=12,
+            transform=ax.transAxes,
+        )
+        plt.text(
+            1.05,
+            0.7,
+            f"Read current: {IREAD:.1f} uA",
+            fontsize=12,
+            transform=ax.transAxes,
+        )
+        plt.text(1.05, 0.6, f"Alpha: {ALPHA}", fontsize=12, transform=ax.transAxes)
+        plt.text(
+            1.05,
+            0.5,
+            f"Width ratio: {WIDTH_RATIO}",
+            fontsize=12,
+            transform=ax.transAxes,
+        )
+
         print(
             f"Write current: {write_current:.1f} uA, Peak distance: {inverting_peak - nominal_peak:.1f} uA"
         )
@@ -165,32 +292,33 @@ def plot_enable_write_sweep_single(
 
 
 def plot_enable_write_sweep_multiple(data_dict: dict, find_peaks=False):
-    fig, ax = plt.subplots()
     for key in data_dict.keys():
+        fig, ax = plt.subplots()
+
         plot_enable_write_sweep_single(data_dict, key, ax, find_peaks=find_peaks)
 
-    width_ratio = 3.0
-    ax = plt.gca()
-    ax2 = ax.twiny()
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
+        plt.show()
 
-    plt.show()
+def plot_enable_write_sweep_multiple_save(data_dict: dict, find_peaks=False):
+    for key in data_dict.keys():
+        fig, ax = plt.subplots()
+        plot_enable_write_sweep_single(data_dict, key, ax, find_peaks=find_peaks)
+        plt.savefig(f"enable_write_current_sweep{key}.png", format='png', bbox_inches='tight')
+        plt.show()
 
 
 def plot_peak_distance(write_currents, peaks):
     fig, ax = plt.subplots()
     plt.plot(
         write_currents,
-        [x[1] - x[0] for x in peaks],
+        [x[0] - x[1] for x in peaks],
         label="Peak Distance",
         marker="o",
         color="C4",
     )
     # plot a linear fit
     fit_x = np.array(write_currents[5:-1])
-    fit_y = np.array([x[1] - x[0] for x in peaks[5:-1]])
+    fit_y = np.array([x[0] - x[1] for x in peaks[5:-1]])
     m, b = np.polyfit(fit_x, fit_y, 1)
     plt.plot(
         fit_x,
@@ -200,9 +328,10 @@ def plot_peak_distance(write_currents, peaks):
         linestyle="None",
         markeredgecolor="k",
         markerfacecolor="None",
+        markeredgewidth=2,
     )
     plt.plot(fit_x, m * fit_x + b, label=f"y = {m:.2f}x + {b:.2f}", color="k")
-    plt.text(20, 40, f"y = {m:.2f}x + {b:.2f}", fontsize=12)
+    plt.text(20, 100, f"y = {m:.2f}x + {b:.2f}", fontsize=12)
     plt.xlabel("Write Current ($\mu$A)")
     plt.ylabel("Peak Distance ($\mu$A)")
     plt.grid(True)
@@ -225,12 +354,36 @@ def plot_peak_locations(write_currents, peaks):
     plt.plot(write_currents, [x[0] for x in peaks], label="Nominal Peak")
     plt.plot(write_currents, [x[1] for x in peaks], label="Inverting Peak")
     plt.legend()
+    plt.ylabel("Peak Location ($\mu$A)")
+    plt.xlabel("Write Current ($\mu$A)")
+
     plt.show()
 
 
 def load_data(file_path: str):
     data = sio.loadmat(file_path)
     return data
+
+
+def plot_waterfall_filtered(data_dict: dict):
+    data_dict2 = {
+        0: data_dict[1],
+        1: data_dict[3],
+        2: data_dict[5],
+        3: data_dict[6],
+        4: data_dict[7],
+        5: data_dict[8],
+        6: data_dict[9],
+        7: data_dict[10],
+        8: data_dict[11],
+        9: data_dict[12],
+    }
+    fig, ax = plt.subplot_mosaic(
+        [["waterfall"]], figsize=(16, 9), subplot_kw={"projection": "3d"}
+    )
+    ax["waterfall"] = plot_waterfall(data_dict2, ax=ax["waterfall"])
+    plt.savefig("enable_write_current_sweep.pdf", format="pdf", bbox_inches="tight")
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -276,32 +429,22 @@ if __name__ == "__main__":
         ),
     }
 
+    ALPHA = 0.612
+    WIDTH_RATIO = 1.82
+    IRETRAP = 0.82
+    IREAD=630
+    CURRENT_CELL = "C1"
+
     data_dict1 = {
-        0: data_dict[5],
+        0: data_dict[0],
+        # 1: data_dict[12],
     }
 
-    plot_enable_write_sweep_multiple(data_dict, find_peaks=False)
+    plot_enable_write_sweep_multiple(data_dict1, find_peaks=True)
 
     write_currents, peaks = get_operating_peaks(data_dict)
     # plot_peak_distance(write_currents, peaks)
     # plot_peak_locations(write_currents, peaks)
     # plot_peak_widths(write_currents, peaks)
 
-    data_dict2 = {
-        0: data_dict[1],
-        1: data_dict[3],
-        2: data_dict[5],
-        3: data_dict[6],
-        4: data_dict[7],
-        5: data_dict[8],
-        6: data_dict[9],
-        7: data_dict[10],
-        8: data_dict[11],
-        9: data_dict[12],
-    }
-    fig, ax = plt.subplot_mosaic(
-        [["waterfall"]], figsize=(16, 9), subplot_kw={"projection": "3d"}
-    )
-    ax["waterfall"] = plot_waterfall(data_dict2, ax=ax["waterfall"])
-    plt.savefig("enable_write_current_sweep.pdf", format="pdf", bbox_inches="tight")
-    plt.show()
+    # plot_waterfall_filtered(data_dict)
