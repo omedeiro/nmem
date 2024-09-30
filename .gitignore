@@ -29,3 +29,6 @@ dist/
 
 # Images
 *.png
+
+# Documentation
+*.pdf
