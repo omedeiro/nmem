@@ -1218,11 +1218,11 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
     measurement_settings["threshold_enforced"] = threshold
     print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
 
-    # READ 1: below threshold (no voltage)
-    write_0_read_1 = np.array([(read_zero_top < threshold).sum()])
+    # READ 1: above threshold (voltage)
+    write_0_read_1 = np.array([(read_zero_top > threshold).sum()])
 
-    # READ 0: above threshold (voltage)
-    write_1_read_0 = np.array([(read_one_top > threshold).sum()])
+    # READ 0: below threshold (no voltage)
+    write_1_read_0 = np.array([(read_one_top < threshold).sum()])
 
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
@@ -1268,11 +1268,11 @@ def run_sequence_bert(b: nTron, measurement_settings: dict):
 
     threshold = measurement_settings.get("threshold_bert", 150e-3)
 
-    # READ 1: below threshold (no voltage)
-    write_0_read_1 = (read_zero_top < threshold).sum()
+    # READ 1: above threshold (voltage)
+    write_0_read_1 = (read_zero_top > threshold).sum()
 
-    # READ 0: above threshold (voltage)
-    write_1_read_0 = (read_one_top > threshold).sum()
+    # READ 0: below threshold (no voltage)
+    write_1_read_0 = (read_one_top < threshold).sum()
 
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
@@ -1543,8 +1543,8 @@ def run_sweep(
             print(f"Enable Read Power [uW]: {enable_read_power*1e6:.2f}")
 
             if data_dict["bit_error_rate"] < 0.01:
-                write_voltage_high = np.mean(data_dict["read_zero_top"][1])
-                write_voltage_low = np.mean(data_dict["read_one_top"][1])
+                write_voltage_high = np.mean(data_dict["read_one_top"][1])
+                write_voltage_low = np.mean(data_dict["read_zero_top"][1])
                 print(f"Write Voltage High: {write_voltage_high:.2f}")
                 print(f"Write Voltage Low: {write_voltage_low:.2f}")
 
