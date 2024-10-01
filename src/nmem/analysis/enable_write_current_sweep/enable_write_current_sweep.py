@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.collections import PolyCollection
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.ticker import MultipleLocator
+from mpl_toolkits.mplot3d import Axes3D
 
-from nmem.measurement.cells import CELLS
 from nmem.calculations.calculations import (
-    calculate_zero_state_current,
     calculate_one_state_current,
+    calculate_zero_state_current,
 )
+from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 12
@@ -175,13 +175,14 @@ def plot_enable_write_sweep_single(
     ax = plt.gca()
     ax.xaxis.set_major_locator(MultipleLocator(50))
     ax.xaxis.set_minor_locator(MultipleLocator(10))
+    ax.tick_params(axis="x", colors="m")
     plt.xlim(left_critical_currents[-1], left_critical_currents[0])
     # plt.hlines([0.5], ax.get_xlim()[0], ax.get_xlim()[1], linestyle=":", color="lightgray")
     # plt.ylim(1e-4, 1)
     # plt.xticks(np.linspace(570, 650, 5))
     # plt.yscale("log")
 
-    plt.xlabel("Left Critical Current ($\mu$A)")
+    plt.xlabel("Left Critical Current ($\mu$A)", color="m")
     plt.ylabel("Bit Error Rate")
     plt.grid(True, which="both", axis="x")
     plt.ylim(0, 1)
@@ -191,65 +192,45 @@ def plot_enable_write_sweep_single(
     ax = plt.gca()
     ax2 = ax.twiny()
 
-    ax2.set_xlabel("Right Critical Current ($\mu$A)")
+    ax2.set_xlabel("Right Critical Current ($\mu$A)", color="b")
     ax2.set_xlim(
         left_critical_currents[-1] * WIDTH_RATIO,
         left_critical_currents[0] * WIDTH_RATIO,
     )
     ax2.xaxis.set_major_locator(MultipleLocator(50))
+    ax2.tick_params(axis="x", colors="b")
     # ax2.xaxis.set_minor_locator(MultipleLocator(10))
     if find_peaks:
         nominal_peak, inverting_peak = find_operating_peaks(data_dict[index])
         nominal_width, inverting_width = find_operating_width(data_dict[index])
 
-        # plt.axvline(nominal_peak+nominal_width/2, color="g", linestyle="--")
-        # plt.axvline(nominal_peak-nominal_width/2, color="g", linestyle="--")
-        # plt.axvline(inverting_peak+inverting_width/2, color="b", linestyle="--")
-        # plt.axvline(inverting_peak-inverting_width/2, color="b", linestyle="--")
-
-        # plt.axvline(nominal_peak+write_current/2, color="g", linestyle=":")
-        # plt.axvline(nominal_peak-write_current/2, color="g", linestyle=":")
-        # plt.axvline(inverting_peak+write_current/2, color="b", linestyle=":")
-        # plt.axvline(inverting_peak-write_current/2, color="b", linestyle=":")
-
-        # plt.axvline(center, color="c", linestyle="--")
-        # plt.axvline(center + write_current/2, color="k", linestyle=":")
-        # plt.axvline(center - write_current/2, color="k", linestyle=":")
-        # plt.axvline(iread_left, color="r", linestyle="--")
-
-        # plt.axvline(center - write_current, color="g", linestyle="--")
-        # plt.axvline(center + write_current, color="b", linestyle="--")
-
         minichl = IREAD * ALPHA - write_current
         maxichl = IREAD * ALPHA + write_current
-        minichr = IREAD * (1 - ALPHA) + write_current
-        maxichr = IREAD
+        minichr = IREAD * (1 - ALPHA) - write_current
+        maxichr = IREAD * (1 - ALPHA) + write_current
 
-        minichl_half = IREAD * ALPHA - write_current / 2
-        maxichl_half = IREAD * ALPHA + write_current / 2
-        minichr_half = IREAD * (1 - ALPHA) + write_current / 2
-
-        irhl = maxichl * IRETRAP
-        irhr = maxichr * IRETRAP
-        retrap_left = IREAD - irhl
-        retrap_right = IREAD - irhr
-
+        retrap_left = IREAD + ICHL*IRETRAP
+        retrap_right = IREAD + ICHR*IRETRAP
+        
+        state0 = calculate_zero_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
+        state1 = calculate_one_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
         limit_dict = {
             "minichl": minichl,
-            # "maxichl": maxichl,
+            "maxichl": maxichl,
             "minichr": minichr,
             "maxichr": maxichr,
-            # "minichl_half": minichl_half,
-            # "maxichl_half": maxichl_half,
-            # "minichr_half": minichr_half,
-            # "retrap_left": retrap_left,
-            # "retrap_right": retrap_right,
+            "ICHL": ICHL,
+            "ICHR": ICHR,
+            "retrap_left": retrap_left,
+            "retrap_right": retrap_right,
+            "state0": state0,
+            "state1": state1,
         }
 
         for key, value in limit_dict.items():
             if value > left_critical_currents[0]:
                 plt.sca(ax2)
-                plt.vlines(value, 0, 1, color="m", linestyle="--")
+                plt.vlines(value, 0, 1, color="b", linestyle="--")
             else:
                 plt.sca(ax)
                 plt.vlines(value, 0, 1, color="m", linestyle="-")
@@ -299,11 +280,14 @@ def plot_enable_write_sweep_multiple(data_dict: dict, find_peaks=False):
 
         plt.show()
 
+
 def plot_enable_write_sweep_multiple_save(data_dict: dict, find_peaks=False):
     for key in data_dict.keys():
         fig, ax = plt.subplots()
         plot_enable_write_sweep_single(data_dict, key, ax, find_peaks=find_peaks)
-        plt.savefig(f"enable_write_current_sweep{key}.png", format='png', bbox_inches='tight')
+        plt.savefig(
+            f"enable_write_current_sweep{key}.png", format="png", bbox_inches="tight"
+        )
         plt.show()
 
 
@@ -430,13 +414,14 @@ if __name__ == "__main__":
     }
 
     ALPHA = 0.612
-    WIDTH_RATIO = 1.82
+    WIDTH_RATIO = 1.8
     IRETRAP = 0.82
-    IREAD=630
+    IREAD = 630
     CURRENT_CELL = "C1"
-
+    ICHL = 150
+    ICHR = ICHL * WIDTH_RATIO
     data_dict1 = {
-        0: data_dict[0],
+        0: data_dict[5],
         # 1: data_dict[12],
     }
 
