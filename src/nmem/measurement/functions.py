@@ -1202,9 +1202,11 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         read_one_top.resize(num_meas, refcheck=False)
 
     # Find the difference between the highest and lowest values in the read top arrays
-    difference = read_one_top - read_zero_top
+    difference = np.max([read_one_top, read_zero_top]) - np.min(
+        [read_one_top, read_zero_top]
+    )
     max_diff = difference.max()
-    if max_diff > 0.3:
+    if max_diff > 0.1:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         threshold = calculate_threshold(read_zero_top, read_one_top)
         print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
