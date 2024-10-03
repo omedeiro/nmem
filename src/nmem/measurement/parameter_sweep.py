@@ -74,15 +74,15 @@ if __name__ == "__main__":
         "enable_read_phase": 0,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
-        "threshold_bert": 0.4,
-        "threshold_enforced": 0.4,
+        "threshold_bert": 0.33,
+        "threshold_enforced": 0.33,
     }
 
     current_settings = {
-        "write_current": 14e-6,
+        "write_current": 30e-6,
         "read_current": 630e-6,
-        "enable_write_current": 299.5e-6,
-        "enable_read_current": 215e-6,
+        "enable_write_current": 300e-6,
+        "enable_read_current": 160e-6,
     }
 
     scope_settings = {
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 5000
+    NUM_MEAS = 2000
     sweep_length = 31
 
     measurement_settings.update(
@@ -106,20 +106,20 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "x": 0,
             "y": 0,
-            "threshold_bert": 0.4,
         }
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(270e-6, 300e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(250e-6, 340e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.80, end=0.90
+            measurement_settings, current_cell, sweep_length, start=0.85, end=1.15
         )
+        # measurement_settings["y"] = np.linspace(500e-6, 650e-6, sweep_length)
     else:
         parameter_y = "write_current"
         # measurement_settings = write_sweep_scaled(
