@@ -202,12 +202,11 @@ def calculate_channel_current_one(
 
 
 def calculate_zero_state_current(
-    left_critical_currents: np.ndarray,
-    right_critical_currents: np.ndarray,
+    channel_critical_currents: np.ndarray,
+    width_ratio: float,
     persistent_currents: np.ndarray,
     alpha: float,
     iretrap_enable: float,
-    maximum_current: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device when in state 0
 
@@ -228,15 +227,29 @@ def calculate_zero_state_current(
         The current that causes the channel to switch in state 0.
     """
 
+    right_critical_currents = channel_critical_currents / (
+        1 + iretrap_enable / width_ratio
+    )
+    left_critical_currents = right_critical_currents / width_ratio
     left_retrapping_currents = left_critical_currents * iretrap_enable
+    right_retrapping_currents = right_critical_currents * iretrap_enable
+    current_to_switch_left = (
+        left_critical_currents - persistent_currents
+    ) / alpha + OFFSET_C
+    current_to_switch_right = (
+        left_critical_currents + right_retrapping_currents + OFFSET_B
+    )
 
-    current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
-    current_to_switch_right = right_critical_currents + left_retrapping_currents
-
+    fa = right_critical_currents + left_retrapping_currents
+    fb = left_critical_currents + right_retrapping_currents
+    fc = (left_critical_currents - persistent_currents) / alpha
+    fd = (right_critical_currents - persistent_currents) / (1 - alpha)
+    upper_limit = np.minimum(fa, fd)
+    lower_limit = np.minimum(fb, fc)
     zero_state_current = np.where(
-        current_to_switch_left > current_to_switch_right,
-        current_to_switch_left,
-        current_to_switch_right,
+        persistent_currents > 0,
+        lower_limit,
+        upper_limit,
     )
     zero_state_current_index = np.where(
         current_to_switch_left > current_to_switch_right, 0, 1
@@ -244,21 +257,16 @@ def calculate_zero_state_current(
 
     # State currents are positive
     zero_state_current = np.where(zero_state_current < 0, 0, zero_state_current)
-    zero_state_current = np.where(
-        zero_state_current > maximum_current * 1e6,
-        maximum_current * 1e6,
-        zero_state_current,
-    )
+
     return zero_state_current, zero_state_current_index
 
 
 def calculate_one_state_current(
-    left_critical_currents: np.ndarray,
-    right_critical_currents: np.ndarray,
+    channel_critical_currents: np.ndarray,
+    width_ratio: float,
     persistent_currents: np.ndarray,
     alpha: float,
     iretrap_enable: float,
-    maximum_current: float,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device to state 1.
 
@@ -278,29 +286,32 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
+    right_critical_currents = channel_critical_currents / (
+        1 + iretrap_enable / width_ratio
+    )
+    left_critical_currents = right_critical_currents / width_ratio
     right_retrapping_currents = right_critical_currents * iretrap_enable
+    left_retrapping_currents = left_critical_currents * iretrap_enable
 
-    current_to_switch_left = left_critical_currents + right_retrapping_currents
-    current_to_switch_right = (right_critical_currents - persistent_currents) / (
-        1 - alpha
-    )
+    fa = right_critical_currents + left_retrapping_currents
+    fb = left_critical_currents + right_retrapping_currents
+    fc = (left_critical_currents - persistent_currents) / alpha
+    fd = (right_critical_currents - persistent_currents) / (1 - alpha)
+    upper_limit = np.minimum(fa, fd)
+    lower_limit = np.maximum(fb, fc)
 
+    print(f"persistent_currents: {persistent_currents}")
     one_state_currents = np.where(
-        current_to_switch_left > current_to_switch_right,
-        current_to_switch_left,
-        current_to_switch_right,
+        persistent_currents > 0,
+        upper_limit,
+        lower_limit,
     )
-    one_state_currents_index = np.where(
-        current_to_switch_left > current_to_switch_right, 0, 1
-    )
+
+    one_state_currents_index = np.where(lower_limit < upper_limit, 0, 1)
 
     # State currents are positive
     one_state_currents = np.where(one_state_currents < 0, 0, one_state_currents)
-    one_state_currents = np.where(
-        one_state_currents > maximum_current * 1e6,
-        maximum_current * 1e6,
-        one_state_currents,
-    )
+
     return one_state_currents, one_state_currents_index
 
 
@@ -415,40 +426,36 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     read_margins : np.ndarray
         The read margins of the device.
     """
-    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
-    right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
+    channel_critical_currents_mesh = data_dict["channel_critical_currents_mesh"]
+    width_ratio = data_dict["width_ratio"]
     persistent_currents = data_dict["persistent_currents"]
     alpha = data_dict["alpha"]
     iretrap_enable = data_dict["iretrap_enable"]
-    max_critical_current = data_dict["max_critical_current"]
 
-    zero_state_current, zero_state_current_index = calculate_zero_state_current(
-        left_critical_currents_mesh,
-        right_critical_currents_mesh,
+    state_currents = calculate_state_currents(
+        channel_critical_currents_mesh,
         persistent_currents,
         alpha,
+        width_ratio,
         iretrap_enable,
-        max_critical_current,
-    )
-    one_state_current, one_state_current_index = calculate_one_state_current(
-        left_critical_currents_mesh,
-        right_critical_currents_mesh,
-        persistent_currents,
-        alpha,
-        iretrap_enable,
-        max_critical_current,
     )
 
-    read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
-    read_margins = calculate_ideal_read_margin(zero_state_current, one_state_current)
+    zero_state_currents = state_currents[0]
+    one_state_currents = state_currents[1]
+    zero_state_currents_inv = state_currents[2]
+    one_state_currents_inv = state_currents[3]
+    fa = state_currents[4]
+    fb = state_currents[5]
+    fc = state_currents[6]
 
     current_dict = {
-        "zero_state_currents": zero_state_current,
-        "one_state_currents": one_state_current,
-        "read_currents": read_currents,
-        "read_margins": read_margins,
-        "zero_state_current_index": zero_state_current_index,
-        "one_state_current_index": one_state_current_index,
+        "zero_state_currents": zero_state_currents,
+        "one_state_currents": one_state_currents,
+        "zero_state_currents_inv": zero_state_currents_inv,
+        "one_state_currents_inv": one_state_currents_inv,
+        "fa": fa,
+        "fb": fb,
+        "fc": fc,
     }
     return current_dict
 
@@ -463,6 +470,12 @@ def calculate_ideal_read_margin(
     zero_state_current: float, one_state_current: float
 ) -> float:
     return np.abs(zero_state_current - one_state_current) / 2
+
+
+def calculate_ideal_read_margin_signed(
+    zero_state_current: float, one_state_current: float
+) -> float:
+    return (zero_state_current - one_state_current) / 2
 
 
 def calculate_left_upper_bound(
@@ -487,3 +500,49 @@ def calculate_right_lower_bound(
     persistent_current: float, read_current: float, alpha: float
 ) -> float:
     return np.max([persistent_current + read_current * (1 - alpha), 0])
+
+
+OFFSET_A = -297.0
+OFFSET_B = -240.0
+OFFSET_C = 20.0
+
+
+def calculate_state_currents(
+    channel_critical_current: float,
+    persistent_current: float,
+    alpha: float,
+    width_ratio: float,
+    iretrap_enable: float,
+) -> list:
+
+    right_critical_current = channel_critical_current / (
+        1 + (iretrap_enable / width_ratio)
+    )
+    left_critical_current = right_critical_current / width_ratio
+    right_retrapping_current = right_critical_current * iretrap_enable
+    left_retrapping_current = left_critical_current * iretrap_enable
+
+    fa = right_critical_current + left_retrapping_current + OFFSET_A
+    fb = left_critical_current + right_retrapping_current + OFFSET_B
+    fc = (left_critical_current - persistent_current) / alpha + OFFSET_C
+
+    # minichl = fc
+    # minichr = fb
+    # maxichr = fa
+
+    zero_state_current = np.minimum(fa, 950)
+    one_state_current = np.maximum(fb, fc)
+    one_state_current_inv = np.minimum(np.maximum(fb, fc), zero_state_current)
+
+    zero_state_current_inv = np.minimum(fb, fc)
+
+    state_currents = [
+        zero_state_current,
+        one_state_current,
+        zero_state_current_inv,
+        one_state_current_inv,
+        fa,
+        fb,
+        fc,
+    ]
+    return state_currents

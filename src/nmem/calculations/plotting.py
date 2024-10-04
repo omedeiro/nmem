@@ -269,122 +269,58 @@ def plot_read_current(
     contour: bool = False,
     plot_regions: bool = False,
 ):
-    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
-    read_current_mesh = data_dict["write_currents_mesh"]
-    persistent_currents = data_dict["persistent_currents"]
-    width_ratio = data_dict["width_ratio"]
-    set_read_current = data_dict["set_read_current"]
+    color_map = plt.get_cmap("RdBu")
+    channel_critical_currents_mesh = data_dict["channel_critical_currents_mesh"]
+    read_current_mesh = data_dict["read_currents_mesh"]
 
     read_current_dict = calculate_read_currents(data_dict)
-    read_currents = read_current_dict["read_currents"]
-    read_margins = read_current_dict["read_margins"]
 
-    read_margins = np.where(
-        (read_current_mesh < read_current_dict["zero_state_currents"])
-        * (read_current_mesh < read_current_dict["one_state_currents"]),
-        0,
-        read_margins,
+    zero_state_current = read_current_dict["zero_state_currents"]
+    one_state_current = read_current_dict["one_state_currents"]
+    zero_state_current_inv = read_current_dict["zero_state_currents_inv"]
+    one_state_current_inv = read_current_dict["one_state_currents_inv"]
+    right_critical_currents_mesh = channel_critical_currents_mesh / (
+        1 + (data_dict["iretrap_enable"] / data_dict["width_ratio"])
     )
-
-    read_margins = np.where(
-        (read_current_mesh > read_current_dict["zero_state_currents"])
-        * (read_current_mesh > read_current_dict["one_state_currents"]),
-        0,
-        read_margins,
+    inv_region = np.where(
+        (read_current_dict["zero_state_currents_inv"] < data_dict["read_currents_mesh"])
+        * (
+            data_dict["read_currents_mesh"]
+            < read_current_dict["one_state_currents_inv"]
+        ),
+        data_dict["read_currents_mesh"],
+        np.nan,
+    )
+    nominal_region = np.where(
+        (data_dict["read_currents_mesh"] > read_current_dict["one_state_currents"])
+        * (data_dict["read_currents_mesh"] < read_current_dict["zero_state_currents"]),
+        data_dict["read_currents_mesh"],
+        np.nan,
     )
 
     plt.pcolormesh(
-        left_critical_currents_mesh,
-        read_current_mesh,
-        read_margins,
-        linewidth=0.5,
-        cmap="cividis",
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        nominal_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
     )
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
+    plt.pcolormesh(
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        -1*inv_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
+    )
+    plt.xlabel("Channel Critical Current ($I_{C, CH}(I_{RE})$)) [uA]")
     plt.ylabel("Set Read Current [uA]")
-    plt.title("Ideal Read Current Margin")
-    plt.gca().invert_xaxis()
     cbar = plt.colorbar()
-    cbar.set_label("Read Current Margin [uA]")
-    # ax.set_xlim(right=0)
-
-    if contour:
-        # Add contour at set_read_current
-        operating_regions = np.where(
-            (set_read_current > read_current_dict["zero_state_currents"])
-            * (set_read_current < read_current_dict["one_state_currents"]),
-            1,
-            0,
-        )
-        operating_regions = np.where(read_margins == 0, 0, operating_regions)
-
-        inverting_region = np.where(
-            (set_read_current < read_current_dict["zero_state_currents"])
-            * (set_read_current > read_current_dict["one_state_currents"]),
-            1,
-            0,
-        )
-        operating_margin = plt.contourf(
-            left_critical_currents_mesh,
-            read_current_mesh,
-            operating_regions,
-            levels=[0.5, 1.5],
-            colors="white",
-            alpha=0.5,
-        )
-        plt.contour(
-            left_critical_currents_mesh,
-            read_current_mesh,
-            operating_regions,
-            levels=[0.5, 1.5],
-            colors="white",
-            linestyles="solid",
-        )
-
-        plt.contour(
-            left_critical_currents_mesh,
-            read_current_mesh,
-            read_current_dict["read_margins"],
-            levels=[set_read_current - 10, set_read_current, set_read_current + 10],
-            colors="white",
-            linestyles="dashed",
-        )
-
-        inv_region = plt.contour(
-            left_critical_currents_mesh,
-            read_current_mesh,
-            inverting_region,
-            levels=[0.5, 1.5],
-            colors="black",
-            linestyles="dashed",
-        )
-        plt.clabel(
-            inv_region,
-            inline=True,
-            fontsize=10,
-            fmt="Inverting",
-            inline_spacing=0,
-            rightside_up=True,
-        )
-
-    if data_point is not None:
-        ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
-
-    ax2 = ax.twiny()
-    ax2.set_xticks(ax.get_xticks())
-    ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
-    ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
+    cbar.set_label("Signed Read Current [uA]")
 
     ax = plt.gca()
-    if plot_regions:
-        ax = plot_region_dict(
-            ax, data_dict["regions"], left_critical_currents_mesh, read_current_mesh
-        )
-
-    data_dict["read_currents"] = read_currents
-    data_dict["read_margins"] = read_current_dict["read_margins"]
-    return ax
+    return ax, read_current_dict
 
 
 def plot_region_dict(ax, regions: dict, x, y):
