@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
 from nmem.analysis.analysis import plot_measurement_coarse, plot_trace_stack_write
 
 plt.rcParams["figure.figsize"] = [6, 2]
