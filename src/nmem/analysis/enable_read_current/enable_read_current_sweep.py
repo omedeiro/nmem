@@ -20,7 +20,19 @@ def polygon_under_graph(x, y):
     Construct the vertex list which defines the polygon filling the space under
     the (x, y) line graph. This assumes x is in ascending order.
     """
-    return [(x[0], 0.0), *zip(x, y), (x[-1], 0.0)]
+    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
+
+
+def polygon_nominal(x, y):
+    y = np.copy(y)
+    y[y > 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+
+
+def polygon_inverting(x, y):
+    y = np.copy(y)
+    y[y < 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
 def plot_waterfall(data_dict: dict, ax: Axes3D = None):
@@ -31,6 +43,7 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     # cmap = cmap.reversed()
     colors = cmap(np.linspace(0, 1, len(data_dict)))
     verts_list = []
+    inv_verts_list = []
     zlist = []
     for key, data in data_dict.items():
         read_currents = data["y"][:, :, 0].flatten() * 1e6
@@ -38,11 +51,17 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
         ber = data["bit_error_rate"].flatten()
         enable_read_current = data["enable_read_current"].flatten()[0] * 1e6
         zlist.append(enable_read_current)
-        verts = polygon_under_graph(read_currents, ber)
+        verts = polygon_nominal(read_currents, ber)
+        inv_verts = polygon_inverting(read_currents, ber)
         verts_list.append(verts)
+        inv_verts_list.append(inv_verts)
 
-    poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
+    poly = PolyCollection(verts_list, facecolors="blue", alpha=0.6, edgecolors="k")
+    poly_inv = PolyCollection(
+        inv_verts_list, facecolors="red", alpha=0.6, edgecolors="k"
+    )
     ax.add_collection3d(poly, zs=zlist, zdir="y")
+    ax.add_collection3d(poly_inv, zs=zlist, zdir="y")
 
     # ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
     ax.set_xlabel("$I_R$ ($\mu$A)", labelpad=10)
@@ -68,7 +87,7 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     ax.grid(False)
 
     for key, data in data_dict.items():
-        colors = ["red", "darkred", "green", "limegreen"]
+        colors = ["red", "darkred", "lightblue", "blue"]
         edge_dict = get_edges({key: data})
         edge_list = edge_dict[key]["edges"]
         read_currents = data["y"][:, :, 0].flatten() * 1e6
@@ -86,17 +105,25 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
         ax.plot(
             read_currents,
             enable_read_current * np.ones_like(read_currents),
-            w0r1,
+            ber,
             "-",
-            color="r",
+            color="k",
         )
-        ax.plot(
-            read_currents,
-            enable_read_current * np.ones_like(read_currents),
-            w1r0,
-            "-",
-            color="b",
-        )
+
+        # ax.plot(
+        #     read_currents,
+        #     enable_read_current * np.ones_like(read_currents),
+        #     w0r1,
+        #     "-",
+        #     color="r",
+        # )
+        # ax.plot(
+        #     read_currents,
+        #     enable_read_current * np.ones_like(read_currents),
+        #     w1r0,
+        #     "-",
+        #     color="b",
+        # )
     ax = plt.gca()
     return ax
 
@@ -139,17 +166,17 @@ def find_edge_dual(ber: np.ndarray, w0r1: np.ndarray, w1r0: np.ndarray) -> list:
 
     # if right_nominal < left_nominal:
     #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
-        
+
     # if left_nominal > right_nominal:
     #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
-        
+
     # if right_nominal < left_nominal:
     #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
 
     while ber[left_inverting] < 0.5:
         left_inverting = np.argmax(np.diff(w0r1[:left_nominal]))
 
-    if np.min(ber)>=0.45:
+    if np.min(ber) >= 0.45:
         left_nominal = 0
         right_nominal = 0
     # if left_nominal > right_nominal:
@@ -197,7 +224,7 @@ def get_edges(data_dict: dict) -> dict:
 
 
 def plot_edges(data_dict: dict, ax: plt.Axes, fit=True) -> plt.Axes:
-    colors = ["red", "darkred", "green", "limegreen"]
+    colors = ["darkred", "red", "lightblue", "blue"]
     edge_dict = get_edges(data_dict)
     edge_list = []
     param_list = []
@@ -220,26 +247,27 @@ def plot_edges(data_dict: dict, ax: plt.Axes, fit=True) -> plt.Axes:
             plt.scatter(param, read_current[e], color=colors[i])
 
     if fit:
-        for i in [1, 3]:
+        for i in [0, 2, 3]:
             x = np.array(param_list)
-            y = [edge[i] for edge in edge_list]
-            y = np.array(y)
+            y = np.array([edge[i] for edge in edge_list])
             fity = y[~np.isnan(y)]
             fitx = x[~np.isnan(y)]
-            fitx = fitx[0:-2]
-            fity = fity[0:-2]
+            FIT_START = 1
+            FIT_STOP = len(fitx) - 1
+            fitx = fitx[FIT_START:FIT_STOP]
+            fity = fity[FIT_START:FIT_STOP]
             fit = np.polyfit(fitx, fity, 1)
             fit_fn = np.poly1d(fit)
             plt.plot(x, fit_fn(x), "--k")
             plt.plot(fitx, fity, "o", color="k", fillstyle="none", mew=1.5)
             plt.text(
-                0.50,
-                0.4 + 0.1 * i,
+                1.20,
+                0.5 + 0.1 * i,
                 f"y = {fit_fn[1]:.2f}x + {fit_fn[0]:.2f}",
                 transform=ax.transAxes,
             )
     ax = plt.gca()
-    
+
     return ax
 
 
@@ -266,6 +294,7 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
             [edge_dict[key]["ber"][edge]],
             color=colors[edge_list.index(edge)],
             marker="o",
+            markeredgecolor="k",
         )
 
     return ax
@@ -277,21 +306,24 @@ def plot_enable_read_current_edges(data_dict: dict):
 
     enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
 
-    ax.xaxis.set_major_locator(MultipleLocator(50))
+    ax.xaxis.set_major_locator(MultipleLocator(100))
+    ax.xaxis.set_minor_locator(MultipleLocator(50))
     ax.yaxis.set_major_locator(MultipleLocator(50))
     plt.text(
-        0.65,
-        0.85,
+        0.05,
+        0.8,
         f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
         transform=ax.transAxes,
     )
 
     plt.ylim(500, 950)
+    plt.xlim(600, 950)
+
     # ax.invert_xaxis()
     plt.title("Enable Read Current Edges")
     plt.xlabel("Channel Critical Current ($\mu$A)")
     plt.ylabel("Read Current ($\mu$A)")
-    plt.grid(True)
+    plt.grid(True, which="both")
     ax.set_aspect("equal")
     plt.show()
 
@@ -626,10 +658,10 @@ if __name__ == "__main__":
 
     # plot_enable_read_sweep_multiple(enable_read_300_dict)
 
-    plot_enable_read_current_edges(enable_read_290_dict)
-    plot_enable_read_current_edges(enable_read_300_dict)
+    # plot_enable_read_current_edges(enable_read_290_dict)
+    # plot_enable_read_current_edges(enable_read_300_dict)
     plot_enable_read_current_edges(enable_read_310_dict)
 
-    # plot_sweep_waterfall(enable_read_300_dict)
+    plot_sweep_waterfall(enable_read_310_dict)
 
     # plot_sweep_waterfall(enable_read_long_dict)
