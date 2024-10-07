@@ -84,7 +84,7 @@ def find_enable_relation(data_dict: dict):
     # mid_idx = np.where(diff_fit == np.nanmax(diff_fit, axis=0))
 
     # Find the maximum critical current using total counts
-    mid_idx = np.where(ztotal >= np.nanmax(ztotal-5, axis=0))
+    mid_idx = np.where(ztotal >= np.nanmax(ztotal - 5, axis=0))
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
     yfit = y[mid_idx[0]][xfit_idx]
     return xfit, yfit

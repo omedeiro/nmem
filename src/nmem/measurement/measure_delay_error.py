@@ -25,8 +25,6 @@ from nmem.measurement.cells import (
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-
-
 if __name__ == "__main__":
     t1 = time.time()
     measurement_name = "nMem_delay_error"

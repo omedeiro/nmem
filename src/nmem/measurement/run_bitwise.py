@@ -7,7 +7,6 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 
-import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
@@ -17,7 +16,6 @@ from nmem.measurement.cells import (
     DEFAULT_SCOPE,
     FREQ_IDX,
     HEATERS,
-    NUM_POINTS,
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
@@ -31,21 +29,27 @@ if __name__ == "__main__":
     current_cell = measurement_settings["cell"]
 
     waveform_settings = {
-        "num_points": NUM_POINTS,
+        "num_points": 64,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
-        "read_width": 30,  #
-        "enable_write_width": 30,
-        "enable_read_width": 35,
+        "write_width": 60,
+        "read_width": 60,  #
+        "enable_write_width": 60,
+        "enable_read_width": 60,
         "enable_write_phase": 0,
-        "enable_read_phase": -20,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
+        "enable_read_phase": 0,
+        "bitmsg_channel": "0R1R0R1R0R1R0R1R",
+        "bitmsg_enable": "WEWEWEWEWNNNNNNE",
     }
 
     current_settings = CELLS[current_cell]
 
-    NUM_MEAS = 200
+    NUM_MEAS = 500
+    scope_settings = {
+        "scope_horizontal_scale": 1e-6,
+        "scope_timespan": 1e-6 * 10,
+        "scope_num_samples": 1000,
+        "scope_sample_rate": 1e3 / (1e-6 * 10),
+    }
 
     measurement_settings.update(
         {
@@ -60,20 +64,7 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    nm.setup_scope_bert(b, measurement_settings)
-    save_dict, measurement_settings = nm.run_measurement(
-        b, measurement_settings, plot=True
-    )
-    b.properties["measurement_settings"] = measurement_settings
 
-    file_path, time_str = qf.save(
-        b.properties, measurement_settings["measurement_name"], save_dict
-    )
-    save_dict["time_str"] = time_str
+    nm.setup_scope_8bit_bert(b, measurement_settings)
 
-    b.inst.awg.set_output(True, 1)
-    b.inst.awg.set_output(True, 2)
-
-    nm.write_dict_to_file(file_path, measurement_settings)
-    t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    nm.run_bitwise_measurement(b, measurement_settings)

@@ -4,13 +4,13 @@ from matplotlib import pyplot as plt
 
 def text_from_bit(bit: str):
     if bit == "0":
-        return 'Wr. \n"0"'
+        return 'WR0'
     elif bit == "1":
-        return 'Wr. \n"1"'
+        return 'WR1'
     elif bit == "N":
         return ""
     elif bit == "R":
-        return "Rr. \n"
+        return "RD"
     elif bit == "E":
         return "Read \nEnable"
     elif bit == "W":
@@ -497,7 +497,12 @@ def plot_normalization(
 
     ax.set_xticks([0, 1, 2, 3])
     ax.set_xticklabels(
-        ["Write Current", "Read Current", "Enable\nWrite Current", "Enable\nRead Current"]
+        [
+            "Write Current",
+            "Read Current",
+            "Enable\nWrite Current",
+            "Enable\nRead Current",
+        ]
     )
     ax.set_xlabel("Input Type")
     plt.xticks(rotation=45)
@@ -505,4 +510,3 @@ def plot_normalization(
     ax.set_yticks(np.linspace(0, 1, 11))
     # plt.grid(axis="y")
     plt.show()
-    

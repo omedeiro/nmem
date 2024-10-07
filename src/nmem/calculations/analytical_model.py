@@ -11,6 +11,7 @@ from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_read_current,
 )
+
 from nmem.measurement.cells import CELLS
 
 

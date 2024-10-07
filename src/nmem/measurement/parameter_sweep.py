@@ -29,7 +29,9 @@ from nmem.measurement.cells import (
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
+def read_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
     read_critical_current = (
         calculate_critical_current(
             measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
@@ -37,7 +39,7 @@ def read_sweep_scaled(measurement_settings, current_cell, num_points=15):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        read_critical_current * 0.885, read_critical_current * 0.905, num_points
+        read_critical_current * start, read_critical_current * end, num_points
     )
     return measurement_settings
 
@@ -64,21 +66,23 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 40,
+        "enable_read_width": 120,
         "enable_write_phase": 0,
-        "enable_read_phase": -44,
-        "bitmsg_channel": "NN0NRN1NRN",
-        "bitmsg_enable": "NNWNENWNEN",
+        "enable_read_phase": 0,
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+        "threshold_bert": 0.33,
+        "threshold_enforced": 0.33,
     }
 
     current_settings = {
-        "write_current": 26.040e-6,
-        "read_current": 617.649e-6,
-        "enable_write_current": 289.318e-6,
-        "enable_read_current": 219.679e-6,
+        "write_current": 30e-6,
+        "read_current": 630e-6,
+        "enable_write_current": 300e-6,
+        "enable_read_current": 160e-6,
     }
 
     scope_settings = {
@@ -87,8 +91,9 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 20000
-    NUM_POINTS = 21
+
+    NUM_MEAS = 2000
+    sweep_length = 31
 
     measurement_settings.update(
         {
@@ -104,21 +109,23 @@ if __name__ == "__main__":
         }
     )
     parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([289.318e-6])
+    measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
+    # measurement_settings["x"] = np.linspace(250e-6, 340e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, NUM_POINTS
+            measurement_settings, current_cell, sweep_length, start=0.85, end=1.15
         )
+        # measurement_settings["y"] = np.linspace(500e-6, 650e-6, sweep_length)
     else:
         parameter_y = "write_current"
-        measurement_settings = write_sweep_scaled(
-            measurement_settings, current_cell, NUM_POINTS
-        )
-        # measurement_settings["y"] = np.array([29.108e-6])
+        # measurement_settings = write_sweep_scaled(
+        #     measurement_settings, current_cell, sweep_length
+        # )
+        measurement_settings["y"] = np.array([current_settings["write_current"]])
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
