@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 
 
@@ -79,6 +81,7 @@ def calculate_heater_current(
 def calculate_heater_power(heater_current: float, heater_resistance: float) -> float:
     return heater_current**2 * heater_resistance
 
+
 def calculate_right_branch_inductance(
     alpha: float, left_branch_inductance: float
 ) -> float:
@@ -139,7 +142,7 @@ def calculate_channel_current_zero(
     right_critical_current: np.ndarray,
     persistent_current: np.ndarray,
     alpha: float,
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the channel current limits for the left and right branches when in state 0.
 
     Parameters
@@ -171,7 +174,7 @@ def calculate_channel_current_one(
     right_critical_current: np.ndarray,
     persistent_current: np.ndarray,
     alpha: float,
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the channel current limits for the left and right branches when in state 1.
 
     Parameters
@@ -199,13 +202,12 @@ def calculate_channel_current_one(
 
 
 def calculate_zero_state_current(
-    left_critical_currents: np.ndarray,
-    right_critical_currents: np.ndarray,
+    channel_critical_currents: np.ndarray,
+    width_ratio: float,
     persistent_currents: np.ndarray,
     alpha: float,
-    iretrap: float,
-    max_critical_current: float,
-):
+    iretrap_enable: float,
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device when in state 0
 
     Parameters
@@ -224,27 +226,48 @@ def calculate_zero_state_current(
     zero_state_current : np.ndarray
         The current that causes the channel to switch in state 0.
     """
-    left_retrapping_current = left_critical_currents * iretrap
-    current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
-    current_to_switch_right = right_critical_currents + left_retrapping_current
-    zero_state_current = np.maximum(current_to_switch_left, current_to_switch_right)
+
+    right_critical_currents = channel_critical_currents / (
+        1 + iretrap_enable / width_ratio
+    )
+    left_critical_currents = right_critical_currents / width_ratio
+    left_retrapping_currents = left_critical_currents * iretrap_enable
+    right_retrapping_currents = right_critical_currents * iretrap_enable
+    current_to_switch_left = (
+        left_critical_currents - persistent_currents
+    ) / alpha + OFFSET_C
+    current_to_switch_right = (
+        left_critical_currents + right_retrapping_currents + OFFSET_B
+    )
+
+    fa = right_critical_currents + left_retrapping_currents
+    fb = left_critical_currents + right_retrapping_currents
+    fc = (left_critical_currents - persistent_currents) / alpha
+    fd = (right_critical_currents - persistent_currents) / (1 - alpha)
+    upper_limit = np.minimum(fa, fd)
+    lower_limit = np.minimum(fb, fc)
+    zero_state_current = np.where(
+        persistent_currents > 0,
+        lower_limit,
+        upper_limit,
+    )
+    zero_state_current_index = np.where(
+        current_to_switch_left > current_to_switch_right, 0, 1
+    )
 
     # State currents are positive
     zero_state_current = np.where(zero_state_current < 0, 0, zero_state_current)
 
-    # State currents are only valid where the persistent current is non-zero
-    zero_state_current = np.where(persistent_currents == 0, 0, zero_state_current)
-    return zero_state_current
+    return zero_state_current, zero_state_current_index
 
 
 def calculate_one_state_current(
-    left_critical_currents: np.ndarray,
-    right_critical_currents: np.ndarray,
+    channel_critical_currents: np.ndarray,
+    width_ratio: float,
     persistent_currents: np.ndarray,
     alpha: float,
-    iretrap: float,
-    max_critical_current: float,
-):
+    iretrap_enable: float,
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the current required to switch the device to state 1.
 
     Parameters
@@ -263,30 +286,43 @@ def calculate_one_state_current(
     one_state_current : np.ndarray
         The current that causes the channel to switch in state 1."""
 
-    right_retrapping_current = right_critical_currents * iretrap
-    current_to_switch_left = left_critical_currents + right_retrapping_current
-    current_to_switch_right = (left_critical_currents + persistent_currents) / alpha
-    one_state_currents = np.maximum(current_to_switch_right, current_to_switch_left)
+    right_critical_currents = channel_critical_currents / (
+        1 + iretrap_enable / width_ratio
+    )
+    left_critical_currents = right_critical_currents / width_ratio
+    right_retrapping_currents = right_critical_currents * iretrap_enable
+    left_retrapping_currents = left_critical_currents * iretrap_enable
+
+    fa = right_critical_currents + left_retrapping_currents
+    fb = left_critical_currents + right_retrapping_currents
+    fc = (left_critical_currents - persistent_currents) / alpha
+    fd = (right_critical_currents - persistent_currents) / (1 - alpha)
+    upper_limit = np.minimum(fa, fd)
+    lower_limit = np.maximum(fb, fc)
+
+    print(f"persistent_currents: {persistent_currents}")
+    one_state_currents = np.where(
+        persistent_currents > 0,
+        upper_limit,
+        lower_limit,
+    )
+
+    one_state_currents_index = np.where(lower_limit < upper_limit, 0, 1)
 
     # State currents are positive
     one_state_currents = np.where(one_state_currents < 0, 0, one_state_currents)
 
-    # State currents are only valid where the persistent current is non-zero
-    one_state_currents = np.where(persistent_currents == 0, 0, one_state_currents)
-    return one_state_currents
+    return one_state_currents, one_state_currents_index
 
 
 def calculate_persistent_current(
     data_dict: dict,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, dict]:
     left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
     right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
     write_currents_mesh = data_dict["write_currents_mesh"]
     alpha = data_dict["alpha"]
-    max_left_critical_current = data_dict["max_left_critical_current"]
-    max_right_critical_current = data_dict["max_right_critical_current"]
-    iretrap = data_dict["iretrap"]
-
+    iretrap_enable = data_dict["iretrap_enable"]
     # Assuming no persistent current in the loop
     persistent_current = np.zeros_like(left_critical_currents_mesh)
 
@@ -294,74 +330,78 @@ def calculate_persistent_current(
     left_branch_current = calculate_left_branch_current(
         alpha, write_currents_mesh, persistent_current
     )
-    right_branch_current = calculate_right_branch_current(
-        alpha, write_currents_mesh, persistent_current
-    )
 
-    # CONDITION A
+    # CONDITION A - WRITE STATE
     # -----------
     # If the left branch current is greater than the
     # left critical current, the branch switches.
     # Where the left branch switched the persistent current is set to the write current.
     # Therefore, the right branch must carry the full write current and not switch
-    condition_a = (left_critical_currents_mesh < left_branch_current) & (
+    condition_a = (left_branch_current > left_critical_currents_mesh) & (
         write_currents_mesh < right_critical_currents_mesh
     )
     persistent_current = np.where(condition_a, write_currents_mesh, persistent_current)
 
-    # CONDITION B
+    # CONDITION B - INVERTING STATE
     # -----------
     # If the left branch switches and the redirected write current is enough
-    # to switch the right branch, then both branches are switched.
-    #
-    condition_b = (left_critical_currents_mesh < left_branch_current) & (
+    # to switch the right branch, then the new left branch current is the
+    # write current minus the right retrapping current.
+    condition_b = (left_branch_current > left_critical_currents_mesh) & (
         write_currents_mesh > right_critical_currents_mesh
     )
-    new_left_branch_current = (
-        write_currents_mesh - right_critical_currents_mesh * iretrap
+    new_left_branch_current = write_currents_mesh - (
+        right_critical_currents_mesh * iretrap_enable
     )
 
+    # CONDITION C - WRITE INVERTING STATE
+    # -----------
+    # If CONDITION B is true and the new left branch current is less than the left critical current, the state is inverted
+    condition_c = condition_b & (new_left_branch_current < left_critical_currents_mesh)
     persistent_current = np.where(
-        condition_b,
+        condition_c,
         new_left_branch_current,
         persistent_current,
     )
-    # CONDITION C
+
+    # CONDITION D
     # -----------
-    # If CONDITION B is true then both branches are switched.
-    condition_c = condition_b & (new_left_branch_current > left_critical_currents_mesh)
+    # If CONDITION B is true and the new left branch current is greater than the left critical current, there will be an output voltage.
+    # Ip is assumed to be the retrapping current
+    condition_d = condition_b & (new_left_branch_current > left_critical_currents_mesh)
+
     persistent_current = np.where(
-        condition_c,
-        write_currents_mesh - left_critical_currents_mesh * iretrap,
+        condition_d,
+        left_critical_currents_mesh,
         persistent_current,
     )
 
     # Limit the persistent current by the maximum critical current of the left branch
     # with the enable current active. This is the maximum persistent current.
-    persistent_current = np.where(
-        persistent_current > max_left_critical_current,
-        0,
-        persistent_current,
-    )
+    # persistent_current = np.where(
+    #     persistent_current > max_left_critical_current,
+    #     0,
+    #     persistent_current,
+    # )
 
     # Limit persistent current to positive values.
-    persistent_current = np.where(persistent_current < 0, 0, persistent_current)
+    # persistent_current = np.where(persistent_current < 0, 0, persistent_current)
 
     # Regions where the critical current is negative are invalid.
     # Set the persistent current to zero in these regions.
-    persistent_current = np.where(
-        left_critical_currents_mesh < 0, 0, persistent_current
-    )
+    # persistent_current = np.where(
+    #     left_critical_currents_mesh < 0, 0, persistent_current
+    # )
     regions = {
-        "left_switch": condition_a,
-        "both_switch": condition_b,
-        "left_retrap": condition_c,
+        "write_state": condition_a,
+        "inverting": condition_c,
+        "voltage": condition_d,
     }
 
     return persistent_current, regions
 
 
-def calculate_read_currents(data_dict: dict):
+def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the read currents and margins of the device.
 
     Parameters
@@ -386,33 +426,38 @@ def calculate_read_currents(data_dict: dict):
     read_margins : np.ndarray
         The read margins of the device.
     """
-    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
-    right_critical_currents_mesh = data_dict["right_critical_currents_mesh"]
+    channel_critical_currents_mesh = data_dict["channel_critical_currents_mesh"]
+    width_ratio = data_dict["width_ratio"]
     persistent_currents = data_dict["persistent_currents"]
     alpha = data_dict["alpha"]
-    iretrap = data_dict["iretrap"]
-    max_critical_current = data_dict["max_critical_current"]
+    iretrap_enable = data_dict["iretrap_enable"]
 
-    zero_state_current = calculate_zero_state_current(
-        left_critical_currents_mesh,
-        right_critical_currents_mesh,
+    state_currents = calculate_state_currents(
+        channel_critical_currents_mesh,
         persistent_currents,
         alpha,
-        iretrap,
-        max_critical_current,
-    )
-    one_state_current = calculate_one_state_current(
-        left_critical_currents_mesh,
-        right_critical_currents_mesh,
-        persistent_currents,
-        alpha,
-        iretrap,
-        max_critical_current,
+        width_ratio,
+        iretrap_enable,
     )
 
-    read_currents = calculate_ideal_read_current(zero_state_current, one_state_current)
-    read_margins = calculate_ideal_read_margin(zero_state_current, one_state_current)
-    return read_currents, read_margins
+    zero_state_currents = state_currents[0]
+    one_state_currents = state_currents[1]
+    zero_state_currents_inv = state_currents[2]
+    one_state_currents_inv = state_currents[3]
+    fa = state_currents[4]
+    fb = state_currents[5]
+    fc = state_currents[6]
+
+    current_dict = {
+        "zero_state_currents": zero_state_currents,
+        "one_state_currents": one_state_currents,
+        "zero_state_currents_inv": zero_state_currents_inv,
+        "one_state_currents_inv": one_state_currents_inv,
+        "fa": fa,
+        "fb": fb,
+        "fc": fc,
+    }
+    return current_dict
 
 
 def calculate_ideal_read_current(
@@ -425,6 +470,12 @@ def calculate_ideal_read_margin(
     zero_state_current: float, one_state_current: float
 ) -> float:
     return np.abs(zero_state_current - one_state_current) / 2
+
+
+def calculate_ideal_read_margin_signed(
+    zero_state_current: float, one_state_current: float
+) -> float:
+    return (zero_state_current - one_state_current) / 2
 
 
 def calculate_left_upper_bound(
@@ -451,38 +502,47 @@ def calculate_right_lower_bound(
     return np.max([persistent_current + read_current * (1 - alpha), 0])
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+OFFSET_A = -297.0
+OFFSET_B = -240.0
+OFFSET_C = 20.0
 
-    left_critical_current = 22
-    right_critical_current = 87
-    persistent_current = 60
-    alpha = 0.63
-    iretrap = 0.1
-    left_critical_currents_mesh, write_currents_mesh = np.meshgrid(
-        np.linspace(0, 100, 100), np.linspace(50, 250, 100)
+
+def calculate_state_currents(
+    channel_critical_current: float,
+    persistent_current: float,
+    alpha: float,
+    width_ratio: float,
+    iretrap_enable: float,
+) -> list:
+
+    right_critical_current = channel_critical_current / (
+        1 + (iretrap_enable / width_ratio)
     )
-    SCALE = 1
-    data_dict = {
-        "left_critical_currents_mesh": left_critical_currents_mesh * SCALE,
-        "right_critical_currents_mesh": left_critical_currents_mesh * 3 * SCALE,
-        "write_currents_mesh": write_currents_mesh,
-        "alpha": alpha,
-        "max_left_critical_current": 100 * SCALE,
-        "max_right_critical_current": 300 * SCALE,
-        "iretrap": iretrap,
-    }
+    left_critical_current = right_critical_current / width_ratio
+    right_retrapping_current = right_critical_current * iretrap_enable
+    left_retrapping_current = left_critical_current * iretrap_enable
 
-    READ_SET = 350
-    persistent_currents, regions = calculate_persistent_current(data_dict)
-    data_dict["persistent_currents"] = persistent_currents
-    read_currents, read_margin = calculate_read_currents(data_dict)
-    read_currents = np.where(read_currents < write_currents_mesh, 0, read_currents)
-    read_currents = np.where(persistent_currents == 0, 0, read_currents)
+    fa = right_critical_current + left_retrapping_current + OFFSET_A
+    fb = left_critical_current + right_retrapping_current + OFFSET_B
+    fc = (left_critical_current - persistent_current) / alpha + OFFSET_C
 
-    # read_currents = np.where(READ_SET > read_currents+read_margin, 0, read_currents)
-    # read_currents = np.where(READ_SET < read_currents-read_margin, 0, read_currents)
+    # minichl = fc
+    # minichr = fb
+    # maxichr = fa
 
-    plt.pcolormesh(left_critical_currents_mesh, write_currents_mesh, read_currents)
-    plt.gca().invert_xaxis()
-    plt.colorbar()
+    zero_state_current = np.minimum(fa, 950)
+    one_state_current = np.maximum(fb, fc)
+    one_state_current_inv = np.minimum(np.maximum(fb, fc), zero_state_current)
+
+    zero_state_current_inv = np.minimum(fb, fc)
+
+    state_currents = [
+        zero_state_current,
+        one_state_current,
+        zero_state_current_inv,
+        one_state_current_inv,
+        fa,
+        fb,
+        fc,
+    ]
+    return state_currents
