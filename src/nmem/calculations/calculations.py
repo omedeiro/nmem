@@ -432,7 +432,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     alpha = data_dict["alpha"]
     iretrap_enable = data_dict["iretrap_enable"]
 
-    state_currents = calculate_state_currents(
+    state_currents_dict = calculate_state_currents(
         channel_critical_currents_mesh,
         persistent_currents,
         alpha,
@@ -440,24 +440,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
         iretrap_enable,
     )
 
-    zero_state_currents = state_currents[0]
-    one_state_currents = state_currents[1]
-    zero_state_currents_inv = state_currents[2]
-    one_state_currents_inv = state_currents[3]
-    fa = state_currents[4]
-    fb = state_currents[5]
-    fc = state_currents[6]
-
-    current_dict = {
-        "zero_state_currents": zero_state_currents,
-        "one_state_currents": one_state_currents,
-        "zero_state_currents_inv": zero_state_currents_inv,
-        "one_state_currents_inv": one_state_currents_inv,
-        "fa": fa,
-        "fb": fb,
-        "fc": fc,
-    }
-    return current_dict
+    return state_currents_dict
 
 
 def calculate_ideal_read_current(
@@ -502,9 +485,9 @@ def calculate_right_lower_bound(
     return np.max([persistent_current + read_current * (1 - alpha), 0])
 
 
-OFFSET_A = -297.0
-OFFSET_B = -240.0
-OFFSET_C = 20.0
+OFFSET_A = -240.0
+OFFSET_B = -110.0
+OFFSET_C = 58.0
 
 
 def calculate_state_currents(
@@ -514,7 +497,6 @@ def calculate_state_currents(
     width_ratio: float,
     iretrap_enable: float,
 ) -> list:
-
     right_critical_current = channel_critical_current / (
         1 + (iretrap_enable / width_ratio)
     )
@@ -529,20 +511,22 @@ def calculate_state_currents(
     # minichl = fc
     # minichr = fb
     # maxichr = fa
+    MAX_IC = 950
+    zero_state_current = np.minimum(fa, MAX_IC)
+    one_state_current = np.maximum(np.minimum(fb, MAX_IC), fc)
+    one_state_current_inv = np.minimum(np.minimum(np.maximum(fa, fc), fb), MAX_IC)
+    one_state_current_inv2 = np.minimum(np.minimum(fb, fc), MAX_IC)
+    zero_state_current_inv = np.minimum(np.minimum(fa, fc), MAX_IC)
 
-    zero_state_current = np.minimum(fa, 950)
-    one_state_current = np.maximum(fb, fc)
-    one_state_current_inv = np.minimum(np.maximum(fb, fc), zero_state_current)
+    state_current_dict = {
+        "zero_state_currents": zero_state_current,
+        "one_state_currents": one_state_current,
+        "zero_state_currents_inv": zero_state_current_inv,
+        "one_state_currents_inv": one_state_current_inv,
+        "one_state_currents_inv2": one_state_current_inv2,
+        "fa": fa,
+        "fb": fb,
+        "fc": fc,
+    }
 
-    zero_state_current_inv = np.minimum(fb, fc)
-
-    state_currents = [
-        zero_state_current,
-        one_state_current,
-        zero_state_current_inv,
-        one_state_current_inv,
-        fa,
-        fb,
-        fc,
-    ]
-    return state_currents
+    return state_current_dict

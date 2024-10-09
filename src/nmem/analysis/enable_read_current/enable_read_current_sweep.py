@@ -6,6 +6,12 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.signal import find_peaks
 
+from nmem.calculations.analytical_model import create_dict_read
+from nmem.calculations.calculations import (
+    calculate_persistent_current,
+    calculate_read_currents,
+)
+from nmem.calculations.plotting import plot_read_current
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
@@ -223,7 +229,9 @@ def get_edges(data_dict: dict) -> dict:
     return edges
 
 
-def plot_edges(data_dict: dict, ax: plt.Axes, fit=True) -> plt.Axes:
+def plot_edges(
+    data_dict: dict, ax: plt.Axes, fit=True, fit_dict: dict = None
+) -> plt.Axes:
     colors = ["darkred", "red", "lightblue", "blue"]
     edge_dict = get_edges(data_dict)
     edge_list = []
@@ -244,27 +252,28 @@ def plot_edges(data_dict: dict, ax: plt.Axes, fit=True) -> plt.Axes:
         for i, e in enumerate(edge):
             if e == 0:
                 continue
-            plt.scatter(param, read_current[e], color=colors[i])
+            plt.scatter(param, read_current[e], color=colors[i], marker="o")
 
     if fit:
-        for i in [0, 2, 3]:
+        for i in range(4):
             x = np.array(param_list)
             y = np.array([edge[i] for edge in edge_list])
             fity = y[~np.isnan(y)]
             fitx = x[~np.isnan(y)]
-            FIT_START = 1
-            FIT_STOP = len(fitx) - 1
-            fitx = fitx[FIT_START:FIT_STOP]
-            fity = fity[FIT_START:FIT_STOP]
+            fit_start = fit_dict[i]["fit_start"]
+            fit_stop = fit_dict[i]["fit_stop"]
+            fitx = fitx[fit_start : len(fitx) - fit_stop]
+            fity = fity[fit_start : len(fity) - fit_stop]
             fit = np.polyfit(fitx, fity, 1)
             fit_fn = np.poly1d(fit)
-            plt.plot(x, fit_fn(x), "--k")
+            plt.plot(x, fit_fn(x), "--", color=colors[i])
             plt.plot(fitx, fity, "o", color="k", fillstyle="none", mew=1.5)
             plt.text(
                 1.20,
                 0.5 + 0.1 * i,
-                f"y = {fit_fn[1]:.2f}x + {fit_fn[0]:.2f}",
+                f"y = {fit_fn[1]:.3f}x + {fit_fn[0]:.1f}",
                 transform=ax.transAxes,
+                color=colors[i],
             )
     ax = plt.gca()
 
@@ -300,9 +309,14 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
     return ax
 
 
-def plot_enable_read_current_edges(data_dict: dict):
+def plot_enable_read_current_edges(
+    data_dict: dict,
+    analytical_data_dict: dict,
+    persistent_current=None,
+    fitting_dict=None,
+):
     fig, ax = plt.subplots()
-    ax = plot_edges(data_dict, ax)
+    ax = plot_edges(data_dict, ax, fit=True, fit_dict=fitting_dict)
 
     enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
 
@@ -315,12 +329,17 @@ def plot_enable_read_current_edges(data_dict: dict):
         f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
         transform=ax.transAxes,
     )
-
+    ax = plot_analytical(
+        analytical_data_dict, persistent_current=persistent_current, ax=ax
+    )
     plt.ylim(500, 950)
     plt.xlim(600, 950)
 
     # ax.invert_xaxis()
-    plt.title("Enable Read Current Edges")
+    # plt.title("Enable Read Current Edges")
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+
     plt.xlabel("Channel Critical Current ($\mu$A)")
     plt.ylabel("Read Current ($\mu$A)")
     plt.grid(True, which="both")
@@ -447,6 +466,69 @@ def plot_sweep_waterfall(data_dict: dict):
     fig.tight_layout()
     plt.savefig(f"enable_read_current_sweep_{int(enable_write_current)}.pdf")
     plt.show()
+
+
+def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    color_map = plt.get_cmap("RdBu")
+    persistent_currents, regions = calculate_persistent_current(data_dict)
+    data_dict["regions"] = regions
+    if persistent_current == 0:
+        data_dict["persistent_currents"] = np.zeros_like(persistent_currents)
+    else:
+        data_dict["persistent_currents"] = (
+            np.ones_like(persistent_currents) * persistent_current
+        )
+
+    read_current_dict = calculate_read_currents(data_dict)
+    inv_region = np.where(
+        np.maximum(
+            data_dict["read_currents_mesh"]
+            - read_current_dict["one_state_currents_inv"],
+            read_current_dict["zero_state_currents_inv"]
+            - data_dict["read_currents_mesh"],
+        )
+        <= 0,
+        data_dict["read_currents_mesh"],
+        np.nan,
+    )
+    inv_region2 = np.where(
+        np.maximum(
+            data_dict["read_currents_mesh"]
+            - read_current_dict["zero_state_currents_inv"],
+            read_current_dict["one_state_currents_inv2"]
+            - data_dict["read_currents_mesh"],
+        )
+        <= 0,
+        data_dict["read_currents_mesh"],
+        inv_region,
+    )
+    nominal_region = np.where(
+        (data_dict["read_currents_mesh"] > read_current_dict["one_state_currents"])
+        * (data_dict["read_currents_mesh"] < read_current_dict["zero_state_currents"]),
+        data_dict["read_currents_mesh"],
+        np.nan,
+    )
+    plt.pcolormesh(
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        nominal_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
+        zorder=0,
+    )
+    plt.pcolormesh(
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        -1 * inv_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
+        zorder=0,
+    )
+    return ax
 
 
 if __name__ == "__main__":
@@ -658,10 +740,66 @@ if __name__ == "__main__":
 
     # plot_enable_read_sweep_multiple(enable_read_300_dict)
 
-    # plot_enable_read_current_edges(enable_read_290_dict)
-    # plot_enable_read_current_edges(enable_read_300_dict)
-    plot_enable_read_current_edges(enable_read_310_dict)
-
-    plot_sweep_waterfall(enable_read_310_dict)
-
     # plot_sweep_waterfall(enable_read_long_dict)
+
+    current_cell = "C1"
+    HTRON_SLOPE = CELLS[current_cell]["slope"]
+    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
+    WIDTH_LEFT = 0.1
+    WIDTH_RIGHT = 0.198
+    ALPHA = 0.675
+
+    MAX_CRITICAL_CURRENT = 860e-6  # CELLS[current_cell]["max_critical_current"]
+    IRETRAP_ENABLE = 0.484
+    IREAD = 630
+    N = 200
+
+    enable_read_currents = np.linspace(0, 400, N)
+    read_currents = np.linspace(400, 1050, N)
+
+    analytical_data_dict = create_dict_read(
+        enable_read_currents,
+        read_currents,
+        WIDTH_LEFT,
+        WIDTH_RIGHT,
+        ALPHA,
+        IRETRAP_ENABLE,
+        MAX_CRITICAL_CURRENT,
+        HTRON_SLOPE,
+        HTRON_INTERCEPT,
+    )
+
+    fitting_dict = {
+        -30: {
+            0: {"fit_start": 0, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 0},
+            2: {"fit_start": 0, "fit_stop": 0},
+            3: {"fit_start": 0, "fit_stop": 0},
+        },
+        0: {
+            0: {"fit_start": 1, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 2},
+            2: {"fit_start": 0, "fit_stop": 1},
+            3: {"fit_start": 0, "fit_stop": 2},
+        },
+        30: {
+            0: {"fit_start": 1, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 2},
+            2: {"fit_start": 0, "fit_stop": 5},
+            3: {"fit_start": 0, "fit_stop": 1},
+        },
+    }
+    # persistent_current_plot(data_dict)
+    # analytical_data_dict = plot_analytical(analytical_data_dict, persistent_current=30)
+
+    # plot_enable_read_current_edges(
+    #     enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
+    # )
+    # plot_enable_read_current_edges(
+    #     enable_read_300_dict, analytical_data_dict, 0, fitting_dict=fitting_dict[0]
+    # )
+    plot_enable_read_current_edges(
+        enable_read_310_dict, analytical_data_dict, 30, fitting_dict=fitting_dict[30]
+    )
+
+    # plot_sweep_waterfall(enable_read_310_dict)
