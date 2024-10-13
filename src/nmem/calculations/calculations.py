@@ -233,12 +233,8 @@ def calculate_zero_state_current(
     left_critical_currents = right_critical_currents / width_ratio
     left_retrapping_currents = left_critical_currents * iretrap_enable
     right_retrapping_currents = right_critical_currents * iretrap_enable
-    current_to_switch_left = (
-        left_critical_currents - persistent_currents
-    ) / alpha + OFFSET_C
-    current_to_switch_right = (
-        left_critical_currents + right_retrapping_currents + OFFSET_B
-    )
+    current_to_switch_left = (left_critical_currents - persistent_currents) / alpha
+    current_to_switch_right = left_critical_currents + right_retrapping_currents
 
     fa = right_critical_currents + left_retrapping_currents
     fb = left_critical_currents + right_retrapping_currents
@@ -431,6 +427,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     persistent_currents = data_dict["persistent_currents"]
     alpha = data_dict["alpha"]
     iretrap_enable = data_dict["iretrap_enable"]
+    max_critical_current = data_dict["max_critical_current"] * 1e6
 
     state_currents_dict = calculate_state_currents(
         channel_critical_currents_mesh,
@@ -438,6 +435,7 @@ def calculate_read_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
         alpha,
         width_ratio,
         iretrap_enable,
+        max_critical_current,
     )
 
     return state_currents_dict
@@ -485,17 +483,13 @@ def calculate_right_lower_bound(
     return np.max([persistent_current + read_current * (1 - alpha), 0])
 
 
-OFFSET_A = -240.0
-OFFSET_B = -110.0
-OFFSET_C = 58.0
-
-
 def calculate_state_currents(
     channel_critical_current: float,
     persistent_current: float,
     alpha: float,
     width_ratio: float,
     iretrap_enable: float,
+    max_critical_current: float,
 ) -> list:
     right_critical_current = channel_critical_current / (
         1 + (iretrap_enable / width_ratio)
@@ -504,19 +498,33 @@ def calculate_state_currents(
     right_retrapping_current = right_critical_current * iretrap_enable
     left_retrapping_current = left_critical_current * iretrap_enable
 
+    right_max = max_critical_current / (1 + (iretrap_enable / width_ratio))
+    left_max = right_max / width_ratio
+    right_retrap_max = right_max * iretrap_enable
+    left_retrap_max = left_max * iretrap_enable
+
+    retrap_difference = right_max + left_retrap_max - right_retrap_max - left_max
+    retrap_gap = left_max + right_retrap_max - right_max
+
+    OFFSET_A = -right_retrap_max + retrap_difference
+    OFFSET_B = retrap_gap - retrap_difference
+    OFFSET_C = -retrap_gap
+    
     fa = right_critical_current + left_retrapping_current + OFFSET_A
-    fb = left_critical_current + right_retrapping_current + OFFSET_B
+    fb = left_critical_current + right_retrapping_current + OFFSET_B - persistent_current
     fc = (left_critical_current - persistent_current) / alpha + OFFSET_C
 
+    fB = fb + persistent_current - retrap_gap
+    fBB = fb-persistent_current/2
     # minichl = fc
     # minichr = fb
     # maxichr = fa
     MAX_IC = 950
     zero_state_current = np.minimum(fa, MAX_IC)
-    one_state_current = np.maximum(np.minimum(fb, MAX_IC), fc)
-    one_state_current_inv = np.minimum(np.minimum(np.maximum(fa, fc), fb), MAX_IC)
-    one_state_current_inv2 = np.minimum(np.minimum(fb, fc), MAX_IC)
-    zero_state_current_inv = np.minimum(np.minimum(fa, fc), MAX_IC)
+    one_state_current = np.maximum(np.minimum(np.maximum(fB, fBB), MAX_IC), fc)
+    one_state_current_inv = np.minimum(np.minimum(np.maximum(fa, fc), fBB), MAX_IC)
+    one_state_current_inv2 = np.minimum(np.minimum(fBB, fc), MAX_IC)
+    zero_state_current_inv = np.minimum(np.minimum(fa, np.minimum(fB, fc)), MAX_IC)
 
     state_current_dict = {
         "zero_state_currents": zero_state_current,
@@ -527,6 +535,9 @@ def calculate_state_currents(
         "fa": fa,
         "fb": fb,
         "fc": fc,
+        "OFFSET_A": OFFSET_A,
+        "OFFSET_B": OFFSET_B,
+        "OFFSET_C": OFFSET_C,
     }
 
     return state_current_dict
