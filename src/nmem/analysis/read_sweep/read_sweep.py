@@ -6,10 +6,8 @@ from matplotlib.ticker import MultipleLocator
 from nmem.analysis.analysis import (
     plot_hist,
     plot_measurement,
-    plot_message,
     plot_threshold,
     plot_trace_stack_1D,
-    plot_trace_zoom,
     text_from_bit,
 )
 

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from cycler import cycler
+
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,

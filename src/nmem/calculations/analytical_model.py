@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -11,7 +12,6 @@ from nmem.calculations.plotting import (
     plot_persistent_current,
     plot_read_current,
 )
-
 from nmem.measurement.cells import CELLS
 
 
