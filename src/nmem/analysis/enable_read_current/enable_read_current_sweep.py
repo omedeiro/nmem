@@ -11,7 +11,6 @@ from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
 )
-from nmem.calculations.plotting import plot_read_current
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
@@ -230,7 +229,7 @@ def get_edges(data_dict: dict) -> dict:
 
 
 def plot_edges(
-    data_dict: dict, ax: plt.Axes, fit=True, fit_dict: dict = None
+    data_dict: dict, ax: plt.Axes = None, fit=True, fit_dict: dict = None
 ) -> plt.Axes:
     colors = ["darkred", "red", "lightblue", "blue"]
     edge_dict = get_edges(data_dict)
@@ -238,6 +237,7 @@ def plot_edges(
     param_list = []
     if ax is None:
         fig, ax = plt.subplots()
+
     for key, data in edge_dict.items():
         read_current = data["read_currents"]
         param = data["param"]
@@ -252,7 +252,9 @@ def plot_edges(
         for i, e in enumerate(edge):
             if e == 0:
                 continue
-            plt.scatter(param, read_current[e], color=colors[i], marker="o")
+            ax.scatter(
+                param, read_current[e], color=colors[i], marker="o", edgecolor="k"
+            )
 
     if fit:
         for i in range(4):
@@ -266,16 +268,15 @@ def plot_edges(
             fity = fity[fit_start : len(fity) - fit_stop]
             fit = np.polyfit(fitx, fity, 1)
             fit_fn = np.poly1d(fit)
-            plt.plot(x, fit_fn(x), "--", color=colors[i])
-            plt.plot(fitx, fity, "o", color="k", fillstyle="none", mew=1.5)
-            plt.text(
-                1.20,
+            ax.plot(x, fit_fn(x), "--", color=colors[i])
+            ax.plot(fitx, fity, "o", color="k", fillstyle="none", mew=1.5)
+            ax.text(
+                1.50,
                 0.5 + 0.1 * i,
                 f"y = {fit_fn[1]:.3f}x + {fit_fn[0]:.1f}",
                 transform=ax.transAxes,
                 color=colors[i],
             )
-    ax = plt.gca()
 
     return ax
 
@@ -316,27 +317,44 @@ def plot_enable_read_current_edges(
     fitting_dict=None,
 ):
     fig, ax = plt.subplots()
-    ax = plot_edges(data_dict, ax, fit=True, fit_dict=fitting_dict)
+    ax = plot_edges(data_dict, ax, fit=False, fit_dict=fitting_dict)
 
     enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
 
     ax.xaxis.set_major_locator(MultipleLocator(100))
     ax.xaxis.set_minor_locator(MultipleLocator(50))
     ax.yaxis.set_major_locator(MultipleLocator(50))
+    write_current = 30.0
     plt.text(
-        0.05,
+        1.5,
         0.8,
-        f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
+        f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A\n$I_{{W}}$ = {write_current}$\mu$A",
         transform=ax.transAxes,
     )
-    ax = plot_analytical(
+    ax, read_current_dict = plot_analytical(
         analytical_data_dict, persistent_current=persistent_current, ax=ax
     )
+
+    width_ratio = WIDTH_RIGHT / WIDTH_LEFT
+    offset_a = read_current_dict["OFFSET_A"]
+    offset_b = read_current_dict["OFFSET_B"]
+    offset_c = read_current_dict["OFFSET_C"]
+    ax.text(
+        1.2,
+        0.0,
+        f"""
+        Width Ratio: {width_ratio:.2f}
+        Alpha: {ALPHA:.3f}
+        Retrap ratio: {IRETRAP_ENABLE:.3f}
+        Offset A: {offset_a:.3f}
+        Offset B: {offset_b:.3f}
+        Offset C: {offset_c:.3f}""",
+        transform=ax.transAxes,
+    )
+
     plt.ylim(500, 950)
     plt.xlim(600, 950)
 
-    # ax.invert_xaxis()
-    # plt.title("Enable Read Current Edges")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
 
@@ -344,6 +362,78 @@ def plot_enable_read_current_edges(
     plt.ylabel("Read Current ($\mu$A)")
     plt.grid(True, which="both")
     ax.set_aspect("equal")
+    plt.show()
+
+
+def plot_enable_read_current_edges_stack(
+    data_dict: dict,
+    analytical_data_dict: dict,
+    ax: plt.Axes = None,
+    persistent_current=None,
+    fitting_dict=None,
+):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    ax = plot_edges(data_dict, ax, fit=False, fit_dict=fitting_dict)
+
+    enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
+
+    ax.set_xlim(600, 950)
+    ax.set_ylim(500, 950)
+    ax.xaxis.set_major_locator(MultipleLocator(100))
+    ax.xaxis.set_minor_locator(MultipleLocator(50))
+    ax.yaxis.set_major_locator(MultipleLocator(100))
+
+    ax, read_current_dict = plot_analytical(
+        analytical_data_dict, persistent_current=persistent_current, ax=ax
+    )
+
+    width_ratio = WIDTH_RIGHT / WIDTH_LEFT
+    offset_a = read_current_dict["OFFSET_A"]
+    offset_b = read_current_dict["OFFSET_B"]
+    offset_c = read_current_dict["OFFSET_C"]
+
+    # ax.set_ylim(500, 950)
+    # ax.set_xlim(600, 950)
+
+    # plt.title("Enable Read Current Edges")
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+
+    # plt.xlabel("Channel Critical Current ($\mu$A)")
+    # plt.ylabel("Read Current ($\mu$A)")
+    # plt.grid(True, which="both")
+    ax.set_aspect("equal")
+    return ax
+
+
+def plot_stack(
+    data_dict_list,
+    analytical_data_dict_list,
+    persistent_currents_list,
+    fitting_dict_list,
+):
+    fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
+    fig.subplots_adjust(hspace=0)
+    for i in range(3):
+        axs[i] = plot_enable_read_current_edges_stack(
+            data_dict_list[i],
+            analytical_data_dict_list[i],
+            axs[i],
+            persistent_current=persistent_currents_list[i],
+            fitting_dict=fitting_dict_list[i],
+        )    
+    
+    fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
+    fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
+
+    caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
+    cbar = fig.colorbar(
+        axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
+    )    
+    caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
+    # plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
     plt.show()
 
 
@@ -400,6 +490,36 @@ def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
 
 
 def plot_write_sweep_single(data_dict: dict, index: int, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    plt.sca(ax)
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0, 0.8, len(data_dict)))
+
+    data_dict = {index: data_dict[index]}
+
+    for key, data in data_dict.items():
+        read_currents = data["y"][:, :, 0].flatten() * 1e6
+        ber = data["bit_error_rate"].flatten()
+        enable_write_current = data["enable_write_current"].flatten()[0] * 1e6
+        plt.plot(
+            read_currents,
+            ber,
+            label=f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
+            color=colors[key],
+            marker=".",
+            markeredgecolor="k",
+        )
+
+    ax = plt.gca()
+    plt.xlabel("Read Current ($\mu$A)")
+    plt.ylabel("Bit Error Rate")
+    plt.grid(True)
+    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
+    return ax
+
+
+def plot_write_sweep_single_log(data_dict: dict, index: int, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     plt.sca(ax)
@@ -505,12 +625,15 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
         inv_region,
     )
     nominal_region = np.where(
-        (data_dict["read_currents_mesh"] > read_current_dict["one_state_currents"])
-        * (data_dict["read_currents_mesh"] < read_current_dict["zero_state_currents"]),
+        np.maximum(
+            data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
+            read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
+        )
+        <= 0,
         data_dict["read_currents_mesh"],
         np.nan,
     )
-    plt.pcolormesh(
+    ax.pcolormesh(
         data_dict["right_critical_currents_mesh"],
         data_dict["read_currents_mesh"],
         nominal_region,
@@ -519,7 +642,7 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
         vmax=1000,
         zorder=0,
     )
-    plt.pcolormesh(
+    ax.pcolormesh(
         data_dict["right_critical_currents_mesh"],
         data_dict["read_currents_mesh"],
         -1 * inv_region,
@@ -528,7 +651,10 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
         vmax=1000,
         zorder=0,
     )
-    return ax
+    read_current_dict["nominal"] = nominal_region
+    read_current_dict["inverting"] = inv_region
+    read_current_dict["inverting2"] = inv_region2
+    return ax, read_current_dict
 
 
 if __name__ == "__main__":
@@ -735,10 +861,20 @@ if __name__ == "__main__":
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 09-17-27.mat"
         ),
     }
+
+    inverse_compare_dict = {
+        0: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
+        ),
+        1: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
+        ),
+    }
+
     # plot_enable_read_sweep_multiple(data_dict)
     # plot_enable_write_sweep_multiple(write_dict)
 
-    # plot_enable_read_sweep_multiple(enable_read_300_dict)
+    # plot_enable_write_sweep_multiple(inverse_compare_dict)
 
     # plot_sweep_waterfall(enable_read_long_dict)
 
@@ -746,11 +882,11 @@ if __name__ == "__main__":
     HTRON_SLOPE = CELLS[current_cell]["slope"]
     HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
     WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.198
-    ALPHA = 0.675
+    WIDTH_RIGHT = 0.213
+    ALPHA = 0.563
 
     MAX_CRITICAL_CURRENT = 860e-6  # CELLS[current_cell]["max_critical_current"]
-    IRETRAP_ENABLE = 0.484
+    IRETRAP_ENABLE = 0.573
     IREAD = 630
     N = 200
 
@@ -792,14 +928,24 @@ if __name__ == "__main__":
     # persistent_current_plot(data_dict)
     # analytical_data_dict = plot_analytical(analytical_data_dict, persistent_current=30)
 
-    # plot_enable_read_current_edges(
-    #     enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
-    # )
+    plot_enable_read_current_edges(
+        enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
+    )
     # plot_enable_read_current_edges(
     #     enable_read_300_dict, analytical_data_dict, 0, fitting_dict=fitting_dict[0]
     # )
-    plot_enable_read_current_edges(
-        enable_read_310_dict, analytical_data_dict, 30, fitting_dict=fitting_dict[30]
-    )
+    # plot_enable_read_current_edges(
+    #     enable_read_310_dict,
+    #     analytical_data_dict,
+    #     persistent_current=30,
+    #     fitting_dict=fitting_dict[30],
+    # )
+
+    # plot_stack(
+    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+    #     [-30, 0, 30],
+    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+    # )
 
     # plot_sweep_waterfall(enable_read_310_dict)
