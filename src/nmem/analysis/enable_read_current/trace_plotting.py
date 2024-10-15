@@ -51,14 +51,16 @@ def text_from_bit(bit: str):
 
 
 def plot_data_delay_manu(data_dict_keyd):
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0.2, 0.8, 3))
     data_dict = data_dict_keyd[0]
     INDEX = 14
-    fig, ax = plt.subplots(figsize=(2.6,4.0))
+    fig, ax = plt.subplots(figsize=(2.6,3.54))
     plt.subplots_adjust(hspace=0.0, wspace=0.0)
     plt.subplot(611)
     x = data_dict["trace_chan_in"][0][:,INDEX] * 1e6
     yin = np.mean(data_dict["trace_chan_in"][1], axis=1) * 1e3
-    (p1,) = plt.plot(x, yin, color="dimgrey", label="Input")
+    (p1,) = plt.plot(x, yin, color=colors[0], label="Input")
     plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
     plt.xlim([x[0], x[-1]])
     ax = plt.gca()
@@ -79,6 +81,9 @@ def plot_data_delay_manu(data_dict_keyd):
     ax.tick_params(direction="in")
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+
     plt.ylim([-150, 1100])
     plt.yticks([0, 500, 1200])
     # plt.grid(axis="x", which="both")
@@ -86,7 +91,7 @@ def plot_data_delay_manu(data_dict_keyd):
     plt.subplot(612)
     x = data_dict["trace_enab"][0][:,INDEX] * 1e6
     y = np.mean(data_dict["trace_enab"][1],axis=1) * 1e3
-    (p2,) = plt.plot(x, y, color="#BF2F36", label="Enable")
+    (p2,) = plt.plot(x, y, color=colors[-1], label="Enable")
     plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
     ax = plt.gca()
     axheight = ax.get_ylim()[1]
@@ -105,6 +110,8 @@ def plot_data_delay_manu(data_dict_keyd):
     ax.set_xticklabels([])
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
     plt.ylim([-10, 100])
     plt.xlim([x[0], x[-1]])
     plt.yticks([0, 50])
@@ -114,7 +121,7 @@ def plot_data_delay_manu(data_dict_keyd):
     x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
     yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
-    (p3,) = plt.plot(x, yout, color="#22345F", label="Output")
+    (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
     ax = plt.gca()
     ax = plot_threshold(ax, 4, 5, 400)
@@ -138,6 +145,8 @@ def plot_data_delay_manu(data_dict_keyd):
         )
     ax.tick_params(direction="in")
     ax.set_xticklabels([])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
     plt.sca(ax)
     plt.xticks(np.linspace(x[0], x[-1], 3), labels=None)
     ax.xaxis.set_major_locator(MultipleLocator(5))
@@ -149,7 +158,7 @@ def plot_data_delay_manu(data_dict_keyd):
     x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
     yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
-    (p3,) = plt.plot(x, yout, color="#22345F", label="Output")
+    (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
     ax = plt.gca()
     axheight = ax.get_ylim()[1]
@@ -173,6 +182,8 @@ def plot_data_delay_manu(data_dict_keyd):
     ax = plt.gca()
     ax.tick_params(direction="in")
     ax.set_xticklabels([])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
     plt.sca(ax)
     plt.xticks(np.linspace(x[0], x[-1], 3), labels=None)
     ax.xaxis.set_major_locator(MultipleLocator(5))
@@ -183,7 +194,7 @@ def plot_data_delay_manu(data_dict_keyd):
     x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
     yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
-    (p3,) = plt.plot(x, yout, color="#22345F", label="Output")
+    (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
     ax = plt.gca()
     axheight = ax.get_ylim()[1]
@@ -207,6 +218,8 @@ def plot_data_delay_manu(data_dict_keyd):
     ax = plt.gca()
     ax.tick_params(direction="in")
     ax.set_xticklabels([])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
     plt.sca(ax)
     plt.xticks(np.linspace(x[0], x[-1], 3), labels=None)
     ax.xaxis.set_major_locator(MultipleLocator(5))
@@ -217,7 +230,7 @@ def plot_data_delay_manu(data_dict_keyd):
     x = data_dict["trace_chan_out"][0][:,-1] * 1e6
     yout = data_dict["trace_chan_out"][1][:,-1] * 1e3
     # yout = np.roll(yout, 10)*1.3
-    (p3,) = plt.plot(x, yout, color="#22345F", label="Output")
+    (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
     ax = plt.gca()
     axheight = ax.get_ylim()[1]
@@ -239,15 +252,20 @@ def plot_data_delay_manu(data_dict_keyd):
     plt.yticks([0, 500])
     ax = plt.gca()
     ax.tick_params(direction="in")
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
     plt.sca(ax)
     plt.xticks(np.linspace(x[0], x[-1], 3))
+    
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
 
 
     fig = plt.gcf()
-    fig.supylabel("Voltage [mV]", x=0, y=0.5)
-    fig.supxlabel("Time [$\mu$s]", x=0.5, y=0.05)
+    # fig.supylabel("Voltage [mV]", x=1, y=0.5, rotation=-90)
+    # fig.supxlabel("Time [$\mu$s]", x=0.5, y=0.05)
+    print(fig.get_size_inches())
+    print(fig.get_dpi())
     plt.savefig("delay_manu.pdf", bbox_inches="tight")
     plt.show()
     return data_dict

@@ -56,7 +56,7 @@ def plot_iv_curve(data, ax, **kwargs):
 
 def create_iv_plot(data_list):
     fig, ax = plt.subplots()
-    colors = plt.cm.cividis(np.linspace(0, 1, int(len(data_list)/2)+1))
+    colors = plt.cm.viridis(np.linspace(0, 1, int(len(data_list)/2)+1))
     for i, data in enumerate(data_list):
         heater_current = np.abs(data["heater_current"].flatten()[0]*1e6)
         ax = plot_iv_curve(data, ax, color=colors[i], zorder=-i, label=f"{heater_current:.0f} µA")
@@ -102,9 +102,10 @@ def get_critical_currents(data_list):
 
 def plot_critical_currents(data_list):
     critical_currents, critical_currents_std = get_critical_currents(data_list)
+    cmap = plt.cm.viridis(np.linspace(0, 1, len(data_list)))
     fig, ax = plt.subplots()
     heater_currents = [data["heater_current"].flatten()*1e6 for data in data_list]
-    ax.errorbar(heater_currents, critical_currents, yerr=critical_currents_std, fmt="o", markersize=3, color="darkblue")
+    ax.errorbar(heater_currents, critical_currents, yerr=critical_currents_std, fmt="o", markersize=3, color=cmap[0,:])
     ax.tick_params(direction="in", top=True, right=True)
     ax.set_xlabel("Heater Current [µA]")
     ax.set_ylabel("Critical Current [µA]")
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     data_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\dc_sweep")
 
     
-    # create_iv_plot(data_list)
+    create_iv_plot(data_list)
 
     critical_currents = get_critical_currents(data_list)
     
