@@ -46,7 +46,7 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     plt.sca(ax)
     cmap = plt.get_cmap("viridis")
     # cmap = cmap.reversed()
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
+    colors = cmap(np.linspace(0.2, 0.8, len(data_dict)))
     verts_list = []
     inv_verts_list = []
     zlist = []
@@ -61,9 +61,9 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
         verts_list.append(verts)
         inv_verts_list.append(inv_verts)
 
-    poly = PolyCollection(verts_list, facecolors="blue", alpha=0.6, edgecolors="k")
+    poly = PolyCollection(verts_list, facecolors=colors[-1], alpha=0.6, edgecolors="k")
     poly_inv = PolyCollection(
-        inv_verts_list, facecolors="red", alpha=0.6, edgecolors="k"
+        inv_verts_list, facecolors=colors[0], alpha=0.6, edgecolors="k"
     )
     ax.add_collection3d(poly, zs=zlist, zdir="y")
     ax.add_collection3d(poly_inv, zs=zlist, zdir="y")
@@ -92,7 +92,9 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     ax.grid(False)
 
     for key, data in data_dict.items():
-        colors = ["red", "darkred", "lightblue", "blue"]
+        cmap = plt.get_cmap("viridis")
+        colors = cmap(np.linspace(0.2, 0.8, 4))
+        # colors = ["red", "darkred", "lightblue", "blue"]
         edge_dict = get_edges({key: data})
         edge_list = edge_dict[key]["edges"]
         read_currents = data["y"][:, :, 0].flatten() * 1e6
@@ -231,7 +233,8 @@ def get_edges(data_dict: dict) -> dict:
 def plot_edges(
     data_dict: dict, ax: plt.Axes = None, fit=True, fit_dict: dict = None
 ) -> plt.Axes:
-    colors = ["darkred", "red", "lightblue", "blue"]
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0, 1, 4))
     edge_dict = get_edges(data_dict)
     edge_list = []
     param_list = []
@@ -336,9 +339,8 @@ def plot_enable_read_current_edges(
     )
 
     width_ratio = WIDTH_RIGHT / WIDTH_LEFT
-    offset_a = read_current_dict["OFFSET_A"]
-    offset_b = read_current_dict["OFFSET_B"]
-    offset_c = read_current_dict["OFFSET_C"]
+    retrap_gap = read_current_dict["retrap_gap"]
+    retrap_difference = read_current_dict["retrap_difference"]
     ax.text(
         1.2,
         0.0,
@@ -346,9 +348,8 @@ def plot_enable_read_current_edges(
         Width Ratio: {width_ratio:.2f}
         Alpha: {ALPHA:.3f}
         Retrap ratio: {IRETRAP_ENABLE:.3f}
-        Offset A: {offset_a:.3f}
-        Offset B: {offset_b:.3f}
-        Offset C: {offset_c:.3f}""",
+        Retrap gap: {retrap_gap:.3f}
+        Retrap difference: {retrap_difference:.3f}""",
         transform=ax.transAxes,
     )
 
@@ -389,10 +390,6 @@ def plot_enable_read_current_edges_stack(
         analytical_data_dict, persistent_current=persistent_current, ax=ax
     )
 
-    width_ratio = WIDTH_RIGHT / WIDTH_LEFT
-    offset_a = read_current_dict["OFFSET_A"]
-    offset_b = read_current_dict["OFFSET_B"]
-    offset_c = read_current_dict["OFFSET_C"]
 
     # ax.set_ylim(500, 950)
     # ax.set_xlim(600, 950)
@@ -433,7 +430,7 @@ def plot_stack(
         axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
     )    
     caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
-    # plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
+    plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
     plt.show()
 
 
@@ -591,7 +588,7 @@ def plot_sweep_waterfall(data_dict: dict):
 def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-    color_map = plt.get_cmap("RdBu")
+    color_map = plt.get_cmap("viridis")
     persistent_currents, regions = calculate_persistent_current(data_dict)
     data_dict["regions"] = regions
     if persistent_current == 0:
@@ -612,17 +609,6 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
         <= 0,
         data_dict["read_currents_mesh"],
         np.nan,
-    )
-    inv_region2 = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"]
-            - read_current_dict["zero_state_currents_inv"],
-            read_current_dict["one_state_currents_inv2"]
-            - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        inv_region,
     )
     nominal_region = np.where(
         np.maximum(
@@ -653,7 +639,6 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
     )
     read_current_dict["nominal"] = nominal_region
     read_current_dict["inverting"] = inv_region
-    read_current_dict["inverting2"] = inv_region2
     return ax, read_current_dict
 
 
@@ -928,9 +913,9 @@ if __name__ == "__main__":
     # persistent_current_plot(data_dict)
     # analytical_data_dict = plot_analytical(analytical_data_dict, persistent_current=30)
 
-    plot_enable_read_current_edges(
-        enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
-    )
+    # plot_enable_read_current_edges(
+    #     enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
+    # )
     # plot_enable_read_current_edges(
     #     enable_read_300_dict, analytical_data_dict, 0, fitting_dict=fitting_dict[0]
     # )
@@ -941,11 +926,11 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
-    # plot_stack(
-    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
-    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
-    #     [-30, 0, 30],
-    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
-    # )
+    plot_stack(
+        [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+        [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+        [-30, 0, 30],
+        [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+    )
 
-    # plot_sweep_waterfall(enable_read_310_dict)
+    # plot_sweep_waterfall(enable_read_290_dict)

@@ -506,38 +506,30 @@ def calculate_state_currents(
     retrap_difference = right_max + left_retrap_max - right_retrap_max - left_max
     retrap_gap = left_max + right_retrap_max - right_max
 
-    OFFSET_A = -right_retrap_max + retrap_difference
-    OFFSET_B = retrap_gap - retrap_difference
-    OFFSET_C = -retrap_gap
-    
-    fa = right_critical_current + left_retrapping_current + OFFSET_A
-    fb = left_critical_current + right_retrapping_current + OFFSET_B - persistent_current
-    fc = (left_critical_current - persistent_current) / alpha + OFFSET_C
+    fa = right_critical_current + left_retrapping_current + retrap_difference - right_retrap_max
+    fb = left_critical_current + right_retrapping_current - retrap_difference 
+    fc = (left_critical_current - persistent_current) / alpha - retrap_gap
 
-    fB = fb + persistent_current - retrap_gap
-    fBB = fb-persistent_current/2
+    fB = fb - persistent_current + retrap_gap
     # minichl = fc
     # minichr = fb
     # maxichr = fa
     MAX_IC = 950
     zero_state_current = np.minimum(fa, MAX_IC)
-    one_state_current = np.maximum(np.minimum(np.maximum(fB, fBB), MAX_IC), fc)
-    one_state_current_inv = np.minimum(np.minimum(np.maximum(fa, fc), fBB), MAX_IC)
-    one_state_current_inv2 = np.minimum(np.minimum(fBB, fc), MAX_IC)
-    zero_state_current_inv = np.minimum(np.minimum(fa, np.minimum(fB, fc)), MAX_IC)
+    one_state_current = np.maximum(np.minimum(np.maximum(fb, fB), MAX_IC), fc)
+    one_state_current_inv = np.minimum(np.minimum(np.maximum(fa, fc), fB), MAX_IC)
+    zero_state_current_inv = np.minimum(np.minimum(fa, np.minimum(fb, fc)), MAX_IC)
 
     state_current_dict = {
         "zero_state_currents": zero_state_current,
         "one_state_currents": one_state_current,
         "zero_state_currents_inv": zero_state_current_inv,
         "one_state_currents_inv": one_state_current_inv,
-        "one_state_currents_inv2": one_state_current_inv2,
         "fa": fa,
         "fb": fb,
         "fc": fc,
-        "OFFSET_A": OFFSET_A,
-        "OFFSET_B": OFFSET_B,
-        "OFFSET_C": OFFSET_C,
+        "retrap_difference": retrap_difference,
+        "retrap_gap": retrap_gap,
     }
 
     return state_current_dict
