@@ -100,7 +100,7 @@ AWG:
 
 Scope: 
   name: LeCroy620Zi
-  port: '18.25.27.57'
+  port: '18.25.30.169'
   channel: [C2]
 # TCPIPO.: DHCP. POOL- 18-25-29-100:INSTR
 # Attenuator:
