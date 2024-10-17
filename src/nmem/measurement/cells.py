@@ -43,7 +43,7 @@ CELLS = {
         "slope": -0,
         "intercept": 0,
         "resistance": 570.6,
-        "resistance_cryo": 0,
+        "resistance_cryo": 287.5,
     },
     "B1": {
         "write_current": 129.51e-6,
@@ -89,7 +89,7 @@ CELLS = {
         "slope": -0,
         "intercept": 0,
         "resistance": 570.6,
-        "resistance_cryo": 0,
+        "resistance_cryo": 287.5,
     },
     "C1": {
         "write_current": 30.160e-6,
@@ -132,10 +132,11 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -0,
-        "intercept": 0,
+        "slope": -4.531,
+        "intercept": 1632.812,
         "resistance": 570.6,
-        "resistance_cryo": 0,
+        "resistance_cryo": 287.5,
+        "max_critical_current": 830e-6,
     },
     "D1": {
         "write_current": 41.067e-6,
@@ -181,7 +182,7 @@ CELLS = {
         "slope": -0,
         "intercept": 0,
         "resistance": 570.6,
-        "resistance_cryo": 0,
+        "resistance_cryo": 287.5,
     },
 }
 
@@ -205,17 +206,20 @@ HEATERS = {
         "squares": 387,
     },
     4: {
+        "resistance_cryo": 287.5,
+        "spice_input_voltage": 0.1,
+        "spice_heater_voltage": 78.835e-3,
         "squares": 428,
     },
 }
 
 
-FREQ_IDX = 2
+FREQ_IDX = 1
 NUM_POINTS = 128
 HORIZONTAL_SCALE = {
     0: 5e-7,
     1: 1e-6,
-    2: 1e-6,
+    2: 2e-6,
     3: 5e-6,
     4: 1e-5,
     5: 2e-5,
@@ -226,7 +230,7 @@ HORIZONTAL_SCALE = {
 }
 SAMPLE_RATE = {
     0: 512e6,
-    1: 256e6,
+    1: 128e6,
     2: 128e6,
     3: 512e5,
     4: 256e5,
