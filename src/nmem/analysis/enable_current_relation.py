@@ -12,25 +12,21 @@ def find_peak(data_dict: dict):
     x = data_dict["x"][0][:, 1] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
 
-    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
-    w1r0 = data_dict["write_1_read_0"][0].flatten()
+    w0r1 = data_dict["write_0_read_1"][0].flatten()
+    w1r0 = 100-data_dict["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
 
     dx = x[1] - x[0]
     dy = y[1] - y[0]
 
-    # Find the maximum critical current using np.diff
-    diff = np.diff(ztotal, axis=0)
-
     xfit, yfit = find_enable_relation(data_dict)
-    # xfit = xfit[:-8]
-    # yfit = yfit[:-8]
+
 
     plt.scatter(xfit, yfit)
-
     # Plot a fit line to the scatter points
     plot_fit(xfit, yfit)
+
 
     plt.imshow(
         ztotal,
@@ -57,8 +53,8 @@ def find_peak(data_dict: dict):
 def find_max_critical_current(data):
     x = data["x"][0][:, 1] * 1e6
     y = data["y"][0][:, 0] * 1e6
-    w0r1 = 100 - data["write_0_read_1"][0].flatten()
-    w1r0 = data["write_1_read_0"][0].flatten()
+    w0r1 = data["write_0_read_1"][0].flatten()
+    w1r0 = 100 - data["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
     ztotal = ztotal[:, 1]
@@ -71,11 +67,11 @@ def find_max_critical_current(data):
 
 
 def find_enable_relation(data_dict: dict):
-    x = data_dict["x"][0][:, 1] * 1e6
+    x = data_dict["x"][0][:, 0] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
 
-    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
-    w1r0 = data_dict["write_1_read_0"][0].flatten()
+    w0r1 = data_dict["write_0_read_1"][0].flatten()
+    w1r0 = 100 - data_dict["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
 
@@ -85,9 +81,12 @@ def find_enable_relation(data_dict: dict):
     # mid_idx = np.where(diff_fit == np.nanmax(diff_fit, axis=0))
 
     # Find the maximum critical current using total counts
-    mid_idx = np.where(ztotal == np.nanmax(ztotal, axis=0))
+    mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0)/2)
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
+    print(xfit)
     yfit = y[mid_idx[0]][xfit_idx]
+
+
     return xfit, yfit
 
 
