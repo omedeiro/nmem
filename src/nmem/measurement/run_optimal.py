@@ -33,19 +33,21 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
-        "read_width": 30,  #
-        "enable_write_width": 30,
-        "enable_read_width": 35,
-        "enable_write_phase": 0,
-        "enable_read_phase": -20,
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 20,
+        "enable_read_width": 100,
+        "enable_write_phase": 20,
+        "enable_read_phase": 0,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
+        "threshold_bert": 0.33,
+        "threshold_enforced": 0.33,
     }
 
     current_settings = CELLS[current_cell]
 
-    NUM_MEAS = 200
+    NUM_MEAS = 10000
 
     measurement_settings.update(
         {
