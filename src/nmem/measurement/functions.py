@@ -284,8 +284,8 @@ def setup_scope_bert(
     # b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
     # b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    b.inst.scope.set_measurement_gate("P3", division_zero - 0.2, division_zero + 0.2)
-    b.inst.scope.set_measurement_gate("P4", division_one - 0.2, division_one + 0.2)
+    b.inst.scope.set_measurement_gate("P3", division_zero, division_zero + 0.5)
+    b.inst.scope.set_measurement_gate("P4", division_one, division_one + 0.5)
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -1093,7 +1093,7 @@ def plot_array(
     y_name: str = "y",
     ax: Axes = None,
     cmap=None,
-    norm=True,
+    norm=False,
 ):
     if not ax:
         fig, ax = plt.subplots()
@@ -1126,7 +1126,6 @@ def plot_array(
         origin="lower",
         cmap=cmap,
     )
-
     # print(f'{dx}, {xstart}, {xstop}, {dy}, {ystart}, {ystop}')
     plt.xticks(np.linspace(xstart, xstop, len(x)), rotation=45)
     plt.yticks(np.linspace(ystart, ystop, len(y)))
@@ -1138,7 +1137,7 @@ def plot_array(
         plt.clim([0, 1])
         cbar = plt.colorbar(ticks=np.linspace(0, 1, 11))
     else:
-        plt.clim([0, c.max()])
+        # plt.clim([0, c.max()])
         cbar = plt.colorbar()
     cbar.ax.set_ylabel(c_name, rotation=270)
     plt.contour(xv, yv, np.reshape(ctotal, (len(y), len(x))).T, [0.05, 0.1])
@@ -1206,14 +1205,12 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         [read_one_top, read_zero_top]
     )
     max_diff = difference.max()
-    if max_diff > 0.1:
+    if max_diff > 0.2:
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         threshold = calculate_threshold(read_zero_top, read_one_top)
         print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
     else:
-        threshold = measurement_settings.get(
-            "threshold_bert", measurement_settings["threshold_enforced"]
-        )
+        threshold = measurement_settings.get("threshold_bert", 0.4)
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
@@ -1438,10 +1435,12 @@ def run_sweep(
     parameter_y: str,
     save_traces: bool = False,
     plot_measurement=False,
+    division_zero: float = 4.5,
+    division_one: float = 9.5,
 ):
     save_dict = {}
 
-    setup_scope_bert(b, measurement_settings)
+    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
@@ -1457,7 +1456,11 @@ def run_sweep(
             read_critical_current = calculate_critical_current(
                 measurement_settings["enable_read_current"] * 1e6, cell_dict
             )
-            max_heater_current = -intercept / slope
+            if slope != 0:
+                max_heater_current = -intercept / slope
+            else:
+                max_heater_current = np.nan
+
             # print(f"Write Current: {measurement_settings['write_current']:.2f}")
             # print(f"Write Critical Current: {write_critical_current:.2f}")
             # print(f"Read Current: {measurement_settings['read_current']:.2f}")
@@ -1599,7 +1602,7 @@ def run_sweep_subset(
                 y > measurement_settings["y_subset"][idx][0]
                 and y < measurement_settings["y_subset"][idx][-1]
             ):
-                data_dict = run_measurement(
+                data_dict, measurement_settings = run_measurement(
                     b,
                     measurement_settings,
                     save_traces,
@@ -1620,9 +1623,9 @@ def run_sweep_subset(
                 print(
                     f"enable_read_current [uA]: {data_dict['enable_read_current']*1e6:.2f}"
                 )
-                print("-")
-                print(f"wr_ratio: {data_dict['wr_ratio']}")
-                print(f"ewr_ratio: {data_dict['ewr_ratio']}")
+                # print("-")
+                # print(f"wr_ratio: {data_dict['wr_ratio']}")
+                # print(f"ewr_ratio: {data_dict['ewr_ratio']}")
                 print("-----------------")
             else:
                 data_dict = {
@@ -1668,6 +1671,7 @@ def plot_ber_sweep(
     if len(x) > 1 and len(y) > 1:
         ax = plot_array(save_dict, C, A, B)
         plt.savefig(file_path + "_0.png")
+        plt.show()
 
         plot_array(
             save_dict,
@@ -1678,8 +1682,8 @@ def plot_ber_sweep(
             norm=False,
         )
         plt.savefig(file_path + "_1.png")
-
         plt.show()
+
         plot_array(
             save_dict,
             "write_1_read_0",
@@ -1689,7 +1693,6 @@ def plot_ber_sweep(
             norm=False,
         )
         plt.savefig(file_path + "_2.png")
-
         plt.show()
 
     if len(x) == 1 and len(y) > 1:
