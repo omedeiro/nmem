@@ -16,7 +16,6 @@ from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
-    FREQ_IDX,
     HEATERS,
     HORIZONTAL_SCALE,
     NUM_DIVISIONS,
@@ -62,12 +61,13 @@ if __name__ == "__main__":
     measurement_name = "nMem_parameter_sweep"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
+    FREQ_IDX = 2
 
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "write_width": 40,
-        "read_width": 40,
+        "read_width": 20,
         "enable_write_width": 40,
         "enable_read_width": 120,
         "enable_write_phase": 0,
@@ -84,7 +84,6 @@ if __name__ == "__main__":
         "enable_write_current": 320e-6,
         "enable_read_current": 220e-6,
     }
-
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
@@ -117,7 +116,7 @@ if __name__ == "__main__":
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.7, end=1.15
+            measurement_settings, current_cell, sweep_length, start=0.8, end=1.05
         )
         # measurement_settings["y"] = np.array([current_settings["read_current"]])
     else:
@@ -128,7 +127,13 @@ if __name__ == "__main__":
         measurement_settings["y"] = np.array([current_settings["write_current"]])
 
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b,
+        measurement_settings,
+        parameter_x,
+        parameter_y,
+        plot_measurement=True,
+        division_zero=3.5,
+        division_one=8.5,
     )
     b.properties["measurement_settings"] = measurement_settings
 
