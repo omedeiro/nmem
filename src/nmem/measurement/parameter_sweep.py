@@ -79,13 +79,13 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 30e-6,
-        "read_current": 630e-6,
-        "enable_write_current": 300e-6,
-        "enable_read_current": 160e-6,
+        "write_current": 50e-6,
+        "read_current": 520e-6,
+        "enable_write_current": 310e-6,
+        "enable_read_current": 240e-6,
     }
 
-    scope_settings = {
+    scope_settings = {  
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
         "scope_num_samples": NUM_SAMPLES,
@@ -110,16 +110,16 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(250e-6, 340e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(250e-6, 350e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.85, end=1.15
+            measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         )
-        # measurement_settings["y"] = np.linspace(500e-6, 650e-6, sweep_length)
+        # measurement_settings["y"] = np.array([current_settings["read_current"]])
     else:
         parameter_y = "write_current"
         # measurement_settings = write_sweep_scaled(
@@ -128,8 +128,15 @@ if __name__ == "__main__":
         measurement_settings["y"] = np.array([current_settings["write_current"]])
 
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b,
+        measurement_settings,
+        parameter_x,
+        parameter_y,
+        plot_measurement=True,
+        division_zero=4.5,
+        division_one=9.5,
     )
+
     b.properties["measurement_settings"] = measurement_settings
 
     file_path, time_str = qf.save(
