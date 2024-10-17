@@ -45,7 +45,7 @@ def update_space(meas_dict: dict, space: list, x0: list):
     return meas_dict
 
 
-def objective_primary(w1r0: np.ndarray, w0r1: np.ndarray):
+def objective_primary(w1r0: np.ndarray, w0r1: np.ndarray) -> float:
     errors = w1r0[0] + w0r1[0]
     res = errors / (NUM_MEAS * 2)
     if res == 0.5:
@@ -77,11 +77,25 @@ def optimize_bias(meas_dict: dict):
     space = [
         Real(10, 220, name="write_current"),
         Real(400, 750, name="read_current"),
-        Real(120, 330, name="enable_write_current"),
-        Real(100, 280, name="enable_read_current"),
+        Real(150, 350, name="enable_write_current"),
+        Real(150, 250, name="enable_read_current"),
     ]
 
-    x0 = [68.58, 427.135, 330.383, 265.073]
+    x0 = [40, 510, 325, 240]
+    meas_dict = update_space(meas_dict, space, x0)
+    return meas_dict, space, x0, b
+
+
+def optimize_enable(meas_dict: dict):
+    measurement_name = "nMem_optimize_enable"
+    measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
+    meas_dict.update(measurement_settings)
+    space = [
+        Real(150, 350, name="enable_write_current"),
+        Real(150, 250, name="enable_read_current"),
+    ]
+
+    x0 = [325.0, 240.0]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -232,7 +246,7 @@ def objective(x, meas_dict: dict, space: list, b: nTron):
     print(x)
     meas_dict = update_space(meas_dict, space, x)
 
-    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+    data_dict, measurement_settings = nm.run_measurement(b, meas_dict, plot=False)
 
     qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
@@ -242,10 +256,10 @@ def objective(x, meas_dict: dict, space: list, b: nTron):
 def run_optimize(meas_dict: dict):
     # meas_dict, space, x0 = optimize_all(meas_dict)
     # meas_dict, space, x0 = optimize_bias_phase(meas_dict)
-    # meas_dict, space, x0 = optimize_bias(meas_dict)
+    meas_dict, space, x0, b = optimize_bias(meas_dict)
     # meas_dict, space, x0 = optimize_fixed_write(meas_dict)
     # meas_dict, space, x0, b = optimize_phase(meas_dict)
-    meas_dict, space, x0, b = optimize_read_pulse(meas_dict)
+    # meas_dict, space, x0, b = optimize_read_pulse(meas_dict)
 
     opt_result = gp_minimize(
         partial(objective, meas_dict=meas_dict, space=space, b=b),
@@ -264,9 +278,9 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 120,
-        "read_width": 30,  #
-        "enable_write_width": 30,
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 40,
         "enable_read_width": 120,
         "enable_write_phase": 0,
         "enable_read_phase": 0,
@@ -276,13 +290,13 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 25e-6,
-        "read_current": 640.192e-6,
-        "enable_write_current": 295e-6,
-        "enable_read_current": 215e-6,
+        "write_current": 40e-6,
+        "read_current": 510e-6,
+        "enable_write_current": 325e-6,
+        "enable_read_current": 240e-6,
     }
 
-    NUM_MEAS = 1000
+    NUM_MEAS = 2000
     NUM_CALLS = 40
     measurement_settings = {
         **waveform_settings,
