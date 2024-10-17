@@ -37,14 +37,14 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 82,  #
-        "enable_write_width": 36,
-        "enable_read_width": 33,
-        "enable_write_phase": -12,
-        "enable_read_phase": -35,
-        "bitmsg_channel": "N0NNRNNNRN",
-        "bitmsg_enable": "NNNNENNNEW",
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 40,
+        "enable_read_width": 120,
+        "enable_write_phase": 0,
+        "enable_read_phase": 0,
+        "bitmsg_channel": "N0NNRNNNNR",
+        "bitmsg_enable": "NNNNENNNNE",
     }
 
     current_settings = {
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 100
+    NUM_MEAS = 500
 
     measurement_settings.update(
         {
@@ -73,14 +73,14 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "x": 0,
             "y": 0,
-            "threshold_bert": 0.2,
+            "threshold_bert": 0.4,
         }
     )
     parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([0])
 
     parameter_y = "read_current"
-    measurement_settings["y"] = np.linspace(750e-6, 770e-6, 15)
+    measurement_settings["y"] = np.linspace(850e-6, 910e-6, 11)
 
     save_dict = nm.run_sweep(
         b, measurement_settings, parameter_x, parameter_y, plot_measurement=True

@@ -37,8 +37,8 @@ def construct_currents(
             critical_current = max_critical_current
         bias_currents = np.array(
             [
-                critical_current * (1 - margin * 1.5),
-                critical_current * (1 + margin * 0.5),
+                critical_current * (1 - margin * 2.0),
+                critical_current * (1 + margin * 0.1),
             ]
         )
         bias_current_array[heater_currents == heater_current] = bias_currents
@@ -54,14 +54,14 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 90,
-        "read_width": 90,  #
-        "enable_write_width": 30,
-        "enable_read_width": 30,
+        "write_width": 40,
+        "read_width": 40,
+        "enable_write_width": 40,
+        "enable_read_width": 120,
         "enable_write_phase": 0,
-        "enable_read_phase": 30,
-        "bitmsg_channel": "N0NNRNNNRN",
-        "bitmsg_enable": "NNNNENNNEW",
+        "enable_read_phase": 0,
+        "bitmsg_channel": "N0NNRNNNNR",
+        "bitmsg_enable": "NNNNENNNNE",
     }
 
     current_settings = {
@@ -95,11 +95,11 @@ if __name__ == "__main__":
     current_cell = measurement_settings["cell"]
 
     parameter_x = "enable_read_current"
-    # measurement_settings["x"] = np.array([0e-6])
-    measurement_settings["x"] = np.linspace(220e-6, 270e-6, 11)
+    # measurement_settings["x"] = np.array([250e-6])
+    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 8)
     parameter_y = "read_current"
     # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 850e-6, 41)
+    measurement_settings["y"] = np.linspace(300e-6, 600e-6, 61)
     print(f"Slope: {CELLS[current_cell]['slope']}")
     print(f"Intercept: {CELLS[current_cell]['intercept']}")
     measurement_settings["x_subset"] = measurement_settings["x"]
