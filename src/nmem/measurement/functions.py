@@ -1082,7 +1082,7 @@ def plot_parameter(
     # plt.suptitle(
     #     f'{sample_name[0]} -- {measurement_name[0]} \n {time_str}')
 
-    print(f"min {y_name} at {x_name} = {x[y.argmin()]:3.2e}")
+    print(f"min {y_name} ({y.min():3.2e}) at {x_name} = {x[y.argmin()]:3.2e}")
     return ax
 
 
