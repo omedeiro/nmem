@@ -128,15 +128,16 @@ CELLS = {
         "max_critical_current": 830e-6,
     },
     "C4": {
-        "write_current": 0e-6,
-        "read_current": 0e-6,
-        "enable_write_current": 0e-6,
-        "enable_read_current": 0e-6,
+        "write_current": 70e-6,
+        "read_current": 634e-6,
+        "enable_write_current": 335e-6,
+        "enable_read_current": 210e-6,
         "slope": -4.531,
         "intercept": 1632.812,
         "resistance": 570.6,
         "resistance_cryo": 287.5,
         "max_critical_current": 830e-6,
+        "min_bit_error_rate": 5.0e-04
     },
     "D1": {
         "write_current": 41.067e-6,
