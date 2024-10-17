@@ -926,11 +926,44 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
-    plot_stack(
-        [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
-        [analytical_data_dict, analytical_data_dict, analytical_data_dict],
-        [-30, 0, 30],
-        [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
-    )
+    # plot_stack(
+    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+    #     [-30, 0, 30],
+    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+    # )
 
-    # plot_sweep_waterfall(enable_read_290_dict)
+    enable_read_310_C4_dict = {
+            0: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
+            ),
+            1: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
+            ),
+            2: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
+            ),
+            3: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
+            ),
+            4: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
+            ),
+            5: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
+            ),
+            6: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
+            ),
+            7: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
+            ),
+            8: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
+            ),
+            9: load_data(
+                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
+            ),
+                
+        }
+    plot_sweep_waterfall(enable_read_310_C4_dict)
