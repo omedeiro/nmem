@@ -44,7 +44,9 @@ def read_sweep_scaled(
     return measurement_settings
 
 
-def write_sweep_scaled(measurement_settings, current_cell, num_points=15):
+def write_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
     write_critical_current = (
         calculate_critical_current(
             measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
@@ -52,7 +54,7 @@ def write_sweep_scaled(measurement_settings, current_cell, num_points=15):
         * 1e-6
     )
     measurement_settings["y"] = np.linspace(
-        write_critical_current * 0.0, write_critical_current * 0.15, num_points
+        write_critical_current * start, write_critical_current * end, num_points
     )
     return measurement_settings
 
@@ -66,34 +68,34 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 40,
-        "read_width": 40,
-        "enable_write_width": 40,
-        "enable_read_width": 120,
-        "enable_write_phase": 0,
-        "enable_read_phase": 0,
+        "write_width": 30,
+        "read_width": 10,
+        "enable_write_width": 10,
+        "enable_read_width": 5,
+        "enable_write_phase": 10,
+        "enable_read_phase": -12,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
-        "threshold_bert": 0.33,
-        "threshold_enforced": 0.33,
+        "threshold_bert": 0.4,
+        "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 50e-6,
-        "read_current": 520e-6,
-        "enable_write_current": 310e-6,
-        "enable_read_current": 240e-6,
+        "write_current": 60e-6,
+        "read_current": 647e-6,
+        "enable_write_current": 325e-6,
+        "enable_read_current": 255e-6,
     }
 
-    scope_settings = {  
+    scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 2000
-    sweep_length = 31
+    NUM_MEAS = 1000
+    sweep_length = 21
 
     measurement_settings.update(
         {
@@ -108,24 +110,25 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    parameter_x = "enable_write_current"
+    parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(250e-6, 350e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(200e-6, 300e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        measurement_settings = read_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
-        )
+        # measurement_settings = read_sweep_scaled(
+        #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
+        # )
         # measurement_settings["y"] = np.array([current_settings["read_current"]])
+        measurement_settings["y"] = np.linspace(650e-6, 780e-6, sweep_length)
     else:
         parameter_y = "write_current"
-        # measurement_settings = write_sweep_scaled(
-        #     measurement_settings, current_cell, sweep_length
-        # )
-        measurement_settings["y"] = np.array([current_settings["write_current"]])
+        measurement_settings = write_sweep_scaled(
+            measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
+        )
+        # measurement_settings["y"] = np.array([current_settings["write_current"]])
 
     save_dict = nm.run_sweep(
         b,
