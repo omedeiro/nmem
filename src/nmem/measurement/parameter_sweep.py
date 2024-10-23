@@ -68,23 +68,23 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
-        "read_width": 10,
-        "enable_write_width": 10,
-        "enable_read_width": 5,
-        "enable_write_phase": 10,
-        "enable_read_phase": -12,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
+        "write_width": 2,
+        "read_width": 7,
+        "enable_write_width": 5,
+        "enable_read_width": 6,
+        "enable_write_phase": -9,
+        "enable_read_phase": -9,
+        "bitmsg_channel": "N0RNRN1RNR",
+        "bitmsg_enable": "EWNWEEWNWE",
         "threshold_bert": 0.4,
         "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 60e-6,
-        "read_current": 647e-6,
-        "enable_write_current": 325e-6,
-        "enable_read_current": 255e-6,
+        "write_current": 130e-6,
+        "read_current": 620e-6,
+        "enable_write_current": 493e-6,
+        "enable_read_current": 265e-6,
     }
 
     scope_settings = {
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(200e-6, 300e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(230e-6, 330e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
@@ -122,20 +122,20 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         # )
         # measurement_settings["y"] = np.array([current_settings["read_current"]])
-        measurement_settings["y"] = np.linspace(650e-6, 780e-6, sweep_length)
+        measurement_settings["y"] = np.linspace(550e-6, 700e-6, sweep_length)
     else:
         parameter_y = "write_current"
-        measurement_settings = write_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
-        )
-        # measurement_settings["y"] = np.array([current_settings["write_current"]])
-
+        # measurement_settings = write_sweep_scaled(
+        #     measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
+        # )
+        measurement_settings["y"] = np.array([current_settings["write_current"]])
+        # measurement_settings["y"] = np.linspace(0e-6, 90e-6, sweep_length)
     save_dict = nm.run_sweep(
         b,
         measurement_settings,
         parameter_x,
         parameter_y,
-        plot_measurement=True,
+        plot_measurement=False,
         division_zero=4.5,
         division_one=9.5,
     )
