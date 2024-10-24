@@ -71,19 +71,19 @@ if __name__ == "__main__":
         "write_width": 2,
         "read_width": 7,
         "enable_write_width": 5,
-        "enable_read_width": 6,
+        "enable_read_width": 5,
         "enable_write_phase": -9,
-        "enable_read_phase": -9,
-        "bitmsg_channel": "N0RNRN1RNR",
-        "bitmsg_enable": "EWNWEEWNWE",
+        "enable_read_phase": -8,
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "WWNNEWWNNE",
         "threshold_bert": 0.4,
         "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 130e-6,
+        "write_current": 100e-6,
         "read_current": 620e-6,
-        "enable_write_current": 493e-6,
+        "enable_write_current": 250e-6,
         "enable_read_current": 265e-6,
     }
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 1000
+    NUM_MEAS = 500
     sweep_length = 21
 
     measurement_settings.update(
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         # )
         # measurement_settings["y"] = np.array([current_settings["read_current"]])
-        measurement_settings["y"] = np.linspace(550e-6, 700e-6, sweep_length)
+        measurement_settings["y"] = np.linspace(580e-6, 730e-6, sweep_length)
     else:
         parameter_y = "write_current"
         # measurement_settings = write_sweep_scaled(
