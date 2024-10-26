@@ -1,5 +1,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import scipy.io as sio
+
+def load_data(file_path: str):
+    data = sio.loadmat(file_path)
+    return data
 
 
 def text_from_bit(bit: str):
@@ -17,6 +22,90 @@ def text_from_bit(bit: str):
         return "Write \nEnable"
     else:
         return None
+
+
+
+
+def find_edge(data: np.ndarray) -> list:
+    pos_data = np.argwhere(data > 0.55)
+    neg_data = np.argwhere(data < 0.45)
+
+    if len(pos_data) > 0:
+        pos_edge1 = pos_data[0][0]
+        neg_edge1 = pos_data[-1][0]
+    else:
+        pos_edge1 = 0
+        neg_edge1 = 0
+    if len(neg_data) > 0:
+        neg_edge2 = neg_data[0][0]
+        pos_edge2 = neg_data[-1][0]
+    else:
+        neg_edge2 = 0
+        pos_edge2 = 0
+    return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
+
+
+def find_edge_dual(ber: np.ndarray, w0r1: np.ndarray, w1r0: np.ndarray) -> list:
+    w0r1_peak = np.argmax(np.diff(w0r1))
+    w0r1_peak_neg = np.argmin(np.diff(w0r1))
+    w1r0_peak = np.argmax(np.diff(w1r0))
+    w1r0_peak_neg = np.argmin(np.diff(w1r0))
+    left_nominal = np.argmin(np.diff(w1r0))
+    right_nominal = np.argmax(np.diff(w0r1))
+    left_inverting = np.argmax(np.diff(w0r1))
+
+    # if right_nominal == 0:
+    #     right_nominal = np.argmax(np.diff(w1r0[left_nominal:]))
+
+    # if right_nominal < left_nominal:
+    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
+
+    # if left_nominal > right_nominal:
+    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
+
+    # if right_nominal < left_nominal:
+    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
+
+    while ber[left_inverting] < 0.5:
+        left_inverting = np.argmax(np.diff(w0r1[:left_nominal]))
+
+    if np.min(ber) >= 0.45:
+        left_nominal = 0
+        right_nominal = 0
+    # if left_nominal > right_nominal:
+    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
+    #     right_nominal = np.argmax(np.diff(ber[left_nominal:]))
+    # right_nominal = np.argmax(np.diff(w0r1[right_nominal:])
+
+    # if ber[w0r1_peak] < 0.45:
+    #     w0r1_peak = np.argmax(np.diff(w0r1[:w0r1_peak]))
+    # if w0r1_peak_neg > w0r1_peak:
+    #     w0r1_peak = np.argmax(np.diff(w0r1[w0r1_peak_neg:]))
+    # if w1r0_peak_neg > w1r0_peak:
+    #     w1r0_peak_neg = np.argmin(np.diff(w1r0[:w1r0_peak_neg]))
+    print(f"left_nominal: {left_nominal}, right_nominal: {right_nominal}")
+    print(f"left invert: {left_inverting}")
+    return [left_inverting]
+
+
+def polygon_under_graph(x, y):
+    """
+    Construct the vertex list which defines the polygon filling the space under
+    the (x, y) line graph. This assumes x is in ascending order.
+    """
+    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
+
+
+def polygon_nominal(x, y):
+    y = np.copy(y)
+    y[y > 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+
+
+def polygon_inverting(x, y):
+    y = np.copy(y)
+    y[y < 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
 def plot_threshold(ax: plt.Axes, start, end, threshold):
@@ -510,3 +599,61 @@ def plot_normalization(
     ax.set_yticks(np.linspace(0, 1, 11))
     # plt.grid(axis="y")
     plt.show()
+
+
+
+def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    color_map = plt.get_cmap("viridis")
+    persistent_currents, regions = calculate_persistent_current(data_dict)
+    data_dict["regions"] = regions
+    if persistent_current == 0:
+        data_dict["persistent_currents"] = np.zeros_like(persistent_currents)
+    else:
+        data_dict["persistent_currents"] = (
+            np.ones_like(persistent_currents) * persistent_current
+        )
+
+    read_current_dict = calculate_read_currents(data_dict)
+    inv_region = np.where(
+        np.maximum(
+            data_dict["read_currents_mesh"]
+            - read_current_dict["one_state_currents_inv"],
+            read_current_dict["zero_state_currents_inv"]
+            - data_dict["read_currents_mesh"],
+        )
+        <= 0,
+        data_dict["read_currents_mesh"],
+        np.nan,
+    )
+    nominal_region = np.where(
+        np.maximum(
+            data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
+            read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
+        )
+        <= 0,
+        data_dict["read_currents_mesh"],
+        np.nan,
+    )
+    ax.pcolormesh(
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        nominal_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
+        zorder=0,
+    )
+    ax.pcolormesh(
+        data_dict["right_critical_currents_mesh"],
+        data_dict["read_currents_mesh"],
+        -1 * inv_region,
+        cmap=color_map,
+        vmin=-1000,
+        vmax=1000,
+        zorder=0,
+    )
+    read_current_dict["nominal"] = nominal_region
+    read_current_dict["inverting"] = inv_region
+    return ax, read_current_dict
