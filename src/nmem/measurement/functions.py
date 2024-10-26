@@ -8,7 +8,7 @@ Created on Fri Nov  3 14:01:31 2023
 import time
 from datetime import datetime
 from time import sleep
-
+from typing import Tuple
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
@@ -261,8 +261,8 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
 def setup_scope_bert(
     b: nTron,
     measurement_settings: dict,
-    division_zero: float = 4.5,
-    division_one: float = 9.5,
+    division_zero: tuple = (4.5, 5.5),
+    division_one: tuple = (9.5, 10.0),
 ):
     scope_horizontal_scale = measurement_settings["scope_horizontal_scale"]
     scope_timespan = measurement_settings["scope_timespan"]
@@ -284,8 +284,8 @@ def setup_scope_bert(
     # b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
     # b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    b.inst.scope.set_measurement_gate("P3", division_zero, division_zero + 0.5)
-    b.inst.scope.set_measurement_gate("P4", division_one, division_one + 0.5)
+    b.inst.scope.set_measurement_gate("P3", division_zero[0], division_zero[1])
+    b.inst.scope.set_measurement_gate("P4", division_one[0], division_one[1])
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -296,8 +296,6 @@ def setup_scope_bert(
 def setup_scope_8bit_bert(
     b: nTron,
     measurement_settings: dict,
-    division_zero: float = 4.5,
-    division_one: float = 8.5,
 ):
     scope_horizontal_scale = measurement_settings["scope_horizontal_scale"]
     scope_sample_rate = measurement_settings["scope_sample_rate"]
@@ -1214,6 +1212,8 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         print(f"Max difference: {max_diff*1e3:.2f} mV")
         print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
+    # if threshold < measurement_settings.get("threshold_enforced", 0.4):
+    #     threshold = measurement_settings.get("threshold_enforced", 0.4)
     measurement_settings["threshold_enforced"] = threshold
     print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
 
@@ -1435,8 +1435,8 @@ def run_sweep(
     parameter_y: str,
     save_traces: bool = False,
     plot_measurement=False,
-    division_zero: float = 4.5,
-    division_one: float = 9.5,
+    division_zero: Tuple[float, float] = (4.5, 5.5),
+    division_one: Tuple[float,float] = (9.5, 10),
 ):
     save_dict = {}
 
@@ -1570,7 +1570,7 @@ def run_sweep(
                 )
                 print(f"Write Power [nW]: {write_power*1e9:.2f}")
                 print(f"Switch Impedance [Ohm]: {switch_impedance:.2f}")
-
+                print(f"Bit Error Rate: {data_dict['bit_error_rate']:.2e}")
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
             else:
