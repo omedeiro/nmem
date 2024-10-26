@@ -12,32 +12,19 @@ from nmem.calculations.calculations import (
     calculate_read_currents,
 )
 from nmem.measurement.cells import CELLS
-
+from nmem.analysis.analysis import (
+    load_data,
+    find_edge,
+    polygon_nominal,
+    polygon_inverting,
+    plot_analytical,
+)
+from nmem.analysis.enable_read_current.trace_plotting import plot_data_delay_manu, INVERSE_COMPARE_DICT
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14
 
 
 CURRENT_CELL = "C1"
-
-
-def polygon_under_graph(x, y):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
-
-
-def polygon_nominal(x, y):
-    y = np.copy(y)
-    y[y > 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
-
-
-def polygon_inverting(x, y):
-    y = np.copy(y)
-    y[y < 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
 def plot_waterfall(data_dict: dict, ax: Axes3D = None):
@@ -135,71 +122,6 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     return ax
 
 
-def load_data(file_path: str):
-    data = sio.loadmat(file_path)
-    return data
-
-
-def find_edge(data: np.ndarray) -> list:
-    pos_data = np.argwhere(data > 0.55)
-    neg_data = np.argwhere(data < 0.45)
-
-    if len(pos_data) > 0:
-        pos_edge1 = pos_data[0][0]
-        neg_edge1 = pos_data[-1][0]
-    else:
-        pos_edge1 = 0
-        neg_edge1 = 0
-    if len(neg_data) > 0:
-        neg_edge2 = neg_data[0][0]
-        pos_edge2 = neg_data[-1][0]
-    else:
-        neg_edge2 = 0
-        pos_edge2 = 0
-    return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
-
-
-def find_edge_dual(ber: np.ndarray, w0r1: np.ndarray, w1r0: np.ndarray) -> list:
-    w0r1_peak = np.argmax(np.diff(w0r1))
-    w0r1_peak_neg = np.argmin(np.diff(w0r1))
-    w1r0_peak = np.argmax(np.diff(w1r0))
-    w1r0_peak_neg = np.argmin(np.diff(w1r0))
-    left_nominal = np.argmin(np.diff(w1r0))
-    right_nominal = np.argmax(np.diff(w0r1))
-    left_inverting = np.argmax(np.diff(w0r1))
-
-    # if right_nominal == 0:
-    #     right_nominal = np.argmax(np.diff(w1r0[left_nominal:]))
-
-    # if right_nominal < left_nominal:
-    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
-
-    # if left_nominal > right_nominal:
-    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
-
-    # if right_nominal < left_nominal:
-    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
-
-    while ber[left_inverting] < 0.5:
-        left_inverting = np.argmax(np.diff(w0r1[:left_nominal]))
-
-    if np.min(ber) >= 0.45:
-        left_nominal = 0
-        right_nominal = 0
-    # if left_nominal > right_nominal:
-    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
-    #     right_nominal = np.argmax(np.diff(ber[left_nominal:]))
-    # right_nominal = np.argmax(np.diff(w0r1[right_nominal:])
-
-    # if ber[w0r1_peak] < 0.45:
-    #     w0r1_peak = np.argmax(np.diff(w0r1[:w0r1_peak]))
-    # if w0r1_peak_neg > w0r1_peak:
-    #     w0r1_peak = np.argmax(np.diff(w0r1[w0r1_peak_neg:]))
-    # if w1r0_peak_neg > w1r0_peak:
-    #     w1r0_peak_neg = np.argmin(np.diff(w1r0[:w1r0_peak_neg]))
-    print(f"left_nominal: {left_nominal}, right_nominal: {right_nominal}")
-    print(f"left invert: {left_inverting}")
-    return [left_inverting]
 
 
 def get_edges(data_dict: dict) -> dict:
@@ -390,7 +312,6 @@ def plot_enable_read_current_edges_stack(
         analytical_data_dict, persistent_current=persistent_current, ax=ax
     )
 
-
     # ax.set_ylim(500, 950)
     # ax.set_xlim(600, 950)
 
@@ -420,15 +341,15 @@ def plot_stack(
             axs[i],
             persistent_current=persistent_currents_list[i],
             fitting_dict=fitting_dict_list[i],
-        )    
-    
+        )
+
     fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
     fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
 
     caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
     cbar = fig.colorbar(
         axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
-    )    
+    )
     caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
     plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
     plt.show()
@@ -585,62 +506,16 @@ def plot_sweep_waterfall(data_dict: dict):
     plt.show()
 
 
-def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    color_map = plt.get_cmap("viridis")
-    persistent_currents, regions = calculate_persistent_current(data_dict)
-    data_dict["regions"] = regions
-    if persistent_current == 0:
-        data_dict["persistent_currents"] = np.zeros_like(persistent_currents)
-    else:
-        data_dict["persistent_currents"] = (
-            np.ones_like(persistent_currents) * persistent_current
-        )
 
-    read_current_dict = calculate_read_currents(data_dict)
-    inv_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"]
-            - read_current_dict["one_state_currents_inv"],
-            read_current_dict["zero_state_currents_inv"]
-            - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
-    )
-    nominal_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
-            read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
-    )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        nominal_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
-    )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        -1 * inv_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
-    )
-    read_current_dict["nominal"] = nominal_region
-    read_current_dict["inverting"] = inv_region
-    return ax, read_current_dict
+def manuscript_figure(data_dict: dict):
 
+    fig, axs = plt.subplot_mosaic(
+        [["a", "b", "c"], ["a", "c", "d"], ["a", "e", "f"]],
+        figsize=(7, 4),
+        layout="constrained",
+    )
+
+    axs["a"] = plot_read_sweep_single(data_dict, 0, axs["a"])
 
 if __name__ == "__main__":
     data0 = sio.loadmat(
@@ -926,44 +801,44 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
-    # plot_stack(
-    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
-    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
-    #     [-30, 0, 30],
-    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
-    # )
+    plot_stack(
+        [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+        [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+        [-30, 0, 30],
+        [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+    )
 
     enable_read_310_C4_dict = {
-            0: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
-            ),
-            1: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
-            ),
-            2: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
-            ),
-            3: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
-            ),
-            4: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
-            ),
-            5: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
-            ),
-            6: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
-            ),
-            7: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
-            ),
-            8: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
-            ),
-            9: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
-            ),
-                
-        }
-    plot_sweep_waterfall(enable_read_310_C4_dict)
+        0: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
+        ),
+        1: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
+        ),
+        2: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
+        ),
+        3: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
+        ),
+        4: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
+        ),
+        5: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
+        ),
+        6: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
+        ),
+        7: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
+        ),
+        8: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
+        ),
+        9: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
+        ),
+    }
+
+    manuscript_figure(data_dict)
