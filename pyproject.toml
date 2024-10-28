@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "nmem"
-version = "0.1.16"
+version = "0.1.17"
 
 
 authors = [
@@ -16,7 +16,7 @@ maintainers = [
 ]
 description = "code related to the NMEM project at MIT"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {file = "LICENSE.txt"}
 keywords = ["nanowire_electronics", "instrument control"]
 classifiers = [
