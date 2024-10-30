@@ -972,6 +972,12 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     sample_name = measurement_settings.get("sample_name", 0)
     scope_timespan = measurement_settings.get("scope_timespan", 0)
     threshold_bert = measurement_settings.get("threshold_enforced")
+    write_width = measurement_settings.get("write_width")
+    read_width = measurement_settings.get("read_width")
+    enable_write_width = measurement_settings.get("enable_write_width")
+    enable_read_width = measurement_settings.get("enable_read_width")
+    enable_write_phase = measurement_settings.get("enable_write_phase")
+    enable_read_phase = measurement_settings.get("enable_read_phase")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
@@ -1029,7 +1035,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax3.legend(loc=4)
 
     plt.suptitle(
-        f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
+        f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}, \n write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
     )
 
     plt.tight_layout()
@@ -1072,9 +1078,15 @@ def plot_parameter(
     enable_write_current = data_dict["enable_write_current"].flatten()
     bitmsg_channel = data_dict["bitmsg_channel"]
     bitmsg_enable = data_dict["bitmsg_enable"]
+    write_width = data_dict["write_width"]
+    read_width = data_dict["read_width"]
+    enable_write_width = data_dict["enable_write_width"]
+    enable_read_width = data_dict["enable_read_width"]
+    enable_write_phase = data_dict["enable_write_phase"]
+    enable_read_phase = data_dict["enable_read_phase"]
 
     plt.suptitle(
-        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
+        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable} \n, write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
     )
 
     # plt.suptitle(
@@ -1199,23 +1211,21 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         read_one_top.resize(num_meas, refcheck=False)
 
     # Find the difference between the highest and lowest values in the read top arrays
-    difference = np.max([read_one_top, read_zero_top]) - np.min(
-        [read_one_top, read_zero_top]
-    )
-    max_diff = difference.max()
-    if max_diff > 0.2:
-        print(f"Max difference: {max_diff*1e3:.2f} mV")
-        threshold = calculate_threshold(read_zero_top, read_one_top)
-        print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
-    else:
-        threshold = measurement_settings.get("threshold_bert", 0.4)
-        print(f"Max difference: {max_diff*1e3:.2f} mV")
-        print(f"Default Threshold: {threshold*1e3:.2f} mV")
+    # difference = np.max([read_one_top, read_zero_top]) - np.min(
+    #     [read_one_top, read_zero_top]
+    # )
+    # max_diff = difference.max()
+    # if max_diff > 0.3:
+    #     print(f"Max difference: {max_diff*1e3:.2f} mV")
+    #     threshold = calculate_threshold(read_zero_top, read_one_top)
+    #     print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
+    # else:
+    #     threshold = measurement_settings.get("threshold_bert", 0.4)
+    #     print(f"Max difference: {max_diff*1e3:.2f} mV")
+    #     print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
     # if threshold < measurement_settings.get("threshold_enforced", 0.4):
-    #     threshold = measurement_settings.get("threshold_enforced", 0.4)
-    measurement_settings["threshold_enforced"] = threshold
-    print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
+    threshold = measurement_settings.get("threshold_enforced", 0.35)
 
     # READ 1: above threshold (voltage)
     write_0_read_1 = np.array([(read_zero_top > threshold).sum()])
