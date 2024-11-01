@@ -33,12 +33,12 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 40,
-        "read_width": 40,
-        "enable_write_width": 20,
-        "enable_read_width": 100,
-        "enable_write_phase": 20,
-        "enable_read_phase": 0,
+        "write_width": 1,
+        "read_width": 7,
+        "enable_write_width": 3,
+        "enable_read_width": 6,
+        "enable_write_phase": 1,
+        "enable_read_phase": -8,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
         "threshold_bert": 0.33,
@@ -62,7 +62,9 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    nm.setup_scope_bert(b, measurement_settings)
+    nm.setup_scope_bert(
+        b, measurement_settings, division_zero=(3.5, 4.0), division_one=(5.5, 6.0)
+    )
     save_dict, measurement_settings = nm.run_measurement(
         b, measurement_settings, plot=True
     )
