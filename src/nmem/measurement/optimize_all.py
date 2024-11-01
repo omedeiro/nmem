@@ -75,13 +75,13 @@ def optimize_bias(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(10, 220, name="write_current"),
-        Real(400, 750, name="read_current"),
-        Real(150, 350, name="enable_write_current"),
-        Real(150, 250, name="enable_read_current"),
+        Real(50, 70, name="write_current"),
+        Real(620, 640, name="read_current"),
+        Real(330, 340, name="enable_write_current"),
+        Real(230, 240, name="enable_read_current"),
     ]
 
-    x0 = [40, 510, 325, 240]
+    x0 = [60, 630, 335, 236]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -278,22 +278,23 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 40,
-        "read_width": 40,
-        "enable_write_width": 40,
-        "enable_read_width": 120,
-        "enable_write_phase": 0,
-        "enable_read_phase": 0,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
-        "threshold_bert": 0.4,
+        "write_width": 0,
+        "read_width": 7,
+        "enable_write_width": 3,
+        "enable_read_width": 6,
+        "enable_write_phase": 1,
+        "enable_read_phase": -8,
+        "bitmsg_channel": "NN0NRNN1NR",
+        "bitmsg_enable": "NNWNENNWNE",
+        "threshold_bert": 0.33,
+        "threshold_enforced": 0.33,
     }
 
     current_settings = {
-        "write_current": 40e-6,
-        "read_current": 510e-6,
-        "enable_write_current": 325e-6,
-        "enable_read_current": 240e-6,
+        "write_current": 60e-6,
+        "read_current": 630e-6,
+        "enable_write_current": 335e-6,
+        "enable_read_current": 236e-6,
     }
 
     NUM_MEAS = 2000
@@ -313,7 +314,9 @@ if __name__ == "__main__":
 
     meas_dict, b = nm.initilize_measurement(CONFIG, "nMem_optimize")
 
-    nm.setup_scope_bert(b, measurement_settings)
+    nm.setup_scope_bert(
+        b, measurement_settings, division_zero=(3.5, 4.0), division_one=(5.5, 6.0)
+    )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
 
