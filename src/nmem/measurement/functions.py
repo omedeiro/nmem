@@ -464,16 +464,16 @@ def load_waveforms(
 
     if ewr_ratio >= 1:
         enable_write = create_waveforms_edge(
-            width=eww, height=1, phase=ew_phase, edge=0
+            width=eww, height=1, phase=ew_phase, edge=1
         )
         enable_read = create_waveforms_edge(
-            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=0
+            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=1
         )
     else:
         enable_write = create_waveforms_edge(
-            width=eww, height=ewr_ratio, phase=ew_phase, edge=0
+            width=eww, height=ewr_ratio, phase=ew_phase, edge=1
         )
-        enable_read = create_waveforms_edge(width=erw, height=1, phase=er_phase, edge=0)
+        enable_read = create_waveforms_edge(width=erw, height=1, phase=er_phase, edge=1)
 
     null_wave = create_waveforms(height=0)
 
