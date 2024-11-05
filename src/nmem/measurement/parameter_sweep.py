@@ -84,7 +84,7 @@ if __name__ == "__main__":
     }
 
     fast_read = {
-        "read_width": 30,
+        "read_width": 10,
         "enable_read_width": 15,
         "enable_read_phase": -13,
     }
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         "write_current": 30e-6,
         "read_current": 635e-6,
         "enable_write_current": 310e-6,
-        "enable_read_current": 223e-6,
+        "enable_read_current": 228e-6,
     }
 
     scope_settings = {
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 1000
-    sweep_length = 11
+    sweep_length = 21
 
     measurement_settings.update(
         {
