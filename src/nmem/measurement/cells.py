@@ -128,10 +128,10 @@ CELLS = {
         "max_critical_current": 830e-6,
     },
     "C4": {
-        "write_current": 70e-6,
-        "read_current": 634e-6,
-        "enable_write_current": 335e-6,
-        "enable_read_current": 210e-6,
+        "write_current": 30e-6, # Fast waveform
+        "read_current": 660e-6,
+        "enable_write_current": 320e-6,
+        "enable_read_current": 250e-6,
         "slope": -4.531,
         "intercept": 1632.812,
         "resistance": 570.6,
@@ -262,6 +262,23 @@ DEFAULT_WAVEFORM = {
     "bitmsg_channel": "N0RNR1RNRN",
     "bitmsg_enable": "NWNWEWNWEW",
 }
+
+
+# Fast waveform 
+# waveform_settings = {
+#     "num_points": NUM_POINTS,
+#     "sample_rate": SAMPLE_RATE[FREQ_IDX],
+#     "write_width": 3,
+#     "read_width": 7,
+#     "enable_write_width": 4,
+#     "enable_read_width": 4,
+#     "enable_write_phase": -5,
+#     "enable_read_phase": -8,
+#     "bitmsg_channel": "NN0NRNN1NR",
+#     "bitmsg_enable": "NNWNENNWNE",
+#     "threshold_bert": 0.33,
+#     "threshold_enforced": 0.33,
+# }
 
 DEFAULT_SCOPE = {
     "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
