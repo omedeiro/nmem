@@ -74,7 +74,7 @@ if __name__ == "__main__":
     fast_write = {
         "write_width": 0,
         "enable_write_width": 4,
-        "enable_write_phase": -7,
+        "enable_write_phase": -6,
     }
 
     slow_read = {
@@ -84,9 +84,9 @@ if __name__ == "__main__":
     }
 
     fast_read = {
-        "read_width": 10,
+        "read_width": 7,
         "enable_read_width": 8,
-        "enable_read_phase": -10,
+        "enable_read_phase": -7,
     }
 
     two_nulls = {
@@ -119,10 +119,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 30e-6,
-        "read_current": 674e-6,
-        "enable_write_current": 429e-6,
-        "enable_read_current": 232e-6,
+        "write_current": 37e-6,
+        "read_current": 687e-6,
+        "enable_write_current": 417e-6,
+        "enable_read_current": 233e-6,
     }
 
     scope_settings = {
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(200e-6, 250e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(220e-6, 240e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         # )
         measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(640e-6, 700e-6, sweep_length)
+        # measurement_settings["y"] = np.linspace(670e-6, 700e-6, sweep_length)
 
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
         # )
         # measurement_settings["y"] = np.array([current_settings["write_current"]])
-        measurement_settings["y"] = np.linspace(0e-6, 100e-6, sweep_length)
+        measurement_settings["y"] = np.linspace(00e-6, 60e-6, sweep_length)
 
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
