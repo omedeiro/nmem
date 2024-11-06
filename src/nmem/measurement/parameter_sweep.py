@@ -72,39 +72,57 @@ if __name__ == "__main__":
         "enable_write_phase": 0,
     }
     fast_write = {
-        "write_width": 30,
-        "enable_write_width": 40,
-        "enable_write_phase": -2,
+        "write_width": 0,
+        "enable_write_width": 4,
+        "enable_write_phase": -7,
     }
 
     slow_read = {
         "read_width": 40,
         "enable_read_width": 120,
-        "enable_read_phase": 0,
+        "enable_read_phase": 25,
     }
 
     fast_read = {
         "read_width": 10,
-        "enable_read_width": 15,
-        "enable_read_phase": -13,
+        "enable_read_width": 8,
+        "enable_read_phase": -10,
     }
 
-    waveform_settings = {
+    two_nulls = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_nulls_inv = {
+        "bitmsg_channel": "N1NNRN0NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+
+    one_null = {
+        "bitmsg_channel": "NN0NRNN1NR",
+        "bitmsg_enable": "NNWNENNWNE",
+    }
+
+    zero_nulls = {
+        "bitmsg_channel": "NNN0RNNN1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+
+    waveform_settings = {   
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         **fast_write,
         **fast_read,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
+        **two_nulls,
         "threshold_bert": 0.33,
         "threshold_enforced": 0.33,
     }
 
     current_settings = {
         "write_current": 30e-6,
-        "read_current": 635e-6,
-        "enable_write_current": 310e-6,
-        "enable_read_current": 228e-6,
+        "read_current": 674e-6,
+        "enable_write_current": 429e-6,
+        "enable_read_current": 232e-6,
     }
 
     scope_settings = {
@@ -115,7 +133,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 1000
-    sweep_length = 21
+    sweep_length = 15
 
     measurement_settings.update(
         {
@@ -130,9 +148,9 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    parameter_x = "enable_write_current"
+    parameter_x = "enable_read_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(280e-6, 340e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(200e-6, 250e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
@@ -142,7 +160,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         # )
         measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(600e-6, 660e-6, sweep_length)
+        # measurement_settings["y"] = np.linspace(640e-6, 700e-6, sweep_length)
 
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
@@ -151,7 +169,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
         # )
         # measurement_settings["y"] = np.array([current_settings["write_current"]])
-        measurement_settings["y"] = np.linspace(30e-6, 60e-6, sweep_length)
+        measurement_settings["y"] = np.linspace(0e-6, 100e-6, sweep_length)
 
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 

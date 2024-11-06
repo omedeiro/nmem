@@ -452,8 +452,8 @@ def load_waveforms(
     num_points = measurement_settings.get("num_points", 256)
 
     if wr_ratio >= 1:
-        write_0 = create_waveforms_edge(width=ww, height=-1, edge=RISING_EDGE)
-        write_1 = create_waveforms_edge(width=ww, height=1, edge=RISING_EDGE)
+        write_0 = create_waveforms_edge(width=ww, height=-1, edge=1)
+        write_1 = create_waveforms_edge(width=ww, height=1, edge=1)
         read_wave = create_waveforms_edge(
             width=rw, height=1 / wr_ratio, edge=RISING_EDGE
         )
