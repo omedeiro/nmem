@@ -92,16 +92,16 @@ CELLS = {
         "resistance_cryo": 287.5,
     },
     "C1": {
-        "write_current": 30.160e-6,
-        "read_current": 640.192e-6,
-        "enable_write_current": 289.500e-6,
-        "enable_read_current": 212.843e-6,
+        "write_current": 40e-6,
+        "read_current": 750e-6,
+        "enable_write_current": 450e-6,
+        "enable_read_current": 220e-6,
         "slope": -3.200,
         "intercept": 1402.778,
         "resistance": 559.2,
         "resistance_cryo": 258.8,
         "max_critical_current": 790e-6,
-        "min_bit_error_rate": 2.5e-4,
+        "min_bit_error_rate": 5.5e-4,
     },
     "C2": {
         "write_current": 69.605e-6,
@@ -264,21 +264,30 @@ DEFAULT_WAVEFORM = {
 }
 
 
-# Fast waveform 
-# waveform_settings = {
-#     "num_points": NUM_POINTS,
-#     "sample_rate": SAMPLE_RATE[FREQ_IDX],
-#     "write_width": 3,
-#     "read_width": 7,
-#     "enable_write_width": 4,
-#     "enable_read_width": 4,
-#     "enable_write_phase": -5,
-#     "enable_read_phase": -8,
-#     "bitmsg_channel": "NN0NRNN1NR",
-#     "bitmsg_enable": "NNWNENNWNE",
-#     "threshold_bert": 0.33,
-#     "threshold_enforced": 0.33,
-# }
+# Fast waveform settings -- 11072024
+    # slow_write = {
+    #     "write_width": 40,
+    #     "enable_write_width": 40,
+    #     "enable_write_phase": 0,
+    # }
+    # fast_write = {
+    #     "write_width": 0,
+    #     "enable_write_width": 3,
+    #     "enable_write_phase": -5,
+    # }
+
+    # slow_read = {
+    #     "read_width": 40,
+    #     "enable_read_width": 120,
+    #     "enable_read_phase": 25,
+    # }
+
+    # fast_read = {
+    #     "read_width": 7,
+    #     "enable_read_width": 7,
+    #     "enable_read_phase": -8,
+    # }
+
 
 DEFAULT_SCOPE = {
     "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
