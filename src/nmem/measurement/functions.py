@@ -46,6 +46,35 @@ def bimodal_fit(
     params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
     return params, cov
 
+def read_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
+    read_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        read_critical_current * start, read_critical_current * end, num_points
+    )
+    return measurement_settings
+
+
+def write_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
+    write_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        write_critical_current * start, write_critical_current * end, num_points
+    )
+    return measurement_settings
+
 
 def get_param_mean(param: np.ndarray) -> np.ndarray:
     if round(param[2], 5) > round(param[5], 5):
