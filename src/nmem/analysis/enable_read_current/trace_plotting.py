@@ -1,8 +1,8 @@
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.ticker import MultipleLocator
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 
 from nmem.analysis.analysis import (
     plot_threshold,

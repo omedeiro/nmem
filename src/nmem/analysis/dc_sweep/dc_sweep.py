@@ -1,8 +1,6 @@
-import scipy.io as sio
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
+import numpy as np
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
@@ -17,9 +15,7 @@ plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["font.family"] = "Inter"
 # plt.rcParams['font.sans-serif'] =
 
-from nmem.analysis.analysis import (
-    import_directory
-)
+from nmem.analysis.analysis import import_directory
 
 
 def plot_iv_curve(data, ax, **kwargs):

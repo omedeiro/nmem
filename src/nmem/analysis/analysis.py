@@ -3,6 +3,7 @@ import os
 import numpy as np
 import scipy.io as sio
 from matplotlib import pyplot as plt
+
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,

@@ -1,19 +1,11 @@
-from typing import List
 import numpy as np
-from skopt.space import Real, Integer
-import nmem.measurement.functions as nm
 import qnnpy.functions.functions as qf
 from qnnpy.functions.ntron import nTron
+from skopt.space import Integer, Real
 
+import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
-    CELLS,
     CONFIG,
-    DEFAULT_SCOPE,
-    FREQ_IDX,
-    HEATERS,
-    NUM_POINTS,
-    SAMPLE_RATE,
-    SPICE_DEVICE_CURRENT,
 )
 
 

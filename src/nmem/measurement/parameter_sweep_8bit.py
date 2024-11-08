@@ -12,7 +12,6 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,

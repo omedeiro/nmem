@@ -17,8 +17,8 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-from nmem.measurement.parameter_sweep import CONFIG
-from nmem.measurement.parameter_sweep import construct_currents
+from nmem.measurement.parameter_sweep import CONFIG, construct_currents
+
 plt.rcParams["figure.figsize"] = [10, 12]
 
 

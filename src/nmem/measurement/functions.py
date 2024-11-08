@@ -9,6 +9,7 @@ import time
 from datetime import datetime
 from time import sleep
 from typing import Tuple
+
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
@@ -24,7 +25,7 @@ from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
-from nmem.measurement.cells import MITEQ_AMP_GAIN, CELLS
+from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
 
 
 def gauss(x: float, mu: float, sigma: float, A: float):

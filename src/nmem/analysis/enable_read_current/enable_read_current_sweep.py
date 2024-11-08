@@ -6,20 +6,16 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.signal import find_peaks
 
-from nmem.calculations.analytical_model import create_dict_read
-from nmem.calculations.calculations import (
-    calculate_persistent_current,
-    calculate_read_currents,
-)
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
-    load_data,
     find_edge,
-    polygon_nominal,
-    polygon_inverting,
+    load_data,
     plot_analytical,
+    polygon_inverting,
+    polygon_nominal,
 )
-from nmem.analysis.enable_read_current.trace_plotting import plot_data_delay_manu, INVERSE_COMPARE_DICT
+from nmem.calculations.analytical_model import create_dict_read
+from nmem.measurement.cells import CELLS
+
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14
 

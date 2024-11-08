@@ -8,17 +8,14 @@ Created on Sat Dec  9 16:17:34 2023
 import time
 from functools import partial
 
-import numpy as np
 import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
-from qnnpy.functions.ntron import nTron
 from skopt import gp_minimize
 from skopt.plots import (
     plot_convergence,
     plot_evaluations,
     plot_objective,
 )
-from skopt.space import Integer, Real
 
 import nmem.measurement.functions as nm
 from nmem.measurement.cells import (
@@ -34,7 +31,7 @@ from nmem.measurement.cells import (
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
-from nmem.measurement.optimize import optimize_bias, objective
+from nmem.measurement.optimize import objective, optimize_bias
 
 
 def run_optimize(meas_dict: dict):

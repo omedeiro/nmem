@@ -6,7 +6,6 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.signal import find_peaks
 
-from nmem.calculations.analytical_model import create_dict_read
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
