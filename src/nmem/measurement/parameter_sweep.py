@@ -73,8 +73,8 @@ if __name__ == "__main__":
     }
     fast_write = {
         "write_width": 0,
-        "enable_write_width": 3,
-        "enable_write_phase": -5,
+        "enable_write_width": 2,
+        "enable_write_phase": -7,
     }
 
     slow_read = {
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     fast_read = {
         "read_width": 7,
-        "enable_read_width": 7,
+        "enable_read_width": 3,
         "enable_read_phase": -8,
     }
 
@@ -124,22 +124,26 @@ if __name__ == "__main__":
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "WWWWEWWWWE",
     }
+    two_emulate_eread = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "EWEEEEWEEE",
+    }
 
     waveform_settings = {   
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         **fast_write,
         **fast_read,
-        **two_emulate_read,
+        **two_nulls,
         "threshold_bert": 0.33,
         "threshold_enforced": 0.33,
     }
 
     current_settings = {
         "write_current": 40e-6,
-        "read_current": 750e-6,
-        "enable_write_current": 450e-6,
-        "enable_read_current": 220e-6,
+        "read_current": 710e-6,
+        "enable_write_current": 560e-6,
+        "enable_read_current": 310e-6,
     }
 
     scope_settings = {
@@ -149,8 +153,8 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 10000
-    sweep_length = 31
+    NUM_MEAS = 1000
+    sweep_length = 21
 
     measurement_settings.update(
         {
@@ -167,7 +171,7 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(100e-6, 450e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(540e-6, 580e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
@@ -177,7 +181,7 @@ if __name__ == "__main__":
         #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
         # )
         measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(500e-6, 900e-6, sweep_length)
+        # measurement_settings["y"] = np.linspace(680e-6, 720e-6, sweep_length)
 
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
@@ -196,8 +200,8 @@ if __name__ == "__main__":
         parameter_x,
         parameter_y,
         plot_measurement=True,
-        division_zero=(3.5, 5.0),
-        division_one=(5.5, 7.0),
+        division_zero=(1.9, 2.5),
+        division_one=(5.9, 6.5),
     )
 
     b.properties["measurement_settings"] = measurement_settings
