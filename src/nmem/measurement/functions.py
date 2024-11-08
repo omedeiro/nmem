@@ -22,8 +22,9 @@ from tqdm import tqdm
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
+    htron_critical_current,
 )
-from nmem.measurement.cells import MITEQ_AMP_GAIN
+from nmem.measurement.cells import MITEQ_AMP_GAIN, CELLS
 
 
 def gauss(x: float, mu: float, sigma: float, A: float):
@@ -74,6 +75,30 @@ def write_sweep_scaled(
         write_critical_current * start, write_critical_current * end, num_points
     )
     return measurement_settings
+
+
+
+def construct_currents(
+    heater_currents: np.ndarray,
+    slope: float,
+    intercept: float,
+    margin: float,
+    max_critical_current: float,
+) -> np.ndarray:
+    bias_current_array = np.zeros((len(heater_currents), 2))
+    for heater_current in heater_currents:
+        critical_current = htron_critical_current(heater_current, slope, intercept)
+        if critical_current > max_critical_current:
+            critical_current = max_critical_current
+        bias_currents = np.array(
+            [
+                critical_current * (1 - margin * 2.0),
+                critical_current * (1 + margin * 0.1),
+            ]
+        )
+        bias_current_array[heater_currents == heater_current] = bias_currents
+
+    return bias_current_array
 
 
 def get_param_mean(param: np.ndarray) -> np.ndarray:
