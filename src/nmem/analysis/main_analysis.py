@@ -96,14 +96,12 @@ if __name__ == "__main__":
     fig, axs = plt.subplot_mosaic(
         [
             ["bit_error", "max_heater_current", "delay"],
-            ["max_critical_current", "read", "temperature"],
+            ["write", "read", "temperature"],
         ]
     )
     plot_array(xloc, yloc, bit_error_array, log=True, ax=axs["bit_error"])
-    plot_array(
-        xloc, yloc, max_critical_current_array, log=True, ax=axs["max_critical_current"]
-    )
     plot_array(xloc, yloc, x_intercept_array, log=True, ax=axs["max_heater_current"])
+    plot_array(xloc, yloc, write_array, log=True, ax=axs["write"])
     plot_array(xloc, yloc, read_array, log=True, ax=axs["read"])
 
     axs["delay"].set_xlabel("Delay ($\mu$s)")
