@@ -23,6 +23,7 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
+from nmem.measurement.functions import read_sweep_scaled
 
 plt.rcParams["figure.figsize"] = [10, 12]
 

@@ -28,10 +28,10 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
+from nmem.measurement.optimize import objective, optimize_bias
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
-from nmem.measurement.optimize import objective, optimize_bias
 
 
 def run_optimize(meas_dict: dict):
