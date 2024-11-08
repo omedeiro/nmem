@@ -12,7 +12,11 @@ from nmem.calculations.calculations import (
     htron_heater_current,
 )
 from nmem.measurement.cells import CELLS
+from matplotlib import font_manager
 
+font_path = "/home/omedeiro/Inter-Regular.otf"  # Your font path goes here
+font_manager.fontManager.addfont(font_path)
+prop = font_manager.FontProperties(fname=font_path)
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
@@ -25,7 +29,7 @@ plt.rcParams["lines.markersize"] = 2
 plt.rcParams["lines.linewidth"] = 0.5
 plt.rcParams["legend.fontsize"] = 5
 plt.rcParams["legend.frameon"] = False
-plt.rcParams['axes.labelpad'] = 0.5
+plt.rcParams["axes.labelpad"] = 0.5
 
 if __name__ == "__main__":
     xloc = []
@@ -89,18 +93,23 @@ if __name__ == "__main__":
             enable_write_power_array[y, x] = enable_write_power
             enable_read_power_array[y, x] = enable_read_power
 
-    fig, axs = plt.subplot_mosaic([["bit_error", "max_heater_current", "delay"], ["max_critical_current", "read", "temperature"]])
+    fig, axs = plt.subplot_mosaic(
+        [
+            ["bit_error", "max_heater_current", "delay"],
+            ["max_critical_current", "read", "temperature"],
+        ]
+    )
     plot_array(xloc, yloc, bit_error_array, log=True, ax=axs["bit_error"])
-    plot_array(xloc, yloc, max_critical_current_array, log=True, ax=axs["max_critical_current"])
+    plot_array(
+        xloc, yloc, max_critical_current_array, log=True, ax=axs["max_critical_current"]
+    )
     plot_array(xloc, yloc, x_intercept_array, log=True, ax=axs["max_heater_current"])
     plot_array(xloc, yloc, read_array, log=True, ax=axs["read"])
 
     axs["delay"].set_xlabel("Delay ($\mu$s)")
     axs["delay"].set_ylabel("BER")
 
-
     axs["temperature"].set_xlabel("Temperature (K)")
     axs["temperature"].set_ylabel("BER")
-
-
+    fig.patch.set_visible(False)
     plt.savefig("main_analysis.pdf", bbox_inches="tight")
