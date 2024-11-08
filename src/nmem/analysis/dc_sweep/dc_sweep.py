@@ -17,25 +17,9 @@ plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["font.family"] = "Inter"
 # plt.rcParams['font.sans-serif'] =
 
-
-def import_data(file_path: str):
-    data = sio.loadmat(file_path)
-    return data
-
-
-def import_directory(file_path: str):
-    data_list = []
-    files = get_file_names(file_path)
-    for file in files:
-        data = import_data(os.path.join(file_path, file))
-        data_list.append(data)
-    return data_list
-
-
-def get_file_names(file_path: str):
-    files = os.listdir(file_path)
-    files = [file for file in files if file.endswith(".mat")]
-    return files
+from nmem.analysis.analysis import (
+    import_directory
+)
 
 
 def plot_iv_curve(data, ax, **kwargs):
