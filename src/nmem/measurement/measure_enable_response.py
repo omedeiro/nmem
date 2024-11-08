@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
 from nmem.analysis.enable_current_relation import find_peak
-from nmem.calculations.calculations import htron_critical_current
 from nmem.measurement.cells import (
     CELLS,
     FREQ_IDX,
@@ -19,31 +18,9 @@ from nmem.measurement.cells import (
     SPICE_DEVICE_CURRENT,
 )
 from nmem.measurement.parameter_sweep import CONFIG
-
+from nmem.measurement.parameter_sweep import construct_currents
 plt.rcParams["figure.figsize"] = [10, 12]
 
-
-def construct_currents(
-    heater_currents: np.ndarray,
-    slope: float,
-    intercept: float,
-    margin: float,
-    max_critical_current: float,
-) -> np.ndarray:
-    bias_current_array = np.zeros((len(heater_currents), 2))
-    for heater_current in heater_currents:
-        critical_current = htron_critical_current(heater_current, slope, intercept)
-        if critical_current > max_critical_current:
-            critical_current = max_critical_current
-        bias_currents = np.array(
-            [
-                critical_current * (1 - margin * 2.0),
-                critical_current * (1 + margin * 0.1),
-            ]
-        )
-        bias_current_array[heater_currents == heater_current] = bias_currents
-
-    return bias_current_array
 
 
 if __name__ == "__main__":
