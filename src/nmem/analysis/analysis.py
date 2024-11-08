@@ -1,6 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import scipy.io as sio
+from nmem.calculations.calculations import (
+    calculate_persistent_current,
+    calculate_read_currents,
+)
+from nmem.measurement.cells import CELLS
 
 def load_data(file_path: str):
     data = sio.loadmat(file_path)
@@ -515,7 +520,10 @@ def convert_location_to_coordinates(location):
     return column_number, row_number
 
 
-def plot_text_labels(xloc, yloc, ztotal, log=False):
+def plot_text_labels(xloc, yloc, ztotal, log=False, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+
     for x, y in zip(xloc, yloc):
         text = f"{ztotal[y, x]:.2f}"
         if log:
@@ -524,11 +532,10 @@ def plot_text_labels(xloc, yloc, ztotal, log=False):
         if ztotal[y, x] < 0.5 * max(ztotal.flatten()):
             txt_color = "white"
 
-        plt.text(
+        ax.text(
             x,
             y,
             text,
-            fontsize=12,
             color=txt_color,
             backgroundcolor="none",
             ha="center",
@@ -536,9 +543,11 @@ def plot_text_labels(xloc, yloc, ztotal, log=False):
             weight="bold",
         )
 
+    return ax
 
-def plot_array(xloc, yloc, ztotal, title, log=False, norm=False, reverse=False):
-    fig, ax = plt.subplots()
+def plot_array(xloc, yloc, ztotal, title=None, log=False, norm=False, reverse=False, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
 
     cmap = plt.cm.get_cmap("viridis")
     if reverse:
@@ -548,17 +557,14 @@ def plot_array(xloc, yloc, ztotal, title, log=False, norm=False, reverse=False):
         im = ax.imshow(ztotal, cmap=cmap, vmin=0, vmax=1)
     else:
         im = ax.imshow(ztotal, cmap=cmap)
-    plt.title(title)
-    plt.xticks(range(4), ["A", "B", "C", "D"])
-    plt.yticks(range(4), ["1", "2", "3", "4"])
-    plt.xlabel("Column")
-    plt.ylabel("Row")
-    cbar = plt.colorbar(im)
+    if title is not None:
+        ax.set_title(title)
+    ax.set_xticks(range(4), ["A", "B", "C", "D"])
+    ax.set_yticks(range(4), ["1", "2", "3", "4"])
 
-    plot_text_labels(xloc, yloc, ztotal, log)
+    ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
 
-    plt.show()
-
+    return ax
 
 def plot_normalization(
     write_current_norm: np.ndarray,
@@ -605,7 +611,7 @@ def plot_normalization(
 def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-    color_map = plt.get_cmap("viridis")
+    color_map = plt.get_cmap("RdBu")
     persistent_currents, regions = calculate_persistent_current(data_dict)
     data_dict["regions"] = regions
     if persistent_current == 0:
@@ -657,3 +663,21 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
     read_current_dict["nominal"] = nominal_region
     read_current_dict["inverting"] = inv_region
     return ax, read_current_dict
+
+
+def plot_cell_param(param: str, ax: plt.Axes = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    param_array = np.array([CELLS[cell][param] for cell in CELLS]).reshape(4, 4)
+
+    plot_array(
+        np.arange(4),
+        np.arange(4),
+        param_array*1e6,
+        f"Cell {param}",
+        log=False,
+        norm=False,
+        reverse=False,
+    )
+    return ax
