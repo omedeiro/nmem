@@ -12,7 +12,6 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
@@ -28,35 +27,6 @@ from nmem.measurement.cells import (
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
-
-def read_sweep_scaled(
-    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
-):
-    read_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        read_critical_current * start, read_critical_current * end, num_points
-    )
-    return measurement_settings
-
-
-def write_sweep_scaled(
-    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
-):
-    write_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        write_critical_current * start, write_critical_current * end, num_points
-    )
-    return measurement_settings
 
 
 if __name__ == "__main__":
@@ -177,21 +147,13 @@ if __name__ == "__main__":
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings = read_sweep_scaled(
-        #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
-        # )
         measurement_settings["y"] = np.array([current_settings["read_current"]])
         # measurement_settings["y"] = np.linspace(680e-6, 720e-6, sweep_length)
-
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
-        # measurement_settings = write_sweep_scaled(
-        #     measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
-        # )
         # measurement_settings["y"] = np.array([current_settings["write_current"]])
         measurement_settings["y"] = np.linspace(00e-6, 60e-6, sweep_length)
-
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
     save_dict = nm.run_sweep(
