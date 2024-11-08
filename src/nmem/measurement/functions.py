@@ -1600,8 +1600,12 @@ def run_sweep_subset(
     parameter_y: str,
     save_traces: bool = False,
     plot_measurement=False,
+    division_zero: Tuple[float, float] = (4.5, 5.5),
+    division_one: Tuple[float,float] = (9.5, 10),
 ):
     save_dict = {}
+
+    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
     for idx, x in enumerate(measurement_settings["x"]):
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x
