@@ -36,37 +36,7 @@ if __name__ == "__main__":
     current_cell = measurement_settings["cell"]
 
 
-    slow_write = {
-        "write_width": 40,
-        "enable_write_width": 40,
-        "enable_write_phase": 0,
-    }
-    slow_write_new = {
-        "write_width": 40,
-        "enable_write_width": 4,
-        "enable_write_phase": 15,
-    }
-    fast_write = {
-        "write_width": 0,
-        "enable_write_width": 2,
-        "enable_write_phase": -7,
-    }
 
-    slow_read = {
-        "read_width": 40,
-        "enable_read_width": 120,
-        "enable_read_phase": 25,
-    }
-    slow_read_new = {
-        "read_width": 40,
-        "enable_read_width": 4,
-        "enable_read_phase": -5,
-    }
-    fast_read = {
-        "read_width": 7,
-        "enable_read_width": 4,
-        "enable_read_phase": -7,
-    }
 
     two_nulls = {
         "bitmsg_channel": "N0NNRN1NNR",
@@ -76,6 +46,15 @@ if __name__ == "__main__":
         "bitmsg_channel": "N1NNRN0NNR",
         "bitmsg_enable": "NWNNENWNNE",
     }
+    two_nulls_zero = {
+        "bitmsg_channel": "N0NNRN0NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_nulls_one = {
+        "bitmsg_channel": "N1NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+
 
     one_null = {
         "bitmsg_channel": "NN0NRNN1NR",
@@ -87,7 +66,15 @@ if __name__ == "__main__":
         "bitmsg_enable": "NNNWENNNWE",
     }
     zero_nulls_inv = {
+        "bitmsg_channel": "NNN1RNNN0R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_zero = {
         "bitmsg_channel": "NNN0RNNN0R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_one = {
+        "bitmsg_channel": "NNN1RNNN1R",
         "bitmsg_enable": "NNNWENNNWE",
     }
     zero_nulls_ewrite = {
@@ -126,6 +113,41 @@ if __name__ == "__main__":
         "bitmsg_channel": "N0R0RN1R1R",
         "bitmsg_enable": "NWEWENWEWE",
     }
+
+
+
+    slow_write = {
+        "write_width": 40,
+        "enable_write_width": 40,
+        "enable_write_phase": 0,
+    }
+    slow_write_new = {
+        "write_width": 40,
+        "enable_write_width": 4,
+        "enable_write_phase": 15,
+    }
+    fast_write = {
+        "write_width": 0,
+        "enable_write_width": 2,
+        "enable_write_phase": -7,
+    }
+
+    slow_read = {
+        "read_width": 40,
+        "enable_read_width": 120,
+        "enable_read_phase": 25,
+    }
+    slow_read_new = {
+        "read_width": 40,
+        "enable_read_width": 4,
+        "enable_read_phase": -5,
+    }
+    fast_read = {
+        "read_width": 7,
+        "enable_read_width": 4,
+        "enable_read_phase": -7,
+    }
+
     waveform_settings = {   
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
@@ -189,8 +211,8 @@ if __name__ == "__main__":
         parameter_x,
         parameter_y,
         plot_measurement=True,
-        division_zero=(1.9, 3.0),
-        division_one=(5.9, 7.0),
+        division_zero=(1.9, 4.0),
+        division_one=(5.9, 8.0),
     )
 
     b.properties["measurement_settings"] = measurement_settings
