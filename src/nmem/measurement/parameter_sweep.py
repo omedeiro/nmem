@@ -41,6 +41,11 @@ if __name__ == "__main__":
         "enable_write_width": 40,
         "enable_write_phase": 0,
     }
+    slow_write_new = {
+        "write_width": 40,
+        "enable_write_width": 4,
+        "enable_write_phase": 15,
+    }
     fast_write = {
         "write_width": 0,
         "enable_write_width": 2,
@@ -52,11 +57,15 @@ if __name__ == "__main__":
         "enable_read_width": 120,
         "enable_read_phase": 25,
     }
-
+    slow_read_new = {
+        "read_width": 40,
+        "enable_read_width": 4,
+        "enable_read_phase": -5,
+    }
     fast_read = {
         "read_width": 7,
-        "enable_read_width": 3,
-        "enable_read_phase": -8,
+        "enable_read_width": 4,
+        "enable_read_phase": -7,
     }
 
     two_nulls = {
@@ -77,7 +86,18 @@ if __name__ == "__main__":
         "bitmsg_channel": "NNN0RNNN1R",
         "bitmsg_enable": "NNNWENNNWE",
     }
-
+    zero_nulls_inv = {
+        "bitmsg_channel": "NNN0RNNN0R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_ewrite = {
+        "bitmsg_channel": "NNN0RNNN1R",
+        "bitmsg_enable": "WWWWEWWWWE",
+    }
+    zero_nulls_emulate = {
+        "bitmsg_channel": "RRR0RRRR1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
     two_emulate = {
         "bitmsg_channel": "N0RNRN1RNR",
         "bitmsg_enable": "NWNWENWNWE",
@@ -98,22 +118,29 @@ if __name__ == "__main__":
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "EWEEEEWEEE",
     }
-
+    two_read = {
+        "bitmsg_channel": "N1R0RN0R1R",
+        "bitmsg_enable": "NWEWENWEWE",
+    }
+    two_read_inv = {
+        "bitmsg_channel": "N0R0RN1R1R",
+        "bitmsg_enable": "NWEWENWEWE",
+    }
     waveform_settings = {   
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        **fast_write,
-        **fast_read,
+        **slow_write_new,
+        **slow_read_new,
         **two_nulls,
         "threshold_bert": 0.33,
         "threshold_enforced": 0.33,
     }
 
     current_settings = {
-        "write_current": 40e-6,
-        "read_current": 710e-6,
-        "enable_write_current": 560e-6,
-        "enable_read_current": 310e-6,
+        "write_current": 30e-6,
+        "read_current": 650e-6,
+        "enable_write_current": 425e-6,
+        "enable_read_current": 290e-6,
     }
 
     scope_settings = {
@@ -123,7 +150,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 1000
+    NUM_MEAS = 500
     sweep_length = 21
 
     measurement_settings.update(
@@ -141,19 +168,19 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(540e-6, 580e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(350e-6, 450e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
         measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(680e-6, 720e-6, sweep_length)
+        # measurement_settings["y"] = np.linspace(630e-6, 650e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
-        # measurement_settings["y"] = np.array([current_settings["write_current"]])
-        measurement_settings["y"] = np.linspace(00e-6, 60e-6, sweep_length)
+        measurement_settings["y"] = np.array([current_settings["write_current"]])
+        # measurement_settings["y"] = np.linspace(20e-6, 40e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
     save_dict = nm.run_sweep(
@@ -162,8 +189,8 @@ if __name__ == "__main__":
         parameter_x,
         parameter_y,
         plot_measurement=True,
-        division_zero=(1.9, 2.5),
-        division_one=(5.9, 6.5),
+        division_zero=(1.9, 3.0),
+        division_one=(5.9, 7.0),
     )
 
     b.properties["measurement_settings"] = measurement_settings
