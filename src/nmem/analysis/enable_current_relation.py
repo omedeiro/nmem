@@ -97,12 +97,13 @@ def plot_fit(xfit, yfit):
     xplot = np.linspace(190, 310, 10)
     plt.plot(xplot, p(xplot), "r--")
     plt.text(
-        200,
-        350,
+        0.1,
+        0.9,
         f"{p[1]:.3f}x + {p[0]:.3f}",
         fontsize=12,
         color="red",
         backgroundcolor="white",
+        transform=plt.gca().transAxes,
     )
 
 
