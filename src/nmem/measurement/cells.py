@@ -50,8 +50,8 @@ CELLS = {
         "read_current": 602.473e-6,
         "enable_write_current": 290.49e-6,
         "enable_read_current": 200.973e-6,
-        "slope": -3.826,
-        "intercept": 1451.490,
+        "slope": -2.272,
+        "intercept": 1190,
         "resistance": 559.2,
         "resistance_cryo": 258.8,
         "max_critical_current": 702e-6,
@@ -96,12 +96,12 @@ CELLS = {
         "read_current": 750e-6,
         "enable_write_current": 450e-6,
         "enable_read_current": 220e-6,
-        "slope": -3.200,
-        "intercept": 1402.778,
+        "slope": -2.72,
+        "intercept": 1480,
         "resistance": 559.2,
         "resistance_cryo": 258.8,
-        "max_critical_current": 790e-6,
-        "min_bit_error_rate": 5.5e-4,
+        "max_critical_current": 900e-6,
+        "min_bit_error_rate": 6.25e-4,
     },
     "C2": {
         "write_current": 69.605e-6,
@@ -180,10 +180,11 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -0,
-        "intercept": 0,
+        "slope": -2.0,
+        "intercept": 1100,
         "resistance": 570.6,
         "resistance_cryo": 287.5,
+        "max_critical_current": 800e-6,
     },
 }
 
@@ -243,7 +244,7 @@ SAMPLE_RATE = {
 }
 CONFIG = r"SPG806_config_ICE.yml"
 NUM_DIVISIONS = 10
-NUM_SAMPLES = int(1e3)
+NUM_SAMPLES = int(5e3)
 SPICE_DEVICE_CURRENT = 45.189e-6
 MITEQ_AMP_GAIN = 53.87
 
