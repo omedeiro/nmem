@@ -57,6 +57,7 @@ def create_iv_plot(data_list, ax=None):
     ax.tick_params(direction="in", top=True, right=True)
     ax.xaxis.set_major_locator(plt.MultipleLocator(250))
     ax.yaxis.set_major_locator(plt.MultipleLocator(100))
+    ax.legend(frameon=False)
     return ax
 
 
@@ -193,7 +194,6 @@ def plot_critical_currents_inset(data_list):
     # Plot the iv plot with the critical currents as an inset
     fig, ax = plt.subplots(figsize=(3.5, 3.5))
     ax = create_iv_plot(data_list, ax)
-    plt.legend()
     ax_inset = fig.add_axes([0.62, 0.25, 0.3125, 0.25])
     ax_inset = plot_critical_currents_abs(data_list, ax_inset)
     # ax_inset.yaxis.tick_right()
@@ -216,6 +216,7 @@ if __name__ == "__main__":
 
     # critical_currents = get_critical_currents(data_list)
 
-    # plot_critical_currents(data_list)
-
-    plot_critical_currents_inset(data_list)
+    # plot_critical_currents_abs(data_list)
+    # plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
+    create_iv_plot(data_list)
+    plt.savefig("iv_curve.pdf", bbox_inches="tight")
