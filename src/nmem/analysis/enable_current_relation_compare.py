@@ -104,8 +104,8 @@ if __name__ == "__main__":
     # plot_array(xloc, yloc, np.abs(slope_array), "Slope [$\mu$A/$\mu$A]")
     # plot_array(xloc, yloc, intercept_array, "Y-Intercept [$\mu$A]")
     # plot_array(xloc, yloc, x_intercept_array, "X-Intercept [$\mu$A]")
-    # plot_array(xloc, yloc, bit_error_array, "Bit Error Rate", log=True)
-    # # plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
+    plot_array(xloc, yloc, bit_error_array, "Bit Error Rate", log=True)
+    plot_array(xloc, yloc, max_critical_current_array, "Max Critical Current [$\mu$A]")
     # plot_array(xloc, yloc, enable_write_array, "Enable Write Current [$\mu$A]")
     # plot_array(xloc, yloc, enable_read_array, "Enable Read Current [$\mu$A]")
     # plot_array(
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     #     enable_read_array / x_intercept_array,
     #     "Enable Read Current Normalized",
     # )
-    plot_array(xloc, yloc, enable_write_power_array * 1e6, "Enable Write Power [uW]")
+    # plot_array(xloc, yloc, enable_write_power_array * 1e6, "Enable Write Power [uW]")
     # plot_array(xloc, yloc, enable_read_power_array * 1e6, "Enable Read Power [uW]")
 
     write_current_avg = np.mean(write_array[write_array > 0])
@@ -173,9 +173,9 @@ if __name__ == "__main__":
     print(
         f"Average Max Critical Current {np.mean(max_critical_current_array[max_critical_current_array>0]):.2f}"
     )
-    plot_normalization(
-        write_array_norm,
-        read_array_norm,
-        enable_write_array_norm,
-        enable_read_array_norm,
-    )
+    # plot_normalization(
+    #     write_array_norm,
+    #     read_array_norm,
+    #     enable_write_array_norm,
+    #     enable_read_array_norm,
+    # )
