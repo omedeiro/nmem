@@ -94,7 +94,7 @@ def plot_fit(xfit, yfit):
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
     plt.scatter(xfit, yfit)
-    xplot = np.linspace(190, 310, 10)
+    xplot = np.linspace(190, 410, 10)
     plt.plot(xplot, p(xplot), "r--")
     plt.text(
         0.1,
