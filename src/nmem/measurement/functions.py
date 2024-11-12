@@ -93,8 +93,8 @@ def construct_currents(
             critical_current = max_critical_current
         bias_currents = np.array(
             [
-                critical_current * (1 - margin * 2.0),
-                critical_current * (1 + margin * 0.1),
+                critical_current * (1 - margin),
+                critical_current * (1 + margin),
             ]
         )
         bias_current_array[heater_currents == heater_current] = bias_currents
@@ -373,7 +373,7 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     sample_rate = measurement_settings.get("sample_rate")
     ramp_read = measurement_settings.get("ramp_read", False)
 
-    if enable_voltage > 200e-3:
+    if enable_voltage > 300e-3:
         raise ValueError("enable voltage too high")
 
     if channel_voltage > 2.5:
