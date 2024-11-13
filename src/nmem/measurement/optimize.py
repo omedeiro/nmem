@@ -49,13 +49,13 @@ def optimize_bias(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(50, 70, name="write_current"),
-        Real(620, 640, name="read_current"),
-        Real(330, 340, name="enable_write_current"),
-        Real(230, 240, name="enable_read_current"),
+        Real(20, 120, name="write_current"),
+        Real(600, 720, name="read_current"),
+        Real(300, 420, name="enable_write_current"),
+        Real(190, 280, name="enable_read_current"),
     ]
 
-    x0 = [60, 630, 335, 236]
+    x0 = [20, 685, 420, 200]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -65,11 +65,11 @@ def optimize_enable(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(150, 350, name="enable_write_current"),
-        Real(150, 250, name="enable_read_current"),
+        Real(550, 570, name="enable_write_current"),
+        Real(280, 310, name="enable_read_current"),
     ]
 
-    x0 = [325.0, 240.0]
+    x0 = [560.0, 290.0]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -125,11 +125,11 @@ def optimize_read(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(400, 690, name="read_current"),
-        Integer(5, 100, name="read_width"),
+        Real(600, 690, name="read_current"),
+        Real(240, 320, name="read_enable_current"),
     ]
 
-    x0 = [619, 82]
+    x0 = [645, 290]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -153,10 +153,10 @@ def optimize_write(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(10, 240, name="write_current"),
-        Integer(5, 100, name="write_width"),
+        Real(20, 40, name="write_current"),
+        Real(540, 560, name="enable_write_current"),
     ]
-    x0 = [68.58, 90]
+    x0 = [33, 554]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
