@@ -8,6 +8,7 @@ import nmem.measurement.functions as nm
 from nmem.analysis.enable_current_relation import find_peak
 from nmem.measurement.cells import (
     CELLS,
+    CONFIG,
     FREQ_IDX,
     HEATERS,
     HORIZONTAL_SCALE,
@@ -17,10 +18,9 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-from nmem.measurement.parameter_sweep import CONFIG, construct_currents
+from nmem.measurement.functions import construct_currents
 
 plt.rcParams["figure.figsize"] = [10, 12]
-
 
 
 if __name__ == "__main__":
@@ -32,11 +32,11 @@ if __name__ == "__main__":
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "write_width": 40,
-        "read_width": 40,
+        "read_width": 7,
         "enable_write_width": 40,
-        "enable_read_width": 120,
+        "enable_read_width": 4,
         "enable_write_phase": 0,
-        "enable_read_phase": 0,
+        "enable_read_phase": -7,
         "bitmsg_channel": "N0NNRNNNNR",
         "bitmsg_enable": "NNNNENNNNE",
     }
@@ -89,7 +89,13 @@ if __name__ == "__main__":
     )
 
     save_dict = nm.run_sweep_subset(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
+        b,
+        measurement_settings,
+        parameter_x,
+        parameter_y,
+        plot_measurement=False,
+        division_zero=(1.9, 2.5),
+        division_one=(5.9, 6.5),
     )
     save_dict["trace_chan_in"] = save_dict["trace_chan_in"][:, :, 1]
     save_dict["trace_chan_out"] = save_dict["trace_chan_out"][:, :, 1]
@@ -115,3 +121,4 @@ if __name__ == "__main__":
     print(f"run time {(t2-t1)/60:.2f} minutes")
 
     find_peak(save_dict)
+    plt.savefig(f"{file_path}_fit.png")
