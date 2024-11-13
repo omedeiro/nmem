@@ -28,19 +28,29 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-from nmem.measurement.optimize import objective, optimize_bias
+from nmem.measurement.optimize import (
+    objective,
+    optimize_all,
+    optimize_bias,
+    optimize_enable,
+    optimize_fixed_write,
+    optimize_phase,
+    optimize_read_pulse,
+    optimize_read, 
+    optimize_write
+)
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-
 def run_optimize(meas_dict: dict):
     # meas_dict, space, x0 = optimize_all(meas_dict)
-    # meas_dict, space, x0 = optimize_bias_phase(meas_dict)
     meas_dict, space, x0, b = optimize_bias(meas_dict)
+    # meas_dict, space, x0, b = optimize_read(meas_dict)
     # meas_dict, space, x0 = optimize_fixed_write(meas_dict)
     # meas_dict, space, x0, b = optimize_phase(meas_dict)
     # meas_dict, space, x0, b = optimize_read_pulse(meas_dict)
+    # meas_dict, space, x0, b = optimize_write(meas_dict)
 
     opt_result = gp_minimize(
         partial(objective, meas_dict=meas_dict, space=space, b=b),
@@ -56,29 +66,53 @@ def run_optimize(meas_dict: dict):
 if __name__ == "__main__":
     t1 = time.time()
 
-    waveform_settings = {
+    slow_write = {
+        "write_width": 40,
+        "enable_write_width": 2,
+        "enable_write_phase": -7,
+    }
+    fast_write = {
+        "write_width": 0,
+        "enable_write_width": 2,
+        "enable_write_phase": -7,
+    }
+    slow_read = {
+        "read_width": 40,
+        "enable_read_width": 4,
+        "enable_read_phase": -7,
+    }
+    fast_read = {
+        "read_width": 8,
+        "enable_read_width": 4,
+        "enable_read_phase": -8,
+    }
+
+    two_nulls = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    zero_nulls = {
+        "bitmsg_channel": "NNN0RNNN1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    waveform_settings = {   
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 0,
-        "read_width": 7,
-        "enable_write_width": 3,
-        "enable_read_width": 6,
-        "enable_write_phase": 1,
-        "enable_read_phase": -8,
-        "bitmsg_channel": "NN0NRNN1NR",
-        "bitmsg_enable": "NNWNENNWNE",
-        "threshold_bert": 0.33,
-        "threshold_enforced": 0.33,
+        **fast_write,
+        **fast_read,
+        **two_nulls,
+        "threshold_bert": 0.4,
+        "threshold_enforced": 0.4,
     }
 
     current_settings = {
-        "write_current": 60e-6,
-        "read_current": 630e-6,
-        "enable_write_current": 335e-6,
-        "enable_read_current": 236e-6,
+        "write_current": 30e-6,
+        "read_current": 645e-6,
+        "enable_write_current": 350e-6,
+        "enable_read_current": 250e-6,
     }
 
-    NUM_MEAS = 2000
+    NUM_MEAS = 200
     NUM_CALLS = 40
     measurement_settings = {
         **waveform_settings,
@@ -96,7 +130,10 @@ if __name__ == "__main__":
     meas_dict, b = nm.initilize_measurement(CONFIG, "nMem_optimize")
 
     nm.setup_scope_bert(
-        b, measurement_settings, division_zero=(3.5, 4.0), division_one=(5.5, 6.0)
+        b,
+        measurement_settings,
+        division_zero=(1.9, 2.5),
+        division_one=(5.9, 6.5),
     )
 
     opt_res, measurement_settings = run_optimize(measurement_settings)
