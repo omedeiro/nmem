@@ -83,7 +83,13 @@ if __name__ == "__main__":
     measurement_settings["y"] = np.linspace(850e-6, 910e-6, 11)
 
     save_dict = nm.run_sweep(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=True
+        b,
+        measurement_settings,
+        parameter_x,
+        parameter_y,
+        plot_measurement=True,
+        division_zero=(1.9, 2.5),
+        division_one=(5.9, 6.5),
     )
     b.properties["measurement_settings"] = measurement_settings
 
