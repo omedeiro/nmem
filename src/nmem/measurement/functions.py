@@ -614,7 +614,18 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
     sleep(0.1)
     trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
-
+    sleep(0.1)
+    trace_write_avg: np.ndarray = b.inst.scope.get_wf_data("F1")
+    sleep(0.1)
+    trace_ewrite_avg: np.ndarray = b.inst.scope.get_wf_data("F2")
+    sleep(0.1)
+    trace_eread_avg: np.ndarray = b.inst.scope.get_wf_data("F3")
+    sleep(0.1)
+    trace_read1_avg: np.ndarray = b.inst.scope.get_wf_data("F4")
+    sleep(0.1)
+    trace_read0: np.ndarray = b.inst.scope.get_wf_data("Z5")
+    sleep(0.1)
+    trace_read1: np.ndarray = b.inst.scope.get_wf_data("Z4")
     trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
     trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
     trace_enab = np.resize(trace_enab, (2, scope_samples))
@@ -622,18 +633,20 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     b.inst.scope.set_trigger_mode("Normal")
     sleep(1e-2)
 
-    # try:
-    #     time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
-    #     b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
-    #     b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    # except Exception:
-    #     sleep(1e-4)
 
-    return (
-        trace_chan_in,
-        trace_chan_out,
-        trace_enab,
-    )
+    trace_dict: dict = {
+        "trace_chan_in": trace_chan_in,
+        "trace_chan_out": trace_chan_out,
+        "trace_enab": trace_enab,
+        "trace_write_avg": trace_write_avg,
+        "trace_ewrite_avg": trace_ewrite_avg,
+        "trace_eread_avg": trace_eread_avg,
+        "trace_read1_avg": trace_read1_avg,
+        "trace_read0": trace_read0,
+        "trace_read1": trace_read1,
+    }
+
+    return trace_dict
 
 
 def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
@@ -1471,7 +1484,7 @@ def run_measurement(
 
     meas_dict, measurement_settings = run_realtime_bert(b, measurement_settings)
 
-    trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
+    trace_dict = get_traces(b, scope_samples)
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
@@ -1481,9 +1494,7 @@ def run_measurement(
     )
     DATA_DICT = {
         **meas_dict,
-        "trace_chan_in": trace_chan_in,
-        "trace_chan_out": trace_chan_out,
-        "trace_enab": trace_enab,
+        **trace_dict,
         "bit_error_rate": bit_error_rate,
     }
     print(f"Bit Error Rate: {bit_error_rate:.2e}")
