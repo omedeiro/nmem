@@ -45,9 +45,9 @@ plt.rcParams["figure.figsize"] = [10, 12]
 
 def run_optimize(meas_dict: dict):
     # meas_dict, space, x0 = optimize_all(meas_dict)
-    meas_dict, space, x0, b = optimize_bias(meas_dict)
-    # meas_dict, space, x0, b = optimize_read(meas_dict)
-    # meas_dict, space, x0 = optimize_fixed_write(meas_dict)
+    # meas_dict, space, x0, b = optimize_bias(meas_dict)
+    meas_dict, space, x0, b = optimize_read(meas_dict)
+    # meas_dict, space, x0, b = optimize_fixed_write(meas_dict)
     # meas_dict, space, x0, b = optimize_phase(meas_dict)
     # meas_dict, space, x0, b = optimize_read_pulse(meas_dict)
     # meas_dict, space, x0, b = optimize_write(meas_dict)
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     }
     fast_write = {
         "write_width": 0,
-        "enable_write_width": 2,
+        "enable_write_width": 4,
         "enable_write_phase": -7,
     }
     slow_read = {
@@ -82,9 +82,9 @@ if __name__ == "__main__":
         "enable_read_phase": -7,
     }
     fast_read = {
-        "read_width": 8,
+        "read_width": 10,
         "enable_read_width": 4,
-        "enable_read_phase": -8,
+        "enable_read_phase": -6,
     }
 
     two_nulls = {
@@ -106,13 +106,13 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 30e-6,
-        "read_current": 645e-6,
-        "enable_write_current": 350e-6,
-        "enable_read_current": 250e-6,
+        "write_current": 120e-6,
+        "read_current": 700e-6,
+        "enable_write_current": 420e-6,
+        "enable_read_current": 170e-6,
     }
 
-    NUM_MEAS = 200
+    NUM_MEAS = 500
     NUM_CALLS = 40
     measurement_settings = {
         **waveform_settings,
