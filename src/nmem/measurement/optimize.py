@@ -49,13 +49,13 @@ def optimize_bias(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(20, 120, name="write_current"),
-        Real(600, 720, name="read_current"),
-        Real(300, 420, name="enable_write_current"),
-        Real(190, 280, name="enable_read_current"),
+        Real(10, 250, name="write_current"),
+        Real(500, 750, name="read_current"),
+        Real(300, 550, name="enable_write_current"),
+        Real(150, 250, name="enable_read_current"),
     ]
 
-    x0 = [20, 685, 420, 200]
+    x0 = [120, 726, 515, 177]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -125,11 +125,11 @@ def optimize_read(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(600, 690, name="read_current"),
-        Real(240, 320, name="read_enable_current"),
+        Real(600, 780, name="read_current"),
+        Real(140, 320, name="read_enable_current"),
     ]
 
-    x0 = [645, 290]
+    x0 = [700, 170]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -153,10 +153,10 @@ def optimize_write(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(20, 40, name="write_current"),
-        Real(540, 560, name="enable_write_current"),
+        Real(20, 250, name="write_current"),
+        Real(140, 560, name="enable_write_current"),
     ]
-    x0 = [33, 554]
+    x0 = [120, 420]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
