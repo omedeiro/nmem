@@ -184,11 +184,11 @@ CELLS = {
         "read_current": 0e-6,
         "enable_write_current": 0e-6,
         "enable_read_current": 0e-6,
-        "slope": -2.0,
-        "intercept": 1100,
+        "slope": -1.68,
+        "intercept": 990,
         "resistance": 570.6,
         "resistance_cryo": 287.5,
-        "max_critical_current": 800e-6,
+        "max_critical_current": 807e-6,
     },
 }
 
