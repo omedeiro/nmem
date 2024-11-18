@@ -5,7 +5,7 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.analysis.enable_current_relation import find_peak
+from nmem.analysis.analysis import find_peak
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
