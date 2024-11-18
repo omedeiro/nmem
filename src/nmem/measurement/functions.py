@@ -376,7 +376,7 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     if enable_voltage > 300e-3:
         raise ValueError("enable voltage too high")
 
-    if channel_voltage > 2.5:
+    if channel_voltage > 3.0:
         raise ValueError("channel voltage too high")
 
     if channel_voltage == 0:
