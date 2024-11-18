@@ -24,9 +24,7 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-
 plt.rcParams["figure.figsize"] = [10, 12]
-
 
 
 if __name__ == "__main__":
@@ -34,9 +32,6 @@ if __name__ == "__main__":
     measurement_name = "nMem_parameter_sweep"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
-
-
-
 
     two_nulls = {
         "bitmsg_channel": "N0NNRN1NNR",
@@ -55,6 +50,14 @@ if __name__ == "__main__":
         "bitmsg_enable": "NWNNENWNNE",
     }
 
+    two_nulls_read = {
+        "bitmsg_channel": "R0NNRR1NNR",
+        "bitmsg_enable": "EWNNEEWNNE",
+    }
+    three_nulls = {
+        "bitmsg_channel": "0NNNR1NNNR",
+        "bitmsg_enable": "WNNNEWNNNE",
+    }
 
     one_null = {
         "bitmsg_channel": "NN0NRNN1NR",
@@ -114,16 +117,14 @@ if __name__ == "__main__":
         "bitmsg_enable": "NWEWENWEWE",
     }
 
-
-
     slow_write = {
         "write_width": 40,
-        "enable_write_width": 2,
+        "enable_write_width": 4,
         "enable_write_phase": -7,
     }
     fast_write = {
         "write_width": 0,
-        "enable_write_width": 2,
+        "enable_write_width": 4,
         "enable_write_phase": -7,
     }
     slow_read = {
@@ -132,27 +133,28 @@ if __name__ == "__main__":
         "enable_read_phase": -7,
     }
     fast_read = {
-        "read_width": 7,
+        "read_width": 10,
         "enable_read_width": 4,
         "enable_read_phase": -7,
     }
 
-    waveform_settings = {   
+    waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        **slow_write,
-        **slow_read,
-        **two_nulls,
-        "threshold_bert": 0.33,
-        "threshold_enforced": 0.33,
+        **fast_write,
+        **fast_read,
+        **zero_nulls,
+        "threshold_bert": 0.35,
+        "threshold_enforced": 0.35,
     }
 
     current_settings = {
-        "write_current": 30e-6,
-        "read_current": 645e-6,
-        "enable_write_current": 560e-6,
-        "enable_read_current": 290e-6,
+        "write_current": 160e-6,
+        "read_current": 600e-6,
+        "enable_write_current": 370e-6,
+        "enable_read_current": 230e-6,
     }
+
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -161,7 +163,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 2000
+    NUM_MEAS = 500
     sweep_length = 21
 
     measurement_settings.update(
@@ -177,21 +179,21 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    parameter_x = "enable_read_current"
+    parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(280e-6, 320e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(0e-6, 500e-6, 5)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(630e-6, 700e-6, sweep_length)
+        # measurement_settings["y"] = np.array([current_settings["read_current"]])
+        measurement_settings["y"] = np.linspace(400e-6, 700e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
-        measurement_settings["y"] = np.array([current_settings["write_current"]])
-        # measurement_settings["y"] = np.linspace(20e-6, 40e-6, sweep_length)
+        # measurement_settings["y"] = np.array([current_settings["write_current"]])
+        measurement_settings["y"] = np.linspace(00e-6, 200e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
     save_dict = nm.run_sweep(
@@ -219,8 +221,8 @@ if __name__ == "__main__":
         "bit_error_rate",
     )
 
-    b.inst.awg.set_output(True, 1)
-    b.inst.awg.set_output(True, 2)
+    b.inst.awg.set_output(False, 1)
+    b.inst.awg.set_output(False, 2)
 
     nm.write_dict_to_file(file_path, measurement_settings)
 
