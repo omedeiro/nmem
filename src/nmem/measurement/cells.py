@@ -84,16 +84,16 @@ CELLS = {
         "min_bit_error_rate": 0.0045,
     },
     "B4": {
-        "write_current": 120e-6,
-        "read_current": 700e-6,
-        "enable_write_current": 420e-6,
-        "enable_read_current": 170e-6,
+        "write_current": 141e-6,
+        "read_current": 717e-6,
+        "enable_write_current": 426e-6,
+        "enable_read_current": 164e-6,
         "slope": -2.65,
         "intercept": 1310,
         "resistance": 570.6,
         "resistance_cryo": 287.5,
         "max_critical_current": 908e-6,
-        "min_bit_error_rate": 5.5e-5,
+        "min_bit_error_rate": 2.00e-04,
     },
     "C1": {
         "write_current": 40e-6,
@@ -132,7 +132,7 @@ CELLS = {
         "max_critical_current": 830e-6,
     },
     "C4": {
-        "write_current": 30e-6, # Fast waveform
+        "write_current": 30e-6, 
         "read_current": 660e-6,
         "enable_write_current": 320e-6,
         "enable_read_current": 250e-6,
@@ -141,7 +141,7 @@ CELLS = {
         "resistance": 570.6,
         "resistance_cryo": 287.5,
         "max_critical_current": 830e-6,
-        "min_bit_error_rate": 5.0e-04
+        "min_bit_error_rate": 5.0e-04,
     },
     "D1": {
         "write_current": 41.067e-6,
@@ -270,28 +270,28 @@ DEFAULT_WAVEFORM = {
 
 
 # Fast waveform settings -- 11072024
-    # slow_write = {
-    #     "write_width": 40,
-    #     "enable_write_width": 40,
-    #     "enable_write_phase": 0,
-    # }
-    # fast_write = {
-    #     "write_width": 0,
-    #     "enable_write_width": 3,
-    #     "enable_write_phase": -5,
-    # }
+# slow_write = {
+#     "write_width": 40,
+#     "enable_write_width": 40,
+#     "enable_write_phase": 0,
+# }
+# fast_write = {
+#     "write_width": 0,
+#     "enable_write_width": 3,
+#     "enable_write_phase": -5,
+# }
 
-    # slow_read = {
-    #     "read_width": 40,
-    #     "enable_read_width": 120,
-    #     "enable_read_phase": 25,
-    # }
+# slow_read = {
+#     "read_width": 40,
+#     "enable_read_width": 120,
+#     "enable_read_phase": 25,
+# }
 
-    # fast_read = {
-    #     "read_width": 7,
-    #     "enable_read_width": 7,
-    #     "enable_read_phase": -8,
-    # }
+# fast_read = {
+#     "read_width": 7,
+#     "enable_read_width": 7,
+#     "enable_read_phase": -8,
+# }
 
 
 DEFAULT_SCOPE = {
