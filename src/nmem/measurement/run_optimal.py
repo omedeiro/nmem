@@ -33,12 +33,12 @@ if __name__ == "__main__":
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 1,
-        "read_width": 7,
-        "enable_write_width": 3,
-        "enable_read_width": 6,
-        "enable_write_phase": 1,
-        "enable_read_phase": -8,
+        "write_width": 0,
+        "read_width": 10,
+        "enable_write_width": 4,
+        "enable_read_width": 4,
+        "enable_write_phase": -7,
+        "enable_read_phase": -7,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
         "threshold_bert": 0.33,
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     current_settings = CELLS[current_cell]
 
-    NUM_MEAS = 10000
+    NUM_MEAS = 50000
 
     measurement_settings.update(
         {
@@ -63,10 +63,15 @@ if __name__ == "__main__":
         }
     )
     nm.setup_scope_bert(
-        b, measurement_settings, division_zero=(3.5, 4.0), division_one=(5.5, 6.0)
+        b,
+        measurement_settings,
+        division_zero=(5.9, 6.5),
+        division_one=(5.9, 6.5),
     )
     save_dict, measurement_settings = nm.run_measurement(
-        b, measurement_settings, plot=True
+        b,
+        measurement_settings,
+        plot=True,
     )
     b.properties["measurement_settings"] = measurement_settings
 
