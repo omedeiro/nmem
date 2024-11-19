@@ -7,15 +7,22 @@ from nmem.analysis.analysis import import_directory
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
-plt.rcParams["figure.figsize"] = [3.5, 2.36]
-plt.rcParams["font.size"] = 5.5
+plt.rcParams["figure.figsize"] = [3.5, 3.5]
+plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
 plt.rcParams["xtick.major.width"] = 0.5
 plt.rcParams["ytick.major.width"] = 0.5
 plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["font.family"] = "Inter"
-# plt.rcParams['font.sans-serif'] =
+plt.rcParams["lines.markersize"] = 2
+plt.rcParams["lines.linewidth"] = 0.5
+plt.rcParams["legend.fontsize"] = 5
+plt.rcParams["legend.frameon"] = False
+
+
+plt.rcParams["xtick.major.size"] = 1
+plt.rcParams["ytick.major.size"] = 1
 
 
 
@@ -36,14 +43,15 @@ def plot_iv_curve(data, ax, **kwargs):
         voltage = np.concatenate([voltage, np.zeros(M - len(voltage))])
         time = np.concatenate([time, np.zeros(M - len(time))])
 
-    ax.plot(voltage * 1e3, current.flatten() * 1e6, **kwargs)
+    ax.plot(voltage, current.flatten() * 1e6, **kwargs)
     return ax
 
 
 def create_iv_plot(data_list, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-    colors = plt.cm.viridis(np.linspace(0, 1, int(len(data_list) / 2) + 1))
+    colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(data_list) / 2) + 1))
+    colors = np.flipud(colors)
     for i, data in enumerate(data_list):
         heater_current = np.abs(data["heater_current"].flatten()[0] * 1e6)
         ax = plot_iv_curve(
@@ -52,10 +60,10 @@ def create_iv_plot(data_list, ax=None):
         if i == 10:
             break
     ax.set_ylim([-500, 500])
-    ax.set_xlabel("Voltage [mV]")
-    ax.set_ylabel("Current [µA]")
+    ax.set_xlabel("Voltage [V]")
+    ax.set_ylabel("Current [µA]", labelpad=-1)
     ax.tick_params(direction="in", top=True, right=True)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(250))
+    ax.xaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax.yaxis.set_major_locator(plt.MultipleLocator(100))
     ax.legend(frameon=False)
     return ax
@@ -101,7 +109,7 @@ def plot_critical_currents(data_list, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     critical_currents, critical_currents_std = get_critical_currents(data_list)
-    cmap = plt.cm.viridis(np.linspace(0, 1, len(data_list)))
+    cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
     heater_currents = [data["heater_current"].flatten() * 1e6 for data in data_list]
     ax.errorbar(
         heater_currents,
@@ -123,9 +131,9 @@ def plot_critical_currents_abs(data_list, ax=None):
         fig, ax = plt.subplots()
     critical_currents, critical_currents_std = get_critical_currents(data_list)
 
-    cmap = plt.cm.viridis(np.linspace(0, 1, len(data_list)))
+    cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
     heater_currents = np.array(
-        [data["heater_current"].flatten() * 1e3 for data in data_list]
+        [data["heater_current"].flatten() * 1e6 for data in data_list]
     ).flatten()
     positive_critical_currents = np.where(
         heater_currents > 0, critical_currents, np.nan
@@ -133,24 +141,9 @@ def plot_critical_currents_abs(data_list, ax=None):
     negative_critical_currents = np.where(
         heater_currents < 0, critical_currents, np.nan
     )
-    # ax.errorbar(heater_currents, critical_currents, yerr=critical_currents_std, fmt="o", markersize=3, color=cmap[0,:])
-    # ax.errorbar(
-    #     np.abs(heater_currents),
-    #     positive_critical_currents,
-    #     yerr=critical_currents_std,
-    #     fmt="none",
-    #     color=cmap[0, :],
-    # )
-    # ax.errorbar(
-    #     np.abs(heater_currents),
-    #     negative_critical_currents,
-    #     yerr=critical_currents_std,
-    #     fmt="none",
-    #     color=cmap[-1, :],
-    # )
     ax.plot(
         np.abs(heater_currents),
-        positive_critical_currents * 1e-3,
+        positive_critical_currents,
         "--",
         color=cmap[0, :],
         label="$+I_{{h}}$",
@@ -158,7 +151,7 @@ def plot_critical_currents_abs(data_list, ax=None):
     )
     ax.plot(
         np.abs(heater_currents),
-        negative_critical_currents * 1e-3,
+        negative_critical_currents,
         "--",
         color=cmap[-5, :],
         label="$-I_{{h}}$",
@@ -166,26 +159,26 @@ def plot_critical_currents_abs(data_list, ax=None):
     )
     ax.fill_between(
         np.abs(heater_currents),
-        (positive_critical_currents + critical_currents_std) * 1e-3,
-        (positive_critical_currents - critical_currents_std) * 1e-3,
+        (positive_critical_currents + critical_currents_std),
+        (positive_critical_currents - critical_currents_std),
         color=cmap[0, :],
         alpha=0.3,
         edgecolor="none",
     )
     ax.fill_between(
         np.abs(heater_currents),
-        (negative_critical_currents + critical_currents_std) * 1e-3,
-        (negative_critical_currents - critical_currents_std) * 1e-3,
+        (negative_critical_currents + critical_currents_std),
+        (negative_critical_currents - critical_currents_std),
         color=cmap[-5, :],
         alpha=0.3,
         edgecolor="none",
     )
     ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
-    ax.set_xlabel("$|I_{{h}}|$[mA]")
+    ax.set_xlabel("$|I_{{h}}|$[$\mu$A]")
 
-    ax.set_ylabel("$I_{{C}}$ [mA]", labelpad=-2)
-    ax.set_ylim([0, 0.4])
-    ax.set_xlim([0, 0.5])
+    ax.set_ylabel("$I_{{C}}$ [$\mu$A]", labelpad=-1)
+    ax.set_ylim([0, 400])
+    ax.set_xlim([0, 500])
     ax.legend(frameon=False)
     return ax
 
@@ -218,5 +211,19 @@ if __name__ == "__main__":
 
     # plot_critical_currents_abs(data_list)
     # plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
-    create_iv_plot(data_list)
-    plt.savefig("iv_curve.pdf", bbox_inches="tight")
+    # create_iv_plot(data_list)
+
+
+    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
+    ax[0,0].axis("off")
+    ax[0,1].axis("off")
+    ax[0,2].axis("off")
+    ax[1,0].axis("off")
+    ax[1,1] = create_iv_plot(data_list, ax[1,1])
+    ax[1,2] = plot_critical_currents_abs(data_list, ax[1,2])
+    plt.subplots_adjust(wspace=0.3)
+
+    fig.patch.set_visible(False)
+    plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
+
+    plt.show()
