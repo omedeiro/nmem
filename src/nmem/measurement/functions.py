@@ -48,6 +48,7 @@ def bimodal_fit(
     params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
     return params, cov
 
+
 def read_sweep_scaled(
     measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
 ):
@@ -76,7 +77,6 @@ def write_sweep_scaled(
         write_critical_current * start, write_critical_current * end, num_points
     )
     return measurement_settings
-
 
 
 def construct_currents(
@@ -621,6 +621,8 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     sleep(0.1)
     trace_eread_avg: np.ndarray = b.inst.scope.get_wf_data("F3")
     sleep(0.1)
+    trace_read0_avg: np.ndarray = b.inst.scope.get_wf_data("F7")
+    sleep(0.1)
     trace_read1_avg: np.ndarray = b.inst.scope.get_wf_data("F4")
     sleep(0.1)
     trace_read0: np.ndarray = b.inst.scope.get_wf_data("Z5")
@@ -633,7 +635,6 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     b.inst.scope.set_trigger_mode("Normal")
     sleep(1e-2)
 
-
     trace_dict: dict = {
         "trace_chan_in": trace_chan_in,
         "trace_chan_out": trace_chan_out,
@@ -641,6 +642,7 @@ def get_traces(b: nTron, scope_samples: int = 5000):
         "trace_write_avg": trace_write_avg,
         "trace_ewrite_avg": trace_ewrite_avg,
         "trace_eread_avg": trace_eread_avg,
+        "trace_read0_avg": trace_read0_avg,
         "trace_read1_avg": trace_read1_avg,
         "trace_read0": trace_read0,
         "trace_read1": trace_read1,
@@ -1512,11 +1514,13 @@ def run_sweep(
     save_traces: bool = False,
     plot_measurement=False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
-    division_one: Tuple[float,float] = (9.5, 10),
+    division_one: Tuple[float, float] = (9.5, 10),
 ):
     save_dict = {}
 
-    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
+    setup_scope_bert(
+        b, measurement_settings, division_zero=division_zero, division_one=division_one
+    )
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
@@ -1665,13 +1669,15 @@ def run_sweep_subset(
     parameter_x: str,
     parameter_y: str,
     save_traces: bool = False,
-    plot_measurement=False,
+    plot_measurement: bool = False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
-    division_one: Tuple[float,float] = (9.5, 10),
+    division_one: Tuple[float, float] = (9.5, 10),
 ):
     save_dict = {}
 
-    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
+    setup_scope_bert(
+        b, measurement_settings, division_zero=division_zero, division_one=division_one
+    )
     for idx, x in enumerate(measurement_settings["x"]):
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x
