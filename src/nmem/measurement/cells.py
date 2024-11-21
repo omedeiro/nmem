@@ -60,16 +60,16 @@ CELLS = {
         "min_bit_error_rate": 1.64e-03,
     },
     "B2": {
-        "write_current": 45.213e-6,
-        "read_current": 675.9e-6,
-        "enable_write_current": 224.494e-6,
-        "enable_read_current": 179.9e-6,
+        "write_current": 150e-6,
+        "read_current": 775e-6,
+        "enable_write_current": 500e-6,
+        "enable_read_current": 105e-6,
         "slope": -4.235,
         "intercept": 1492,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
         "max_critical_current": 908e-6,
-        "min_bit_error_rate": 0.0034,
+        "min_bit_error_rate": 9.00e-05,
     },
     "B3": {
         "write_current": 103e-6,
@@ -176,8 +176,8 @@ CELLS = {
         "intercept": 1714.0,
         "resistance": 518.1,
         "resistance_cryo": 253.3,
-        "min_bit_error_rate": 0.065,
         "max_critical_current": 771e-6,
+        "min_bit_error_rate": 0.065,
     },
     "D4": {
         "write_current": 0e-6,
@@ -189,6 +189,7 @@ CELLS = {
         "resistance": 570.6,
         "resistance_cryo": 287.5,
         "max_critical_current": 807e-6,
+        "min_bit_error_rate": 1.0,
     },
 }
 
