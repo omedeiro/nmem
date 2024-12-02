@@ -27,7 +27,7 @@ from nmem.analysis.enable_read_current.trace_plotting import (
 )
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 5
+plt.rcParams["font.size"] = 6
 plt.rcParams["axes.linewidth"] = 0.5
 plt.rcParams["xtick.major.width"] = 0.5
 plt.rcParams["ytick.major.width"] = 0.5
@@ -38,9 +38,10 @@ plt.rcParams["lines.markersize"] = 2
 plt.rcParams["lines.linewidth"] = 0.5
 plt.rcParams["legend.fontsize"] = 5
 plt.rcParams["legend.frameon"] = False
-
+plt.rcParams["lines.markeredgewidth"] = 0.5
 
 plt.rcParams["xtick.major.size"] = 1
+plt.rcParams["ytick.major.size"] = 1
 
 CURRENT_CELL = "C1"
 
@@ -169,6 +170,7 @@ def plot_edges(
 ) -> plt.Axes:
     cmap = plt.get_cmap("RdBu")
     colors = cmap(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
     edge_dict = get_edges(data_dict)
     edge_list = []
     param_list = []
@@ -190,7 +192,7 @@ def plot_edges(
             if e == 0:
                 continue
             ax.scatter(
-                param, read_current[e], color=colors[i], marker="o", edgecolor="k", linewidth=0.5
+                param, read_current[e], color=colors[i], marker=markers[i], edgecolor=colors[i], linewidth=0.5, s=27
             )
 
     if fit:
@@ -219,6 +221,7 @@ def plot_edges(
 
 
 def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D):
+    markers = ["o", "s", "D", "^"]
     for edge in edge_list:
         if edge == 0:
             continue
@@ -240,7 +243,7 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
             [edge_dict[key]["param"], edge_dict[key]["param"]],
             [edge_dict[key]["ber"][edge]],
             color=colors[edge_list.index(edge)],
-            marker="o",
+            marker=markers[edge_list.index(edge)],
             markeredgecolor=None,
             markeredgewidth=0.5,
         )
@@ -489,7 +492,7 @@ def plot_write_sweep_single_log(data_dict: dict, index: int, ax=None):
 
 def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
     cmap = plt.get_cmap("RdBu").reversed()
-    colors = cmap(np.linspace(0, 1, 4))
+    colors = cmap(np.linspace(0, 1, 8))
     data_dict = data_dict_keyd[0]
     INDEX = 14
     if axs is None:
@@ -499,7 +502,7 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
     x = data_dict["trace_chan_in"][0][:, INDEX] * 1e6
     yin = np.mean(data_dict["trace_chan_in"][1], axis=1) * 1e3
     (p1,) = ax.plot(x, yin, color=colors[0], label="Input")
-    ax.set_xlim([x[0], x[-1]])
+    ax.set_xlim([0, 10])
     axheight = ax.get_ylim()[1]
     for i, bit in enumerate(data_dict["bitmsg_channel"][0]):
         text = text_from_bit(bit)
@@ -541,7 +544,7 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
     ax.set_ylim([-10, 100])
-    ax.set_xlim([x[0], x[-1]])
+    ax.set_xlim([0, 10])
     ax.set_yticks([0, 50])
     ax.tick_params(
         direction="in", top=True, bottom=True, right=True, left=True, length=2
@@ -572,6 +575,7 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
         )
     ax.tick_params(direction="in")
     ax.set_xticklabels([])
+    ax.set_xlim([0, 10])
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
     ax.xaxis.set_major_locator(MultipleLocator(1))
@@ -599,6 +603,7 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
     ax = plot_threshold(ax, 4, 5, 400)
     ax = plot_threshold(ax, 9, 10, 400)
     ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
     ax.yaxis.set_ticks([0, 500])
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
@@ -657,6 +662,7 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
     ax = plot_threshold(ax, 4, 5, 400)
     ax = plot_threshold(ax, 9, 10, 400)
     ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
     ax.set_yticks([0, 500])
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
@@ -740,6 +746,17 @@ def manuscript_figure(data_dict):
     fig.patch.set_visible(False)
     plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")    
     plt.show()
+
+
+def plot_trace_only():    
+    fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
+    axs = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
+    fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+    fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
+    fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
+    plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
 
 
 if __name__ == "__main__":
@@ -1026,6 +1043,7 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
+
     # plot_stack(
     #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
     #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
@@ -1066,6 +1084,18 @@ if __name__ == "__main__":
         ),
     }
 
-    manuscript_figure(data_dict)
+    # manuscript_figure(data_dict)
+    fig, axs = plt.subplots(1, 1, figsize=(2.6, 3.54))
+    axs = plot_enable_read_current_edges_stack(enable_read_310_dict, analytical_data_dict, axs, 30, fitting_dict[30])
+    axs.set_xlabel("$I_{CH}$ ($\mu$A)")
+    axs.set_ylabel("$I_{R}$ ($\mu$A)")
+    fig.tight_layout()
+    plt.savefig("slide_analytical_fit.png", bbox_inches="tight", dpi=300)
+    plt.show()
 
-    # plot_waterfall(enable_read_310_dict)
+    plot_trace_only()
+
+    plot_waterfall(enable_read_310_dict)
+    fig = plt.gcf()
+    fig.patch.set_visible(False)
+    plt.savefig("slide_waterfall.png", bbox_inches="tight", dpi=300)
