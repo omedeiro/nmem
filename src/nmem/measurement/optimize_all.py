@@ -36,20 +36,16 @@ from nmem.measurement.optimize import (
     optimize_fixed_write,
     optimize_phase,
     optimize_read_pulse,
-    optimize_read, 
-    optimize_write
+    optimize_read,
+    optimize_write,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
 def run_optimize(meas_dict: dict):
-    # meas_dict, space, x0 = optimize_all(meas_dict)
-    # meas_dict, space, x0, b = optimize_bias(meas_dict)
-    meas_dict, space, x0, b = optimize_read(meas_dict)
-    # meas_dict, space, x0, b = optimize_fixed_write(meas_dict)
-    # meas_dict, space, x0, b = optimize_phase(meas_dict)
-    # meas_dict, space, x0, b = optimize_read_pulse(meas_dict)
+    meas_dict, space, x0, b = optimize_bias(meas_dict)
+    # meas_dict, space, x0, b = optimize_read(meas_dict)
     # meas_dict, space, x0, b = optimize_write(meas_dict)
 
     opt_result = gp_minimize(
@@ -84,36 +80,52 @@ if __name__ == "__main__":
     fast_read = {
         "read_width": 10,
         "enable_read_width": 4,
-        "enable_read_phase": -6,
+        "enable_read_phase": -7,
     }
 
     two_nulls = {
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
     }
+    two_nulls_inv = {
+        "bitmsg_channel": "N1NNRN0NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
     zero_nulls = {
         "bitmsg_channel": "NNN0RNNN1R",
         "bitmsg_enable": "NNNWENNNWE",
     }
-    waveform_settings = {   
+    two_emulate = {
+        "bitmsg_channel": "N0RNRN1RNR",
+        "bitmsg_enable": "NWNWENWNWE",
+    }
+    two_emulate_inv = {
+        "bitmsg_channel": "N1NRRN0NRR",
+        "bitmsg_enable": "NWWNENWWNE",
+    }
+    two_emulate_read = {
+        "bitmsg_channel": "N0RRRN1RRR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         **fast_write,
         **fast_read,
         **two_nulls,
-        "threshold_bert": 0.4,
-        "threshold_enforced": 0.4,
+        "threshold_bert": 0.35,
+        "threshold_enforced": 0.35,
     }
 
     current_settings = {
-        "write_current": 120e-6,
-        "read_current": 700e-6,
-        "enable_write_current": 420e-6,
-        "enable_read_current": 170e-6,
+        "write_current": 191e-6,
+        "read_current": 755e-6,
+        "enable_write_current": 432e-6,
+        "enable_read_current": 120e-6,
     }
 
-    NUM_MEAS = 500
-    NUM_CALLS = 40
+    NUM_MEAS = 1000
+    NUM_CALLS = 200
     measurement_settings = {
         **waveform_settings,
         **current_settings,
@@ -132,7 +144,7 @@ if __name__ == "__main__":
     nm.setup_scope_bert(
         b,
         measurement_settings,
-        division_zero=(1.9, 2.5),
+        division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
 
