@@ -24,6 +24,7 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
+
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
@@ -138,23 +139,27 @@ if __name__ == "__main__":
         "enable_read_phase": -7,
     }
 
+    write_byte = {
+        "bitmsg_channel": "NNNN0R1R0R0R1R1R1R1RNNNNNNNN0R1R0R0R1R1R0R1RNNNN",
+        "bitmsg_enable": "NNNNWEWEWEWEWEWEWEWENNNNNNNNWEWEWEWEWEWEWEWENNNN",
+    }
+
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         **fast_write,
         **fast_read,
-        **zero_nulls,
+        **two_nulls,
         "threshold_bert": 0.35,
         "threshold_enforced": 0.35,
     }
 
     current_settings = {
-        "write_current": 160e-6,
-        "read_current": 600e-6,
-        "enable_write_current": 370e-6,
-        "enable_read_current": 230e-6,
+        "write_current": 155e-6,
+        "read_current": 750e-6,
+        "enable_write_current": 410e-6,
+        "enable_read_current": 180e-6,
     }
-
 
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
@@ -164,7 +169,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 500
-    sweep_length = 21
+    sweep_length = 11
 
     measurement_settings.update(
         {
@@ -181,14 +186,14 @@ if __name__ == "__main__":
     )
     parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(0e-6, 500e-6, 5)
+    # measurement_settings["x"] = np.linspace(00e-6, 550e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings["y"] = np.array([current_settings["read_current"]])
-        measurement_settings["y"] = np.linspace(400e-6, 700e-6, sweep_length)
+        measurement_settings["y"] = np.array([current_settings["read_current"]])
+        # measurement_settings["y"] = np.linspace(750e-6, 850e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
@@ -202,7 +207,7 @@ if __name__ == "__main__":
         parameter_x,
         parameter_y,
         plot_measurement=True,
-        division_zero=(1.9, 2.5),
+        division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
 
