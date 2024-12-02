@@ -3,7 +3,7 @@ import os
 import numpy as np
 import scipy.io as sio
 from matplotlib import pyplot as plt
-
+from matplotlib.colors import LogNorm
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -540,14 +540,14 @@ def convert_location_to_coordinates(location):
 def plot_text_labels(xloc, yloc, ztotal, log=False, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
-
     for x, y in zip(xloc, yloc):
         text = f"{ztotal[y, x]:.2f}"
+        txt_color = "black"
+        if ztotal[y, x] > (0.8 * max(ztotal.flatten())):
+            txt_color = "white"
         if log:
             text = f"{ztotal[y, x]:.1e}"
-        txt_color = "black"
-        if ztotal[y, x] < 0.5 * max(ztotal.flatten()):
-            txt_color = "white"
+            txt_color = "black"
 
         ax.text(
             x,
@@ -564,23 +564,29 @@ def plot_text_labels(xloc, yloc, ztotal, log=False, ax=None):
 
 
 def plot_array(
-    xloc, yloc, ztotal, title=None, log=False, norm=False, reverse=False, ax=None
+    xloc, yloc, ztotal, title=None, log=False, reverse=False, ax=None, cmap=None
 ):
     if ax is None:
         fig, ax = plt.subplots()
 
-    cmap = plt.cm.get_cmap("viridis")
+    if cmap is None:
+        cmap = plt.get_cmap("viridis")
     if reverse:
-        cmap = plt.cm.get_cmap("viridis").reversed()
+        cmap = cmap.reversed()
 
-    if norm:
-        im = ax.imshow(ztotal, cmap=cmap, vmin=0, vmax=1)
+    if log:
+        im = ax.matshow(ztotal, cmap=cmap, norm=LogNorm(vmin=1e-6, vmax=1e-2))
     else:
-        im = ax.imshow(ztotal, cmap=cmap)
+        im = ax.matshow(ztotal, cmap=cmap)
     if title is not None:
         ax.set_title(title)
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position("top")
+    
+    # Change the tick length of the x-axis
+    ax.tick_params(axis="both", length=0)
 
     ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
 
