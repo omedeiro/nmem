@@ -13,7 +13,9 @@ from nmem.calculations.calculations import (
 )
 from nmem.measurement.cells import CELLS
 
-font_path = "/home/omedeiro/Inter-Regular.otf"  # Your font path goes here
+# font_path = "/home/omedeiro/Inter-Regular.otf"  
+font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+
 font_manager.fontManager.addfont(font_path)
 prop = font_manager.FontProperties(fname=font_path)
 plt.rcParams["figure.figsize"] = [7, 3.5]
@@ -29,6 +31,31 @@ plt.rcParams["lines.linewidth"] = 0.5
 plt.rcParams["legend.fontsize"] = 5
 plt.rcParams["legend.frameon"] = False
 plt.rcParams["axes.labelpad"] = 0.5
+
+
+def plot_array_3d(
+    xloc, yloc, ztotal, title=None, log=False, norm=False, reverse=False, ax=None
+):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    cmap = plt.cm.get_cmap("viridis")
+    if reverse:
+        cmap = plt.cm.get_cmap("viridis").reversed()
+
+    ax.bar3d(xloc, yloc, 0, 1, 1, ztotal.flatten(), shade=True)
+    if title is not None:
+        ax.set_title(title)
+    ax.set_xticks(range(4), ["A", "B", "C", "D"])
+    ax.set_yticks(range(4), ["1", "2", "3", "4"])
+    ax.set_zlim(0, np.nanmax(ztotal))
+    ax.patch.set_visible(False)
+
+    ax.tick_params(axis="both", which="major", labelsize=6, pad=0)
+    # ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
+
+    return ax
+
 
 if __name__ == "__main__":
     xloc = []
@@ -94,19 +121,17 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         [
-            ["bit_error", "max_heater_current", "delay"],
-            ["write", "read", "temperature"],
-        ]
+            ["bit_error", "write", "read", ],
+            ["bit_error", "enable_write", "enable_read", ],
+        ],
+        # per_subplot_kw={"bit_error": {"projection": "3d"}},
     )
-    plot_array(xloc, yloc, bit_error_array, log=True, ax=axs["bit_error"])
-    plot_array(xloc, yloc, x_intercept_array, log=True, ax=axs["max_heater_current"])
-    plot_array(xloc, yloc, write_array, log=True, ax=axs["write"])
-    plot_array(xloc, yloc, read_array, log=True, ax=axs["read"])
+    plot_array(xloc, yloc, bit_error_array, log=True, ax=axs["bit_error"], cmap=plt.get_cmap("Blues").reversed())
+    # plot_array(xloc, yloc, x_intercept_array, log=True, ax=axs["max_heater_current"])
+    plot_array(xloc, yloc, write_array, log=False, ax=axs["write"], cmap=plt.get_cmap("Reds"))
+    plot_array(xloc, yloc, read_array, log=False, ax=axs["read"], cmap=plt.get_cmap("Reds"))
+    plot_array(xloc, yloc, enable_write_array, log=False, ax=axs["enable_write"], cmap=plt.get_cmap("Reds"))
+    plot_array(xloc, yloc, enable_read_array, log=False, ax=axs["enable_read"], cmap=plt.get_cmap("Reds"))
 
-    axs["delay"].set_xlabel("Delay ($\mu$s)")
-    axs["delay"].set_ylabel("BER")
-
-    axs["temperature"].set_xlabel("Temperature (K)")
-    axs["temperature"].set_ylabel("BER")
     fig.patch.set_visible(False)
     plt.savefig("main_analysis.pdf", bbox_inches="tight")
