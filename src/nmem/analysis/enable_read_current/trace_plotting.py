@@ -6,6 +6,7 @@ from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
     plot_threshold,
+    load_data
 )
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
@@ -20,10 +21,6 @@ plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["font.family"] = "Inter"
 
-
-def load_data(file_path: str):
-    data = sio.loadmat(file_path)
-    return data
 
 
 def text_from_bit(bit: str):
