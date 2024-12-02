@@ -65,7 +65,7 @@ def create_iv_plot(data_list, ax=None):
     ax.tick_params(direction="in", top=True, right=True)
     ax.xaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax.yaxis.set_major_locator(plt.MultipleLocator(100))
-    ax.legend(frameon=False)
+    ax.legend(frameon=False, handlelength=0.5, labelspacing=0.1)
     return ax
 
 
@@ -144,18 +144,22 @@ def plot_critical_currents_abs(data_list, ax=None):
     ax.plot(
         np.abs(heater_currents),
         positive_critical_currents,
-        "--",
+        "o--",
         color=cmap[0, :],
         label="$+I_{{h}}$",
         linewidth=0.5,
+        markersize=0.5,
+        markerfacecolor=cmap[0, :],
     )
     ax.plot(
         np.abs(heater_currents),
         negative_critical_currents,
-        "--",
+        "o--",
         color=cmap[-5, :],
         label="$-I_{{h}}$",
         linewidth=0.5,
+        markersize=0.5,
+        markerfacecolor=cmap[-5, :],
     )
     ax.fill_between(
         np.abs(heater_currents),
