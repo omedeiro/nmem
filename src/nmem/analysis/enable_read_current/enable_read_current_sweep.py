@@ -390,7 +390,6 @@ def plot_enable_read_current_edges_stack(
         analytical_data_dict, persistent_current=persistent_current, ax=ax
     )
 
-
     # ax.set_ylim(500, 950)
     # ax.set_xlim(600, 950)
 
@@ -420,15 +419,15 @@ def plot_stack(
             axs[i],
             persistent_current=persistent_currents_list[i],
             fitting_dict=fitting_dict_list[i],
-        )    
-    
+        )
+
     fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
     fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
 
     caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
     cbar = fig.colorbar(
         axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
-    )    
+    )
     caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
     plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
     plt.show()
@@ -934,36 +933,35 @@ if __name__ == "__main__":
     # )
 
     enable_read_310_C4_dict = {
-            0: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
-            ),
-            1: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
-            ),
-            2: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
-            ),
-            3: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
-            ),
-            4: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
-            ),
-            5: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
-            ),
-            6: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
-            ),
-            7: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
-            ),
-            8: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
-            ),
-            9: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
-            ),
-                
-        }
+        0: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
+        ),
+        1: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
+        ),
+        2: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
+        ),
+        3: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
+        ),
+        4: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
+        ),
+        5: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
+        ),
+        6: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
+        ),
+        7: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
+        ),
+        8: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
+        ),
+        9: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
+        ),
+    }
     plot_sweep_waterfall(enable_read_310_C4_dict)

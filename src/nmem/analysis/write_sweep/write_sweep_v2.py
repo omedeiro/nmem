@@ -71,7 +71,5 @@ if __name__ == "__main__":
     data_dict = {0: data0, 1: data1, 2: data2, 3: data3}
     plot_enable_write_sweep_multiple(data_dict)
 
-
     data_dict_fine = {0: data5, 1: data4}
     plot_enable_write_sweep_multiple(data_dict_fine)
-

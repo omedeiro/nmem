@@ -506,8 +506,13 @@ def calculate_state_currents(
     retrap_difference = right_max + left_retrap_max - right_retrap_max - left_max
     retrap_gap = left_max + right_retrap_max - right_max
 
-    fa = right_critical_current + left_retrapping_current + retrap_difference - right_retrap_max
-    fb = left_critical_current + right_retrapping_current - retrap_difference 
+    fa = (
+        right_critical_current
+        + left_retrapping_current
+        + retrap_difference
+        - right_retrap_max
+    )
+    fb = left_critical_current + right_retrapping_current - retrap_difference
     fc = (left_critical_current - persistent_current) / alpha - retrap_gap
 
     fB = fb - persistent_current + retrap_gap

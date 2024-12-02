@@ -1440,7 +1440,9 @@ def run_sweep(
 ):
     save_dict = {}
 
-    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
+    setup_scope_bert(
+        b, measurement_settings, division_zero=division_zero, division_one=division_one
+    )
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
