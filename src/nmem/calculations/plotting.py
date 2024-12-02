@@ -310,7 +310,7 @@ def plot_read_current(
     plt.pcolormesh(
         data_dict["right_critical_currents_mesh"],
         data_dict["read_currents_mesh"],
-        -1*inv_region,
+        -1 * inv_region,
         cmap=color_map,
         vmin=-1000,
         vmax=1000,

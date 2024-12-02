@@ -209,9 +209,9 @@ def plot_enable_write_sweep_single(
         minichr = IREAD * (1 - ALPHA) - write_current
         maxichr = IREAD * (1 - ALPHA) + write_current
 
-        retrap_left = IREAD + ICHL*IRETRAP
-        retrap_right = IREAD + ICHR*IRETRAP
-        
+        retrap_left = IREAD + ICHL * IRETRAP
+        retrap_right = IREAD + ICHR * IRETRAP
+
         state0 = calculate_zero_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
         state1 = calculate_one_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
         limit_dict = {

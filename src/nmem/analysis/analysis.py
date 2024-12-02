@@ -4,9 +4,9 @@ from matplotlib import pyplot as plt
 
 def text_from_bit(bit: str):
     if bit == "0":
-        return 'WR0'
+        return "WR0"
     elif bit == "1":
-        return 'WR1'
+        return "WR1"
     elif bit == "N":
         return ""
     elif bit == "R":
