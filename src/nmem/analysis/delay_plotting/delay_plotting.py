@@ -55,24 +55,43 @@ def plot_message(ax: plt.Axes, message: str):
     return ax
 
 
-def plot_trace_averaged(ax, data_dict, trace_name):
+def plot_trace_averaged(ax, data_dict, trace_name, color):
     ax.plot(
         (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
         data_dict[trace_name][1, :],
         label=trace_name,
+        color=color,
     )
 
 
 def plot_hist(ax, data_dict):
-    ax.hist(data_dict["read_zero_top"][0, :], log=True, range=(0.2, 0.6), bins=100, label="Read 0")
-    ax.hist(data_dict["read_one_top"][0, :], log=True, range=(0.2, 0.6), bins=100, label="Read 1")
+    ax.hist(
+        data_dict["read_zero_top"][0, :],
+        log=True,
+        range=(0.2, 0.6),
+        bins=100,
+        label="Read 0",
+        color="#345F90",
+    )
+    ax.hist(
+        data_dict["read_one_top"][0, :],
+        log=True,
+        range=(0.2, 0.6),
+        bins=100,
+        label="Read 1",
+        color="#B3252C",
+    )
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Counts")
     ax.legend()
 
+
 def plot_bitstream(ax, data_dict, trace_name):
     ax.plot(
-        data_dict[trace_name][0, :] * 1e6, data_dict[trace_name][1, :], label=trace_name
+        data_dict[trace_name][0, :] * 1e6,
+        data_dict[trace_name][1, :],
+        label=trace_name,
+        color="#345F90",
     )
     plot_message(ax, data_dict["bitmsg_channel"][0])
 
@@ -82,7 +101,7 @@ def plot_delay(ax, data_dict):
     for i in range(4):
         bers.append(data_dict[i]["bit_error_rate"][0])
 
-    ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o")
+    ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o", color="#345F90")
     ax.set_xlabel("Delay [$\mu$s]")
     ax.set_ylabel("BER")
 
@@ -123,29 +142,34 @@ if __name__ == "__main__":
 
     fig = plt.figure(figsize=(7, 3.5))
     subfigs = fig.subfigures(
-        2, 3, width_ratios=[0.3, 0.7, 0.3], height_ratios=[0.4, 0.6], wspace=-0.1, hspace=0.0
+        2,
+        3,
+        width_ratios=[0.3, 0.7, 0.3],
+        height_ratios=[0.4, 0.6],
+        wspace=-0.1,
+        hspace=0.0,
     )
     ax = subfigs[1, 0].subplots(4, 1)
     subfigs[1, 0].subplots_adjust(hspace=0.0)
     subfigs[1, 0].supylabel("Voltage [V]", x=-0.05)
     subfigs[1, 0].supxlabel("Time [ns]")
-    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg")
-    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg")
-    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg")
+    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
+    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
     ax[2].legend(["Read 0", "Read 1"], frameon=False)
-    axhist = subfigs[0,2].add_subplot()
+    axhist = subfigs[0, 2].add_subplot()
     subfigs[0, 2].subplots_adjust(hspace=0.0)
-    plot_hist(axhist, data_dict[0])
+    plot_hist(axhist, data_dict[3])
 
     axbits = subfigs[1, 1].subplots(4, 1)
     plot_bitstream(axbits[0], data_dict[5], trace_name="trace_chan_out")
     plot_bitstream(axbits[1], data_dict[6], trace_name="trace_chan_out")
     plot_bitstream(axbits[2], data_dict[7], trace_name="trace_chan_out")
     plot_bitstream(axbits[3], data_dict[8], trace_name="trace_chan_out")
-    subfigs[1,1].supylabel("Voltage [V]", x=0.05)
-    subfigs[1,1].supxlabel("Time [$\mu$s]")
+    subfigs[1, 1].supylabel("Voltage [V]", x=0.05)
+    subfigs[1, 1].supxlabel("Time [$\mu$s]")
 
     axdelay = subfigs[1, 2].add_subplot()
     plot_delay(axdelay, data_dict)
