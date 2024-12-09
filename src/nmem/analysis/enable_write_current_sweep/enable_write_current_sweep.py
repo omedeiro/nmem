@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from typing import Tuple
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
@@ -16,8 +17,8 @@ plt.rcParams["font.size"] = 12
 
 
 def calculate_right_critical_currents(
-    enable_write_currents, cell, width_ratio, iretrap
-):
+    enable_write_currents: np.ndarray, cell: str, width_ratio: float, iretrap: float
+) -> np.ndarray:
     channel_critical_current = (enable_write_currents * cell["slope"]) + cell[
         "intercept"
     ]
@@ -27,7 +28,7 @@ def calculate_right_critical_currents(
     return right_branch_critical_current
 
 
-def polygon_under_graph(x, y):
+def polygon_under_graph(x: np.ndarray, y: np.ndarray) -> list:
     """
     Construct the vertex list which defines the polygon filling the space under
     the (x, y) line graph. This assumes x is in ascending order.
@@ -100,7 +101,7 @@ def find_operating_peaks(data_dict: dict):
     return nominal_peak, inverting_peak
 
 
-def find_operating_width(data_dict: dict):
+def find_operating_width(data_dict: dict) -> Tuple[float, float]:
     bit_error_rate = data_dict["bit_error_rate"].flatten()
     enable_write_currents = data_dict["x"][:, :, 0].flatten() * 1e6
 
@@ -116,7 +117,7 @@ def find_operating_width(data_dict: dict):
     return nominal_width, inverting_width
 
 
-def get_operating_widths(data_dict: dict):
+def get_operating_widths(data_dict: dict) -> Tuple[list, list]:
     widths = []
     write_currents = []
     for key in data_dict.keys():
@@ -126,7 +127,7 @@ def get_operating_widths(data_dict: dict):
     return write_currents, widths
 
 
-def get_operating_peaks(data_dict: dict):
+def get_operating_peaks(data_dict: dict) -> Tuple[list, list]:
     peaks = []
     write_currents = []
     for key in data_dict.keys():
@@ -139,9 +140,9 @@ def get_operating_peaks(data_dict: dict):
 def plot_enable_write_sweep_single(
     data_dict: dict,
     index: int,
-    ax=None,
-    find_peaks=False,
-):
+    ax: plt.Axes = None,
+    find_peaks: bool = False,
+) -> plt.Axes:
     if ax is None:
         fig, ax = plt.subplots()
     plt.sca(ax)
@@ -209,11 +210,15 @@ def plot_enable_write_sweep_single(
         minichr = IREAD * (1 - ALPHA) - write_current
         maxichr = IREAD * (1 - ALPHA) + write_current
 
-        retrap_left = IREAD + ICHL*IRETRAP
-        retrap_right = IREAD + ICHR*IRETRAP
-        
-        state0, _ = calculate_zero_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
-        state1, _ = calculate_one_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
+        retrap_left = IREAD + ICHL * IRETRAP
+        retrap_right = IREAD + ICHR * IRETRAP
+
+        state0, _ = calculate_zero_state_current(
+            ICHL, ICHR, write_current, ALPHA, IRETRAP
+        )
+        state1, _ = calculate_one_state_current(
+            ICHL, ICHR, write_current, ALPHA, IRETRAP
+        )
         # limit_dict = {
         #     "minichl": minichl,
         #     "maxichl": maxichl,
@@ -278,8 +283,6 @@ def plot_enable_write_sweep_multiple(data_dict: dict, find_peaks=False):
         plot_enable_write_sweep_single(data_dict, key, ax, find_peaks=find_peaks)
 
         plt.show()
-
-
 
 
 def plot_peak_distance(write_currents, peaks):
