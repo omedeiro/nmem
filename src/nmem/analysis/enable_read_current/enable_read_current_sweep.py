@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from typing import List, Dict, Any, Optional
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
@@ -192,7 +193,13 @@ def plot_edges(
             if e == 0:
                 continue
             ax.scatter(
-                param, read_current[e], color=colors[i], marker=markers[i], edgecolor=colors[i], linewidth=0.5, s=27
+                param,
+                read_current[e],
+                color=colors[i],
+                marker=markers[i],
+                edgecolor=colors[i],
+                linewidth=0.5,
+                s=27,
             )
 
     if fit:
@@ -251,65 +258,12 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
     return ax
 
 
-def plot_enable_read_current_edges(
-    data_dict: dict,
-    analytical_data_dict: dict,
-    persistent_current=None,
-    fitting_dict=None,
-):
-    fig, ax = plt.subplots()
-    ax = plot_edges(data_dict, ax, fit=False, fit_dict=fitting_dict)
-
-    enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
-
-    ax.xaxis.set_major_locator(MultipleLocator(100))
-    ax.xaxis.set_minor_locator(MultipleLocator(50))
-    ax.yaxis.set_major_locator(MultipleLocator(50))
-    write_current = 30.0
-    plt.text(
-        1.5,
-        0.8,
-        f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A\n$I_{{W}}$ = {write_current}$\mu$A",
-        transform=ax.transAxes,
-    )
-    ax, read_current_dict = plot_analytical(
-        analytical_data_dict, persistent_current=persistent_current, ax=ax
-    )
-
-    width_ratio = WIDTH_RIGHT / WIDTH_LEFT
-    retrap_gap = read_current_dict["retrap_gap"]
-    retrap_difference = read_current_dict["retrap_difference"]
-    ax.text(
-        1.2,
-        0.0,
-        f"""
-        Width Ratio: {width_ratio:.2f}
-        Alpha: {ALPHA:.3f}
-        Retrap ratio: {IRETRAP_ENABLE:.3f}
-        Retrap gap: {retrap_gap:.3f}
-        Retrap difference: {retrap_difference:.3f}""",
-        transform=ax.transAxes,
-    )
-
-    plt.ylim(500, 950)
-    plt.xlim(600, 950)
-
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-
-    plt.xlabel("Channel Critical Current ($\mu$A)")
-    plt.ylabel("Read Current ($\mu$A)")
-    plt.grid(True, which="both")
-    # ax.set_aspect("equal")
-    plt.show()
-
-
 def plot_enable_read_current_edges_stack(
     data_dict: dict,
     analytical_data_dict: dict,
     ax: plt.Axes = None,
-    persistent_current=None,
-    fitting_dict=None,
+    persistent_current: int = None,
+    fitting_dict: dict = None,
 ):
     if ax is None:
         fig, ax = plt.subplots()
@@ -333,7 +287,9 @@ def plot_enable_read_current_edges_stack(
     # plt.title("Enable Read Current Edges")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
-    ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True, length=2)
+    ax.tick_params(
+        direction="in", top=True, right=True, bottom=True, left=True, length=2
+    )
     # plt.xlabel("Channel Critical Current ($\mu$A)")
     # plt.ylabel("Read Current ($\mu$A)")
     # plt.grid(True, which="both")
@@ -342,11 +298,11 @@ def plot_enable_read_current_edges_stack(
 
 
 def plot_stack(
-    data_dict_list,
-    analytical_data_dict_list,
-    persistent_currents_list,
-    fitting_dict_list,
-    axs=None,
+    data_dict_list: list[dict],
+    analytical_data_dict_list: list[dict],
+    persistent_currents_list: list[int],
+    fitting_dict_list: list[dict],
+    axs: list[plt.Axes] = None,
 ):
     if axs is None:
         fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
@@ -374,254 +330,27 @@ def plot_stack(
     return axs
 
 
-def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
-    if ax is None:
-        fig, ax = plt.subplots()
-    cmap = plt.get_cmap("RdBu")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
-
-    data_dict = {index: data_dict[index]}
-
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        enable_read = data["enable_read_current"].flatten()[0] * 1e6
-        ax.plot(
-            read_currents,
-            ber,
-            label=f"$I_{{ER}}$ = {enable_read:.1f}$\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-
-        edges = find_edge(ber)
-        for edge in edges:
-            if edge == 0:
-                continue
-            ax.vlines(
-                read_currents[edge],
-                0,
-                1,
-                linestyle=":",
-                color=colors[key],
-            )
-        print(f"read current edges: {read_currents[edges]}")
-
-    if fill:
-        ax.fill_between(
-            read_currents,
-            ber,
-            np.ones_like(ber) * 0.5,
-            color=colors[key],
-            alpha=0.5,
-        )
-    ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    ax.set_yticks(np.linspace(0, 1, 5))
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
+def plot_threshold(ax: plt.Axes, start: int, stop: int, threshold: int) -> plt.Axes:
+    ax.hlines(threshold, start, stop, linestyle="--", color="k")
     return ax
 
 
-def plot_write_sweep_single(data_dict: dict, index: int, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("RdBu")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
-
-    data_dict = {index: data_dict[index]}
-
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        enable_write_current = data["enable_write_current"].flatten()[0] * 1e6
-        plt.plot(
-            read_currents,
-            ber,
-            label=f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-
-    ax = plt.gca()
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    return ax
-
-
-def plot_write_sweep_single_log(data_dict: dict, index: int, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("RdBu")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
-
-    data_dict = {index: data_dict[index]}
-
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        if any(ber > 0.9):
-            ber = 1 - ber
-            line_style = "--"
-        else:
-            line_style = "-"
-        enable_write_current = data["enable_write_current"].flatten()[0] * 1e6
-        plt.plot(
-            read_currents,
-            ber,
-            label=f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-            linestyle=line_style,
-        )
-
-    ax = plt.gca()
-    plt.yscale("log")
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    return ax
-
-
-def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
-    cmap = plt.get_cmap("RdBu").reversed()
-    colors = cmap(np.linspace(0, 1, 8))
-    data_dict = data_dict_keyd[0]
-    INDEX = 14
-    if axs is None:
-        fig, axs = plt.subplots(6, 1, figsize=(2.6, 3.54))
-
-    ax = axs[0]
-    x = data_dict["trace_chan_in"][0][:, INDEX] * 1e6
-    yin = np.mean(data_dict["trace_chan_in"][1], axis=1) * 1e3
-    (p1,) = ax.plot(x, yin, color=colors[0], label="Input")
+def plot_single_trace(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray, bit_message: str, **kwargs)->plt.Axes:
+    ax.plot(x_data, y_data, **kwargs)
     ax.set_xlim([0, 10])
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate(data_dict["bitmsg_channel"][0]):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.6,
-            axheight * 1.1,
-            text,
-            ha="center",
-            va="bottom",
-            fontsize=6,
-            rotation=0,
-        )
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.set_ylim([-150, 1100])
-    ax.set_yticks([0, 500, 1200])
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
-
-    ax = axs[1]
-    x = data_dict["trace_enab"][0][:, INDEX] * 1e6
-    y = np.mean(data_dict["trace_enab"][1], axis=1) * 1e3
-    (p2,) = ax.plot(x, y, color=colors[-1], label="Enable")
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate(data_dict["bitmsg_enable"][0]):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.5,
-            axheight * 0.96,
-            text,
-            ha="center",
-            va="bottom",
-            fontsize=6,
-            rotation=0,
-        )
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.set_ylim([-10, 100])
-    ax.set_xlim([0, 10])
-    ax.set_yticks([0, 50])
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
-
-    ax = axs[2]
-    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
-    # yout = np.roll(yout, 10)*1.3
-    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
-    # plt.grid(axis="x", which="both")
-    ax = plot_threshold(ax, 4, 5, 400)
-    ax = plot_threshold(ax, 9, 10, 400)
     ax.set_ylim([-150, 900])
-    ax.set_xlim([0, 10])
     ax.set_yticks([0, 500])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
     axheight = ax.get_ylim()[1]
-    for i, bit in enumerate("NNNNzNNNNo"):
+    for i, bit in enumerate(bit_message):
         text = text_from_bit(bit)
         ax.text(
             i + 0.5,
-            axheight * 0.7,
-            text,
-            ha="center",
-            va="bottom",
-            fontsize=6,
-            rotation=0,
-        )
-    ax.tick_params(direction="in")
-    ax.set_xticklabels([])
-    ax.set_xlim([0, 10])
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
-
-    ax = axs[3]
-    data_dict = data_dict_keyd[1]
-    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
-    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate("NNNNZNNNNO"):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.2,
-            axheight * 0.95,
-            text,
-            ha="center",
-            va="bottom",
-            fontsize=6,
-            rotation=0,
-        )
-    ax = plot_threshold(ax, 4, 5, 400)
-    ax = plot_threshold(ax, 9, 10, 400)
-    ax.set_ylim([-150, 900])
-    ax.set_xlim([0, 10])
-    ax.yaxis.set_ticks([0, 500])
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
-
-    ax = axs[4]
-    data_dict = data_dict_keyd[2]
-    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
-    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate("NNNNzNNNNO"):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.2,
             axheight * 1.2,
             text,
             ha="center",
@@ -629,64 +358,73 @@ def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
             fontsize=6,
             rotation=0,
         )
-    ax = plot_threshold(ax, 4, 5, 400)
-    ax = plot_threshold(ax, 9, 10, 400)
-    ax.set_ylim([-150, 900])
-    ax.set_xlim([0, 10])
-    ax.yaxis.set_ticks([0, 500])
-    ax.set_xticklabels([])
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
+    return ax
 
-    ax = axs[5]
-    data_dict = data_dict_keyd[2]
-    x = data_dict["trace_chan_out"][0][:, -1] * 1e6
-    yout = data_dict["trace_chan_out"][1][:, -1] * 1e3
-    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate("NNNNZNNNNo"):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.51,
-            axheight * 1.0,
-            text,
-            ha="center",
-            va="bottom",
-            fontsize=6,
-            rotation=0,
+
+def plot_data_delay_manu_dev(
+    data_dict_keyd: List[Dict[str, Any]], axs: Optional[List[plt.Axes]] = None
+) -> List[plt.Axes]:
+    """Plot data traces with annotations for delay manufacturing development."""
+    cmap = plt.get_cmap("RdBu").reversed()
+    colors = cmap(np.linspace(0, 1, 8))
+
+    INDEX = 14
+    if axs is None:
+        _, axs = plt.subplots(6, 1, figsize=(2.6, 3.54))
+
+    # Define common parameters for each plot
+    plot_params = [
+        {
+            "data_key": "trace_chan_in",
+            "color": colors[0],
+            "label": "Input",
+            "bit_key": "bitmsg_channel",
+            "ylim": [-150, 1100],
+            "y_ticks": [0, 500, 1200],
+            "annotate_offset": 1.1,
+        },
+        {
+            "data_key": "trace_enab",
+            "color": colors[-1],
+            "label": "Enable",
+            "bit_key": "bitmsg_enable",
+            "ylim": [-10, 100],
+            "y_ticks": [0, 50],
+            "annotate_offset": 0.96,
+        },
+    ]
+
+    for i, params in enumerate(plot_params):
+        ax = axs[i]
+        data_dict = data_dict_keyd[0]
+        x = data_dict[params["data_key"]][0][:, INDEX] * 1e6
+        y = np.mean(data_dict[params["data_key"]][1], axis=1) * 1e3
+        bit_messages = data_dict[params["bit_key"]][0]
+
+        ax = plot_single_trace(
+            ax,
+            x,
+            y,
+            bit_messages,
         )
-    ax = plot_threshold(ax, 4, 5, 400)
-    ax = plot_threshold(ax, 9, 10, 400)
-    ax.set_ylim([-150, 900])
-    ax.set_xlim([0, 10])
-    ax.set_yticks([0, 500])
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.xaxis.set_label_position("bottom")
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.tick_params(
-        direction="in", top=True, bottom=True, right=True, left=True, length=2
-    )
-    ax.set_xticklabels(["", "0", "", "", "", "", "5", "", "", "", "", "10"])
+
+    for idx, ax in enumerate(axs[2:]):
+        data_dict = data_dict_keyd[idx % len(data_dict_keyd)]
+        x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+        y = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
+        bit_messages = "NNNNzNNNNo" if idx % 2 == 0 else "NNNNZNNNNO"
+
+        ax = plot_single_trace(
+            ax,
+            x,
+            y,
+            list(bit_messages),
+        )
+        ax = plot_threshold(ax, 4, 5, 400)
+        ax = plot_threshold(ax, 9, 10, 400)
+
     return axs
 
-
-def plot_enable_read_sweep_multiple(data_dict: dict):
-    fig, ax = plt.subplots()
-    for key in data_dict.keys():
-        plot_read_sweep_single(data_dict, key, ax)
-    return ax
-
-
-def plot_enable_write_sweep_multiple(data_dict: dict):
-    fig, ax = plt.subplots()
-    for key in data_dict.keys():
-        plot_write_sweep_single(data_dict, key, ax)
-    return ax
 
 
 def plot_sweep_waterfall(data_dict: dict):
@@ -707,7 +445,7 @@ def plot_sweep_waterfall(data_dict: dict):
     plt.show()
 
 
-def manuscript_figure(data_dict):
+def manuscript_figure(data_dict: dict, save: bool = False):
     fig = plt.figure(figsize=(9.5, 3.5))
 
     subfigs = fig.subfigures(1, 3, wspace=-0.3, width_ratios=[0.5, 1, 1])
@@ -722,9 +460,7 @@ def manuscript_figure(data_dict):
     axsslice[0] = plot_waterfall(enable_read_290_dict, ax=axsslice[0])
     axsslice[1] = plot_waterfall(enable_read_300_dict, ax=axsslice[1])
     axsslice[2] = plot_waterfall(enable_read_310_dict, ax=axsslice[2])
-    subfigs[1].subplots_adjust(
-        hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1
-    )
+    subfigs[1].subplots_adjust(hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1)
 
     axsstack = subfigs[2].subplots(3, 1, sharex=True, sharey=True)
     axsstack = plot_stack(
@@ -742,13 +478,18 @@ def manuscript_figure(data_dict):
     cbar = subfigs[2].colorbar(
         axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
     )
-    caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True, direction="out")
+    caxis.tick_params(
+        labeltop=True, labelbottom=False, bottom=False, top=True, direction="out"
+    )
     fig.patch.set_visible(False)
-    plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")    
+    if save:
+        plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")
     plt.show()
 
+    return
 
-def plot_trace_only():    
+
+def plot_trace_only():
     fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
     axs = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
     fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
@@ -756,7 +497,6 @@ def plot_trace_only():
     fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
     plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
     plt.show()
-
 
 
 if __name__ == "__main__":
@@ -964,93 +704,6 @@ if __name__ == "__main__":
         ),
     }
 
-    inverse_compare_dict = {
-        0: load_data(
-            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
-        ),
-        1: load_data(
-            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
-        ),
-    }
-
-    # plot_enable_read_sweep_multiple(data_dict)
-    # plot_enable_write_sweep_multiple(write_dict)
-
-    # plot_enable_write_sweep_multiple(inverse_compare_dict)
-
-    # plot_sweep_waterfall(enable_read_long_dict)
-
-    current_cell = "C1"
-    HTRON_SLOPE = CELLS[current_cell]["slope"]
-    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
-    WIDTH_LEFT = 0.1
-    WIDTH_RIGHT = 0.213
-    ALPHA = 0.563
-
-    MAX_CRITICAL_CURRENT = 860e-6  # CELLS[current_cell]["max_critical_current"]
-    IRETRAP_ENABLE = 0.573
-    IREAD = 630
-    N = 200
-
-    enable_read_currents = np.linspace(0, 400, N)
-    read_currents = np.linspace(400, 1050, N)
-
-    analytical_data_dict = create_dict_read(
-        enable_read_currents,
-        read_currents,
-        WIDTH_LEFT,
-        WIDTH_RIGHT,
-        ALPHA,
-        IRETRAP_ENABLE,
-        MAX_CRITICAL_CURRENT,
-        HTRON_SLOPE,
-        HTRON_INTERCEPT,
-    )
-
-    fitting_dict = {
-        -30: {
-            0: {"fit_start": 0, "fit_stop": 0},
-            1: {"fit_start": 0, "fit_stop": 0},
-            2: {"fit_start": 0, "fit_stop": 0},
-            3: {"fit_start": 0, "fit_stop": 0},
-        },
-        0: {
-            0: {"fit_start": 1, "fit_stop": 0},
-            1: {"fit_start": 0, "fit_stop": 2},
-            2: {"fit_start": 0, "fit_stop": 1},
-            3: {"fit_start": 0, "fit_stop": 2},
-        },
-        30: {
-            0: {"fit_start": 1, "fit_stop": 0},
-            1: {"fit_start": 0, "fit_stop": 2},
-            2: {"fit_start": 0, "fit_stop": 5},
-            3: {"fit_start": 0, "fit_stop": 1},
-        },
-    }
-    # persistent_current_plot(data_dict)
-    # analytical_data_dict = plot_analytical(analytical_data_dict, persistent_current=30)
-
-    # plot_enable_read_current_edges(
-    #     enable_read_290_dict, analytical_data_dict, -30, fitting_dict=fitting_dict[-30]
-    # )
-    # plot_enable_read_current_edges(
-    #     enable_read_300_dict, analytical_data_dict, 0, fitting_dict=fitting_dict[0]
-    # )
-    # plot_enable_read_current_edges(
-    #     enable_read_310_dict,
-    #     analytical_data_dict,
-    #     persistent_current=30,
-    #     fitting_dict=fitting_dict[30],
-    # )
-
-
-    # plot_stack(
-    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
-    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
-    #     [-30, 0, 30],
-    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
-    # )
-    # plot_sweep_waterfall(enable_read_310_dict)
     enable_read_310_C4_dict = {
         0: load_data(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
@@ -1084,18 +737,68 @@ if __name__ == "__main__":
         ),
     }
 
-    # manuscript_figure(data_dict)
-    fig, axs = plt.subplots(1, 1, figsize=(2.6, 3.54))
-    axs = plot_enable_read_current_edges_stack(enable_read_310_dict, analytical_data_dict, axs, 30, fitting_dict[30])
-    axs.set_xlabel("$I_{CH}$ ($\mu$A)")
-    axs.set_ylabel("$I_{R}$ ($\mu$A)")
-    fig.tight_layout()
-    plt.savefig("slide_analytical_fit.png", bbox_inches="tight", dpi=300)
-    plt.show()
+    inverse_compare_dict = {
+        0: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
+        ),
+        1: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
+        ),
+    }
 
-    plot_trace_only()
+    fitting_dict = {
+        -30: {
+            0: {"fit_start": 0, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 0},
+            2: {"fit_start": 0, "fit_stop": 0},
+            3: {"fit_start": 0, "fit_stop": 0},
+        },
+        0: {
+            0: {"fit_start": 1, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 2},
+            2: {"fit_start": 0, "fit_stop": 1},
+            3: {"fit_start": 0, "fit_stop": 2},
+        },
+        30: {
+            0: {"fit_start": 1, "fit_stop": 0},
+            1: {"fit_start": 0, "fit_stop": 2},
+            2: {"fit_start": 0, "fit_stop": 5},
+            3: {"fit_start": 0, "fit_stop": 1},
+        },
+    }
 
-    plot_waterfall(enable_read_310_dict)
-    fig = plt.gcf()
-    fig.patch.set_visible(False)
-    plt.savefig("slide_waterfall.png", bbox_inches="tight", dpi=300)
+    current_cell = "C1"
+    HTRON_SLOPE = CELLS[current_cell]["slope"]
+    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
+    WIDTH_LEFT = 0.1
+    WIDTH_RIGHT = 0.213
+    ALPHA = 0.563
+
+    MAX_CRITICAL_CURRENT = 860e-6  # CELLS[current_cell]["max_critical_current"]
+    IRETRAP_ENABLE = 0.573
+    IREAD = 630
+    N = 200
+
+    enable_read_currents = np.linspace(0, 400, N)
+    read_currents = np.linspace(400, 1050, N)
+
+    analytical_data_dict = create_dict_read(
+        enable_read_currents,
+        read_currents,
+        WIDTH_LEFT,
+        WIDTH_RIGHT,
+        ALPHA,
+        IRETRAP_ENABLE,
+        MAX_CRITICAL_CURRENT,
+        HTRON_SLOPE,
+        HTRON_INTERCEPT,
+    )
+
+    # plot_stack(
+    #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+    #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+    #     [-30, 0, 30],
+    #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+    # )
+
+    manuscript_figure(data_dict)
