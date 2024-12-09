@@ -54,62 +54,47 @@ def plot_write_sweep_fine(data_dict: dict):
 
 
 if __name__ == "__main__":
-    data0 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 14-54-42.mat"
-    )
-    data1 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-02-05.mat"
-    )
-
-    data2 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-12-02.mat"
-    )
-    data3 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-19-02.mat"
-    )
-
-    data4 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-29-42.mat"
-    )
-
-    data5 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-37-52.mat"
-    )
-    data6 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-44-49.mat"
-    )
-    data7 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-51-58.mat"
-    )
-
-    data8 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-59-19.mat"
-    )
-    data9 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-10-26.mat"
-    )
-    data10 = sio.loadmat(
-        "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-33-07.mat"
-    )
     data_dict = {
-        0: data0,
-        1: data1,
-        2: data2,
-        3: data3,
-        4: data4,
-        5: data5,
-        6: data6,
-        7: data7,
-        8: data8,
-        9: data9,
-        10: data10,
+        0: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 14-54-42.mat"
+        ),
+        1: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-02-05.mat"
+        ),
+        2: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-12-02.mat"
+        ),
+        3: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-19-02.mat"
+        ),
+        4: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-29-42.mat"
+        ),
+        5: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-37-52.mat"
+        ),
+        6: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-44-49.mat"
+        ),
+        7: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-51-58.mat"
+        ),
+        8: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-59-19.mat"
+        ),
+        9: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-10-26.mat"
+        ),
+        10: sio.loadmat(
+            "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-33-07.mat"
+        ),
     }
     plot_write_sweep_fine(data_dict)
 
-    data_dict = {
-        0: data0,
-        1: data1,
-        2: data2,
-        3: data3,
+    data_dict_top = {
+        0: data_dict[0],
+        1: data_dict[1],
+        2: data_dict[2],
+        3: data_dict[3],
     }
-    plot_write_sweep_fine(data_dict)
+    plot_write_sweep_fine(data_dict_top)
