@@ -25,7 +25,6 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 
-
 def plot_iv_curve(data, ax, **kwargs):
     time = data["trace"][0, :]
     voltage = data["trace"][1, :]
@@ -47,7 +46,7 @@ def plot_iv_curve(data, ax, **kwargs):
     return ax
 
 
-def create_iv_plot(data_list, ax=None):
+def plot_iv(data_list, ax=None, save=False):
     if ax is None:
         fig, ax = plt.subplots()
     colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(data_list) / 2) + 1))
@@ -66,6 +65,10 @@ def create_iv_plot(data_list, ax=None):
     ax.xaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax.yaxis.set_major_locator(plt.MultipleLocator(100))
     ax.legend(frameon=False, handlelength=0.5, labelspacing=0.1)
+
+    if save:
+        plt.savefig("iv_curve.pdf", bbox_inches="tight")
+
     return ax
 
 
@@ -126,7 +129,7 @@ def plot_critical_currents(data_list, ax=None):
     return ax
 
 
-def plot_critical_currents_abs(data_list, ax=None):
+def plot_critical_currents_abs(data_list, ax=None, save=False):
     if ax is None:
         fig, ax = plt.subplots()
     critical_currents, critical_currents_std = get_critical_currents(data_list)
@@ -184,13 +187,17 @@ def plot_critical_currents_abs(data_list, ax=None):
     ax.set_ylim([0, 400])
     ax.set_xlim([0, 500])
     ax.legend(frameon=False)
+
+    if save:
+        plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
+
     return ax
 
 
 def plot_critical_currents_inset(data_list):
     # Plot the iv plot with the critical currents as an inset
     fig, ax = plt.subplots(figsize=(3.5, 3.5))
-    ax = create_iv_plot(data_list, ax)
+    ax = plot_iv(data_list, ax)
     ax_inset = fig.add_axes([0.62, 0.25, 0.3125, 0.25])
     ax_inset = plot_critical_currents_abs(data_list, ax_inset)
     # ax_inset.yaxis.tick_right()
@@ -204,30 +211,27 @@ def plot_critical_currents_inset(data_list):
     plt.show()
 
 
+def plot_combined_figure(data_list, save=False):
+    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
+    ax[0, 0].axis("off")
+    ax[0, 1].axis("off")
+    ax[0, 2].axis("off")
+    ax[1, 0].axis("off")
+    ax[1, 1] = plot_iv(data_list, ax[1, 1])
+    ax[1, 2] = plot_critical_currents_abs(data_list, ax[1, 2])
+    plt.subplots_adjust(wspace=0.3)
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
+
+    plt.show()
+
+
 if __name__ == "__main__":
     data_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\dc_sweep"
     )
 
-    # create_iv_plot(data_list)
-
-    # critical_currents = get_critical_currents(data_list)
-
-    # plot_critical_currents_abs(data_list)
-    # plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
-    # create_iv_plot(data_list)
-
-
-    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
-    ax[0,0].axis("off")
-    ax[0,1].axis("off")
-    ax[0,2].axis("off")
-    ax[1,0].axis("off")
-    ax[1,1] = create_iv_plot(data_list, ax[1,1])
-    ax[1,2] = plot_critical_currents_abs(data_list, ax[1,2])
-    plt.subplots_adjust(wspace=0.3)
-
-    fig.patch.set_visible(False)
-    plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
-
-    plt.show()
+    plot_critical_currents_abs(data_list)
+    plot_iv(data_list)
+    plot_combined_figure(data_list, save=False)
