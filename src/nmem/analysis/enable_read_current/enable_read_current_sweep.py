@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from typing import List, Dict, Any, Optional
+from matplotlib.pyplot import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
@@ -47,7 +48,7 @@ plt.rcParams["ytick.major.size"] = 1
 CURRENT_CELL = "C1"
 
 
-def plot_waterfall(data_dict: dict, ax: Axes3D = None):
+def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
     if ax is None:
         fig, ax = plt.subplots(
             subplot_kw={"projection": "3d"}, layout="none", figsize=(3.5, 3.5)
@@ -168,7 +169,7 @@ def get_edges(data_dict: dict) -> dict:
 
 def plot_edges(
     data_dict: dict, ax: plt.Axes = None, fit=True, fit_dict: dict = None
-) -> plt.Axes:
+) -> Axes:
     cmap = plt.get_cmap("RdBu")
     colors = cmap(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
@@ -227,7 +228,9 @@ def plot_edges(
     return ax
 
 
-def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D):
+def plot_edge_3D(
+    edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D
+) -> Axes3D:
     markers = ["o", "s", "D", "^"]
     for edge in edge_list:
         if edge == 0:
@@ -261,10 +264,10 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
 def plot_enable_read_current_edges_stack(
     data_dict: dict,
     analytical_data_dict: dict,
-    ax: plt.Axes = None,
+    ax: Axes = None,
     persistent_current: int = None,
     fitting_dict: dict = None,
-):
+) -> Axes:
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -302,8 +305,8 @@ def plot_stack(
     analytical_data_dict_list: list[dict],
     persistent_currents_list: list[int],
     fitting_dict_list: list[dict],
-    axs: list[plt.Axes] = None,
-):
+    axs: list[Axes] = None,
+) -> list[Axes]:
     if axs is None:
         fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
         fig.subplots_adjust(hspace=0)
@@ -330,12 +333,14 @@ def plot_stack(
     return axs
 
 
-def plot_threshold(ax: plt.Axes, start: int, stop: int, threshold: int) -> plt.Axes:
+def plot_threshold(ax: Axes, start: int, stop: int, threshold: int) -> Axes:
     ax.hlines(threshold, start, stop, linestyle="--", color="k")
     return ax
 
 
-def plot_single_trace(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray, bit_message: str, **kwargs)->plt.Axes:
+def plot_single_trace(
+    ax: Axes, x_data: np.ndarray, y_data: np.ndarray, bit_message: str, **kwargs
+) -> Axes:
     ax.plot(x_data, y_data, **kwargs)
     ax.set_xlim([0, 10])
     ax.set_ylim([-150, 900])
@@ -362,8 +367,8 @@ def plot_single_trace(ax: plt.Axes, x_data: np.ndarray, y_data: np.ndarray, bit_
 
 
 def plot_data_delay_manu_dev(
-    data_dict_keyd: List[Dict[str, Any]], axs: Optional[List[plt.Axes]] = None
-) -> List[plt.Axes]:
+    data_dict_keyd: List[Dict[str, Any]], axs: Optional[List[Axes]] = None
+) -> List[Axes]:
     """Plot data traces with annotations for delay manufacturing development."""
     cmap = plt.get_cmap("RdBu").reversed()
     colors = cmap(np.linspace(0, 1, 8))
@@ -426,8 +431,7 @@ def plot_data_delay_manu_dev(
     return axs
 
 
-
-def plot_sweep_waterfall(data_dict: dict):
+def plot_sweep_waterfall(data_dict: dict) -> None:
     fig, ax = plt.subplot_mosaic(
         [["waterfall"]], figsize=(16, 9), subplot_kw={"projection": "3d"}
     )
@@ -445,7 +449,7 @@ def plot_sweep_waterfall(data_dict: dict):
     plt.show()
 
 
-def manuscript_figure(data_dict: dict, save: bool = False):
+def manuscript_figure(data_dict: dict, save: bool = False) -> None:
     fig = plt.figure(figsize=(9.5, 3.5))
 
     subfigs = fig.subfigures(1, 3, wspace=-0.3, width_ratios=[0.5, 1, 1])
@@ -489,7 +493,7 @@ def manuscript_figure(data_dict: dict, save: bool = False):
     return
 
 
-def plot_trace_only():
+def plot_trace_only() -> None:
     fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
     axs = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
     fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
@@ -500,21 +504,6 @@ def plot_trace_only():
 
 
 if __name__ == "__main__":
-    data0 = sio.loadmat(
-        "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 15-10-41.mat"
-    )
-    data1 = sio.loadmat(
-        "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 15-17-47.mat"
-    )
-    data2 = sio.loadmat(
-        "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-11-46.mat"
-    )
-    data3 = sio.loadmat(
-        "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-18-32.mat"
-    )
-    data4 = sio.loadmat(
-        "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-25-36.mat"
-    )
 
     write_dict = {
         0: load_data(
@@ -525,7 +514,23 @@ if __name__ == "__main__":
         ),
     }
 
-    data_dict = {0: data0, 1: data1, 2: data2, 3: data3, 4: data4}
+    data_dict = {
+        0: sio.loadmat(
+            "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 15-10-41.mat"
+        ),
+        1: sio.loadmat(
+            "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 15-17-47.mat"
+        ),
+        2: sio.loadmat(
+            "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-11-46.mat"
+        ),
+        3: sio.loadmat(
+            "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-18-32.mat"
+        ),
+        4: sio.loadmat(
+            "SPG806_20240924_nMem_parameter_sweep_D6_A4_C1_2024-09-24 16-25-36.mat"
+        ),
+    }
 
     enable_read_290_dict_full = {
         0: load_data(
