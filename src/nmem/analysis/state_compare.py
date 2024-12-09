@@ -6,8 +6,8 @@ font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-V
 
 font_manager.fontManager.addfont(font_path)
 prop = font_manager.FontProperties(fname=font_path)
-# plt.rcParams["figure.figsize"] = [7, 3.5]
-plt.rcParams["font.size"] = 20
+plt.rcParams["figure.figsize"] = [3.5, 3.5]
+plt.rcParams["font.size"] = 12
 plt.rcParams["axes.linewidth"] = 0.5
 plt.rcParams["xtick.major.width"] = 0.5
 plt.rcParams["ytick.major.width"] = 0.5
@@ -21,7 +21,14 @@ plt.rcParams["legend.frameon"] = False
 plt.rcParams["axes.labelpad"] = 0.5
 
 
-def plot_state(retrap_ratio: float, width_ratio: float, ax=None):
+def plot_state(
+    alpha,
+    retrap_ratio: float,
+    width_ratio: float,
+    persistent_current: float,
+    temperature: float,
+    ax=None,
+):
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -36,16 +43,74 @@ def plot_state(retrap_ratio: float, width_ratio: float, ax=None):
         [-1, 0], width_ratio, width_ratio * retrap_ratio, color="blue", alpha=0.1
     )
 
-    diff = (1 + width_ratio * retrap_ratio) - (retrap_ratio + width_ratio)
+    imax = 1 + retrap_ratio * width_ratio
+    imin = retrap_ratio + width_ratio
+    ax.hlines(imax, -0.2, 0.2, color="green", linestyle="--")
+    ax.hlines(imin, -0.2, 0.2, color="green", linestyle="--")
+    ax.text(0.2, imax, "imax", ha="left", va="center", fontsize=8)
+    ax.text(0.2, imin, "imin", ha="left", va="center", fontsize=8)
+    ax.fill_between([-0.2, 0.2], imin, imax, color="green", alpha=0.1)
+    ax.text(0, (imax + imin) / 2, "diff", ha="center", va="center", fontsize=8)
+
+    diff = imax - imin
+
+    ax.hlines(1 - diff, 0, 1, color="green", linestyle="--")
+    ax.text(1, 1 - diff, "1-diff", ha="left", va="center", fontsize=8)
+    ax.hlines(diff, 0, 1, color="green", linestyle="--")
+    ax.text(1, diff, "diff", ha="left", va="center", fontsize=8)
+
+    gap = imin - 1
     ax.fill_between(
-        [-0.2, 0],
-        retrap_ratio * width_ratio,
-        1 + width_ratio * retrap_ratio,
-        color="green",
+        [-0.2, 0.2],
+        imin,
+        1,
+        color="purple",
         alpha=0.1,
     )
+    ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
+    ax.hlines(width_ratio + gap, -0.2, 0.2, color="green", linestyle="--")
 
-    ax.fill_between([0, 0.2], 1-width_ratio, retrap_ratio, color="green", alpha=0.1)
+    # ax.fill_between([0, 0.2], 1-width_ratio, retrap_ratio, color="green", alpha=0.1)
+    fa = imax + diff - retrap_ratio
+    ax.hlines(fa, -0.2, 0, color="green", linestyle="--")
+    ax.text(-0.2, fa, "top-nom", ha="right", va="center", fontsize=8)
+
+    # fb = (
+    #     width_ratio
+    #     + retrap_ratio
+    #     + (gap-diff) # Yb = Q-q = gap-diff
+    #     - persistent_current
+    # )
+    # fb = (
+    #     width_ratio
+    #     + retrap_ratio
+    #     + retrap_ratio
+    #     - (1 - width_ratio)
+    #     - 1
+    #     - width_ratio * retrap_ratio
+    #     + retrap_ratio
+    #     + width_ratio
+    #     - persistent_current
+    # )
+    fb = imin + gap - diff - persistent_current
+    # ax.hlines(fb, 0, 0.2, color="blue", linestyle="--")
+    ax.text(-0.2, fb, "bot-nom", ha="right", va="center", fontsize=8)
+
+    fc = (width_ratio - persistent_current) / alpha - gap
+    # ax.hlines(fc, -0.2, 0, color="blue", linestyle="--")
+    ax.text(-0.2, fc, "bot-inv", ha="right", va="center", fontsize=8)
+
+    ax.fill_between(
+        [-0.4, 0.4], fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
+    )
+    ax.fill_between(
+        [-0.4, 0.4],
+        np.min([fa, np.min([fb, fc])]),
+        np.min([np.max([fa, fc]), fb]),
+        color="red",
+        alpha=0.1,
+        hatch="\\\\\\\\",
+    )
 
     ax.set_xticks([-0.5, 0.5])
     ax.set_xticklabels(["Left", "Right"])
@@ -66,5 +131,10 @@ def plot_state(retrap_ratio: float, width_ratio: float, ax=None):
 
 
 if __name__ == "__main__":
-    plot_state(0.573, width_ratio=0.563)
+    ALPHA = 0.563
+    RETRAP = 0.573
+    WIDTH = 1 / 2.13
+    PERSISTENT = 0 / 860
+    TEMPERATURE = 0.5
+    plot_state(ALPHA, RETRAP, WIDTH, PERSISTENT, TEMPERATURE)
     plt.show()
