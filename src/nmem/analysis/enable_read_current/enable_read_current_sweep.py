@@ -20,12 +20,7 @@ from nmem.analysis.analysis import (
     polygon_nominal,
     polygon_inverting,
     plot_analytical,
-)
-from nmem.analysis.enable_read_current.trace_plotting import (
-    text_from_bit,
-    plot_threshold,
-    plot_data_delay_manu,
-    INVERSE_COMPARE_DICT,
+    plot_threshold
 )
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
@@ -47,6 +42,30 @@ plt.rcParams["ytick.major.size"] = 1
 
 CURRENT_CELL = "C1"
 
+def text_from_bit(bit: str):
+    if bit == "0":
+        return "WR0"
+    elif bit == "1":
+        return "WR1"
+    elif bit == "N":
+        return ""
+    elif bit == "R":
+        return "RD"
+    elif bit == "E":
+        return "ER"
+    elif bit == "W":
+        return "EW"
+    elif bit == "z":
+        return "RD0"
+    elif bit == "Z":
+        return "W0R1"
+    elif bit == "o":
+        return "RD1"
+    elif bit == "O":
+        return "W1R0"
+    else:
+        return None
+    
 
 def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
     if ax is None:
@@ -504,7 +523,17 @@ def plot_trace_only() -> None:
 
 
 if __name__ == "__main__":
-
+    INVERSE_COMPARE_DICT = {
+        0: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
+        ),
+        1: load_data(
+            "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
+        ),
+        2: load_data(
+            "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
+        ),
+}
     write_dict = {
         0: load_data(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
