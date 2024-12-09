@@ -75,8 +75,6 @@ def read_current_plot(data_dict, persistent_current=None):
     return data_dict
 
 
-
-
 def plot_experimental_data():
     FILE_PATH = "/home/omedeiro/"
     FILE_NAME = "SPG806_20240804_nMem_ICE_ber_D6_A4_2024-08-04 16-38-50.mat"

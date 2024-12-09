@@ -4,6 +4,7 @@ import numpy as np
 import scipy.io as sio
 from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
+
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -584,7 +585,7 @@ def plot_array(
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
-    
+
     # Change the tick length of the x-axis
     ax.tick_params(axis="both", length=0)
 
@@ -809,7 +810,6 @@ def plot_fit(xfit, yfit):
     )
 
 
-
 def plot_enable_current_relation(data_dict: dict):
     x = data_dict["x"][0][:, 1] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
@@ -857,14 +857,12 @@ def plot_enable_current_relation(data_dict: dict):
     return ztotal
 
 
-
-
 def find_peak(data_dict: dict):
     x = data_dict["x"][0][:, 1] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
 
     w0r1 = data_dict["write_0_read_1"][0].flatten()
-    w1r0 = 100-data_dict["write_1_read_0"][0].flatten()
+    w1r0 = 100 - data_dict["write_1_read_0"][0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
 
@@ -873,11 +871,9 @@ def find_peak(data_dict: dict):
 
     xfit, yfit = find_enable_relation(data_dict)
 
-
     plt.scatter(xfit, yfit)
     # Plot a fit line to the scatter points
     plot_fit(xfit, yfit)
-
 
     plt.imshow(
         ztotal,
@@ -927,11 +923,10 @@ def find_enable_relation(data_dict: dict):
     ztotal = z.reshape((len(y), len(x)), order="F")
 
     # Find the maximum critical current using total counts
-    mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0)/2)
+    mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0) / 2)
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
     print(xfit)
     yfit = y[mid_idx[0]][xfit_idx]
-
 
     return xfit, yfit
 
@@ -970,4 +965,3 @@ def plot_slice(data_dict: dict):
             label=f"enable current = {enable_current:.2f} $\mu$A",
             color=cmap[enable_current_index],
         )
-
