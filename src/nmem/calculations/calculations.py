@@ -503,14 +503,16 @@ def calculate_state_currents(
     right_retrap_max = right_max * iretrap_enable
     left_retrap_max = left_max * iretrap_enable
 
-    retrap_difference = right_max + left_retrap_max - right_retrap_max - left_max
-    retrap_gap = right_retrap_max - (right_max - left_max)
+    imax = right_max + left_retrap_max
+    imin = left_max + right_retrap_max
+    diff = imax - imin
+    gap = imin - right_max
 
-    fa = right_critical_current + left_retrapping_current + retrap_difference - right_retrap_max
-    fb = left_critical_current + right_retrapping_current - retrap_difference 
-    fc = (left_critical_current - persistent_current) / alpha - retrap_gap
+    fa = right_critical_current + left_retrapping_current + diff - right_retrap_max
+    fb = left_critical_current + right_retrapping_current - diff
+    fc = (left_critical_current - persistent_current) / alpha - gap
 
-    fB = fb - persistent_current + retrap_gap
+    fB = fb - persistent_current + gap
     # minichl = fc
     # minichr = fb
     # maxichr = fa
@@ -528,8 +530,8 @@ def calculate_state_currents(
         "fa": fa,
         "fb": fb,
         "fc": fc,
-        "retrap_difference": retrap_difference,
-        "retrap_gap": retrap_gap,
+        "retrap_difference": diff,
+        "retrap_gap": gap,
     }
 
     return state_current_dict
