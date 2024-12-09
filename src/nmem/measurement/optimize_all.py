@@ -30,14 +30,7 @@ from nmem.measurement.cells import (
 )
 from nmem.measurement.optimize import (
     objective,
-    optimize_all,
     optimize_bias,
-    optimize_enable,
-    optimize_fixed_write,
-    optimize_phase,
-    optimize_read_pulse,
-    optimize_read,
-    optimize_write,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]

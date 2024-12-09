@@ -1,27 +1,25 @@
+from typing import Any, Dict, List, Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from typing import List, Dict, Any, Optional
-from matplotlib.pyplot import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Rectangle
+from matplotlib.pyplot import Axes
 from matplotlib.ticker import MultipleLocator
-from matplotlib.transforms import Bbox
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import patches
 from scipy.signal import find_peaks
 
-from nmem.calculations.analytical_model import create_dict_read
-
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
-    load_data,
     find_edge,
-    polygon_nominal,
-    polygon_inverting,
+    load_data,
     plot_analytical,
-    plot_threshold
+    plot_threshold,
+    polygon_inverting,
+    polygon_nominal,
 )
+from nmem.calculations.analytical_model import create_dict_read
+from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 6

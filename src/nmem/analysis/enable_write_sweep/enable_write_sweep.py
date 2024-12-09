@@ -1,8 +1,9 @@
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 from typing import Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]

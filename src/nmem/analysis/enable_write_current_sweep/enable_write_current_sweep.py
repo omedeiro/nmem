@@ -1,7 +1,8 @@
+from typing import Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from typing import Tuple
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
