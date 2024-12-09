@@ -106,40 +106,7 @@ def plot_delay(ax, data_dict):
     ax.set_ylabel("BER")
 
 
-if __name__ == "__main__":
-    data_dict = {
-        0: load_data(
-            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 11-47-10.mat"
-        ),
-        1: load_data(
-            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-01-12.mat"
-        ),
-        2: load_data(
-            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-13-23.mat"
-        ),
-        3: load_data(
-            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-27-15.mat"
-        ),
-        4: load_data(
-            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-14-54.mat"
-        ),
-        5: load_data(
-            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-01-52.mat"
-        ),
-        6: load_data(
-            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-45-37.mat"
-        ),
-        7: load_data(
-            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-49-50.mat"
-        ),
-        8: load_data(
-            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-52-23.mat"
-        ),
-    }
-
-    trace = [["trace a"], ["trace b"], ["trace c"], ["trace d"]]
-    bits = [["bits a"], ["bits b"], ["bits c"], ["bits d"]]
-
+def plot_combined(data_dict: dict, save=False):
     fig = plt.figure(figsize=(7, 3.5))
     subfigs = fig.subfigures(
         2,
@@ -175,5 +142,40 @@ if __name__ == "__main__":
     plot_delay(axdelay, data_dict)
 
     fig.patch.set_visible(False)
-    plt.savefig("delay_plot.pdf", bbox_inches="tight", pad_inches=0.01)
+    if save:
+        plt.savefig("delay_plotting.pdf", bbox_inches="tight")
     plt.show()
+
+
+if __name__ == "__main__":
+    data_dict = {
+        0: load_data(
+            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 11-47-10.mat"
+        ),
+        1: load_data(
+            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-01-12.mat"
+        ),
+        2: load_data(
+            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-13-23.mat"
+        ),
+        3: load_data(
+            "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-27-15.mat"
+        ),
+        4: load_data(
+            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-14-54.mat"
+        ),
+        5: load_data(
+            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-01-52.mat"
+        ),
+        6: load_data(
+            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-45-37.mat"
+        ),
+        7: load_data(
+            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-49-50.mat"
+        ),
+        8: load_data(
+            "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-52-23.mat"
+        ),
+    }
+
+    plot_combined(data_dict, save=False)
