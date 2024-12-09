@@ -545,7 +545,6 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
 
 
 if __name__ == "__main__":
-
     current_cell = "C4"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
     HTRON_INTERCEPT = CELLS[current_cell]["intercept"]

@@ -13,7 +13,7 @@ from nmem.calculations.calculations import (
 )
 from nmem.measurement.cells import CELLS
 
-# font_path = "/home/omedeiro/Inter-Regular.otf"  
+# font_path = "/home/omedeiro/Inter-Regular.otf"
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 
 font_manager.fontManager.addfont(font_path)
@@ -121,17 +121,50 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         [
-            ["bit_error", "write", "read", ],
-            ["bit_error", "enable_write", "enable_read", ],
+            [
+                "bit_error",
+                "write",
+                "read",
+            ],
+            [
+                "bit_error",
+                "enable_write",
+                "enable_read",
+            ],
         ],
         # per_subplot_kw={"bit_error": {"projection": "3d"}},
     )
-    plot_array(xloc, yloc, bit_error_array, log=True, ax=axs["bit_error"], cmap=plt.get_cmap("Blues").reversed())
+    plot_array(
+        xloc,
+        yloc,
+        bit_error_array,
+        log=True,
+        ax=axs["bit_error"],
+        cmap=plt.get_cmap("Blues").reversed(),
+    )
     # plot_array(xloc, yloc, x_intercept_array, log=True, ax=axs["max_heater_current"])
-    plot_array(xloc, yloc, write_array, log=False, ax=axs["write"], cmap=plt.get_cmap("Reds"))
-    plot_array(xloc, yloc, read_array, log=False, ax=axs["read"], cmap=plt.get_cmap("Reds"))
-    plot_array(xloc, yloc, enable_write_array, log=False, ax=axs["enable_write"], cmap=plt.get_cmap("Reds"))
-    plot_array(xloc, yloc, enable_read_array, log=False, ax=axs["enable_read"], cmap=plt.get_cmap("Reds"))
+    plot_array(
+        xloc, yloc, write_array, log=False, ax=axs["write"], cmap=plt.get_cmap("Reds")
+    )
+    plot_array(
+        xloc, yloc, read_array, log=False, ax=axs["read"], cmap=plt.get_cmap("Reds")
+    )
+    plot_array(
+        xloc,
+        yloc,
+        enable_write_array,
+        log=False,
+        ax=axs["enable_write"],
+        cmap=plt.get_cmap("Reds"),
+    )
+    plot_array(
+        xloc,
+        yloc,
+        enable_read_array,
+        log=False,
+        ax=axs["enable_read"],
+        cmap=plt.get_cmap("Reds"),
+    )
 
     fig.patch.set_visible(False)
     plt.savefig("main_analysis.pdf", bbox_inches="tight")

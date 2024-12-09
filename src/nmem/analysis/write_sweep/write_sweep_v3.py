@@ -30,7 +30,9 @@ def plot_write_sweep_single(data_dict: dict, index: int, ax=None):
 
     ax = plt.gca()
     plt.xlim(570, 650)
-    plt.hlines([0.5], ax.get_xlim()[0], ax.get_xlim()[1], linestyle=":", color="lightgray")
+    plt.hlines(
+        [0.5], ax.get_xlim()[0], ax.get_xlim()[1], linestyle=":", color="lightgray"
+    )
     plt.ylim(1e-4, 1)
     plt.xticks(np.linspace(570, 650, 5))
     plt.yscale("log")
@@ -50,7 +52,6 @@ def plot_enable_write_sweep_multiple(data_dict: dict):
 
 
 if __name__ == "__main__":
-    
     data0 = sio.loadmat(
         "SPG806_20240920_nMem_parameter_sweep_D6_A4_C1_2024-09-20 16-43-58.mat"
     )

@@ -25,7 +25,6 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 
-
 def plot_iv_curve(data, ax, **kwargs):
     time = data["trace"][0, :]
     voltage = data["trace"][1, :]
@@ -217,14 +216,13 @@ if __name__ == "__main__":
     # plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
     # create_iv_plot(data_list)
 
-
     fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
-    ax[0,0].axis("off")
-    ax[0,1].axis("off")
-    ax[0,2].axis("off")
-    ax[1,0].axis("off")
-    ax[1,1] = create_iv_plot(data_list, ax[1,1])
-    ax[1,2] = plot_critical_currents_abs(data_list, ax[1,2])
+    ax[0, 0].axis("off")
+    ax[0, 1].axis("off")
+    ax[0, 2].axis("off")
+    ax[1, 0].axis("off")
+    ax[1, 1] = create_iv_plot(data_list, ax[1, 1])
+    ax[1, 2] = plot_critical_currents_abs(data_list, ax[1, 2])
     plt.subplots_adjust(wspace=0.3)
 
     fig.patch.set_visible(False)

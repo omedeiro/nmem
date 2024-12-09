@@ -35,8 +35,8 @@ from nmem.measurement.optimize import (
     optimize_enable,
     optimize_fixed_write,
     optimize_phase,
-    optimize_read_pulse,
     optimize_read,
+    optimize_read_pulse,
     optimize_write,
 )
 

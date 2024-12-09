@@ -4,10 +4,7 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.ticker import MultipleLocator
 
-from nmem.analysis.analysis import (
-    plot_threshold,
-    load_data
-)
+from nmem.analysis.analysis import load_data, plot_threshold
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
@@ -20,7 +17,6 @@ plt.rcParams["ytick.major.width"] = 0.5
 plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
 plt.rcParams["font.family"] = "Inter"
-
 
 
 def text_from_bit(bit: str):
@@ -280,7 +276,6 @@ INVERSE_COMPARE_DICT = {
 }
 
 if __name__ == "__main__":
-
     inverse_compare_dict = {
         0: load_data(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"

@@ -5,7 +5,6 @@ Created on Mon Nov 28 13:51:12 2022
 @author: omedeiro
 """
 
-
 from __future__ import absolute_import, division, print_function
 
 # import colang as mc

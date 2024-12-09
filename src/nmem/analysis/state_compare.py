@@ -1,6 +1,6 @@
+import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.font_manager as font_manager
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 

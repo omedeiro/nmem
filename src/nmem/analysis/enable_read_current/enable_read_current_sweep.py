@@ -1,30 +1,29 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from matplotlib import patches
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
 from matplotlib.transforms import Bbox
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import patches
 from scipy.signal import find_peaks
 
-from nmem.calculations.analytical_model import create_dict_read
-
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
-    load_data,
     find_edge,
-    polygon_nominal,
-    polygon_inverting,
+    load_data,
     plot_analytical,
+    polygon_inverting,
+    polygon_nominal,
 )
 from nmem.analysis.enable_read_current.trace_plotting import (
-    text_from_bit,
-    plot_threshold,
-    plot_data_delay_manu,
     INVERSE_COMPARE_DICT,
+    plot_data_delay_manu,
+    plot_threshold,
+    text_from_bit,
 )
+from nmem.calculations.analytical_model import create_dict_read
+from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 6
@@ -192,7 +191,13 @@ def plot_edges(
             if e == 0:
                 continue
             ax.scatter(
-                param, read_current[e], color=colors[i], marker=markers[i], edgecolor=colors[i], linewidth=0.5, s=27
+                param,
+                read_current[e],
+                color=colors[i],
+                marker=markers[i],
+                edgecolor=colors[i],
+                linewidth=0.5,
+                s=27,
             )
 
     if fit:
@@ -333,7 +338,9 @@ def plot_enable_read_current_edges_stack(
     # plt.title("Enable Read Current Edges")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
-    ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True, length=2)
+    ax.tick_params(
+        direction="in", top=True, right=True, bottom=True, left=True, length=2
+    )
     # plt.xlabel("Channel Critical Current ($\mu$A)")
     # plt.ylabel("Read Current ($\mu$A)")
     # plt.grid(True, which="both")
@@ -722,9 +729,7 @@ def manuscript_figure(data_dict):
     axsslice[0] = plot_waterfall(enable_read_290_dict, ax=axsslice[0])
     axsslice[1] = plot_waterfall(enable_read_300_dict, ax=axsslice[1])
     axsslice[2] = plot_waterfall(enable_read_310_dict, ax=axsslice[2])
-    subfigs[1].subplots_adjust(
-        hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1
-    )
+    subfigs[1].subplots_adjust(hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1)
 
     axsstack = subfigs[2].subplots(3, 1, sharex=True, sharey=True)
     axsstack = plot_stack(
@@ -742,13 +747,15 @@ def manuscript_figure(data_dict):
     cbar = subfigs[2].colorbar(
         axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
     )
-    caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True, direction="out")
+    caxis.tick_params(
+        labeltop=True, labelbottom=False, bottom=False, top=True, direction="out"
+    )
     fig.patch.set_visible(False)
-    plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")    
+    plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")
     plt.show()
 
 
-def plot_trace_only():    
+def plot_trace_only():
     fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
     axs = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
     fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
@@ -756,7 +763,6 @@ def plot_trace_only():
     fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
     plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
     plt.show()
-
 
 
 if __name__ == "__main__":
@@ -1043,7 +1049,6 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
-
     # plot_stack(
     #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
     #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
@@ -1086,7 +1091,9 @@ if __name__ == "__main__":
 
     # manuscript_figure(data_dict)
     fig, axs = plt.subplots(1, 1, figsize=(2.6, 3.54))
-    axs = plot_enable_read_current_edges_stack(enable_read_310_dict, analytical_data_dict, axs, 30, fitting_dict[30])
+    axs = plot_enable_read_current_edges_stack(
+        enable_read_310_dict, analytical_data_dict, axs, 30, fitting_dict[30]
+    )
     axs.set_xlabel("$I_{CH}$ ($\mu$A)")
     axs.set_ylabel("$I_{R}$ ($\mu$A)")
     fig.tight_layout()
