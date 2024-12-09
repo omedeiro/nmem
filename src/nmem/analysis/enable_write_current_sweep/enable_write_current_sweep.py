@@ -212,37 +212,36 @@ def plot_enable_write_sweep_single(
         retrap_left = IREAD + ICHL*IRETRAP
         retrap_right = IREAD + ICHR*IRETRAP
         
-        state0 = calculate_zero_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
-        state1 = calculate_one_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
-        limit_dict = {
-            "minichl": minichl,
-            "maxichl": maxichl,
-            "minichr": minichr,
-            "maxichr": maxichr,
-            "ICHL": ICHL,
-            "ICHR": ICHR,
-            "retrap_left": retrap_left,
-            "retrap_right": retrap_right,
-            "state0": state0,
-            "state1": state1,
-        }
+        state0, _ = calculate_zero_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
+        state1, _ = calculate_one_state_current(ICHL, ICHR, write_current, ALPHA, IRETRAP)
+        # limit_dict = {
+        #     "minichl": minichl,
+        #     "maxichl": maxichl,
+        #     "minichr": minichr,
+        #     "maxichr": maxichr,
+        #     "ICHL": ICHL,
+        #     "ICHR": ICHR,
+        #     "retrap_left": retrap_left,
+        #     "retrap_right": retrap_right,
+        #     "state0": state0,
+        #     "state1": state1,
+        # }
+        # for key, value in limit_dict.items():
+        #     if value > left_critical_currents[0]:
+        #         plt.sca(ax2)
+        #         plt.vlines(value, 0, 1, color="b", linestyle="--")
+        #     else:
+        #         plt.sca(ax)
+        #         plt.vlines(value, 0, 1, color="m", linestyle="-")
 
-        for key, value in limit_dict.items():
-            if value > left_critical_currents[0]:
-                plt.sca(ax2)
-                plt.vlines(value, 0, 1, color="b", linestyle="--")
-            else:
-                plt.sca(ax)
-                plt.vlines(value, 0, 1, color="m", linestyle="-")
+        #     plt.text(value, 0.1, f"{key}", rotation=90, verticalalignment="bottom")
+        #     print(f"{key}: {value:.1f} uA")
 
-            plt.text(value, 0.1, f"{key}", rotation=90, verticalalignment="bottom")
-            print(f"{key}: {value:.1f} uA")
+        # # plt.axvline((IREAD / WIDTH_RATIO) - center*IRETRAP, color="c", linestyle="--")
+        # # plt.axvline((IREAD / WIDTH_RATIO) * ALPHA + write_current, color="b", linestyle="--")
 
-        # plt.axvline((IREAD / WIDTH_RATIO) - center*IRETRAP, color="c", linestyle="--")
-        # plt.axvline((IREAD / WIDTH_RATIO) * ALPHA + write_current, color="b", linestyle="--")
-
-        # plt.axvline((IREAD/WIDTH_RATIO)*ALPHA+write_current, color="g", linestyle="--")
-        # plt.axvline((IREAD/WIDTH_RATIO)-irhl, color="m", linestyle="--")
+        # # plt.axvline((IREAD/WIDTH_RATIO)*ALPHA+write_current, color="g", linestyle="--")
+        # # plt.axvline((IREAD/WIDTH_RATIO)-irhl, color="m", linestyle="--")
         plt.text(
             1.05,
             0.8,
@@ -281,14 +280,6 @@ def plot_enable_write_sweep_multiple(data_dict: dict, find_peaks=False):
         plt.show()
 
 
-def plot_enable_write_sweep_multiple_save(data_dict: dict, find_peaks=False):
-    for key in data_dict.keys():
-        fig, ax = plt.subplots()
-        plot_enable_write_sweep_single(data_dict, key, ax, find_peaks=find_peaks)
-        plt.savefig(
-            f"enable_write_current_sweep{key}.png", format="png", bbox_inches="tight"
-        )
-        plt.show()
 
 
 def plot_peak_distance(write_currents, peaks):
@@ -422,14 +413,14 @@ if __name__ == "__main__":
     ICHR = ICHL * WIDTH_RATIO
     data_dict1 = {
         0: data_dict[5],
-        # 1: data_dict[12],
+        1: data_dict[12],
     }
 
     plot_enable_write_sweep_multiple(data_dict1, find_peaks=True)
 
     write_currents, peaks = get_operating_peaks(data_dict)
-    # plot_peak_distance(write_currents, peaks)
-    # plot_peak_locations(write_currents, peaks)
-    # plot_peak_widths(write_currents, peaks)
+    plot_peak_distance(write_currents, peaks)
+    plot_peak_locations(write_currents, peaks)
+    plot_peak_widths(write_currents, peaks)
 
-    # plot_waterfall_filtered(data_dict)
+    plot_waterfall_filtered(data_dict)
