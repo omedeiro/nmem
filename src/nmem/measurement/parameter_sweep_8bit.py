@@ -12,7 +12,6 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
@@ -24,37 +23,9 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
+from nmem.measurement.functions import read_sweep_scaled
 
 plt.rcParams["figure.figsize"] = [10, 12]
-
-
-def read_sweep_scaled(
-    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
-):
-    read_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        read_critical_current * start, read_critical_current * end, num_points
-    )
-    return measurement_settings
-
-
-def write_sweep_scaled(measurement_settings, current_cell, num_points=15):
-    write_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        write_critical_current * 0.0, write_critical_current * 0.15, num_points
-    )
-    return measurement_settings
-
 
 if __name__ == "__main__":
     t1 = time.time()

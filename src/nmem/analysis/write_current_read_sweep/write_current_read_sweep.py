@@ -6,7 +6,6 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.signal import find_peaks
 
-from nmem.calculations.analytical_model import create_dict_read
 from nmem.calculations.calculations import (
     calculate_persistent_current,
     calculate_read_currents,
@@ -54,8 +53,8 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         current_cell = data["cell"][0]
         ber = data["bit_error_rate"].flatten()
-        enable_read_current = data["enable_read_current"].flatten()[0] * 1e6
-        zlist.append(enable_read_current)
+        write_current = data["write_current"].flatten()[0] * 1e6
+        zlist.append(write_current)
         verts = polygon_nominal(read_currents, ber)
         inv_verts = polygon_inverting(read_currents, ber)
         verts_list.append(verts)
@@ -70,7 +69,7 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
 
     # ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
     ax.set_xlabel("$I_R$ ($\mu$A)", labelpad=10)
-    ax.set_ylabel("$I_{{ER}}$ ($\mu$A)", labelpad=70)
+    ax.set_ylabel("$I_{{W}}$ ($\mu$A)", labelpad=70)
     ax.set_zlabel("BER", labelpad=10)
     # ax.set_zscale("log")
     ax.tick_params(axis="both", which="major", labelsize=12, pad=5)
@@ -81,7 +80,7 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
 
     ax.set_zlim(0, 1)
     ax.set_zticks([0, 0.5, 1])
-    ax.set_xlim(500, 950)
+    ax.set_xlim(400, 650)
     ax.xaxis.set_major_locator(MultipleLocator(100))
     ax.set_ylim(zlist[0], zlist[-1])
     ax.set_yticks(zlist)
@@ -475,16 +474,16 @@ def plot_sweep_waterfall(data_dict: dict):
         [["waterfall"]], figsize=(16, 9), subplot_kw={"projection": "3d"}
     )
     ax["waterfall"] = plot_waterfall(data_dict, ax=ax["waterfall"])
-    enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
+    write_current = data_dict[0]["write_current"].flatten()[0] * 1e6
     # ax["waterfall"].set_title(f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A")
-    ax["waterfall"].text2D(
-        0.25,
-        0.6,
-        f"$I_{{EW}}$ = {enable_write_current:.1f}$\mu$A",
-        transform=ax["waterfall"].transAxes,
-    )
+    # ax["waterfall"].text2D(
+    #     0.25,
+    #     0.6,
+    #     f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
+    #     transform=ax["waterfall"].transAxes,
+    # )
     fig.tight_layout()
-    plt.savefig(f"enable_read_current_sweep_{int(enable_write_current)}.pdf")
+    plt.savefig(f"write_current_read_sweep{int(write_current)}.pdf")
     plt.show()
 
 
@@ -600,4 +599,31 @@ if __name__ == "__main__":
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 19-34-47.mat"
         ),
     }
-    plot_read_sweep_multiple(write_read_sweep_C4_dict)
+
+    write_read_sweep_C4_dict_min_pulsewidth = {
+        0: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-51-16.mat"
+        ),
+        1: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-47-12.mat"
+        ),
+        2: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-43-05.mat"
+        ),
+        3: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-36-19.mat"
+        ),
+        4: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-31-59.mat"
+        ),
+        5: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-27-18.mat"
+        ),
+        6: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-05-17.mat"
+        ),
+        7: load_data(
+            "SPG806_20241023_nMem_parameter_sweep_D6_A4_C4_2024-10-23 09-00-10.mat"
+        ),
+    }
+    plot_read_sweep_multiple(write_read_sweep_C4_dict_min_pulsewidth)

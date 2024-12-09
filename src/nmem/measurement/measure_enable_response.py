@@ -5,10 +5,10 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.analysis.enable_current_relation import find_peak
-from nmem.calculations.calculations import htron_critical_current
+from nmem.analysis.analysis import find_peak
 from nmem.measurement.cells import (
     CELLS,
+    CONFIG,
     FREQ_IDX,
     HEATERS,
     HORIZONTAL_SCALE,
@@ -18,32 +18,9 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-from nmem.measurement.parameter_sweep import CONFIG
+from nmem.measurement.functions import construct_currents
 
 plt.rcParams["figure.figsize"] = [10, 12]
-
-
-def construct_currents(
-    heater_currents: np.ndarray,
-    slope: float,
-    intercept: float,
-    margin: float,
-    max_critical_current: float,
-) -> np.ndarray:
-    bias_current_array = np.zeros((len(heater_currents), 2))
-    for heater_current in heater_currents:
-        critical_current = htron_critical_current(heater_current, slope, intercept)
-        if critical_current > max_critical_current:
-            critical_current = max_critical_current
-        bias_currents = np.array(
-            [
-                critical_current * (1 - margin * 2.0),
-                critical_current * (1 + margin * 0.1),
-            ]
-        )
-        bias_current_array[heater_currents == heater_current] = bias_currents
-
-    return bias_current_array
 
 
 if __name__ == "__main__":
@@ -55,11 +32,11 @@ if __name__ == "__main__":
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
         "write_width": 40,
-        "read_width": 40,
+        "read_width": 7,
         "enable_write_width": 40,
-        "enable_read_width": 120,
+        "enable_read_width": 4,
         "enable_write_phase": 0,
-        "enable_read_phase": 0,
+        "enable_read_phase": -7,
         "bitmsg_channel": "N0NNRNNNNR",
         "bitmsg_enable": "NNNNENNNNE",
     }
@@ -112,7 +89,13 @@ if __name__ == "__main__":
     )
 
     save_dict = nm.run_sweep_subset(
-        b, measurement_settings, parameter_x, parameter_y, plot_measurement=False
+        b,
+        measurement_settings,
+        parameter_x,
+        parameter_y,
+        plot_measurement=False,
+        division_zero=(1.9, 2.5),
+        division_one=(5.9, 6.5),
     )
     save_dict["trace_chan_in"] = save_dict["trace_chan_in"][:, :, 1]
     save_dict["trace_chan_out"] = save_dict["trace_chan_out"][:, :, 1]
@@ -138,3 +121,4 @@ if __name__ == "__main__":
     print(f"run time {(t2-t1)/60:.2f} minutes")
 
     find_peak(save_dict)
+    plt.savefig(f"{file_path}_fit.png")

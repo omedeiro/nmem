@@ -8,6 +8,7 @@ Created on Fri Nov  3 14:01:31 2023
 import time
 from datetime import datetime
 from time import sleep
+from typing import Tuple
 
 import matplotlib as mpl
 import numpy as np
@@ -22,8 +23,9 @@ from tqdm import tqdm
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
+    htron_critical_current,
 )
-from nmem.measurement.cells import MITEQ_AMP_GAIN
+from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
 
 
 def gauss(x: float, mu: float, sigma: float, A: float):
@@ -45,6 +47,59 @@ def bimodal_fit(
     y = np.nan_to_num(y, posinf=0.0, neginf=0.0)
     params, cov = curve_fit(bimodal, x, y, expected, maxfev=5000, bounds=bounds)
     return params, cov
+
+
+def read_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
+    read_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        read_critical_current * start, read_critical_current * end, num_points
+    )
+    return measurement_settings
+
+
+def write_sweep_scaled(
+    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
+):
+    write_critical_current = (
+        calculate_critical_current(
+            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
+        )
+        * 1e-6
+    )
+    measurement_settings["y"] = np.linspace(
+        write_critical_current * start, write_critical_current * end, num_points
+    )
+    return measurement_settings
+
+
+def construct_currents(
+    heater_currents: np.ndarray,
+    slope: float,
+    intercept: float,
+    margin: float,
+    max_critical_current: float,
+) -> np.ndarray:
+    bias_current_array = np.zeros((len(heater_currents), 2))
+    for heater_current in heater_currents:
+        critical_current = htron_critical_current(heater_current, slope, intercept)
+        if critical_current > max_critical_current:
+            critical_current = max_critical_current
+        bias_currents = np.array(
+            [
+                critical_current * (1 - margin),
+                critical_current * (1 + margin),
+            ]
+        )
+        bias_current_array[heater_currents == heater_current] = bias_currents
+
+    return bias_current_array
 
 
 def get_param_mean(param: np.ndarray) -> np.ndarray:
@@ -261,8 +316,8 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
 def setup_scope_bert(
     b: nTron,
     measurement_settings: dict,
-    division_zero: float = 4.5,
-    division_one: float = 9.5,
+    division_zero: tuple = (4.5, 5.5),
+    division_one: tuple = (9.5, 10.0),
 ):
     scope_horizontal_scale = measurement_settings["scope_horizontal_scale"]
     scope_timespan = measurement_settings["scope_timespan"]
@@ -284,8 +339,8 @@ def setup_scope_bert(
     # b.inst.scope.set_measurement_clock_level("P1", "2", "Absolute", threshold_read)
     # b.inst.scope.set_measurement_clock_level("P2", "2", "Absolute", threshold_read)
 
-    b.inst.scope.set_measurement_gate("P3", division_zero, division_zero + 0.5)
-    b.inst.scope.set_measurement_gate("P4", division_one, division_one + 0.5)
+    b.inst.scope.set_measurement_gate("P3", division_zero[0], division_zero[1])
+    b.inst.scope.set_measurement_gate("P4", division_one[0], division_one[1])
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
@@ -296,8 +351,6 @@ def setup_scope_bert(
 def setup_scope_8bit_bert(
     b: nTron,
     measurement_settings: dict,
-    division_zero: float = 4.5,
-    division_one: float = 8.5,
 ):
     scope_horizontal_scale = measurement_settings["scope_horizontal_scale"]
     scope_sample_rate = measurement_settings["scope_sample_rate"]
@@ -320,10 +373,10 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     sample_rate = measurement_settings.get("sample_rate")
     ramp_read = measurement_settings.get("ramp_read", False)
 
-    if enable_voltage > 200e-3:
+    if enable_voltage > 300e-3:
         raise ValueError("enable voltage too high")
 
-    if channel_voltage > 2.5:
+    if channel_voltage > 3.0:
         raise ValueError("channel voltage too high")
 
     if channel_voltage == 0:
@@ -454,8 +507,8 @@ def load_waveforms(
     num_points = measurement_settings.get("num_points", 256)
 
     if wr_ratio >= 1:
-        write_0 = create_waveforms_edge(width=ww, height=-1, edge=RISING_EDGE)
-        write_1 = create_waveforms_edge(width=ww, height=1, edge=RISING_EDGE)
+        write_0 = create_waveforms_edge(width=ww, height=-1, edge=1)
+        write_1 = create_waveforms_edge(width=ww, height=1, edge=1)
         read_wave = create_waveforms_edge(
             width=rw, height=1 / wr_ratio, edge=RISING_EDGE
         )
@@ -466,16 +519,16 @@ def load_waveforms(
 
     if ewr_ratio >= 1:
         enable_write = create_waveforms_edge(
-            width=eww, height=1, phase=ew_phase, edge=0
+            width=eww, height=1, phase=ew_phase, edge=1
         )
         enable_read = create_waveforms_edge(
-            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=0
+            width=erw, height=1 / ewr_ratio, phase=er_phase, edge=1
         )
     else:
         enable_write = create_waveforms_edge(
-            width=eww, height=ewr_ratio, phase=ew_phase, edge=0
+            width=eww, height=ewr_ratio, phase=ew_phase, edge=1
         )
-        enable_read = create_waveforms_edge(width=erw, height=1, phase=er_phase, edge=0)
+        enable_read = create_waveforms_edge(width=erw, height=1, phase=er_phase, edge=1)
 
     null_wave = create_waveforms(height=0)
 
@@ -561,7 +614,20 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
     sleep(0.1)
     trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
-
+    sleep(0.1)
+    trace_write_avg: np.ndarray = b.inst.scope.get_wf_data("F1")
+    sleep(0.1)
+    trace_ewrite_avg: np.ndarray = b.inst.scope.get_wf_data("F2")
+    sleep(0.1)
+    trace_eread_avg: np.ndarray = b.inst.scope.get_wf_data("F3")
+    sleep(0.1)
+    trace_read0_avg: np.ndarray = b.inst.scope.get_wf_data("F7")
+    sleep(0.1)
+    trace_read1_avg: np.ndarray = b.inst.scope.get_wf_data("F4")
+    sleep(0.1)
+    trace_read0: np.ndarray = b.inst.scope.get_wf_data("Z5")
+    sleep(0.1)
+    trace_read1: np.ndarray = b.inst.scope.get_wf_data("Z4")
     trace_chan_in = np.resize(trace_chan_in, (2, scope_samples))
     trace_chan_out = np.resize(trace_chan_out, (2, scope_samples))
     trace_enab = np.resize(trace_enab, (2, scope_samples))
@@ -569,18 +635,20 @@ def get_traces(b: nTron, scope_samples: int = 5000):
     b.inst.scope.set_trigger_mode("Normal")
     sleep(1e-2)
 
-    # try:
-    #     time_est = round(b.inst.scope.get_parameter_value("P2"), 8)
-    #     b.inst.scope.set_math_vertical_scale("F1", 50e-9, time_est)
-    #     b.inst.scope.set_math_vertical_scale("F2", 50e-9, time_est)
-    # except Exception:
-    #     sleep(1e-4)
+    trace_dict: dict = {
+        "trace_chan_in": trace_chan_in,
+        "trace_chan_out": trace_chan_out,
+        "trace_enab": trace_enab,
+        "trace_write_avg": trace_write_avg,
+        "trace_ewrite_avg": trace_ewrite_avg,
+        "trace_eread_avg": trace_eread_avg,
+        "trace_read0_avg": trace_read0_avg,
+        "trace_read1_avg": trace_read1_avg,
+        "trace_read0": trace_read0,
+        "trace_read1": trace_read1,
+    }
 
-    return (
-        trace_chan_in,
-        trace_chan_out,
-        trace_enab,
-    )
+    return trace_dict
 
 
 def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
@@ -974,6 +1042,12 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     sample_name = measurement_settings.get("sample_name", 0)
     scope_timespan = measurement_settings.get("scope_timespan", 0)
     threshold_bert = measurement_settings.get("threshold_enforced")
+    write_width = measurement_settings.get("write_width")
+    read_width = measurement_settings.get("read_width")
+    enable_write_width = measurement_settings.get("enable_write_width")
+    enable_read_width = measurement_settings.get("enable_read_width")
+    enable_write_phase = measurement_settings.get("enable_write_phase")
+    enable_read_phase = measurement_settings.get("enable_read_phase")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
@@ -1031,7 +1105,7 @@ def plot_waveforms_bert(data_dict: dict, measurement_settings: dict):
     ax3.legend(loc=4)
 
     plt.suptitle(
-        f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
+        f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}, \n write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
     )
 
     plt.tight_layout()
@@ -1074,9 +1148,15 @@ def plot_parameter(
     enable_write_current = data_dict["enable_write_current"].flatten()
     bitmsg_channel = data_dict["bitmsg_channel"]
     bitmsg_enable = data_dict["bitmsg_enable"]
+    write_width = data_dict["write_width"]
+    read_width = data_dict["read_width"]
+    enable_write_width = data_dict["enable_write_width"]
+    enable_read_width = data_dict["enable_read_width"]
+    enable_write_phase = data_dict["enable_write_phase"]
+    enable_read_phase = data_dict["enable_read_phase"]
 
     plt.suptitle(
-        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
+        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable} \n, write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
     )
 
     # plt.suptitle(
@@ -1201,21 +1281,21 @@ def run_realtime_bert(b: nTron, measurement_settings: dict, channel="F5") -> dic
         read_one_top.resize(num_meas, refcheck=False)
 
     # Find the difference between the highest and lowest values in the read top arrays
-    difference = np.max([read_one_top, read_zero_top]) - np.min(
-        [read_one_top, read_zero_top]
-    )
-    max_diff = difference.max()
-    if max_diff > 0.2:
-        print(f"Max difference: {max_diff*1e3:.2f} mV")
-        threshold = calculate_threshold(read_zero_top, read_one_top)
-        print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
-    else:
-        threshold = measurement_settings.get("threshold_bert", 0.4)
-        print(f"Max difference: {max_diff*1e3:.2f} mV")
-        print(f"Default Threshold: {threshold*1e3:.2f} mV")
+    # difference = np.max([read_one_top, read_zero_top]) - np.min(
+    #     [read_one_top, read_zero_top]
+    # )
+    # max_diff = difference.max()
+    # if max_diff > 0.3:
+    #     print(f"Max difference: {max_diff*1e3:.2f} mV")
+    #     threshold = calculate_threshold(read_zero_top, read_one_top)
+    #     print(f"Calculated Threshold: {threshold*1e3:.2f} mV")
+    # else:
+    #     threshold = measurement_settings.get("threshold_bert", 0.4)
+    #     print(f"Max difference: {max_diff*1e3:.2f} mV")
+    #     print(f"Default Threshold: {threshold*1e3:.2f} mV")
 
-    measurement_settings["threshold_enforced"] = threshold
-    print(f"Enforced Threshold: {threshold*1e3:.2f} mV")
+    # if threshold < measurement_settings.get("threshold_enforced", 0.4):
+    threshold = measurement_settings.get("threshold_enforced", 0.35)
 
     # READ 1: above threshold (voltage)
     write_0_read_1 = np.array([(read_zero_top > threshold).sum()])
@@ -1406,7 +1486,7 @@ def run_measurement(
 
     meas_dict, measurement_settings = run_realtime_bert(b, measurement_settings)
 
-    trace_chan_in, trace_chan_out, trace_enab = get_traces(b, scope_samples)
+    trace_dict = get_traces(b, scope_samples)
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
@@ -1416,9 +1496,7 @@ def run_measurement(
     )
     DATA_DICT = {
         **meas_dict,
-        "trace_chan_in": trace_chan_in,
-        "trace_chan_out": trace_chan_out,
-        "trace_enab": trace_enab,
+        **trace_dict,
         "bit_error_rate": bit_error_rate,
     }
     print(f"Bit Error Rate: {bit_error_rate:.2e}")
@@ -1435,12 +1513,14 @@ def run_sweep(
     parameter_y: str,
     save_traces: bool = False,
     plot_measurement=False,
-    division_zero: float = 4.5,
-    division_one: float = 9.5,
+    division_zero: Tuple[float, float] = (4.5, 5.5),
+    division_one: Tuple[float, float] = (9.5, 10),
 ):
     save_dict = {}
 
-    setup_scope_bert(b, measurement_settings, division_zero=division_zero, division_one=division_one)
+    setup_scope_bert(
+        b, measurement_settings, division_zero=division_zero, division_one=division_one
+    )
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
@@ -1570,7 +1650,7 @@ def run_sweep(
                 )
                 print(f"Write Power [nW]: {write_power*1e9:.2f}")
                 print(f"Switch Impedance [Ohm]: {switch_impedance:.2f}")
-
+                print(f"Bit Error Rate: {data_dict['bit_error_rate']:.2e}")
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
             else:
@@ -1589,9 +1669,15 @@ def run_sweep_subset(
     parameter_x: str,
     parameter_y: str,
     save_traces: bool = False,
-    plot_measurement=False,
+    plot_measurement: bool = False,
+    division_zero: Tuple[float, float] = (4.5, 5.5),
+    division_one: Tuple[float, float] = (9.5, 10),
 ):
     save_dict = {}
+
+    setup_scope_bert(
+        b, measurement_settings, division_zero=division_zero, division_one=division_one
+    )
     for idx, x in enumerate(measurement_settings["x"]):
         for y in measurement_settings["y"]:
             measurement_settings[parameter_x] = x

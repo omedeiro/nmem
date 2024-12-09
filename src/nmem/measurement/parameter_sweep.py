@@ -12,7 +12,6 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.calculations.calculations import calculate_critical_current
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
@@ -29,62 +28,137 @@ from nmem.measurement.cells import (
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
-def read_sweep_scaled(
-    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
-):
-    read_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_read_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        read_critical_current * start, read_critical_current * end, num_points
-    )
-    return measurement_settings
-
-
-def write_sweep_scaled(
-    measurement_settings, current_cell, num_points=15, start=0.8, end=0.95
-):
-    write_critical_current = (
-        calculate_critical_current(
-            measurement_settings["enable_write_current"] * 1e6, CELLS[current_cell]
-        )
-        * 1e-6
-    )
-    measurement_settings["y"] = np.linspace(
-        write_critical_current * start, write_critical_current * end, num_points
-    )
-    return measurement_settings
-
-
 if __name__ == "__main__":
     t1 = time.time()
     measurement_name = "nMem_parameter_sweep"
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
 
+    two_nulls = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_nulls_inv = {
+        "bitmsg_channel": "N1NNRN0NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_nulls_zero = {
+        "bitmsg_channel": "N0NNRN0NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_nulls_one = {
+        "bitmsg_channel": "N1NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+
+    two_nulls_read = {
+        "bitmsg_channel": "R0NNRR1NNR",
+        "bitmsg_enable": "EWNNEEWNNE",
+    }
+    three_nulls = {
+        "bitmsg_channel": "0NNNR1NNNR",
+        "bitmsg_enable": "WNNNEWNNNE",
+    }
+
+    one_null = {
+        "bitmsg_channel": "NN0NRNN1NR",
+        "bitmsg_enable": "NNWNENNWNE",
+    }
+
+    zero_nulls = {
+        "bitmsg_channel": "NNN0RNNN1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_inv = {
+        "bitmsg_channel": "NNN1RNNN0R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_zero = {
+        "bitmsg_channel": "NNN0RNNN0R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_one = {
+        "bitmsg_channel": "NNN1RNNN1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    zero_nulls_ewrite = {
+        "bitmsg_channel": "NNN0RNNN1R",
+        "bitmsg_enable": "WWWWEWWWWE",
+    }
+    zero_nulls_emulate = {
+        "bitmsg_channel": "RRR0RRRR1R",
+        "bitmsg_enable": "NNNWENNNWE",
+    }
+    two_emulate = {
+        "bitmsg_channel": "N0RNRN1RNR",
+        "bitmsg_enable": "NWNWENWNWE",
+    }
+    two_emulate_inv = {
+        "bitmsg_channel": "N0NRRN1NRR",
+        "bitmsg_enable": "NWWNENWWNE",
+    }
+    two_emulate_read = {
+        "bitmsg_channel": "R0RRRR1RRR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+    two_emulate_ewrite = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "WWWWEWWWWE",
+    }
+    two_emulate_eread = {
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "EWEEEEWEEE",
+    }
+    two_read = {
+        "bitmsg_channel": "N1R0RN0R1R",
+        "bitmsg_enable": "NWEWENWEWE",
+    }
+    two_read_inv = {
+        "bitmsg_channel": "N0R0RN1R1R",
+        "bitmsg_enable": "NWEWENWEWE",
+    }
+
+    slow_write = {
+        "write_width": 40,
+        "enable_write_width": 4,
+        "enable_write_phase": -7,
+    }
+    fast_write = {
+        "write_width": 0,
+        "enable_write_width": 4,
+        "enable_write_phase": -7,
+    }
+    slow_read = {
+        "read_width": 40,
+        "enable_read_width": 4,
+        "enable_read_phase": -7,
+    }
+    fast_read = {
+        "read_width": 10,
+        "enable_read_width": 4,
+        "enable_read_phase": -7,
+    }
+
+    write_byte = {
+        "bitmsg_channel": "NNNN0R1R0R0R1R1R1R1RNNNNNNNN0R1R0R0R1R1R0R1RNNNN",
+        "bitmsg_enable": "NNNNWEWEWEWEWEWEWEWENNNNNNNNWEWEWEWEWEWEWEWENNNN",
+    }
+
     waveform_settings = {
         "num_points": NUM_POINTS,
         "sample_rate": SAMPLE_RATE[FREQ_IDX],
-        "write_width": 30,
-        "read_width": 10,
-        "enable_write_width": 10,
-        "enable_read_width": 5,
-        "enable_write_phase": 10,
-        "enable_read_phase": -12,
-        "bitmsg_channel": "N0NNRN1NNR",
-        "bitmsg_enable": "NWNNENWNNE",
-        "threshold_bert": 0.4,
-        "threshold_enforced": 0.4,
+        **fast_write,
+        **fast_read,
+        **two_nulls,
+        "threshold_bert": 0.35,
+        "threshold_enforced": 0.35,
     }
 
     current_settings = {
-        "write_current": 60e-6,
-        "read_current": 647e-6,
-        "enable_write_current": 325e-6,
-        "enable_read_current": 255e-6,
+        "write_current": 155e-6,
+        "read_current": 750e-6,
+        "enable_write_current": 410e-6,
+        "enable_read_current": 180e-6,
     }
 
     scope_settings = {
@@ -94,8 +168,8 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 1000
-    sweep_length = 21
+    NUM_MEAS = 500
+    sweep_length = 11
 
     measurement_settings.update(
         {
@@ -110,25 +184,22 @@ if __name__ == "__main__":
             "y": 0,
         }
     )
-    parameter_x = "enable_read_current"
+    parameter_x = "enable_write_current"
     measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(200e-6, 300e-6, sweep_length)
+    # measurement_settings["x"] = np.linspace(00e-6, 550e-6, sweep_length)
     measurement_settings[parameter_x] = measurement_settings["x"][0]
 
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        # measurement_settings = read_sweep_scaled(
-        #     measurement_settings, current_cell, sweep_length, start=0.7, end=1.10
-        # )
-        # measurement_settings["y"] = np.array([current_settings["read_current"]])
-        measurement_settings["y"] = np.linspace(650e-6, 780e-6, sweep_length)
+        measurement_settings["y"] = np.array([current_settings["read_current"]])
+        # measurement_settings["y"] = np.linspace(750e-6, 850e-6, sweep_length)
+        measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
-        measurement_settings = write_sweep_scaled(
-            measurement_settings, current_cell, sweep_length, start=0.5, end=1.0
-        )
         # measurement_settings["y"] = np.array([current_settings["write_current"]])
+        measurement_settings["y"] = np.linspace(00e-6, 200e-6, sweep_length)
+        measurement_settings[parameter_y] = measurement_settings["y"][0]
 
     save_dict = nm.run_sweep(
         b,
@@ -136,8 +207,8 @@ if __name__ == "__main__":
         parameter_x,
         parameter_y,
         plot_measurement=True,
-        division_zero=4.5,
-        division_one=9.5,
+        division_zero=(5.9, 6.5),
+        division_one=(5.9, 6.5),
     )
 
     b.properties["measurement_settings"] = measurement_settings

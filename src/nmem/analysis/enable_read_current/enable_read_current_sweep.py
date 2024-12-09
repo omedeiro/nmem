@@ -2,51 +2,59 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.collections import PolyCollection
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
+from matplotlib.transforms import Bbox
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import patches
 from scipy.signal import find_peaks
 
 from nmem.calculations.analytical_model import create_dict_read
-from nmem.calculations.calculations import (
-    calculate_persistent_current,
-    calculate_read_currents,
-)
+
 from nmem.measurement.cells import CELLS
+from nmem.analysis.analysis import (
+    load_data,
+    find_edge,
+    polygon_nominal,
+    polygon_inverting,
+    plot_analytical,
+)
+from nmem.analysis.enable_read_current.trace_plotting import (
+    text_from_bit,
+    plot_threshold,
+    plot_data_delay_manu,
+    INVERSE_COMPARE_DICT,
+)
 
-plt.rcParams["figure.figsize"] = [6, 4]
-plt.rcParams["font.size"] = 14
+plt.rcParams["figure.figsize"] = [3.5, 3.5]
+plt.rcParams["font.size"] = 6
+plt.rcParams["axes.linewidth"] = 0.5
+plt.rcParams["xtick.major.width"] = 0.5
+plt.rcParams["ytick.major.width"] = 0.5
+plt.rcParams["xtick.direction"] = "in"
+plt.rcParams["ytick.direction"] = "in"
+plt.rcParams["font.family"] = "Inter"
+plt.rcParams["lines.markersize"] = 2
+plt.rcParams["lines.linewidth"] = 0.5
+plt.rcParams["legend.fontsize"] = 5
+plt.rcParams["legend.frameon"] = False
+plt.rcParams["lines.markeredgewidth"] = 0.5
 
+plt.rcParams["xtick.major.size"] = 1
+plt.rcParams["ytick.major.size"] = 1
 
 CURRENT_CELL = "C1"
 
 
-def polygon_under_graph(x, y):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
-
-
-def polygon_nominal(x, y):
-    y = np.copy(y)
-    y[y > 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
-
-
-def polygon_inverting(x, y):
-    y = np.copy(y)
-    y[y < 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
-
-
 def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     if ax is None:
-        fig, ax = plt.subplots(projection="3d")
-    plt.sca(ax)
-    cmap = plt.get_cmap("viridis")
+        fig, ax = plt.subplots(
+            subplot_kw={"projection": "3d"}, layout="none", figsize=(3.5, 3.5)
+        )
+
+    cmap = plt.get_cmap("RdBu")
     # cmap = cmap.reversed()
-    colors = cmap(np.linspace(0.2, 0.8, len(data_dict)))
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
     verts_list = []
     inv_verts_list = []
     zlist = []
@@ -61,19 +69,19 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
         verts_list.append(verts)
         inv_verts_list.append(inv_verts)
 
-    poly = PolyCollection(verts_list, facecolors=colors[-1], alpha=0.6, edgecolors="k")
+    poly = PolyCollection(verts_list, facecolors=colors[-1], alpha=0.6, edgecolors=None)
     poly_inv = PolyCollection(
-        inv_verts_list, facecolors=colors[0], alpha=0.6, edgecolors="k"
+        inv_verts_list, facecolors=colors[0], alpha=0.6, edgecolors=None
     )
     ax.add_collection3d(poly, zs=zlist, zdir="y")
     ax.add_collection3d(poly_inv, zs=zlist, zdir="y")
 
     # ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
-    ax.set_xlabel("$I_R$ ($\mu$A)", labelpad=10)
-    ax.set_ylabel("$I_{{ER}}$ ($\mu$A)", labelpad=70)
-    ax.set_zlabel("BER", labelpad=10)
+    ax.set_xlabel("$I_R$ ($\mu$A)", labelpad=-6)
+    ax.set_ylabel("$I_{{ER}}$ ($\mu$A)", labelpad=4)
+    ax.set_zlabel("BER", labelpad=-6)
     # ax.set_zscale("log")
-    ax.tick_params(axis="both", which="major", labelsize=12, pad=5)
+    ax.tick_params(axis="both", which="major", pad=-1)
 
     ax.xaxis.set_rotate_label(True)
     ax.yaxis.set_rotate_label(False)
@@ -87,13 +95,13 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
     ax.set_yticks(zlist)
     ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
+    ax.set_box_aspect([0.5, 1, 0.25], zoom=0.8)
     ax.view_init(20, -35)
     ax.grid(False)
 
     for key, data in data_dict.items():
-        cmap = plt.get_cmap("viridis")
-        colors = cmap(np.linspace(0.2, 0.8, 4))
+        cmap = plt.get_cmap("RdBu")
+        colors = cmap(np.linspace(0, 1, 4))
         # colors = ["red", "darkred", "lightblue", "blue"]
         edge_dict = get_edges({key: data})
         edge_list = edge_dict[key]["edges"]
@@ -117,89 +125,16 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None):
             color="k",
         )
 
-        # ax.plot(
-        #     read_currents,
-        #     enable_read_current * np.ones_like(read_currents),
-        #     w0r1,
-        #     "-",
-        #     color="r",
-        # )
-        # ax.plot(
-        #     read_currents,
-        #     enable_read_current * np.ones_like(read_currents),
-        #     w1r0,
-        #     "-",
-        #     color="b",
-        # )
-    ax = plt.gca()
+    ax.set_position([0.0, 0.0, 1, 1])
+
+    for child in ax.get_children():
+        if isinstance(child, Rectangle):
+            child.set_visible(False)
+
+    # fig.subplots_adjust(left=0, right=1, top=0.9, bottom=0.1)
+    # fig.bbox = Bbox.from_bounds(-x0/4, -100, width*8, height*4)
+    # plt.show()
     return ax
-
-
-def load_data(file_path: str):
-    data = sio.loadmat(file_path)
-    return data
-
-
-def find_edge(data: np.ndarray) -> list:
-    pos_data = np.argwhere(data > 0.55)
-    neg_data = np.argwhere(data < 0.45)
-
-    if len(pos_data) > 0:
-        pos_edge1 = pos_data[0][0]
-        neg_edge1 = pos_data[-1][0]
-    else:
-        pos_edge1 = 0
-        neg_edge1 = 0
-    if len(neg_data) > 0:
-        neg_edge2 = neg_data[0][0]
-        pos_edge2 = neg_data[-1][0]
-    else:
-        neg_edge2 = 0
-        pos_edge2 = 0
-    return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
-
-
-def find_edge_dual(ber: np.ndarray, w0r1: np.ndarray, w1r0: np.ndarray) -> list:
-    w0r1_peak = np.argmax(np.diff(w0r1))
-    w0r1_peak_neg = np.argmin(np.diff(w0r1))
-    w1r0_peak = np.argmax(np.diff(w1r0))
-    w1r0_peak_neg = np.argmin(np.diff(w1r0))
-    left_nominal = np.argmin(np.diff(w1r0))
-    right_nominal = np.argmax(np.diff(w0r1))
-    left_inverting = np.argmax(np.diff(w0r1))
-
-    # if right_nominal == 0:
-    #     right_nominal = np.argmax(np.diff(w1r0[left_nominal:]))
-
-    # if right_nominal < left_nominal:
-    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
-
-    # if left_nominal > right_nominal:
-    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
-
-    # if right_nominal < left_nominal:
-    #     right_nominal = np.argmax(np.diff(w0r1[left_nominal:]))
-
-    while ber[left_inverting] < 0.5:
-        left_inverting = np.argmax(np.diff(w0r1[:left_nominal]))
-
-    if np.min(ber) >= 0.45:
-        left_nominal = 0
-        right_nominal = 0
-    # if left_nominal > right_nominal:
-    #     left_nominal = np.argmin(np.diff(w1r0[:left_nominal]))
-    #     right_nominal = np.argmax(np.diff(ber[left_nominal:]))
-    # right_nominal = np.argmax(np.diff(w0r1[right_nominal:])
-
-    # if ber[w0r1_peak] < 0.45:
-    #     w0r1_peak = np.argmax(np.diff(w0r1[:w0r1_peak]))
-    # if w0r1_peak_neg > w0r1_peak:
-    #     w0r1_peak = np.argmax(np.diff(w0r1[w0r1_peak_neg:]))
-    # if w1r0_peak_neg > w1r0_peak:
-    #     w1r0_peak_neg = np.argmin(np.diff(w1r0[:w1r0_peak_neg]))
-    print(f"left_nominal: {left_nominal}, right_nominal: {right_nominal}")
-    print(f"left invert: {left_inverting}")
-    return [left_inverting]
 
 
 def get_edges(data_dict: dict) -> dict:
@@ -233,8 +168,9 @@ def get_edges(data_dict: dict) -> dict:
 def plot_edges(
     data_dict: dict, ax: plt.Axes = None, fit=True, fit_dict: dict = None
 ) -> plt.Axes:
-    cmap = plt.get_cmap("viridis")
+    cmap = plt.get_cmap("RdBu")
     colors = cmap(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
     edge_dict = get_edges(data_dict)
     edge_list = []
     param_list = []
@@ -256,7 +192,7 @@ def plot_edges(
             if e == 0:
                 continue
             ax.scatter(
-                param, read_current[e], color=colors[i], marker="o", edgecolor="k"
+                param, read_current[e], color=colors[i], marker=markers[i], edgecolor=colors[i], linewidth=0.5, s=27
             )
 
     if fit:
@@ -272,7 +208,7 @@ def plot_edges(
             fit = np.polyfit(fitx, fity, 1)
             fit_fn = np.poly1d(fit)
             ax.plot(x, fit_fn(x), "--", color=colors[i])
-            ax.plot(fitx, fity, "o", color="k", fillstyle="none", mew=1.5)
+            ax.plot(fitx, fity, "o", color="k", fillstyle="none", mew=0.5)
             ax.text(
                 1.50,
                 0.5 + 0.1 * i,
@@ -285,6 +221,7 @@ def plot_edges(
 
 
 def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D):
+    markers = ["o", "s", "D", "^"]
     for edge in edge_list:
         if edge == 0:
             continue
@@ -306,8 +243,9 @@ def plot_edge_3D(edge_dict: dict, edge_list: list, key: int, colors: list, ax: A
             [edge_dict[key]["param"], edge_dict[key]["param"]],
             [edge_dict[key]["ber"][edge]],
             color=colors[edge_list.index(edge)],
-            marker="o",
-            markeredgecolor="k",
+            marker=markers[edge_list.index(edge)],
+            markeredgecolor=None,
+            markeredgewidth=0.5,
         )
 
     return ax
@@ -362,7 +300,7 @@ def plot_enable_read_current_edges(
     plt.xlabel("Channel Critical Current ($\mu$A)")
     plt.ylabel("Read Current ($\mu$A)")
     plt.grid(True, which="both")
-    ax.set_aspect("equal")
+    # ax.set_aspect("equal")
     plt.show()
 
 
@@ -383,13 +321,11 @@ def plot_enable_read_current_edges_stack(
     ax.set_xlim(600, 950)
     ax.set_ylim(500, 950)
     ax.xaxis.set_major_locator(MultipleLocator(100))
-    ax.xaxis.set_minor_locator(MultipleLocator(50))
     ax.yaxis.set_major_locator(MultipleLocator(100))
 
     ax, read_current_dict = plot_analytical(
         analytical_data_dict, persistent_current=persistent_current, ax=ax
     )
-
 
     # ax.set_ylim(500, 950)
     # ax.set_xlim(600, 950)
@@ -397,7 +333,7 @@ def plot_enable_read_current_edges_stack(
     # plt.title("Enable Read Current Edges")
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position("right")
-
+    ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True, length=2)
     # plt.xlabel("Channel Critical Current ($\mu$A)")
     # plt.ylabel("Read Current ($\mu$A)")
     # plt.grid(True, which="both")
@@ -410,9 +346,12 @@ def plot_stack(
     analytical_data_dict_list,
     persistent_currents_list,
     fitting_dict_list,
+    axs=None,
 ):
-    fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
-    fig.subplots_adjust(hspace=0)
+    if axs is None:
+        fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
+        fig.subplots_adjust(hspace=0)
+
     for i in range(3):
         axs[i] = plot_enable_read_current_edges_stack(
             data_dict_list[i],
@@ -420,26 +359,26 @@ def plot_stack(
             axs[i],
             persistent_current=persistent_currents_list[i],
             fitting_dict=fitting_dict_list[i],
-        )    
-    
-    fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
-    fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
+        )
 
-    caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
-    cbar = fig.colorbar(
-        axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
-    )    
-    caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
-    plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
-    plt.show()
+    # fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
+    # fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
+
+    # caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
+    # cbar = fig.colorbar(
+    #     axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
+    # )
+    # caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
+    # plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
+    # plt.show()
+    return axs
 
 
 def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
     if ax is None:
         fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("viridis")
-    colors = cmap(np.linspace(0.3, 1, len(data_dict)))
+    cmap = plt.get_cmap("RdBu")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
 
     data_dict = {index: data_dict[index]}
 
@@ -447,7 +386,7 @@ def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         ber = data["bit_error_rate"].flatten()
         enable_read = data["enable_read_current"].flatten()[0] * 1e6
-        plt.plot(
+        ax.plot(
             read_currents,
             ber,
             label=f"$I_{{ER}}$ = {enable_read:.1f}$\mu$A",
@@ -460,7 +399,7 @@ def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
         for edge in edges:
             if edge == 0:
                 continue
-            plt.vlines(
+            ax.vlines(
                 read_currents[edge],
                 0,
                 1,
@@ -470,19 +409,17 @@ def plot_read_sweep_single(data_dict: dict, index: int, ax=None, fill=False):
         print(f"read current edges: {read_currents[edges]}")
 
     if fill:
-        plt.fill_between(
+        ax.fill_between(
             read_currents,
             ber,
             np.ones_like(ber) * 0.5,
             color=colors[key],
             alpha=0.5,
         )
-
-    ax = plt.gca()
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.yticks(np.linspace(0, 1, 5))
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
+    ax.set_xlabel("Read Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax.set_yticks(np.linspace(0, 1, 5))
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax
 
 
@@ -490,8 +427,8 @@ def plot_write_sweep_single(data_dict: dict, index: int, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     plt.sca(ax)
-    cmap = plt.get_cmap("viridis")
-    colors = cmap(np.linspace(0, 0.8, len(data_dict)))
+    cmap = plt.get_cmap("RdBu")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
 
     data_dict = {index: data_dict[index]}
 
@@ -520,8 +457,8 @@ def plot_write_sweep_single_log(data_dict: dict, index: int, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     plt.sca(ax)
-    cmap = plt.get_cmap("viridis")
-    colors = cmap(np.linspace(0, 0.8, len(data_dict)))
+    cmap = plt.get_cmap("RdBu")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
 
     data_dict = {index: data_dict[index]}
 
@@ -551,6 +488,191 @@ def plot_write_sweep_single_log(data_dict: dict, index: int, ax=None):
     plt.grid(True)
     plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax
+
+
+def plot_data_delay_manu_dev(data_dict_keyd, axs=None):
+    cmap = plt.get_cmap("RdBu").reversed()
+    colors = cmap(np.linspace(0, 1, 8))
+    data_dict = data_dict_keyd[0]
+    INDEX = 14
+    if axs is None:
+        fig, axs = plt.subplots(6, 1, figsize=(2.6, 3.54))
+
+    ax = axs[0]
+    x = data_dict["trace_chan_in"][0][:, INDEX] * 1e6
+    yin = np.mean(data_dict["trace_chan_in"][1], axis=1) * 1e3
+    (p1,) = ax.plot(x, yin, color=colors[0], label="Input")
+    ax.set_xlim([0, 10])
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate(data_dict["bitmsg_channel"][0]):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.6,
+            axheight * 1.1,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.set_ylim([-150, 1100])
+    ax.set_yticks([0, 500, 1200])
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+
+    ax = axs[1]
+    x = data_dict["trace_enab"][0][:, INDEX] * 1e6
+    y = np.mean(data_dict["trace_enab"][1], axis=1) * 1e3
+    (p2,) = ax.plot(x, y, color=colors[-1], label="Enable")
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate(data_dict["bitmsg_enable"][0]):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.5,
+            axheight * 0.96,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.set_ylim([-10, 100])
+    ax.set_xlim([0, 10])
+    ax.set_yticks([0, 50])
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+
+    ax = axs[2]
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
+    # yout = np.roll(yout, 10)*1.3
+    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
+    # plt.grid(axis="x", which="both")
+    ax = plot_threshold(ax, 4, 5, 400)
+    ax = plot_threshold(ax, 9, 10, 400)
+    ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
+    ax.set_yticks([0, 500])
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate("NNNNzNNNNo"):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.5,
+            axheight * 0.7,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax.tick_params(direction="in")
+    ax.set_xticklabels([])
+    ax.set_xlim([0, 10])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+
+    ax = axs[3]
+    data_dict = data_dict_keyd[1]
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
+    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate("NNNNZNNNNO"):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.2,
+            axheight * 0.95,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax = plot_threshold(ax, 4, 5, 400)
+    ax = plot_threshold(ax, 9, 10, 400)
+    ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
+    ax.yaxis.set_ticks([0, 500])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+
+    ax = axs[4]
+    data_dict = data_dict_keyd[2]
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
+    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate("NNNNzNNNNO"):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.2,
+            axheight * 1.2,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax = plot_threshold(ax, 4, 5, 400)
+    ax = plot_threshold(ax, 9, 10, 400)
+    ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
+    ax.yaxis.set_ticks([0, 500])
+    ax.set_xticklabels([])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+
+    ax = axs[5]
+    data_dict = data_dict_keyd[2]
+    x = data_dict["trace_chan_out"][0][:, -1] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, -1] * 1e3
+    (p3,) = ax.plot(x, yout, color=colors[1], label="Output")
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate("NNNNZNNNNo"):
+        text = text_from_bit(bit)
+        ax.text(
+            i + 0.51,
+            axheight * 1.0,
+            text,
+            ha="center",
+            va="bottom",
+            fontsize=6,
+            rotation=0,
+        )
+    ax = plot_threshold(ax, 4, 5, 400)
+    ax = plot_threshold(ax, 9, 10, 400)
+    ax.set_ylim([-150, 900])
+    ax.set_xlim([0, 10])
+    ax.set_yticks([0, 500])
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.xaxis.set_label_position("bottom")
+    ax.xaxis.set_major_locator(MultipleLocator(1))
+    ax.tick_params(
+        direction="in", top=True, bottom=True, right=True, left=True, length=2
+    )
+    ax.set_xticklabels(["", "0", "", "", "", "", "5", "", "", "", "", "10"])
+    return axs
 
 
 def plot_enable_read_sweep_multiple(data_dict: dict):
@@ -585,61 +707,56 @@ def plot_sweep_waterfall(data_dict: dict):
     plt.show()
 
 
-def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    color_map = plt.get_cmap("viridis")
-    persistent_currents, regions = calculate_persistent_current(data_dict)
-    data_dict["regions"] = regions
-    if persistent_current == 0:
-        data_dict["persistent_currents"] = np.zeros_like(persistent_currents)
-    else:
-        data_dict["persistent_currents"] = (
-            np.ones_like(persistent_currents) * persistent_current
-        )
+def manuscript_figure(data_dict):
+    fig = plt.figure(figsize=(9.5, 3.5))
 
-    read_current_dict = calculate_read_currents(data_dict)
-    inv_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"]
-            - read_current_dict["one_state_currents_inv"],
-            read_current_dict["zero_state_currents_inv"]
-            - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
+    subfigs = fig.subfigures(1, 3, wspace=-0.3, width_ratios=[0.5, 1, 1])
+
+    axs = subfigs[0].subplots(6, 1, sharex=True, sharey=False)
+    axstrace = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
+    subfigs[0].supxlabel("Time ($\mu$s)", x=0.5, y=-0.01)
+    subfigs[0].supylabel("Voltage (mV)", x=1.01, y=0.5, rotation=270)
+    subfigs[0].subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+
+    axsslice = subfigs[1].subplots(3, 1, subplot_kw={"projection": "3d"})
+    axsslice[0] = plot_waterfall(enable_read_290_dict, ax=axsslice[0])
+    axsslice[1] = plot_waterfall(enable_read_300_dict, ax=axsslice[1])
+    axsslice[2] = plot_waterfall(enable_read_310_dict, ax=axsslice[2])
+    subfigs[1].subplots_adjust(
+        hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1
     )
-    nominal_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
-            read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
+
+    axsstack = subfigs[2].subplots(3, 1, sharex=True, sharey=True)
+    axsstack = plot_stack(
+        [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
+        [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+        [-30, 0, 30],
+        [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
+        axs=axsstack,
     )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        nominal_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
+    subfigs[2].subplots_adjust(hspace=0.0, bottom=0.06, top=0.90, left=-0.2, right=0.9)
+    subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.36, y=-0.02)
+    subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)", x=0.48, y=0.5)
+
+    caxis = subfigs[2].add_axes([0.266, 0.91, 0.165, 0.02])
+    cbar = subfigs[2].colorbar(
+        axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
     )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        -1 * inv_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
-    )
-    read_current_dict["nominal"] = nominal_region
-    read_current_dict["inverting"] = inv_region
-    return ax, read_current_dict
+    caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True, direction="out")
+    fig.patch.set_visible(False)
+    plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")    
+    plt.show()
+
+
+def plot_trace_only():    
+    fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
+    axs = plot_data_delay_manu_dev(INVERSE_COMPARE_DICT, axs)
+    fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+    fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
+    fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
+    plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
 
 
 if __name__ == "__main__":
@@ -926,44 +1043,59 @@ if __name__ == "__main__":
     #     fitting_dict=fitting_dict[30],
     # )
 
+
     # plot_stack(
     #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
     #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
     #     [-30, 0, 30],
     #     [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
     # )
-
+    # plot_sweep_waterfall(enable_read_310_dict)
     enable_read_310_C4_dict = {
-            0: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
-            ),
-            1: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
-            ),
-            2: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
-            ),
-            3: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
-            ),
-            4: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
-            ),
-            5: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
-            ),
-            6: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
-            ),
-            7: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
-            ),
-            8: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
-            ),
-            9: load_data(
-                "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
-            ),
-                
-        }
-    plot_sweep_waterfall(enable_read_310_C4_dict)
+        0: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
+        ),
+        1: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
+        ),
+        2: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
+        ),
+        3: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
+        ),
+        4: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
+        ),
+        5: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
+        ),
+        6: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
+        ),
+        7: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
+        ),
+        8: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
+        ),
+        9: load_data(
+            "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
+        ),
+    }
+
+    # manuscript_figure(data_dict)
+    fig, axs = plt.subplots(1, 1, figsize=(2.6, 3.54))
+    axs = plot_enable_read_current_edges_stack(enable_read_310_dict, analytical_data_dict, axs, 30, fitting_dict[30])
+    axs.set_xlabel("$I_{CH}$ ($\mu$A)")
+    axs.set_ylabel("$I_{R}$ ($\mu$A)")
+    fig.tight_layout()
+    plt.savefig("slide_analytical_fit.png", bbox_inches="tight", dpi=300)
+    plt.show()
+
+    plot_trace_only()
+
+    plot_waterfall(enable_read_310_dict)
+    fig = plt.gcf()
+    fig.patch.set_visible(False)
+    plt.savefig("slide_waterfall.png", bbox_inches="tight", dpi=300)

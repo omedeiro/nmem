@@ -1,13 +1,15 @@
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.ticker import MultipleLocator
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
 
 from nmem.analysis.analysis import (
     plot_threshold,
+    load_data
 )
-font_path= r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+
+font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
 plt.rcParams["figure.figsize"] = [3.5, 2.36]
@@ -17,18 +19,15 @@ plt.rcParams["xtick.major.width"] = 0.5
 plt.rcParams["ytick.major.width"] = 0.5
 plt.rcParams["xtick.direction"] = "in"
 plt.rcParams["ytick.direction"] = "in"
-plt.rcParams['font.family'] = "Inter"
+plt.rcParams["font.family"] = "Inter"
 
-def load_data(file_path: str):
-    data = sio.loadmat(file_path)
-    return data
 
 
 def text_from_bit(bit: str):
     if bit == "0":
-        return 'WR0'
+        return "WR0"
     elif bit == "1":
-        return 'WR1'
+        return "WR1"
     elif bit == "N":
         return ""
     elif bit == "R":
@@ -41,7 +40,7 @@ def text_from_bit(bit: str):
         return "RD0"
     elif bit == "Z":
         return "W0R1"
-    elif bit =="o":
+    elif bit == "o":
         return "RD1"
     elif bit == "O":
         return "W1R0"
@@ -49,16 +48,15 @@ def text_from_bit(bit: str):
         return None
 
 
-
 def plot_data_delay_manu(data_dict_keyd):
     cmap = plt.get_cmap("viridis")
     colors = cmap(np.linspace(0.2, 0.8, 3))
     data_dict = data_dict_keyd[0]
     INDEX = 14
-    fig, ax = plt.subplots(figsize=(2.6,3.54))
+    fig, ax = plt.subplots(figsize=(2.6, 3.54))
     plt.subplots_adjust(hspace=0.0, wspace=0.0)
     plt.subplot(611)
-    x = data_dict["trace_chan_in"][0][:,INDEX] * 1e6
+    x = data_dict["trace_chan_in"][0][:, INDEX] * 1e6
     yin = np.mean(data_dict["trace_chan_in"][1], axis=1) * 1e3
     (p1,) = plt.plot(x, yin, color=colors[0], label="Input")
     plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
@@ -89,8 +87,8 @@ def plot_data_delay_manu(data_dict_keyd):
     # plt.grid(axis="x", which="both")
 
     plt.subplot(612)
-    x = data_dict["trace_enab"][0][:,INDEX] * 1e6
-    y = np.mean(data_dict["trace_enab"][1],axis=1) * 1e3
+    x = data_dict["trace_enab"][0][:, INDEX] * 1e6
+    y = np.mean(data_dict["trace_enab"][1], axis=1) * 1e3
     (p2,) = plt.plot(x, y, color=colors[-1], label="Enable")
     plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
     ax = plt.gca()
@@ -118,8 +116,8 @@ def plot_data_delay_manu(data_dict_keyd):
     # plt.grid(axis="x", which="both")
 
     plt.subplot(613)
-    x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
     (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
@@ -152,11 +150,10 @@ def plot_data_delay_manu(data_dict_keyd):
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
 
-
     plt.subplot(614)
     data_dict = data_dict_keyd[1]
-    x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
     (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
@@ -172,7 +169,7 @@ def plot_data_delay_manu(data_dict_keyd):
             va="bottom",
             fontsize=8,
             rotation=0,
-        )    
+        )
     ax = plot_threshold(ax, 4, 5, 400)
     ax = plot_threshold(ax, 9, 10, 400)
     plt.xlabel("Time [$\mu$s]")
@@ -191,8 +188,8 @@ def plot_data_delay_manu(data_dict_keyd):
 
     plt.subplot(615)
     data_dict = data_dict_keyd[2]
-    x = data_dict["trace_chan_out"][0][:,INDEX] * 1e6
-    yout = data_dict["trace_chan_out"][1][:,INDEX] * 1e3
+    x = data_dict["trace_chan_out"][0][:, INDEX] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, INDEX] * 1e3
     # yout = np.roll(yout, 10)*1.3
     (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
@@ -208,7 +205,7 @@ def plot_data_delay_manu(data_dict_keyd):
             va="bottom",
             fontsize=8,
             rotation=0,
-        )    
+        )
     ax = plot_threshold(ax, 4, 5, 400)
     ax = plot_threshold(ax, 9, 10, 400)
     plt.xlabel("Time [$\mu$s]")
@@ -227,8 +224,8 @@ def plot_data_delay_manu(data_dict_keyd):
 
     plt.subplot(616)
     data_dict = data_dict_keyd[2]
-    x = data_dict["trace_chan_out"][0][:,-1] * 1e6
-    yout = data_dict["trace_chan_out"][1][:,-1] * 1e3
+    x = data_dict["trace_chan_out"][0][:, -1] * 1e6
+    yout = data_dict["trace_chan_out"][1][:, -1] * 1e3
     # yout = np.roll(yout, 10)*1.3
     (p3,) = plt.plot(x, yout, color=colors[1], label="Output")
     # plt.grid(axis="x", which="both")
@@ -244,7 +241,7 @@ def plot_data_delay_manu(data_dict_keyd):
             va="bottom",
             fontsize=8,
             rotation=0,
-        )    
+        )
     ax = plot_threshold(ax, 4, 5, 400)
     ax = plot_threshold(ax, 9, 10, 400)
     plt.ylim([-150, 900])
@@ -256,10 +253,9 @@ def plot_data_delay_manu(data_dict_keyd):
     ax.yaxis.set_label_position("right")
     plt.sca(ax)
     plt.xticks(np.linspace(x[0], x[-1], 3))
-    
+
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
-
 
     fig = plt.gcf()
     # fig.supylabel("Voltage [mV]", x=1, y=0.5, rotation=-90)
@@ -270,6 +266,18 @@ def plot_data_delay_manu(data_dict_keyd):
     plt.show()
     return data_dict
 
+
+INVERSE_COMPARE_DICT = {
+    0: load_data(
+        "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
+    ),
+    1: load_data(
+        "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
+    ),
+    2: load_data(
+        "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
+    ),
+}
 
 if __name__ == "__main__":
 
@@ -283,7 +291,6 @@ if __name__ == "__main__":
         2: load_data(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
         ),
-
     }
 
     plot_data_delay_manu(inverse_compare_dict)
