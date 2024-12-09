@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from typing import Tuple
 import numpy as np
 import scipy.io as sio
 from matplotlib.ticker import MultipleLocator
@@ -7,10 +9,7 @@ plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 14
 
 
-def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
+def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axes:
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(data_dict)))
 
@@ -19,7 +18,7 @@ def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
     for key, data in data_dict.items():
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         ber = data["bit_error_rate"].flatten()
-        plt.plot(
+        ax.plot(
             read_currents,
             ber,
             label=f"$I_{{EW}}$ = {data['enable_write_current'][0,0,0]*1e6:.1f} $\mu$A",
@@ -29,7 +28,7 @@ def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
         )
 
         state0_current, state1_current = find_state_currents(data)
-        plt.plot(
+        ax.plot(
             read_currents[read_currents == state0_current],
             ber[read_currents == state0_current],
             color=colors[key],
@@ -37,8 +36,9 @@ def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
             markerfacecolor=colors[key],
             markeredgecolor="k",
             linewidth=1.5,
+            label="_state0",
         )
-        plt.plot(
+        ax.plot(
             read_currents[read_currents == state1_current],
             ber[read_currents == state1_current],
             color=colors[key],
@@ -47,72 +47,18 @@ def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
             markeredgecolor="k",
             markersize=10,
             linewidth=1.5,
+            label="_state1",
         )
 
-    ax = plt.gca()
-
-    plt.ylim(0, 1)
-    # plt.yscale("log")
-    # plt.xlabel("Read Current ($\mu$A)")
-    # plt.ylabel("Bit Error Rate")
-    plt.grid(True)
+    ax.set_ylim(0, 1)
 
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
-    plt.legend(frameon=True, loc=2)
-    # plt.title("Enable Write Sweep")
+    ax.legend(frameon=True, loc=2)
     return ax
 
 
-def plot_enable_write_sweep(data_dict: dict, index: int = None, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
-
-    if index is not None:
-        data_dict = {index: data_dict[index]}
-
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        ax = plt.plot(
-            read_currents,
-            ber,
-            label=f"$I_{{EW}}$ = {data['enable_write_current'][0,0,0]*1e6:.1f} $\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-
-        state0_current, state1_current = find_state_currents(data)
-        plt.plot(
-            read_currents[read_currents == state0_current],
-            ber[read_currents == state0_current],
-            color=colors[key],
-            marker="D",
-            markerfacecolor=colors[key],
-            markeredgecolor=colors[key],
-        )
-        plt.plot(
-            read_currents[read_currents == state1_current],
-            ber[read_currents == state1_current],
-            color=colors[key],
-            marker="P",
-            markerfacecolor=colors[key],
-            markeredgecolor=colors[key],
-            markersize=10,
-        )
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1.25))
-    plt.title("Enable Write Sweep")
-    return ax
-
-
-def plot_enable_write_sweep_grid(data_dict: dict):
+def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:
     fig, ax = plt.subplot_mosaic(
         [["A", "B", "C", "D"], ["E", "E", "E", "E"]],
         figsize=(16, 9),
@@ -121,24 +67,26 @@ def plot_enable_write_sweep_grid(data_dict: dict):
         sharey=False,
     )
     for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
-        ax[i] = plot_enable_write_sweep_single(data_dict, j, ax=ax[i])
+        ax[i] = plot_enable_write_sweep_single(ax[i], data_dict, j)
         if i == "A":
-            print(ax[i])
             ax[i].set_ylabel("Bit Error Rate")
-            plt.legend(loc=2)
+            ax[i].legend(loc=2)
         if i == "C":
-            plt.legend(loc=3)
+            ax[i].legend(loc=3)
         if i == "D":
-            plt.legend(loc=3)
+            ax[i].legend(loc=3)
 
         ax[i].set_xlabel("Read Current ($\mu$A)")
 
-    ax["E"] = plot_state_currents(data_dict, ax=ax["E"])
+    ax["E"] = plot_state_currents(ax["E"], data_dict)
     plt.tight_layout()
+    if save:
+        plt.savefig("enable_write_sweep_grid.png", dpi=300)
     plt.show()
+    return
 
 
-def plot_persistent_currents(data_dict: dict, ax=None):
+def plot_persistent_currents(ax: Axes, data_dict: dict) -> None:
     persistent_currents = []
     for key, data in data_dict.items():
         state0_current, state1_current = find_state_currents(data)
@@ -159,9 +107,10 @@ def plot_persistent_currents(data_dict: dict, ax=None):
     plt.grid(True, axis="both", which="both")
     plt.xlabel("Enable Write Current ($\mu$A)")
     plt.ylabel("Diff. Between State Currents ($\mu$A)")
+    return
 
 
-def find_state_currents(data_dict: dict):
+def find_state_currents(data_dict: dict) -> Tuple[float, float]:
     read_currents = data_dict["y"][:, :, 0].flatten() * 1e6
     ber = data_dict["bit_error_rate"].flatten()
 
@@ -180,10 +129,7 @@ def find_state_currents(data_dict: dict):
     return state0_current, state1_current
 
 
-def plot_state_currents(data_dict: dict, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
+def plot_state_currents(ax: Axes, data_dict: dict):
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(data_dict)))
     enable_write_currents = []
@@ -198,14 +144,14 @@ def plot_state_currents(data_dict: dict, ax=None):
         state0_currents.append(state0_current)
         state1_currents.append(state1_current)
 
-        plt.plot(
+        ax.plot(
             data["enable_write_current"][0, 0, 0] * 1e6,
             state0_current,
             "D",
             color=colors[key],
             markeredgecolor="k",
         )
-        plt.plot(
+        ax.plot(
             data["enable_write_current"][0, 0, 0] * 1e6,
             state1_current,
             "P",
@@ -215,7 +161,7 @@ def plot_state_currents(data_dict: dict, ax=None):
             markeredgewidth=1,
         )
 
-    plt.plot(
+    ax.plot(
         enable_write_currents,
         state0_currents,
         label="State 0",
@@ -224,7 +170,7 @@ def plot_state_currents(data_dict: dict, ax=None):
         markeredgecolor="k",
         zorder=0,
     )
-    plt.plot(
+    ax.plot(
         enable_write_currents,
         state1_currents,
         label="State 1",
@@ -234,78 +180,61 @@ def plot_state_currents(data_dict: dict, ax=None):
         markersize=10,
         zorder=0,
     )
-    plt.xlabel("Enable Write Current ($\mu$A)")
-    plt.ylabel("State Current ($\mu$A)")
-    plt.grid(True)
-    plt.legend(frameon=False)
-    # plt.title("Enable Write Sweep")
+    ax.set_xlabel("Enable Write Current ($\mu$A)")
+    ax.set_ylabel("State Current ($\mu$A)")
+    ax.grid(True, which="both", axis="both")
+    ax.legend(frameon=False)
 
     return ax
 
 
 if __name__ == "__main__":
-    data0 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-51-36.mat"
-    )
-    data1 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-48-50.mat"
-    )
-    data2 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-45-47.mat"
-    )
-    data3 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-43-16.mat"
-    )
-    data4 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-40-40.mat"
-    )
-    data5 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-37-15.mat"
-    )
-    data6 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-54-34.mat"
-    )
-    data7 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-25-14.mat"
-    )
-    data8 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-28-20.mat"
-    )
-    data9 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-31-44.mat"
-    )
-    data10 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-34-33.mat"
-    )
-    data11 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-04-25.mat"
-    )
-    data12 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-19-21.mat"
-    )
-    data13 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-22-26.mat"
-    )
-    data14 = sio.loadmat(
-        "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-26-08.mat"
-    )
-
     data_dict = {
-        0: data0,
-        1: data1,
-        2: data2,
-        3: data3,
-        4: data4,
-        5: data5,
-        6: data6,
-        7: data7,
-        8: data8,
-        9: data9,
-        10: data10,
-        11: data11,
-        12: data12,
-        13: data13,
-        14: data14,
+        0: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-51-36.mat"
+        ),
+        1: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-45-47.mat"
+        ),
+        2: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-43-16.mat"
+        ),
+        3: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-40-40.mat"
+        ),
+        4: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-37-15.mat"
+        ),
+        5: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-54-34.mat"
+        ),
+        6: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-25-14.mat"
+        ),
+        7: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-28-20.mat"
+        ),
+        8: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-31-44.mat"
+        ),
+        9: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 14-34-33.mat"
+        ),
+        10: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-04-25.mat"
+        ),
+        11: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-19-21.mat"
+        ),
+        12: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-22-26.mat"
+        ),
+        13: sio.loadmat(
+            "SPG806_20240916_nMem_parameter_sweep_D6_A4_C1_2024-09-16 15-26-08.mat"
+        ),
     }
     plot_enable_write_sweep_grid(data_dict)
-    plot_persistent_currents(data_dict)
+
+    fig, ax = plt.subplots()
+    plot_state_currents(ax, data_dict)
+
