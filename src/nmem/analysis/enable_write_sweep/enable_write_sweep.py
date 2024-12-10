@@ -87,11 +87,11 @@ def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:
     return
 
 
-def plot_persistent_currents(ax: Axes, data_dict: dict) -> None:
-    persistent_currents = []
+def plot_state_separation(ax: Axes, data_dict: dict) -> None:
+    state_separation = []
     for key, data in data_dict.items():
         state0_current, state1_current = find_state_currents(data)
-        persistent_currents.append(state1_current - state0_current)
+        state_separation.append(state1_current - state0_current)
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -99,7 +99,7 @@ def plot_persistent_currents(ax: Axes, data_dict: dict) -> None:
 
     plt.bar(
         [data["enable_write_current"][0, 0, 0] * 1e6 for data in data_dict.values()],
-        persistent_currents,
+        state_separation,
         width=2.5,
     )
     ax.xaxis.set_major_locator(MultipleLocator(20))
@@ -138,8 +138,6 @@ def plot_state_currents(ax: Axes, data_dict: dict):
     state1_currents = []
     for key, data in data_dict.items():
         state0_current, state1_current = find_state_currents(data)
-        # print(f"State 0 Current: {state0_current:.2f} µA")
-        # print(f"State 1 Current: {state1_current:.2f} µA")
 
         enable_write_currents.append(data["enable_write_current"][0, 0, 0] * 1e6)
         state0_currents.append(state0_current)
@@ -239,3 +237,5 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     plot_state_currents(ax, data_dict)
 
+    fig, ax = plt.subplots()
+    plot_state_separation(ax, data_dict)

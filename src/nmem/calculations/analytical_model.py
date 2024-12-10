@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
 
 from nmem.calculations.calculations import (
     calculate_persistent_currents,
@@ -8,7 +7,6 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.calculations.plotting import (
-    plot_htron_sweep,
     plot_persistent_current,
     plot_read_current,
 )

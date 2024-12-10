@@ -1,12 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 from cycler import cycler
 from matplotlib.axes import Axes
-from nmem.calculations.calculations import (
-    calculate_persistent_currents,
-    calculate_read_currents,
-)
 
 
 def plot_htron_critical_current(
