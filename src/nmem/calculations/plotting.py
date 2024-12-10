@@ -1,65 +1,61 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from cycler import cycler
 
+from cycler import cycler
+from matplotlib.axes import Axes
 from nmem.calculations.calculations import (
-    calculate_persistent_current,
+    calculate_persistent_currents,
     calculate_read_currents,
 )
 
 
-def plot_point(ax, x, y, **kwargs):
-    ax.plot(x, y, **kwargs)
-    return ax
-
-
 def plot_htron_critical_current(
     enable_currents: np.ndarray, critical_currents: np.ndarray
-):
+) -> None:
     plt.plot(enable_currents, critical_currents)
     plt.xlabel("Enable Current [uA]")
     plt.ylabel("Critical Current [uA]")
     plt.title("Critical Current vs Enable Current")
     plt.show()
+    return
 
 
-def print_dict_keys(data_dict: dict):
+def print_dict_keys(data_dict: dict) -> None:
     for key in data_dict.keys():
         print(key)
+    return
 
 
 def plot_htron_sweep(
-    ax: plt.Axes,
+    ax: Axes,
     write_currents: np.ndarray,
     enable_write_currents: np.ndarray,
     ber: np.ndarray,
-):
+) -> Axes:
     xx, yy = np.meshgrid(enable_write_currents, write_currents)
-    plt.pcolormesh(xx, yy, ber)
-    # plt.gca().invert_xaxis()
-    plt.xlabel("Enable Current [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("BER vs Write Current and Critical Current")
+    ax.pcolormesh(xx, yy, ber, vmin=0, vmax=1)
+
+    ax.set_xlabel("Enable Current [uA]")
+    ax.set_ylabel("Write Current [uA]")
+    ax.title("BER vs Write Current and Critical Current")
     cbar = plt.colorbar()
-    plt.clim(0, 1)
     cbar.set_ticks([0, 0.5, 1])
+
     return ax
 
 
 def plot_htron_sweep_scaled(
-    ax: plt.Axes,
+    ax: Axes,
     left_critical_currents: np.ndarray,
     write_currents: np.ndarray,
     ber: np.ndarray,
-):
-    plt.sca(ax)
+) -> Axes:
     xx, yy = np.meshgrid(left_critical_currents, write_currents)
-    plt.pcolor(xx, yy, ber, shading="auto")
-    plt.xlabel("Left Critical Current [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("BER vs Write Current and Critical Current")
-    cbar = plt.colorbar()
-    plt.clim(0, 1)
+    ax.pcolor(xx, yy, ber, shading="auto", vmin=0, vmax=1)
+    ax.set_xlabel("Left Critical Current [uA]")
+    ax.set_ylabel("Write Current [uA]")
+    ax.title("BER vs Write Current and Critical Current")
+    cbar = ax.colorbar()
     cbar.set_ticks([0, 0.5, 1])
 
     return ax
@@ -98,18 +94,14 @@ def plot_mask_region(
 
 
 def plot_persistent_current(
-    ax: plt.Axes,
-    data_dict: dict,
-    plot_regions=False,
-    data_point: tuple = None,
-):
-    left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
-    write_currents_mesh = data_dict["write_currents_mesh"]
-    width_ratio = data_dict["width_ratio"]
+    ax: Axes,
+    left_critical_currents_mesh: np.ndarray,
+    write_currents_mesh: np.ndarray,
+    total_persistent_current: np.ndarray,
+    width_ratio: float,
+) -> Axes:
 
-    total_persistent_current, regions = calculate_persistent_current(data_dict)
-    regions = {"voltage": regions["voltage"]}
-    c = plt.pcolormesh(
+    c = ax.pcolormesh(
         left_critical_currents_mesh,
         write_currents_mesh,
         total_persistent_current,
@@ -117,36 +109,12 @@ def plot_persistent_current(
         linewidth=0.5,
     )
 
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Write Current [uA]")
-    # plt.title("Maximum Persistent Current")
-    plt.gca().invert_xaxis()
-    cbar = plt.colorbar()
+    ax.set_xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
+    ax.set_ylabel("Write Current [uA]")
+    ax.invert_xaxis()
+
+    cbar = plt.colorbar(c)
     cbar.set_label("Maximum Persistent Current [uA]")
-    if plot_regions:
-        color_cycler = cycler(colors=["magenta", "skyblue"])
-        for (name, region), colors in zip(regions.items(), color_cycler):
-            region_plot = plt.contour(
-                left_critical_currents_mesh,
-                write_currents_mesh,
-                region,
-                levels=[0.5, 1.5],
-                **colors,
-            )
-
-            plt.clabel(
-                region_plot,
-                inline=True,
-                fontsize=14,
-                fmt=name,
-                inline_spacing=0,
-                rightside_up=True,
-            )
-
-    if data_point is not None:
-        ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
-
-    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -154,16 +122,12 @@ def plot_persistent_current(
     ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
-    data_dict["persistent_currents"] = total_persistent_current
-    data_dict["regions"] = regions
-
-    return ax, data_dict
+    return ax
 
 
 def plot_zero_state_currents(
     ax: plt.Axes,
     data_dict: dict,
-    data_point: tuple = None,
     plot_regions: bool = False,
 ):
     left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
@@ -188,11 +152,6 @@ def plot_zero_state_currents(
     cbar = plt.colorbar()
     cbar.set_ticks([cbar.vmin, cbar.vmax])
 
-    if data_point is not None:
-        ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
-
-    # ax.set_xlim(right=0)
-
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
@@ -210,7 +169,6 @@ def plot_zero_state_currents(
 def plot_one_state_currents(
     ax: plt.Axes,
     data_dict: dict,
-    data_point: tuple = None,
     plot_regions=False,
 ):
     left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
@@ -219,7 +177,7 @@ def plot_one_state_currents(
 
     one_state_currents = data_dict["one_state_currents"]
 
-    c = plt.pcolormesh(
+    c = ax.pcolormesh(
         left_critical_currents_mesh,
         write_currents_mesh,
         one_state_currents,
@@ -228,17 +186,12 @@ def plot_one_state_currents(
         cmap="cividis",
     )
 
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Read Current [uA]")
-    plt.title("One State Current")
-    plt.gca().invert_xaxis()
+    ax.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
+    ax.ylabel("Read Current [uA]")
+    ax.title("One State Current")
+    ax.invert_xaxis()
     cbar = plt.colorbar()
     cbar.set_ticks([cbar.vmin, cbar.vmax])
-
-    if data_point is not None:
-        ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
-
-    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -254,7 +207,7 @@ def plot_one_state_currents(
     return ax
 
 
-def plot_state_currents(data_dict: dict, plot_regions=False):
+def plot_state_currents(data_dict: dict, plot_regions=False) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
     plt.sca(axes[0])
     axes[0] = plot_zero_state_currents(axes[0], data_dict, plot_regions=plot_regions)
@@ -262,70 +215,64 @@ def plot_state_currents(data_dict: dict, plot_regions=False):
     axes[1] = plot_one_state_currents(axes[1], data_dict, plot_regions=plot_regions)
     plt.show()
 
+    return
+
 
 def plot_read_current(
-    ax: plt.Axes,
+    ax: Axes,
     data_dict: dict,
-    data_point: tuple = None,
-    contour: bool = False,
-    plot_regions: bool = False,
-):
+) -> Axes:
     color_map = plt.get_cmap("RdBu")
-    channel_critical_currents_mesh = data_dict["channel_critical_currents_mesh"]
-    read_current_mesh = data_dict["read_currents_mesh"]
 
-    read_current_dict = calculate_read_currents(data_dict)
-
-    zero_state_current = read_current_dict["zero_state_currents"]
-    one_state_current = read_current_dict["one_state_currents"]
-    zero_state_current_inv = read_current_dict["zero_state_currents_inv"]
-    one_state_current_inv = read_current_dict["one_state_currents_inv"]
-    right_critical_currents_mesh = channel_critical_currents_mesh / (
-        1 + (data_dict["iretrap_enable"] / data_dict["width_ratio"])
+    channel_critical_currents_mesh: np.ndarray = data_dict.get(
+        "channel_critical_currents_mesh"
     )
+    zero_state_currents: np.ndarray = data_dict.get("zero_state_currents")
+    one_state_currents: np.ndarray = data_dict.get("one_state_currents")
+    zero_state_currents_inv: np.ndarray = data_dict.get("zero_state_currents_inv")
+    one_state_currents_inv: np.ndarray = data_dict.get("one_state_currents_inv")
+    read_currents_mesh: np.ndarray = data_dict.get("read_currents_mesh")
+
     inv_region = np.where(
-        (read_current_dict["zero_state_currents_inv"] < data_dict["read_currents_mesh"])
-        * (
-            data_dict["read_currents_mesh"]
-            < read_current_dict["one_state_currents_inv"]
-        ),
-        data_dict["read_currents_mesh"],
+        (zero_state_currents_inv < read_currents_mesh)
+        * (read_currents_mesh < one_state_currents_inv),
+        read_currents_mesh,
         np.nan,
     )
     nominal_region = np.where(
-        (data_dict["read_currents_mesh"] > read_current_dict["one_state_currents"])
-        * (data_dict["read_currents_mesh"] < read_current_dict["zero_state_currents"]),
-        data_dict["read_currents_mesh"],
+        (read_currents_mesh > one_state_currents)
+        * (read_currents_mesh < zero_state_currents),
+        read_currents_mesh,
         np.nan,
     )
 
-    plt.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
+    c1 = ax.pcolormesh(
+        channel_critical_currents_mesh,
+        read_currents_mesh,
         nominal_region,
         cmap=color_map,
         vmin=-1000,
         vmax=1000,
     )
-    plt.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        -1*inv_region,
+    c2 = ax.pcolormesh(
+        channel_critical_currents_mesh,
+        read_currents_mesh,
+        -1 * inv_region,
         cmap=color_map,
         vmin=-1000,
         vmax=1000,
     )
-    plt.xlabel("Channel Critical Current ($I_{C, CH}(I_{RE})$)) [uA]")
-    plt.ylabel("Set Read Current [uA]")
-    cbar = plt.colorbar()
+    print(np.max(inv_region))
+    ax.set_xlabel("Channel Critical Current ($I_{C, CH}(I_{RE})$)) [uA]")
+    ax.set_ylabel("HERESet Read Current [uA]")
+    # ax.legend(["Nominal Region", "Inverting Region"])
+    cbar = plt.colorbar(c2)
     cbar.set_label("Signed Read Current [uA]")
 
-    ax = plt.gca()
-    return ax, read_current_dict
+    return ax
 
 
-def plot_region_dict(ax, regions: dict, x, y):
-    plt.sca(ax)
+def plot_region_dict(ax: Axes, regions: dict, x: np.ndarray, y: np.ndarray) -> Axes:
     color_cycler = cycler(colors=["red", "orange", "magenta", "skyblue"])
     for (name, region), colors in zip(regions.items(), color_cycler):
         region_plot = plt.contour(
@@ -336,7 +283,7 @@ def plot_region_dict(ax, regions: dict, x, y):
             **colors,
         )
 
-        plt.clabel(
+        ax.clabel(
             region_plot,
             inline=True,
             fontsize=14,
@@ -344,11 +291,10 @@ def plot_region_dict(ax, regions: dict, x, y):
             inline_spacing=0,
             rightside_up=True,
         )
-    ax = plt.gca()
     return ax
 
 
-def plot_edge_fits(ax, lines, critical_currents):
+def plot_edge_fits(ax: Axes, critical_currents: np.ndarray, lines: list) -> Axes:
     x_min, x_max = ax.get_xlim()
     y_min, y_max = ax.get_ylim()
 
@@ -360,16 +306,15 @@ def plot_edge_fits(ax, lines, critical_currents):
     return ax
 
 
-def plot_edge_fit(ax, x, p1, p2):
+def plot_edge_fit(ax: Axes, x: np.ndarray, p1: float, p2: float) -> Axes:
     y = p1 * x + p2
     ax.plot(x, y, color="red")
     return ax
 
 
 def plot_read_margin(
-    ax: plt.Axes,
+    ax: Axes,
     data_dict: dict,
-    data_point: tuple = None,
 ):
     left_critical_currents_mesh = data_dict["left_critical_currents_mesh"]
     write_currents_mesh = data_dict["write_currents_mesh"]
@@ -378,7 +323,7 @@ def plot_read_margin(
     set_read_current = data_dict["set_read_current"]
     width_ratio = data_dict["width_ratio"]
 
-    plt.pcolor(
+    ax.pcolor(
         left_critical_currents_mesh,
         write_currents_mesh,
         read_margins,
@@ -386,16 +331,11 @@ def plot_read_margin(
         shading="auto",
     )
 
-    plt.xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
-    plt.ylabel("Write Current [uA]")
-    plt.title("Read Currents Margins")
-    plt.gca().invert_xaxis()
+    ax.set_xlabel("Left Branch Critical Current ($I_{C, H_L}(I_{RE})$)) [uA]")
+    ax.set_ylabel("Write Current [uA]")
+    ax.set_title("Read Currents Margins")
+    ax.invert_xaxis()
     cbar = plt.colorbar()
-
-    if data_point is not None:
-        ax = plot_point(ax, *data_point, marker="*", color="red", markersize=15)
-
-    # ax.set_xlim(right=0)
 
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
@@ -403,7 +343,7 @@ def plot_read_margin(
     ax2.set_xticklabels([f"{ic*width_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
-    inv_region = plt.contour(
+    inv_region = ax.contour(
         left_critical_currents_mesh,
         write_currents_mesh,
         data_dict["regions"]["inverting"],
@@ -411,7 +351,7 @@ def plot_read_margin(
         colors="white",
         linestyles="dashed",
     )
-    plt.clabel(
+    ax.clabel(
         inv_region,
         inline=True,
         fontsize=10,
@@ -419,3 +359,5 @@ def plot_read_margin(
         inline_spacing=0,
         rightside_up=True,
     )
+
+    return ax
