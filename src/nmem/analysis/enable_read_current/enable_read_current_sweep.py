@@ -12,7 +12,6 @@ from scipy.signal import find_peaks
 
 from nmem.analysis.analysis import (
     find_edge,
-    load_data,
     plot_analytical,
     plot_threshold,
     polygon_inverting,
@@ -517,21 +516,21 @@ def plot_trace_only() -> None:
 
 if __name__ == "__main__":
     INVERSE_COMPARE_DICT = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
         ),
 }
     write_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
         ),
     }
@@ -555,220 +554,220 @@ if __name__ == "__main__":
     }
 
     enable_read_290_dict_full = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-45-11.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-53-18.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 16-08-51.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 16-19-03.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-10-30.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-19-12.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-26-55.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-33-48.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-40-47.mat"
         ),
-        9: load_data(
+        9: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-49-39.mat"
         ),
-        10: load_data(
+        10: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-59-27.mat"
         ),
-        11: load_data(
+        11: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-10-02.mat"
         ),
-        12: load_data(
+        12: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-17-53.mat"
         ),
-        13: load_data(
+        13: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-24-46.mat"
         ),
-        14: load_data(
+        14: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-32-29.mat"
         ),
-        15: load_data(
+        15: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-40-00.mat"
         ),
-        16: load_data(
+        16: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-53-35.mat"
         ),
-        17: load_data(
+        17: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-02-47.mat"
         ),
     }
 
     enable_read_290_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-45-11.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-53-18.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 16-08-51.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 16-19-03.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-19-12.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-33-48.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-49-39.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-10-02.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-24-46.mat"
         ),
-        9: load_data(
+        9: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-40-00.mat"
         ),
-        10: load_data(
+        10: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-02-47.mat"
         ),
     }
 
     enable_read_290_dict_short = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 12-19-12.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-10-02.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 13-24-46.mat"
         ),
     }
 
     enable_read_300_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 14-54-06.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-06-21.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 14-44-04.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-16-22.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-23-31.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-30-28.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-39-15.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-47-05.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 15-54-14.mat"
         ),
-        9: load_data(
+        9: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
         ),
-        10: load_data(
+        10: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 14-29-17.mat"
         ),
     }
 
     enable_read_310_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-37-34.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-30-17.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-21-01.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-13-38.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-15-11.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-27-11.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-34-04.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-44-33.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 14-56-20.mat"
         ),
-        9: load_data(
+        9: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 15-05-30.mat"
         ),
-        10: load_data(
+        10: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 09-17-27.mat"
         ),
     }
 
     enable_read_310_C4_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 13-49-54.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-03-11.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-10-42.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-17-31.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-24-30.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-43-26.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-45-10.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 14-52-08.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-06-17.mat"
         ),
-        9: load_data(
+        9: sio.loadmat(
             "SPG806_20241016_nMem_parameter_sweep_D6_A4_C4_2024-10-16 15-13-23.mat"
         ),
     }
 
     inverse_compare_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-31-23.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
         ),
     }
