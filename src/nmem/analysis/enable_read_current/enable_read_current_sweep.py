@@ -350,11 +350,6 @@ def plot_stack(
     return axs
 
 
-def plot_threshold(ax: Axes, start: int, stop: int, threshold: int) -> Axes:
-    ax.hlines(threshold, start, stop, linestyle="--", color="k")
-    return ax
-
-
 def plot_single_trace(
     ax: Axes, x_data: np.ndarray, y_data: np.ndarray, bit_message: str, **kwargs
 ) -> Axes:
