@@ -17,7 +17,7 @@ from nmem.analysis.analysis import (
     polygon_inverting,
     polygon_nominal,
 )
-from nmem.calculations.analytical_model import create_dict_read
+from nmem.calculations.analytical_model import create_data_dict
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
@@ -38,6 +38,7 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 CURRENT_CELL = "C1"
+
 
 def text_from_bit(bit: str):
     if bit == "0":
@@ -62,7 +63,7 @@ def text_from_bit(bit: str):
         return "W1R0"
     else:
         return None
-    
+
 
 def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
     if ax is None:
@@ -121,8 +122,8 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
         cmap = plt.get_cmap("RdBu")
         colors = cmap(np.linspace(0, 1, 4))
         # colors = ["red", "darkred", "lightblue", "blue"]
-        edge_dict = get_edges({key: data})
-        edge_list = edge_dict[key]["edges"]
+        # edge_dict = get_edges({key: data})
+        # edge_list = edge_dict[key]["edges"]
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         current_cell = data["cell"][0]
         ber = data["bit_error_rate"].flatten()
@@ -130,11 +131,11 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
         w1r0 = data["write_1_read_0_norm"].flatten()
         enable_read_current = data["enable_read_current"].flatten()[0] * 1e6
 
-        ax = plot_edge_3D(edge_dict, edge_list, key, colors, ax)
-        peaks = edge_dict[key]["peaks"]
-        peak_properties = edge_dict[key]["peak_properties"]
-        inv_peaks = edge_dict[key]["inv_peaks"]
-        inv_peak_properties = edge_dict[key]["inv_peak_properties"]
+        # # ax = plot_edge_3D(edge_dict, edge_list, key, colors, ax)
+        # peaks = edge_dict[key]["peaks"]
+        # peak_properties = edge_dict[key]["peak_properties"]
+        # inv_peaks = edge_dict[key]["inv_peaks"]
+        # inv_peak_properties = edge_dict[key]["inv_peak_properties"]
         ax.plot(
             read_currents,
             enable_read_current * np.ones_like(read_currents),
@@ -155,153 +156,115 @@ def plot_waterfall(data_dict: dict, ax: Axes3D = None) -> Axes3D:
     return ax
 
 
-def get_edges(data_dict: dict) -> dict:
-    edges = {}
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        w0r1 = data["write_0_read_1_norm"].flatten()
-        w1r0 = data["write_1_read_0_norm"].flatten()
-        enable_read_current = data["enable_read_current"].flatten()[0] * 1e6
-        edges[key] = {}
-        edges[key]["edges"] = find_edge(ber)
-        # edges[key]["edges"] = find_edge_dual(ber, w0r1, w1r0)
-        edges[key]["param"] = enable_read_current
-        edges[key]["read_currents"] = read_currents
-        peaks, peak_properties = find_peaks(
-            ber, height=0.4, prominence=0.05, width=1, distance=1
-        )
-        inv_peaks, inv_peak_properties = find_peaks(
-            1 - ber, height=0.4, prominence=0.05, width=1, distance=1
-        )
-        edges[key]["ber"] = ber
-        edges[key]["peaks"] = peaks
-        edges[key]["peak_properties"] = peak_properties
-        edges[key]["inv_peaks"] = inv_peaks
-        edges[key]["inv_peak_properties"] = inv_peak_properties
+# def plot_edges(ax: Axes, data_dict: dict, fit=True, fit_dict: dict = None) -> Axes:
+#     cmap = plt.get_cmap("RdBu")
+#     colors = cmap(np.linspace(0, 1, 4))
+#     markers = ["o", "s", "D", "^"]
+#     edge_dict = get_edges(data_dict)
+#     edge_list = []
+#     param_list = []
 
-    return edges
+#     read_current = data_dict.get("read_currents")
+#     param = data_dict.get("param")
+#     param = param * CELLS[CURRENT_CELL]["slope"] + CELLS[CURRENT_CELL]["intercept"]
+#     param_list.append(param)
+#     edge = data_dict.get("edges")
+#     current_edge = np.array([read_current[e] for e in edge])
+#     current_edge = np.where(np.array(edge) == 0, np.nan, current_edge)
 
+#     edge_list.append(current_edge)
 
-def plot_edges(
-    data_dict: dict, ax: plt.Axes = None, fit=True, fit_dict: dict = None
-) -> Axes:
-    cmap = plt.get_cmap("RdBu")
-    colors = cmap(np.linspace(0, 1, 4))
-    markers = ["o", "s", "D", "^"]
-    edge_dict = get_edges(data_dict)
-    edge_list = []
-    param_list = []
-    if ax is None:
-        fig, ax = plt.subplots()
+#     for i, e in enumerate(edge):
+#         if e == 0:
+#             continue
+#         ax.scatter(
+#             param,
+#             read_current[e],
+#             color=colors[i],
+#             marker=markers[i],
+#             edgecolor=colors[i],
+#             linewidth=0.5,
+#             s=27,
+#         )
 
-    for key, data in edge_dict.items():
-        read_current = data["read_currents"]
-        param = data["param"]
-        param = param * CELLS[CURRENT_CELL]["slope"] + CELLS[CURRENT_CELL]["intercept"]
-        param_list.append(param)
-        edge = data["edges"]
-        current_edge = np.array([read_current[e] for e in edge])
-        current_edge = np.where(np.array(edge) == 0, np.nan, current_edge)
+#     if fit:
+#         for i in range(4):
+#             x = np.array(param_list)
+#             y = np.array([edge[i] for edge in edge_list])
+#             fity = y[~np.isnan(y)]
+#             fitx = x[~np.isnan(y)]
+#             fit_start = fit_dict[i]["fit_start"]
+#             fit_stop = fit_dict[i]["fit_stop"]
+#             fitx = fitx[fit_start : len(fitx) - fit_stop]
+#             fity = fity[fit_start : len(fity) - fit_stop]
+#             fit = np.polyfit(fitx, fity, 1)
+#             fit_fn = np.poly1d(fit)
+#             ax.plot(x, fit_fn(x), "--", color=colors[i])
+#             ax.plot(fitx, fity, "o", color="k", fillstyle="none", mew=0.5)
+#             ax.text(
+#                 1.50,
+#                 0.5 + 0.1 * i,
+#                 f"y = {fit_fn[1]:.3f}x + {fit_fn[0]:.1f}",
+#                 transform=ax.transAxes,
+#                 color=colors[i],
+#             )
 
-        edge_list.append(current_edge)
-
-        for i, e in enumerate(edge):
-            if e == 0:
-                continue
-            ax.scatter(
-                param,
-                read_current[e],
-                color=colors[i],
-                marker=markers[i],
-                edgecolor=colors[i],
-                linewidth=0.5,
-                s=27,
-            )
-
-    if fit:
-        for i in range(4):
-            x = np.array(param_list)
-            y = np.array([edge[i] for edge in edge_list])
-            fity = y[~np.isnan(y)]
-            fitx = x[~np.isnan(y)]
-            fit_start = fit_dict[i]["fit_start"]
-            fit_stop = fit_dict[i]["fit_stop"]
-            fitx = fitx[fit_start : len(fitx) - fit_stop]
-            fity = fity[fit_start : len(fity) - fit_stop]
-            fit = np.polyfit(fitx, fity, 1)
-            fit_fn = np.poly1d(fit)
-            ax.plot(x, fit_fn(x), "--", color=colors[i])
-            ax.plot(fitx, fity, "o", color="k", fillstyle="none", mew=0.5)
-            ax.text(
-                1.50,
-                0.5 + 0.1 * i,
-                f"y = {fit_fn[1]:.3f}x + {fit_fn[0]:.1f}",
-                transform=ax.transAxes,
-                color=colors[i],
-            )
-
-    return ax
+#     return ax
 
 
-def plot_edge_3D(
-    edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D
-) -> Axes3D:
-    markers = ["o", "s", "D", "^"]
-    for edge in edge_list:
-        if edge == 0:
-            continue
-        ax.plot(
-            [
-                edge_dict[key]["read_currents"][edge],
-                edge_dict[key]["read_currents"][edge],
-            ],
-            [edge_dict[key]["param"], edge_dict[key]["param"]],
-            [0, edge_dict[key]["ber"][edge]],
-            color="k",
-            linestyle=":",
-        )
-        ax.plot(
-            [
-                edge_dict[key]["read_currents"][edge],
-                edge_dict[key]["read_currents"][edge],
-            ],
-            [edge_dict[key]["param"], edge_dict[key]["param"]],
-            [edge_dict[key]["ber"][edge]],
-            color=colors[edge_list.index(edge)],
-            marker=markers[edge_list.index(edge)],
-            markeredgecolor=None,
-            markeredgewidth=0.5,
-        )
+# def plot_edge_3D(
+#     edge_dict: dict, edge_list: list, key: int, colors: list, ax: Axes3D
+# ) -> Axes3D:
+#     markers = ["o", "s", "D", "^"]
+#     for edge in edge_list:
+#         if edge == 0:
+#             continue
+#         ax.plot(
+#             [
+#                 edge_dict[key]["read_currents"][edge],
+#                 edge_dict[key]["read_currents"][edge],
+#             ],
+#             [edge_dict[key]["param"], edge_dict[key]["param"]],
+#             [0, edge_dict[key]["ber"][edge]],
+#             color="k",
+#             linestyle=":",
+#         )
+#         ax.plot(
+#             [
+#                 edge_dict[key]["read_currents"][edge],
+#                 edge_dict[key]["read_currents"][edge],
+#             ],
+#             [edge_dict[key]["param"], edge_dict[key]["param"]],
+#             [edge_dict[key]["ber"][edge]],
+#             color=colors[edge_list.index(edge)],
+#             marker=markers[edge_list.index(edge)],
+#             markeredgecolor=None,
+#             markeredgewidth=0.5,
+#         )
 
-    return ax
+#     return ax
 
 
 def plot_enable_read_current_edges_stack(
+    ax: Axes,
     data_dict: dict,
     analytical_data_dict: dict,
-    ax: Axes = None,
-    persistent_current: int = None,
+    persistent_current: float,
     fitting_dict: dict = None,
 ) -> Axes:
-    if ax is None:
-        fig, ax = plt.subplots()
 
-    ax = plot_edges(data_dict, ax, fit=False, fit_dict=fitting_dict)
-
-    enable_write_current = data_dict[0]["enable_write_current"].flatten()[0] * 1e6
+    data_dict["persistent_current"] = float(persistent_current)
+    # ax = plot_edges(ax, data_dict, fit=False, fit_dict=fitting_dict)
 
     ax.set_xlim(600, 950)
     ax.set_ylim(500, 950)
     ax.xaxis.set_major_locator(MultipleLocator(100))
     ax.yaxis.set_major_locator(MultipleLocator(100))
 
-    ax, read_current_dict = plot_analytical(
-        analytical_data_dict, persistent_current=persistent_current, ax=ax
-    )
+    ax = plot_analytical(ax, analytical_data_dict)
 
-    # ax.set_ylim(500, 950)
-    # ax.set_xlim(600, 950)
+    ax.set_ylim(500, 950)
+    ax.set_xlim(600, 950)
 
     # plt.title("Enable Read Current Edges")
     ax.yaxis.tick_right()
@@ -317,35 +280,21 @@ def plot_enable_read_current_edges_stack(
 
 
 def plot_stack(
+    axs: list[Axes],
     data_dict_list: list[dict],
     analytical_data_dict_list: list[dict],
     persistent_currents_list: list[int],
     fitting_dict_list: list[dict],
-    axs: list[Axes] = None,
 ) -> list[Axes]:
-    if axs is None:
-        fig, axs = plt.subplots(3, 1, figsize=(3, 9), sharex=True)
-        fig.subplots_adjust(hspace=0)
 
-    for i in range(3):
+    for i in range(len(axs)):
         axs[i] = plot_enable_read_current_edges_stack(
+            axs[i],
             data_dict_list[i],
             analytical_data_dict_list[i],
-            axs[i],
             persistent_current=persistent_currents_list[i],
             fitting_dict=fitting_dict_list[i],
         )
-
-    # fig.supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.5, y=0.04)
-    # fig.supylabel("$I_{{R}}$ ($\mu$A)", x=0.99, y=0.5)
-
-    # caxis = fig.add_axes([0.21, 0.9, 0.61, 0.02])
-    # cbar = fig.colorbar(
-    #     axs[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
-    # )
-    # caxis.tick_params(labeltop=True, labelbottom=False, bottom=False, top=True)
-    # plt.savefig("enable_read_current_edges_stack.pdf", bbox_inches="tight")
-    # plt.show()
     return axs
 
 
@@ -477,25 +426,27 @@ def manuscript_figure(data_dict: dict, save: bool = False) -> None:
     axsslice[2] = plot_waterfall(enable_read_310_dict, ax=axsslice[2])
     subfigs[1].subplots_adjust(hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1)
 
-    axsstack = subfigs[2].subplots(3, 1, sharex=True, sharey=True)
+    axsstack = subfigs[2].subplots(3, 1, sharex=True)
     axsstack = plot_stack(
+        axsstack,
         [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
         [analytical_data_dict, analytical_data_dict, analytical_data_dict],
         [-30, 0, 30],
         [fitting_dict[-30], fitting_dict[0], fitting_dict[30]],
-        axs=axsstack,
     )
     subfigs[2].subplots_adjust(hspace=0.0, bottom=0.06, top=0.90, left=-0.2, right=0.9)
     subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.36, y=-0.02)
     subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)", x=0.48, y=0.5)
 
-    caxis = subfigs[2].add_axes([0.266, 0.91, 0.165, 0.02])
-    cbar = subfigs[2].colorbar(
+    caxis = subfigs[2].add_axes([0.3, 0.92, 0.1, 0.02], frame_on=True)
+    subfigs[2].colorbar(
         axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
     )
     caxis.tick_params(
         labeltop=True, labelbottom=False, bottom=False, top=True, direction="out"
     )
+    subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)")
+    subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)")
     fig.patch.set_visible(False)
     if save:
         plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")
@@ -525,7 +476,7 @@ if __name__ == "__main__":
         2: sio.loadmat(
             "SPG806_20241001_nMem_parameter_sweep_D6_A4_C1_2024-10-01 16-04-36.mat"
         ),
-}
+    }
     write_dict = {
         0: sio.loadmat(
             "SPG806_20240930_nMem_parameter_sweep_D6_A4_C1_2024-09-30 09-23-55.mat"
@@ -799,7 +750,7 @@ if __name__ == "__main__":
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.213
     ALPHA = 0.563
-
+    PERSISTENT_CURRENT = 30.0
     MAX_CRITICAL_CURRENT = 860e-6  # CELLS[current_cell]["max_critical_current"]
     IRETRAP_ENABLE = 0.573
     IREAD = 630
@@ -808,7 +759,7 @@ if __name__ == "__main__":
     enable_read_currents = np.linspace(0, 400, N)
     read_currents = np.linspace(400, 1050, N)
 
-    analytical_data_dict = create_dict_read(
+    analytical_data_dict = create_data_dict(
         enable_read_currents,
         read_currents,
         WIDTH_LEFT,
@@ -818,9 +769,12 @@ if __name__ == "__main__":
         MAX_CRITICAL_CURRENT,
         HTRON_SLOPE,
         HTRON_INTERCEPT,
+        PERSISTENT_CURRENT,
     )
 
+    # fig, axs = plt.subplots(3, 1, figsize=(6.6, 3.54))
     # plot_stack(
+    #     axs,
     #     [enable_read_290_dict, enable_read_300_dict, enable_read_310_dict],
     #     [analytical_data_dict, analytical_data_dict, analytical_data_dict],
     #     [-30, 0, 30],
