@@ -5,12 +5,12 @@ import scipy.io as sio
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
-
+from matplotlib.ticker import MaxNLocator, MultipleLocator
 from nmem.calculations.calculations import (
-    calculate_persistent_currents,
     calculate_read_currents,
 )
 from nmem.measurement.cells import CELLS
+from typing import List
 
 
 def import_directory(file_path: str) -> list:
@@ -173,9 +173,9 @@ def plot_enable(ax: Axes, data_dict: dict, trace_index: int):
 
 
 def plot_measurement(ax: Axes, data_dict: dict) -> Axes:
-    num_meas = data_dict["num_meas"][0][0]
-    w1r0 = data_dict["write_1_read_0"][0].flatten() / num_meas
-    w0r1 = data_dict["write_0_read_1"][0].flatten() / num_meas
+    num_meas = data_dict.get("num_meas")[0][0]
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
+    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
     z = (w1r0 + w0r1) / 2
     line_width = 2
     ax.plot(
@@ -212,6 +212,7 @@ def plot_measurement(ax: Axes, data_dict: dict) -> Axes:
     ax.grid(axis="y")
     ax.set_ylabel("Bit Error Rate")
     ax.set_xlabel("Read Current [$\mu$A]")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
 
 
@@ -376,68 +377,63 @@ def plot_trace_stack_read(ax, data_dict: dict, trace_index: int):
     return ax
 
 
-def plot_trace_stack_1D(ax, data_dict: dict):
-    plt.subplots_adjust(hspace=0.0, wspace=0.0)
-    plt.subplot(311)
+def plot_voltage_trace(
+    ax: Axes, time: np.ndarray, voltage: np.ndarray, **kwargs
+) -> Axes:
+    ax.plot(time, voltage, **kwargs)
+    ax.set_xlim(time[0], time[-1])
+    ax.yaxis.set_major_locator(MaxNLocator(4))
+    ax.set_xticklabels([])
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
+    ax.tick_params(axis="x", direction="in", which="both")
+    ax.grid(axis="x", which="both")
+    return ax
+
+
+def plot_trace_stack_1D(axes: List[Axes], data_dict: dict) -> List[Axes]:
+    if len(axes) != 3:
+        raise ValueError("The number of axes must be 3.")
+
+    ax = axes[0]
     x = data_dict["trace_chan_in"][0] * 1e6
     y = data_dict["trace_chan_in"][1] * 1e3
-    (p1,) = plt.plot(x, y, color="#08519C", label="Input")
-    plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
-
-    plot_message(plt.gca(), data_dict["bitmsg_channel"][0])
+    plot_voltage_trace(ax, x, y)
 
     if (
         data_dict["bitmsg_enable"][0][1] == "W"
         and data_dict["bitmsg_channel"][0][1] != "N"
     ):
-        plot_trace_zoom(x, y, 0.9, 2.1)
-        plot_trace_zoom(x, y, 4.9, 6.1)
+        plot_trace_zoom(ax, x, y, 0.9, 2.1)
+        plot_trace_zoom(ax, x, y, 4.9, 6.1)
 
     if (
         data_dict["bitmsg_enable"][0][3] == "W"
         and data_dict["bitmsg_channel"][0][3] != "N"
     ):
-        plot_trace_zoom(x, y, 2.9, 4.1)
-        plot_trace_zoom(x, y, 6.9, 8.1)
+        plot_trace_zoom(ax, x, y, 2.9, 4.1)
+        plot_trace_zoom(ax, x, y, 6.9, 8.1)
 
-    ax = plt.gca()
-    ax.set_xticklabels([])
-    plt.ylim([-150, 900])
-    plt.yticks([0, 500])
-    plt.grid(axis="x")
-
-    plt.subplot(312)
+    ax = axes[1]
     x = data_dict["trace_enab"][0] * 1e6
     y = data_dict["trace_enab"][1] * 1e3
-    (p2,) = plt.plot(x, y, color="#DBB40C", label="Enable")
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax = plt.gca()
-    ax.set_xticklabels([])
+    plot_voltage_trace(ax, x, y)
 
-    plt.ylim([-10, 100])
-    plt.yticks([0, 50])
-    plt.grid(axis="x")
-
-    plt.subplot(313)
+    ax = axes[2]
     x = data_dict["trace_chan_out"][0] * 1e6
     y = data_dict["trace_chan_out"][1] * 1e3
+    plot_voltage_trace(ax, x, y)
 
-    (p3,) = plt.plot(x, y, color="#740F15", label="Output")
-    plt.grid(axis="x")
-    ax = plt.gca()
-    ax = plot_threshold(ax, 4, 5, 360)
-    ax = plot_threshold(ax, 8, 9, 360)
-    plt.xlabel("Time [$\mu$s]")
-    plt.ylim([-150, 800])
-    plt.yticks([0, 500])
-    ax = plt.gca()
-    plt.sca(ax)
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax.set_xticklabels([f"{i:.1f}" for i in np.linspace(x[0], x[-1], 11)])
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
+    ax.set_xlim([0, 10])
+
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
+    fig.supxlabel("Time [$\mu$s]")
+    fig.subplots_adjust(hspace=0.0)
 
-    return ax
+    return axes
 
 
 def plot_hist_2axis(data_dict: dict, trace_index: int):
@@ -461,29 +457,15 @@ def plot_hist_2axis(data_dict: dict, trace_index: int):
     plt.show()
 
 
-def plot_hist(data_dict: dict, trace_index: int):
-    fig, (ax, ax2) = plt.subplots(2, 1, sharex=True, figsize=(6, 3))
-
-    print(f"Bit error rate: {data_dict['bit_error_rate'][0][:, trace_index][0]:.2e}")
-    w0r1 = data_dict["read_zero_top"][0][:, trace_index] * 1e3
-    w1r0 = data_dict["read_one_top"][0][:, trace_index] * 1e3
-
-    ax.hist(w1r0, bins=77, alpha=1, color="#740F15", label="Read 1")
-    ax2.hist(w0r1, bins=77, alpha=0.5, color="#DBB40C", label="Read 0")
+def plot_voltage_hist(ax: Axes, voltage: np.ndarray, **kwargs) -> Axes:
+    ax.hist(voltage, bins=77, **kwargs)
 
     ax.set_yscale("log")
-    ax.set_yticks([1, 10, 100, 1000, 10000])
-    ax.set_ylim([0.1, 10000])
+    ax.xaxis.set_major_locator(MaxNLocator(5))
     ax.set_ylabel("Counts")
+    ax.set_xlabel("Voltage [mV]")
 
-    ax2.set_yscale("log")
-    ax2.set_yticks([1, 10, 100, 1000, 10000])
-    ax2.set_ylim([0.1, 10000])
-
-    plt.ylabel("Counts")
-    plt.xlabel("Voltage [mV]")
-
-    plt.show()
+    return ax
 
 
 def convert_location_to_coordinates(location: str) -> tuple:
