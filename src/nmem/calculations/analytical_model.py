@@ -23,6 +23,7 @@ def create_data_dict(
     max_critical_current: float,
     htron_slope: float,
     htron_intercept: float,
+    persistent_current: float = 0.0,
 ):
     width_ratio = width_right / width_left
 
@@ -65,6 +66,7 @@ def create_data_dict(
         "width_right": width_right,
         "width_ratio": width_ratio,
         "max_critical_current": max_critical_current,
+        "persistent_current": persistent_current,
     }
 
     return data_dict
@@ -109,7 +111,6 @@ if __name__ == "__main__":
     )
 
     data_dict["persistent_current"] = PERSISTENT_CURRENT
-
 
     fig, ax = plt.subplots()
     read_current_dict = calculate_read_currents(data_dict)
