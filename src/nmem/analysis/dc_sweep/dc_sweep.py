@@ -1,6 +1,10 @@
+from typing import Tuple
+
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import import_directory
 
@@ -25,12 +29,12 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 
-def plot_iv_curve(data, ax, **kwargs):
-    time = data["trace"][0, :]
-    voltage = data["trace"][1, :]
+def plot_iv_curve(ax: Axes, data_dict: dict, **kwargs) -> Axes:
+    time = data_dict.get("trace")[0, :]
+    voltage = data_dict.get("trace")[1, :]
 
     M = int(np.round(len(voltage), -2))
-    currentQuart = np.linspace(0, data["vpp"] / 2 / 10e3, M // 4)
+    currentQuart = np.linspace(0, data_dict["vpp"] / 2 / 10e3, M // 4)
     current = np.concatenate(
         [-currentQuart, np.flip(-currentQuart), currentQuart, np.flip(currentQuart)]
     )
@@ -46,15 +50,13 @@ def plot_iv_curve(data, ax, **kwargs):
     return ax
 
 
-def plot_iv(data_list, ax=None, save=False):
-    if ax is None:
-        fig, ax = plt.subplots()
+def plot_iv(ax: Axes, data_list: list, save: bool = False) -> Axes:
     colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(data_list) / 2) + 1))
     colors = np.flipud(colors)
     for i, data in enumerate(data_list):
         heater_current = np.abs(data["heater_current"].flatten()[0] * 1e6)
         ax = plot_iv_curve(
-            data, ax, color=colors[i], zorder=-i, label=f"{heater_current:.0f} µA"
+            ax, data, color=colors[i], zorder=-i, label=f"{heater_current:.0f} µA"
         )
         if i == 10:
             break
@@ -62,8 +64,8 @@ def plot_iv(data_list, ax=None, save=False):
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Current [µA]", labelpad=-1)
     ax.tick_params(direction="in", top=True, right=True)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(0.5))
-    ax.yaxis.set_major_locator(plt.MultipleLocator(100))
+    ax.xaxis.set_major_locator(MultipleLocator(0.5))
+    ax.yaxis.set_major_locator(MultipleLocator(100))
     ax.legend(frameon=False, handlelength=0.5, labelspacing=0.1)
 
     if save:
@@ -72,20 +74,14 @@ def plot_iv(data_list, ax=None, save=False):
     return ax
 
 
-def get_critical_currents(data_list):
+def get_critical_currents(data_list: list) -> Tuple[list, list]:
     critical_currents = []
     critical_currents_std = []
     for data in data_list:
-        heater_current = data["heater_current"]
-        time = data["trace"][0, :]
-        voltage = data["trace"][1, :]
+        time = data.get("trace")[0, :]
+        voltage = data.get("trace")[1, :]
 
         M = int(np.round(len(voltage), -2))
-        currentQuart = np.linspace(0, data["vpp"] / 2 / 10e3, M // 4)
-        current = np.concatenate(
-            [-currentQuart, np.flip(-currentQuart), currentQuart, np.flip(currentQuart)]
-        )
-
         if len(voltage) > M:
             voltage = voltage[:M]
             time = time[:M]
@@ -101,16 +97,16 @@ def get_critical_currents(data_list):
             / (1 / (data["freq"] * 4))
             * 1e6
         )
+
         avg_critical_current = np.mean(current_time_trend)
         std_critical_current = np.std(current_time_trend)
         critical_currents.append(avg_critical_current)
         critical_currents_std.append(std_critical_current)
+        
     return critical_currents, critical_currents_std
 
 
-def plot_critical_currents(data_list, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
+def plot_critical_currents(ax: Axes = None, data_list: list = None) -> Axes:
     critical_currents, critical_currents_std = get_critical_currents(data_list)
     cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
     heater_currents = [data["heater_current"].flatten() * 1e6 for data in data_list]
@@ -129,9 +125,7 @@ def plot_critical_currents(data_list, ax=None):
     return ax
 
 
-def plot_critical_currents_abs(data_list, ax=None, save=False):
-    if ax is None:
-        fig, ax = plt.subplots()
+def plot_critical_currents_abs(ax: Axes, data_list: list, save: bool = False) -> Axes:
     critical_currents, critical_currents_std = get_critical_currents(data_list)
 
     cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
@@ -194,37 +188,36 @@ def plot_critical_currents_abs(data_list, ax=None, save=False):
     return ax
 
 
-def plot_critical_currents_inset(data_list):
-    # Plot the iv plot with the critical currents as an inset
-    fig, ax = plt.subplots(figsize=(3.5, 3.5))
-    ax = plot_iv(data_list, ax)
+def plot_critical_currents_inset(ax: Axes, data_list: list, save: bool = False) -> Axes:
+    ax = plot_iv(ax, data_list)
+    fig = plt.gcf()
     ax_inset = fig.add_axes([0.62, 0.25, 0.3125, 0.25])
-    ax_inset = plot_critical_currents_abs(data_list, ax_inset)
-    # ax_inset.yaxis.tick_right()
-    # ax_inset.yaxis.set_label_position("right")
+    ax_inset = plot_critical_currents_abs(ax_inset, data_list)
     ax_inset.xaxis.tick_top()
     ax_inset.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
 
     ax_inset.xaxis.set_label_position("top")
-    ax_inset.xaxis.set_major_locator(plt.MultipleLocator(0.1))
-    plt.savefig("critical_currents_inset.pdf", bbox_inches="tight")
-    plt.show()
+    ax_inset.xaxis.set_major_locator(MultipleLocator(0.1))
 
+    if save:
+        plt.savefig("critical_currents_inset.pdf", bbox_inches="tight")
 
-def plot_combined_figure(data_list, save=False):
-    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
+    return ax
+
+def plot_combined_figure(ax: Axes, data_list: list, save: bool = False) -> Axes:
     ax[0, 0].axis("off")
     ax[0, 1].axis("off")
     ax[0, 2].axis("off")
     ax[1, 0].axis("off")
-    ax[1, 1] = plot_iv(data_list, ax[1, 1])
-    ax[1, 2] = plot_critical_currents_abs(data_list, ax[1, 2])
+    ax[1, 1] = plot_iv(ax[1, 1], data_list)
+    ax[1, 2] = plot_critical_currents_abs(ax[1, 2], data_list)
     plt.subplots_adjust(wspace=0.3)
     fig.patch.set_visible(False)
+
     if save:
         plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
 
-    plt.show()
+    return ax
 
 
 if __name__ == "__main__":
@@ -232,6 +225,11 @@ if __name__ == "__main__":
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\dc_sweep"
     )
 
-    plot_critical_currents_abs(data_list)
-    plot_iv(data_list)
-    plot_combined_figure(data_list, save=False)
+    fig, ax = plt.subplots()
+    plot_critical_currents_abs(ax, data_list)
+
+    fig, ax = plt.subplots()
+    plot_iv(ax, data_list)
+
+    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
+    plot_combined_figure(ax, data_list)
