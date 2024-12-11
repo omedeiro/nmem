@@ -27,6 +27,8 @@ def plot_write_sweep(ax: Axes, data_dict: dict) -> Axes:
     ax.grid(True)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1))
 
+    return ax
+
 
 if __name__ == "__main__":
     data0 = sio.loadmat(
@@ -54,6 +56,6 @@ if __name__ == "__main__":
         3: data3,
         4: data4,
     }
-    
+
     fig, ax = plt.subplots()
     plot_write_sweep(ax, data_dict)

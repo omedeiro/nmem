@@ -8,10 +8,8 @@ from matplotlib.patches import Rectangle
 from matplotlib.pyplot import Axes
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.signal import find_peaks
 
 from nmem.analysis.analysis import (
-    find_edge,
     plot_analytical,
     plot_threshold,
     polygon_inverting,

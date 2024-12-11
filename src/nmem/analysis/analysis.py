@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import numpy as np
 import scipy.io as sio
@@ -6,11 +7,11 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
+
 from nmem.calculations.calculations import (
     calculate_read_currents,
 )
 from nmem.measurement.cells import CELLS
-from typing import List
 
 
 def import_directory(file_path: str) -> list:

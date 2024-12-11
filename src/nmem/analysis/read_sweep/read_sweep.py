@@ -1,15 +1,10 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy.io as sio
-from matplotlib.ticker import MultipleLocator, MaxNLocator
-from matplotlib.axes import Axes
+
 from nmem.analysis.analysis import (
-    plot_voltage_hist,
-    plot_voltage_trace,
     plot_measurement,
-    plot_threshold,
     plot_trace_stack_1D,
-    text_from_bit,
+    plot_voltage_hist,
 )
 
 plt.rcParams["figure.figsize"] = [1.77, 3.54]
