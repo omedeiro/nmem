@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-
-from nmem.analysis.analysis import load_data
+import scipy.io as sio
+from matplotlib.axes import Axes
 
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
@@ -20,7 +20,7 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 
-def text_from_bit(bit: str):
+def text_from_bit(bit: str) -> str:
     if bit == "0":
         return "0"
     elif bit == "1":
@@ -37,7 +37,7 @@ def text_from_bit(bit: str):
         return None
 
 
-def plot_message(ax: plt.Axes, message: str):
+def plot_message(ax: Axes, message: str) -> Axes:
     axheight = ax.get_ylim()[1]
     for i, bit in enumerate(message):
         text = text_from_bit(bit)
@@ -54,16 +54,17 @@ def plot_message(ax: plt.Axes, message: str):
     return ax
 
 
-def plot_trace_averaged(ax, data_dict, trace_name, color):
+def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, color: str) -> Axes:
     ax.plot(
         (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
         data_dict[trace_name][1, :],
         label=trace_name,
         color=color,
     )
+    return ax
 
 
-def plot_hist(ax, data_dict):
+def plot_hist(ax: Axes, data_dict: dict) -> Axes:
     ax.hist(
         data_dict["read_zero_top"][0, :],
         log=True,
@@ -83,9 +84,10 @@ def plot_hist(ax, data_dict):
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Counts")
     ax.legend()
+    return ax
 
 
-def plot_bitstream(ax, data_dict, trace_name):
+def plot_bitstream(ax: Axes, data_dict: dict, trace_name: str) -> Axes:
     ax.plot(
         data_dict[trace_name][0, :] * 1e6,
         data_dict[trace_name][1, :],
@@ -93,9 +95,10 @@ def plot_bitstream(ax, data_dict, trace_name):
         color="#345F90",
     )
     plot_message(ax, data_dict["bitmsg_channel"][0])
+    return ax
 
 
-def plot_delay(ax, data_dict):
+def plot_delay(ax: Axes, data_dict: dict) -> Axes:
     bers = []
     for i in range(4):
         bers.append(data_dict[i]["bit_error_rate"][0])
@@ -104,8 +107,10 @@ def plot_delay(ax, data_dict):
     ax.set_xlabel("Delay [$\mu$s]")
     ax.set_ylabel("BER")
 
+    return ax
 
-def plot_combined(data_dict: dict, save=False):
+
+def create_combined_plot(data_dict: dict, save=False):
     fig = plt.figure(figsize=(7, 3.5))
     subfigs = fig.subfigures(
         2,
@@ -148,33 +153,33 @@ def plot_combined(data_dict: dict, save=False):
 
 if __name__ == "__main__":
     data_dict = {
-        0: load_data(
+        0: sio.loadmat(
             "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 11-47-10.mat"
         ),
-        1: load_data(
+        1: sio.loadmat(
             "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-01-12.mat"
         ),
-        2: load_data(
+        2: sio.loadmat(
             "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-13-23.mat"
         ),
-        3: load_data(
+        3: sio.loadmat(
             "SPG806_20241114_nMem_parameter_sweep_D6_A4_B4_2024-11-14 12-27-15.mat"
         ),
-        4: load_data(
+        4: sio.loadmat(
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-14-54.mat"
         ),
-        5: load_data(
+        5: sio.loadmat(
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-01-52.mat"
         ),
-        6: load_data(
+        6: sio.loadmat(
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-45-37.mat"
         ),
-        7: load_data(
+        7: sio.loadmat(
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-49-50.mat"
         ),
-        8: load_data(
+        8: sio.loadmat(
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-52-23.mat"
         ),
     }
 
-    plot_combined(data_dict, save=False)
+    create_combined_plot(data_dict, save=False)
