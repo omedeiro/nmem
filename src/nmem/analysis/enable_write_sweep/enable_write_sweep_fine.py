@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.axes import Axes
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 
 
 def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axes:
@@ -29,9 +30,9 @@ def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axe
     
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
-    ax.xaxis.set_major_locator(plt.MultipleLocator(5))
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}"))
-    ax.xaxis.set_minor_locator(plt.MultipleLocator(1))
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.0f}"))
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
 
     ax.legend(frameon=True, loc=3)
     ax.grid(True, which="both", axis="x", linestyle="--")
@@ -40,10 +41,9 @@ def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axe
     return ax
 
 
-def plot_write_sweep_fine(data_dict: dict):
-    fig, ax = plt.subplots()
+def plot_write_sweep_fine(ax:Axes, data_dict: dict) -> Axes:
     for key in data_dict.keys():
-        plot_enable_write_sweep_single(ax, data_dict, key)
+        ax = plot_enable_write_sweep_single(ax, data_dict, key)
     return ax
 
 
@@ -83,7 +83,9 @@ if __name__ == "__main__":
             "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-33-07.mat"
         ),
     }
-    plot_write_sweep_fine(data_dict)
+
+    fig, ax = plt.subplots()
+    plot_write_sweep_fine(ax, data_dict)
 
     data_dict_top = {
         0: data_dict[0],
@@ -91,4 +93,6 @@ if __name__ == "__main__":
         2: data_dict[2],
         3: data_dict[3],
     }
-    plot_write_sweep_fine(data_dict_top)
+
+    fig, ax = plt.subplots()
+    plot_write_sweep_fine(ax, data_dict_top)
