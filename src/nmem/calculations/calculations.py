@@ -296,7 +296,6 @@ def calculate_one_state_current(
     upper_limit = np.minimum(fa, fd)
     lower_limit = np.maximum(fb, fc)
 
-    print(f"persistent_currents: {persistent_currents}")
     one_state_currents = np.where(
         persistent_currents > 0,
         upper_limit,
@@ -499,9 +498,16 @@ def calculate_state_currents(
     max_critical_current: float,
 ) -> dict:
     if not isinstance(persistent_current, float):
-        raise ValueError("Persistent current must be a float.")
+        try:
+            persistent_current = float(persistent_current)
+        except ValueError:
+            raise ValueError(
+                f"Persistent current must be a float. Got {type(persistent_current)}"
+            )
 
-        
+    if max_critical_current < 1:
+        max_critical_current *= 1e6
+
     if isinstance(persistent_current, np.ndarray):
         persistent_current = persistent_current.flatten()
 
@@ -521,7 +527,7 @@ def calculate_state_currents(
     imin = left_max + right_retrap_max
     diff = imax - imin
     gap = imin - right_max
-    
+
     fa = (
         np.add(right_critical_currents, left_retrapping_currents)
         + diff
@@ -538,9 +544,7 @@ def calculate_state_currents(
     fB = fb + persistent_current - gap
 
     zero_state_current = np.minimum(fa, max_critical_current)
-    one_state_current = np.maximum(
-        np.minimum(fb, max_critical_current), fc
-    )
+    one_state_current = np.maximum(np.minimum(fb, max_critical_current), fc)
     one_state_current_inv = np.minimum(
         np.minimum(np.maximum(fa, fc), fb), max_critical_current
     )
