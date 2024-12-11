@@ -8,10 +8,6 @@ from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
-from nmem.calculations.calculations import (
-    calculate_one_state_current,
-    calculate_zero_state_current,
-)
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
