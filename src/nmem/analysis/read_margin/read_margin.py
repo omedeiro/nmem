@@ -1,18 +1,19 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from matplotlib.axes import Axes
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 12
 
 
-def plot_write_sweep(data_dict: dict):
+def plot_write_sweep(ax: Axes, data_dict: dict) -> Axes:
     cmap = plt.get_cmap("Greens")
     colors = cmap(np.linspace(0.2, 1, len(data_dict)))
     for key, data in data_dict.items():
         read_currents = data["y"][:, :, 0].flatten() * 1e6
         ber = data["bit_error_rate"].flatten()
-        ax = plt.plot(
+        ax.plot(
             read_currents,
             ber,
             label=f"$I_W$ = {data['write_current'][0,0,0]*1e6:.1f} $\mu$A",
@@ -20,11 +21,11 @@ def plot_write_sweep(data_dict: dict):
             marker=".",
             markeredgecolor="k",
         )
-        plt.xlim(read_currents[0], read_currents[-1])
-        plt.xlabel("Read Current ($\mu$A)")
-        plt.ylabel("Bit Error Rate")
-        plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1))
+    ax.set_xlim(read_currents[0], read_currents[-1])
+    ax.set_xlabel("Read Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax.grid(True)
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1))
 
 
 if __name__ == "__main__":
@@ -53,6 +54,6 @@ if __name__ == "__main__":
         3: data3,
         4: data4,
     }
+    
     fig, ax = plt.subplots()
-
-    plot_write_sweep(data_dict)
+    plot_write_sweep(ax, data_dict)
