@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,46 +10,55 @@ plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 14
 
 
-def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axes:
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
+def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
+    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    ber = data_dict.get("bit_error_rate").flatten()
+    state0_current, state1_current = find_state_currents(data_dict)
+    ax.plot(
+        read_currents[read_currents == state0_current],
+        ber[read_currents == state0_current],
+        marker="D",
+        markeredgecolor="k",
+        linewidth=1.5,
+        label="_state0",
+        **kwargs,
+    )
+    ax.plot(
+        read_currents[read_currents == state1_current],
+        ber[read_currents == state1_current],
+        marker="P",
+        markeredgecolor="k",
+        linewidth=1.5,
+        label="_state1",
+        **kwargs,
+    )
 
-    data_dict = {index: data_dict[index]}
+    return ax
 
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        ax.plot(
-            read_currents,
-            ber,
-            label=f"$I_{{EW}}$ = {data['enable_write_current'][0,0,0]*1e6:.1f} $\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
 
-        state0_current, state1_current = find_state_currents(data)
-        ax.plot(
-            read_currents[read_currents == state0_current],
-            ber[read_currents == state0_current],
-            color=colors[key],
-            marker="D",
-            markerfacecolor=colors[key],
-            markeredgecolor="k",
-            linewidth=1.5,
-            label="_state0",
-        )
-        ax.plot(
-            read_currents[read_currents == state1_current],
-            ber[read_currents == state1_current],
-            color=colors[key],
-            marker="P",
-            markerfacecolor=colors[key],
-            markeredgecolor="k",
-            markersize=10,
-            linewidth=1.5,
-            label="_state1",
-        )
+def plot_read_sweep(
+    ax: Axes,
+    data_dict: dict,
+    value_name: Literal["bit_error_rate", "write_0_read_1", "write_1_read_0"],
+    variable_name: Literal["enable_write_current"],
+    **kwargs,
+) -> Axes:
+
+    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    value = data_dict.get(value_name).flatten()
+    variable = data_dict.get(variable_name)[0, 0, 0] * 1e6
+    ax.plot(
+        read_currents,
+        value,
+        label=f"{variable} $\mu$A",
+        marker=".",
+        markeredgecolor="k",
+        **kwargs,
+    )
+
+    plot_state_current_markers(
+        ax, data_dict, markersize=15, **kwargs
+    )
 
     ax.set_ylim(0, 1)
 
@@ -67,48 +76,45 @@ def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:
         sharex=False,
         sharey=False,
     )
+
+    cmap = plt.get_cmap("Spectral")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
     for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
-        ax[i] = plot_enable_write_sweep_single(ax[i], data_dict, j)
+        ax[i] = plot_read_sweep(
+            ax[i], data_dict[j], "bit_error_rate", "enable_write_current", color=colors[j]
+        )
+        ax[i].set_xlabel("Read Current ($\mu$A)")
         if i == "A":
             ax[i].set_ylabel("Bit Error Rate")
-            ax[i].legend(loc=2)
-        if i == "C":
-            ax[i].legend(loc=3)
-        if i == "D":
-            ax[i].legend(loc=3)
-
-        ax[i].set_xlabel("Read Current ($\mu$A)")
+        
 
     ax["E"] = plot_state_currents(ax["E"], data_dict)
-    plt.tight_layout()
+    fig.tight_layout()
     if save:
-        plt.savefig("enable_write_sweep_grid.png", dpi=300)
-    plt.show()
+        fig.savefig("enable_write_sweep_grid.png", dpi=300)
+
     return
 
 
-def plot_state_separation(ax: Axes, data_dict: dict) -> None:
+def plot_state_separation(ax: Axes, data_dict: dict) -> Axes:
     state_separation = []
     for key, data in data_dict.items():
         state0_current, state1_current = find_state_currents(data)
         state_separation.append(state1_current - state0_current)
 
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6, 4))
-    plt.sca(ax)
 
-    plt.bar(
-        [data["enable_write_current"][0, 0, 0] * 1e6 for data in data_dict.values()],
+    ax.bar(
+        [data.get("enable_write_current")[0, 0, 0] * 1e6 for data in data_dict.values()],
         state_separation,
         width=2.5,
     )
     ax.xaxis.set_major_locator(MultipleLocator(20))
     ax.xaxis.set_minor_locator(MultipleLocator(5))
 
-    plt.grid(True, axis="both", which="both")
-    plt.xlabel("Enable Write Current ($\mu$A)")
-    plt.ylabel("Diff. Between State Currents ($\mu$A)")
-    return
+    ax.grid(True, axis="both", which="both")
+    ax.set_xlabel("Enable Write Current ($\mu$A)")
+    ax.set_ylabel("Diff. Between State Currents ($\mu$A)")
+    return ax
 
 
 def find_state_currents(data_dict: dict) -> Tuple[float, float]:
@@ -237,5 +243,5 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     plot_state_currents(ax, data_dict)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(6, 4))
     plot_state_separation(ax, data_dict)
