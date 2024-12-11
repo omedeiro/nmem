@@ -254,7 +254,9 @@ def plot_measurement_coarse(ax: Axes, data_dict: dict) -> Axes:
     return ax
 
 
-def plot_trace_stack_write(ax: Axes, data_dict: dict, trace_index: int, legend: bool = False):
+def plot_trace_stack_write(
+    ax: Axes, data_dict: dict, trace_index: int, legend: bool = False
+):
     plt.subplots_adjust(hspace=0.0, wspace=0.0)
     plt.subplot(311)
     x = data_dict["trace_chan_in"][0][:, trace_index] * 1e6
@@ -484,7 +486,7 @@ def plot_hist(data_dict: dict, trace_index: int):
     plt.show()
 
 
-def convert_location_to_coordinates(location):
+def convert_location_to_coordinates(location: str) -> tuple:
     """Converts a location like 'A1' to coordinates (x, y)."""
     column_letter = location[0]
     row_number = int(location[1:]) - 1
@@ -492,9 +494,9 @@ def convert_location_to_coordinates(location):
     return column_number, row_number
 
 
-def plot_text_labels(xloc, yloc, ztotal, log=False, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
+def plot_text_labels(
+    ax: Axes, xloc: np.ndarray, yloc: np.ndarray, ztotal: np.ndarray, log: bool
+) -> Axes:
     for x, y in zip(xloc, yloc):
         text = f"{ztotal[y, x]:.2f}"
         txt_color = "black"
@@ -519,11 +521,15 @@ def plot_text_labels(xloc, yloc, ztotal, log=False, ax=None):
 
 
 def plot_array(
-    xloc, yloc, ztotal, title=None, log=False, reverse=False, ax=None, cmap=None
-):
-    if ax is None:
-        fig, ax = plt.subplots()
-
+    ax: Axes,
+    xloc: np.ndarray,
+    yloc: np.ndarray,
+    ztotal: np.ndarray,
+    title: str = None,
+    log: bool = False,
+    reverse: bool = False,
+    cmap: plt.cm = None,
+) -> Axes:
     if cmap is None:
         cmap = plt.get_cmap("viridis")
     if reverse:
@@ -533,26 +539,28 @@ def plot_array(
         im = ax.matshow(ztotal, cmap=cmap, norm=LogNorm(vmin=1e-6, vmax=1e-2))
     else:
         im = ax.matshow(ztotal, cmap=cmap)
+
     if title is not None:
         ax.set_title(title)
+
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
-    # Change the tick length of the x-axis
     ax.tick_params(axis="both", length=0)
 
-    ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
+    ax = plot_text_labels(ax, xloc, yloc, ztotal, log)
 
     return ax
 
 
 def plot_normalization(
+    ax: Axes,
     write_current_norm: np.ndarray,
     read_current_norm: np.ndarray,
     enable_write_current: np.ndarray,
     enable_read_current: np.ndarray,
-):
+) -> Axes:
     # remove NaN from arrays
     write_current_norm = write_current_norm[~np.isnan(write_current_norm)]
     read_current_norm = read_current_norm[~np.isnan(read_current_norm)]
@@ -565,7 +573,6 @@ def plot_normalization(
     enable_write_current = enable_write_current[enable_write_current != 0]
     enable_read_current = enable_read_current[enable_read_current != 0]
 
-    fig, ax = plt.subplots()
     ax.boxplot(write_current_norm.flatten(), positions=[0], widths=0.5)
     ax.boxplot(read_current_norm.flatten(), positions=[1], widths=0.5)
     ax.boxplot(enable_write_current.flatten(), positions=[2], widths=0.5)
@@ -581,25 +588,14 @@ def plot_normalization(
         ]
     )
     ax.set_xlabel("Input Type")
-    plt.xticks(rotation=45)
+    ax.set_xticks(rotation=45)
     ax.set_ylabel("Normalized Current")
     ax.set_yticks(np.linspace(0, 1, 11))
-    # plt.grid(axis="y")
-    plt.show()
+    return ax
 
 
-def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
+def plot_analytical(ax: Axes, data_dict: dict) -> Axes:
     color_map = plt.get_cmap("RdBu")
-    persistent_currents, regions = calculate_persistent_currents(data_dict)
-    data_dict["regions"] = regions
-    if persistent_current == 0:
-        data_dict["persistent_currents"] = np.zeros_like(persistent_currents)
-    else:
-        data_dict["persistent_currents"] = (
-            np.ones_like(persistent_currents) * persistent_current
-        )
 
     read_current_dict = calculate_read_currents(data_dict)
     inv_region = np.where(
@@ -642,16 +638,14 @@ def plot_analytical(data_dict: dict, persistent_current=None, ax=None):
     )
     read_current_dict["nominal"] = nominal_region
     read_current_dict["inverting"] = inv_region
-    return ax, read_current_dict
+    return ax
 
 
-def plot_cell_param(param: str, ax: plt.Axes = None):
-    if ax is None:
-        fig, ax = plt.subplots()
-
+def plot_cell_param(ax: Axes, param: str) -> Axes:
     param_array = np.array([CELLS[cell][param] for cell in CELLS]).reshape(4, 4)
 
     plot_array(
+        ax,
         np.arange(4),
         np.arange(4),
         param_array * 1e6,
@@ -663,7 +657,7 @@ def plot_cell_param(param: str, ax: plt.Axes = None):
     return ax
 
 
-def find_peak(data_dict: dict):
+def find_peak(data_dict: dict) -> float:
     x = data_dict["x"][0][:, 1] * 1e6
     y = data_dict["y"][0][:, 0] * 1e6
 
