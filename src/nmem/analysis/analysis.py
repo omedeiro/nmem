@@ -5,8 +5,11 @@ import numpy as np
 import scipy.io as sio
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
+from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
+from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.calculations.calculations import (
     calculate_read_currents,
@@ -42,6 +45,30 @@ def text_from_bit(bit: str) -> str:
         return "Read \nEnable"
     elif bit == "W":
         return "Write \nEnable"
+    else:
+        return None
+
+def text_from_bit_v2(bit: str):
+    if bit == "0":
+        return "WR0"
+    elif bit == "1":
+        return "WR1"
+    elif bit == "N":
+        return ""
+    elif bit == "R":
+        return "RD"
+    elif bit == "E":
+        return "ER"
+    elif bit == "W":
+        return "EW"
+    elif bit == "z":
+        return "RD0"
+    elif bit == "Z":
+        return "W0R1"
+    elif bit == "o":
+        return "RD1"
+    elif bit == "O":
+        return "W1R0"
     else:
         return None
 
@@ -259,6 +286,59 @@ def plot_read_sweep_array(ax: Axes, data_dict: dict, value_name: str, variable_n
         plot_read_sweep(ax, data_dict[key], value_name, variable_name)
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+    return ax
+
+
+def plot_read_sweep_array_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
+    for key in data_dict.keys():
+        ax = plot_read_sweep_3d(ax, data_dict[key])
+
+    ax.xaxis.set_rotate_label(True)
+    ax.yaxis.set_rotate_label(False)
+    ax.zaxis.set_rotate_label(True)
+
+    ax.set_zlim(0, 1)
+    ax.set_zticks([0, 0.5, 1])
+    ax.set_xlim(500, 950)
+    ax.xaxis.set_major_locator(MultipleLocator(100))
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.set_box_aspect([0.5, 1, 0.25], zoom=0.8)
+    ax.view_init(20, -35)
+    ax.grid(False)
+
+    ax.set_position([0.0, 0.0, 1, 1])
+
+    for child in ax.get_children():
+        if isinstance(child, Rectangle):
+            child.set_visible(False)
+    return ax
+
+
+def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
+
+    cmap = plt.get_cmap("RdBu")
+    colors = cmap(np.linspace(0, 1, 5))
+
+    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    ber = data_dict.get("bit_error_rate").flatten()
+    enable_read_current = data_dict.get("enable_read_current").flatten()[0] * 1e6
+
+    verts = polygon_nominal(read_currents, ber)
+    inv_verts = polygon_inverting(read_currents, ber)
+
+    poly = PolyCollection([verts], facecolors=colors[-1], alpha=0.6, edgecolors=None)
+    poly_inv = PolyCollection(
+        [inv_verts], facecolors=colors[0], alpha=0.6, edgecolors=None
+    )
+    ax.add_collection3d(poly, zs=[enable_read_current], zdir="y")
+    ax.add_collection3d(poly_inv, zs=[enable_read_current], zdir="y")
+
+    ax.set_xlabel("$I_R$ ($\mu$A)", labelpad=-6)
+    ax.set_ylabel("$I_{{ER}}$ ($\mu$A)", labelpad=4)
+    ax.set_zlabel("BER", labelpad=-6)
+    ax.tick_params(axis="both", which="major", pad=-1)
+
     return ax
 
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
