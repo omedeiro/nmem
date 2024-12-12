@@ -1,4 +1,3 @@
-from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,66 +5,11 @@ import scipy.io as sio
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
 
+from nmem.analysis.analysis import find_state_currents, plot_read_sweep
+
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 14
 
-
-def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
-    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
-    ber = data_dict.get("bit_error_rate").flatten()
-    state0_current, state1_current = find_state_currents(data_dict)
-    ax.plot(
-        read_currents[read_currents == state0_current],
-        ber[read_currents == state0_current],
-        marker="D",
-        markeredgecolor="k",
-        linewidth=1.5,
-        label="_state0",
-        **kwargs,
-    )
-    ax.plot(
-        read_currents[read_currents == state1_current],
-        ber[read_currents == state1_current],
-        marker="P",
-        markeredgecolor="k",
-        linewidth=1.5,
-        label="_state1",
-        **kwargs,
-    )
-
-    return ax
-
-
-def plot_read_sweep(
-    ax: Axes,
-    data_dict: dict,
-    value_name: Literal["bit_error_rate", "write_0_read_1", "write_1_read_0"],
-    variable_name: Literal["enable_write_current"],
-    **kwargs,
-) -> Axes:
-
-    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
-    value = data_dict.get(value_name).flatten()
-    variable = data_dict.get(variable_name)[0, 0, 0] * 1e6
-    ax.plot(
-        read_currents,
-        value,
-        label=f"{variable} $\mu$A",
-        marker=".",
-        markeredgecolor="k",
-        **kwargs,
-    )
-
-    plot_state_current_markers(
-        ax, data_dict, markersize=15, **kwargs
-    )
-
-    ax.set_ylim(0, 1)
-
-    ax.xaxis.tick_top()
-    ax.xaxis.set_label_position("top")
-    ax.legend(frameon=True, loc=2)
-    return ax
 
 
 def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:
@@ -81,12 +25,15 @@ def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:
     colors = cmap(np.linspace(0, 1, len(data_dict)))
     for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
         ax[i] = plot_read_sweep(
-            ax[i], data_dict[j], "bit_error_rate", "enable_write_current", color=colors[j]
+            ax[i],
+            data_dict[j],
+            "bit_error_rate",
+            "enable_write_current",
+            color=colors[j],
         )
         ax[i].set_xlabel("Read Current ($\mu$A)")
         if i == "A":
             ax[i].set_ylabel("Bit Error Rate")
-        
 
     ax["E"] = plot_state_currents(ax["E"], data_dict)
     fig.tight_layout()
@@ -102,9 +49,11 @@ def plot_state_separation(ax: Axes, data_dict: dict) -> Axes:
         state0_current, state1_current = find_state_currents(data)
         state_separation.append(state1_current - state0_current)
 
-
     ax.bar(
-        [data.get("enable_write_current")[0, 0, 0] * 1e6 for data in data_dict.values()],
+        [
+            data.get("enable_write_current")[0, 0, 0] * 1e6
+            for data in data_dict.values()
+        ],
         state_separation,
         width=2.5,
     )
@@ -115,25 +64,6 @@ def plot_state_separation(ax: Axes, data_dict: dict) -> Axes:
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Diff. Between State Currents ($\mu$A)")
     return ax
-
-
-def find_state_currents(data_dict: dict) -> Tuple[float, float]:
-    read_currents = data_dict["y"][:, :, 0].flatten() * 1e6
-    ber = data_dict["bit_error_rate"].flatten()
-
-    if np.max(ber) > 0.6:
-        max_ber = np.max(ber)
-        ber_threshold = 0.5 + (max_ber - 0.5) / 2
-        state1_current = read_currents[ber > ber_threshold][0]
-        state0_current = read_currents[ber > ber_threshold][-1]
-
-    else:
-        min_ber = np.min(ber)
-        ber_threshold = 0.5 - (0.5 - min_ber) / 2
-        state0_current = read_currents[ber < ber_threshold][0]
-        state1_current = read_currents[ber < ber_threshold][-1]
-
-    return state0_current, state1_current
 
 
 def plot_state_currents(ax: Axes, data_dict: dict):
