@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-from nmem.analysis.analysis import find_enable_relation, plot_fit
+from nmem.analysis.analysis import get_fitting_points, plot_fit, construct_array
 
 plt.rcParams["figure.figsize"] = [5.7, 5]
 plt.rcParams["font.size"] = 16
@@ -25,12 +25,12 @@ if __name__ == "__main__":
 
         measurement_dict = sio.loadmat(datafile)
         measurement_dict["cell"] = cell
-        xfit, yfit = find_enable_relation(measurement_dict)
-        plot_fit(xfit, yfit)
+        x, y, ztotal = construct_array(measurement_dict)
+        xfit, yfit = get_fitting_points(x, y, ztotal)
+        plot_fit(ax, xfit, yfit)
+
         xfit_sorted = np.sort(xfit)
         yfit_sorted = yfit[np.argsort(xfit)]
-        print(f"Cell: {cell} max Ic = {yfit_sorted[0]}")
-        print(f"Fit resutls: {np.polyfit(xfit, yfit, 1)}")
         ax.plot(
             xfit_sorted,
             yfit_sorted,

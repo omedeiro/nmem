@@ -670,18 +670,18 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
 
     return ax
 
+def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x = data_dict.get("x")[0][:, 1] * 1e6
+    y = data_dict.get("y")[0][:, 0] * 1e6
+    w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten()
+    z = w1r0 + w0r1
+    ztotal = z.reshape((len(y), len(x)), order="F")
+    return x, y, ztotal
 
 def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
-    x: np.ndarray = data_dict.get("x")[0][:, 1] * 1e6
-    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
-
-    w0r1: np.ndarray = 100 - data_dict.get("write_0_read_1")[0].flatten()
-    w1r0: np.ndarray = data_dict.get("write_1_read_0")[0].flatten()
-    z: np.ndarray = w1r0 + w0r1
-    ztotal = z.reshape((len(y), len(x)), order="F")
-
-    dx = x[1] - x[0]
-    dy = y[1] - y[0]
+    
+    x, y, ztotal = construct_array(data_dict)
 
     xfit, yfit = get_fitting_points(x, y, ztotal)
 
