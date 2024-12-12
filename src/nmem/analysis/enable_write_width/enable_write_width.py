@@ -1,50 +1,46 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from matplotlib.axes import Axes
 
 plt.rcParams["figure.figsize"] = [5, 3.5]
 plt.rcParams["font.size"] = 14
 
 
-def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
+def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, **kwargs) -> Axes:
 
-    data_dict = {index: data_dict[index]}
+    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    ber = data_dict.get("bit_error_rate").flatten()
+    enable_write_width = data_dict.get("enable_write_width").flatten()[0]
+    ax.plot(
+        read_currents,
+        ber,
+        label=f"{enable_write_width:.1f}",
+        marker=".",
+        markeredgecolor="k",
+        **kwargs,
+    )
 
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        enable_write_width = data["enable_write_width"].flatten()[0]
-        plt.plot(
-            read_currents,
-            ber,
-            label=f"{enable_write_width:.1f}",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
+    ax.set_ylim(1e-4, 1)
+    ax.set_xticks(np.linspace(570, 680, 5))
+    ax.set_yscale("log")
+    ax.set_xlabel("Read Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax.set_title("Write Enable Width Sweep")
+    ax.grid(True)
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
 
-    ax = plt.gca()
-
-    plt.ylim(1e-4, 1)
-    plt.xticks(np.linspace(570, 680, 5))
-    plt.yscale("log")
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    plt.title("Write Enable Width Sweep")
     return ax
 
 
-def plot_enable_write_sweep_multiple(data_dict: dict):
-    fig, ax = plt.subplots()
+def plot_enable_write_sweep_multiple(ax: Axes, data_dict: dict) -> Axes:
+    cmap = plt.get_cmap("Spectral")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
+
     for key in data_dict.keys():
-        plot_enable_write_sweep_single(data_dict, key, ax)
+        color = colors[key]
+        ax = plot_enable_write_sweep_single(ax, data_dict[key], color=color)
+
     return ax
 
 
@@ -88,8 +84,8 @@ if __name__ == "__main__":
         7: data7,
         8: data8,
     }
-    plot_enable_write_sweep_multiple(data_dict)
-    plt.show()
+    fig, ax = plt.subplots()
+    plot_enable_write_sweep_multiple(ax, data_dict)
 
     data_dict = {
         0: data0,
@@ -99,5 +95,6 @@ if __name__ == "__main__":
         4: data5,
         5: data8,
     }
-    plot_enable_write_sweep_multiple(data_dict)
-    plt.show()
+
+    fig, ax = plt.subplots()
+    plot_enable_write_sweep_multiple(ax, data_dict)

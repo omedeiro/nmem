@@ -1,51 +1,11 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy.io as sio
+
+from nmem.analysis.analysis import plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [5, 3.5]
 plt.rcParams["font.size"] = 14
 
-
-def plot_enable_write_sweep_single(data_dict: dict, index: int, ax=None):
-    if ax is None:
-        fig, ax = plt.subplots()
-    plt.sca(ax)
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(data_dict)))
-
-    data_dict = {index: data_dict[index]}
-
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        write_width = data["write_width"].flatten()[0]
-        plt.plot(
-            read_currents,
-            ber,
-            label=f"{write_width:.1f}",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-
-    ax = plt.gca()
-
-    plt.ylim(1e-4, 1)
-    plt.xticks(np.linspace(570, 680, 5))
-    plt.yscale("log")
-    plt.xlabel("Read Current ($\mu$A)")
-    plt.ylabel("Bit Error Rate")
-    plt.grid(True)
-    plt.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    plt.title("Write Width Sweep")
-    return ax
-
-
-def plot_enable_write_sweep_multiple(data_dict: dict):
-    fig, ax = plt.subplots()
-    for key in data_dict.keys():
-        plot_enable_write_sweep_single(data_dict, key, ax)
-    return ax
 
 
 if __name__ == "__main__":
@@ -93,7 +53,8 @@ if __name__ == "__main__":
         8: data8,
         9: data9,
     }
-    plot_enable_write_sweep_multiple(data_dict)
+    fig, ax = plt.subplots()
+    plot_read_sweep_array(ax, data_dict, "bit_error_rate", "write_width")
     plt.show()
 
     data_dict = {
@@ -102,5 +63,6 @@ if __name__ == "__main__":
         2: data6,
         3: data8,
     }
-    plot_enable_write_sweep_multiple(data_dict)
-    plt.show()
+    
+    fig, ax = plt.subplots()
+    plot_read_sweep_array(ax, data_dict, "bit_error_rate", "write_width")
