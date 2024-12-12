@@ -3,31 +3,10 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.axes import Axes
 
+from nmem.analysis.analysis import plot_read_sweep_array
+
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 12
-
-
-def plot_write_sweep(ax: Axes, data_dict: dict) -> Axes:
-    cmap = plt.get_cmap("Greens")
-    colors = cmap(np.linspace(0.2, 1, len(data_dict)))
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        ax.plot(
-            read_currents,
-            ber,
-            label=f"$I_W$ = {data['write_current'][0,0,0]*1e6:.1f} $\mu$A",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-    ax.set_xlim(read_currents[0], read_currents[-1])
-    ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    ax.grid(True)
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1))
-
-    return ax
 
 
 if __name__ == "__main__":
@@ -58,4 +37,5 @@ if __name__ == "__main__":
     }
 
     fig, ax = plt.subplots()
-    plot_write_sweep(ax, data_dict)
+    plot_read_sweep_array(ax, data_dict, "bit_error_rate", "write_current")
+    ax.set_ylim(0, 0.5)
