@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-from nmem.analysis.analysis import get_fitting_points, plot_fit, construct_array
+from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
 
 plt.rcParams["figure.figsize"] = [5.7, 5]
 plt.rcParams["font.size"] = 16

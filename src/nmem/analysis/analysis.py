@@ -682,7 +682,7 @@ def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray
 def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
     
     x, y, ztotal = construct_array(data_dict)
-
+    dx, dy = np.diff(x)[0], np.diff(y)[0]
     xfit, yfit = get_fitting_points(x, y, ztotal)
 
     ax.scatter(xfit, yfit)

@@ -1,10 +1,8 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
 
-from nmem.analysis.analysis import plot_enable_current_relation, import_directory
+from nmem.analysis.analysis import import_directory, plot_enable_current_relation
 
 plt.rcParams["figure.figsize"] = [5.5, 5.5]
 
