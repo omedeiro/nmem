@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Literal, Tuple
 
 import numpy as np
 import scipy.io as sio
@@ -173,208 +173,126 @@ def plot_enable(ax: Axes, data_dict: dict, trace_index: int):
     return ax
 
 
-def plot_measurement(ax: Axes, data_dict: dict) -> Axes:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
-    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
-    z = (w1r0 + w0r1) / 2
-    line_width = 2
+def find_state_currents(data_dict: dict) -> Tuple[float, float]:
+    read_currents = data_dict["y"][:, :, 0].flatten() * 1e6
+    ber = data_dict["bit_error_rate"].flatten()
+
+    if np.max(ber) > 0.6:
+        max_ber = np.max(ber)
+        ber_threshold = 0.5 + (max_ber - 0.5) / 2
+        state1_current = read_currents[ber > ber_threshold][0]
+        state0_current = read_currents[ber > ber_threshold][-1]
+
+    else:
+        min_ber = np.min(ber)
+        ber_threshold = 0.5 - (0.5 - min_ber) / 2
+        state0_current = read_currents[ber < ber_threshold][0]
+        state1_current = read_currents[ber < ber_threshold][-1]
+
+    return state0_current, state1_current
+
+
+def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
+    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    ber = data_dict.get("bit_error_rate").flatten()
+    state0_current, state1_current = find_state_currents(data_dict)
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
-        w0r1,
-        color="#DBB40C",
-        linewidth=line_width,
-        label="Write 0 Read 1",
-        marker=".",
+        read_currents[read_currents == state0_current],
+        ber[read_currents == state0_current],
+        marker="D",
+        markeredgecolor="k",
+        linewidth=1.5,
+        label="_state0",
+        **kwargs,
     )
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
-        w1r0,
-        color="#740F15",
-        linewidth=line_width,
-        label="Write 1 Read 0",
-        marker=".",
+        read_currents[read_currents == state1_current],
+        ber[read_currents == state1_current],
+        marker="P",
+        markeredgecolor="k",
+        linewidth=1.5,
+        label="_state1",
+        **kwargs,
     )
+
+    return ax
+
+
+def plot_read_sweep(
+    ax: Axes,
+    data_dict: dict,
+    value_name: Literal["bit_error_rate", "write_0_read_1", "write_1_read_0"],
+    variable_name: Literal[
+        "enable_write_current", "read_width", "write_width", "write_current"
+    ],
+    state_markers: bool = False,
+    **kwargs,
+) -> Axes:
+    read_currents = data_dict.get("y")[:,:,0] * 1e6
+    value = data_dict.get(value_name).flatten()
+    variable = data_dict.get(variable_name).flatten()[0]
+
+    if read_currents.shape != value.shape:
+        read_currents = read_currents.flatten()
+
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
-        z,
-        color="#08519C",
-        linewidth=line_width,
-        label="Total",
+        read_currents,
+        value,
+        label=f"{variable}",
         marker=".",
+        markeredgecolor="k",
+        **kwargs,
     )
-    ax.set_yscale("log")
-    ax.set_yticks([5e-5, 1e-4, 1e-3, 1e-2, 1e-1])
-    ax.set_ylim([5e-5, 1e-2])
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-    ax.xaxis.tick_top()
-    ax.xaxis.set_label_position("top")
-    ax.grid(axis="y")
-    ax.set_ylabel("Bit Error Rate")
+
+    if state_markers:
+        plot_state_current_markers(ax, data_dict, markersize=15, **kwargs)
+
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{variable_name}")
+    ax.legend(frameon=True, loc=2)
     ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_ylabel("Normalized Bit Error Rate")
+    return ax
+
+def plot_read_sweep_array(ax: Axes, data_dict: dict, value_name: str, variable_name: str) -> Axes:
+    for key in data_dict.keys():
+        plot_read_sweep(ax, data_dict[key], value_name, variable_name)
+
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
 
+def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
+    num_meas = data_dict.get("num_meas")[0][0]
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
+    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
+    ber = (w1r0 + w0r1) / 2
+    measurement_param = data_dict.get("y")[0][:, 1] * 1e6
 
-def plot_measurement_coarse(ax: Axes, data_dict: dict) -> Axes:
-    num_meas = data_dict["num_meas"][0][0]
-    w1r0 = data_dict["write_1_read_0"][0].flatten() / num_meas
-    w0r1 = data_dict["write_0_read_1"][0].flatten() / num_meas
-    z = (w1r0 + w0r1) / 2
-    line_width = 2
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
+        measurement_param,
         w0r1,
         color="#DBB40C",
-        linewidth=line_width,
         label="Write 0 Read 1",
         marker=".",
     )
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
+        measurement_param,
         w1r0,
         color="#740F15",
-        linewidth=line_width,
         label="Write 1 Read 0",
         marker=".",
     )
     ax.plot(
-        data_dict["y"][0][:, 1] * 1e6,
-        z,
+        measurement_param,
+        ber,
         color="#08519C",
-        linewidth=line_width,
-        label="Total",
+        label="Total Bit Error Rate",
         marker=".",
     )
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
+    ax.legend()
     ax.set_yticks([0, 0.5, 1])
     ax.set_ylim([0, 1])
     ax.set_ylabel("Normalized\nBit Error Rate")
-    ax.set_xlabel("Write Current [$\mu$A]")
-    return ax
-
-
-def plot_trace_stack_write(
-    ax: Axes, data_dict: dict, trace_index: int, legend: bool = False
-):
-    plt.subplots_adjust(hspace=0.0, wspace=0.0)
-    plt.subplot(311)
-    x = data_dict["trace_chan_in"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_in"][1][:, trace_index] * 1e3
-    (p1,) = plt.plot(x, y, color="#08519C", label="Input")
-    plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
-
-    plot_trace_zoom(x, y, 0.9, 2.1)
-    plot_trace_zoom(x, y, 4.9, 6.1)
-
-    ax = plt.gca()
-    ax.set_xticklabels([])
-    plt.ylim([-150, 900])
-    plt.yticks([0, 500])
-    plt.grid(axis="x")
-
-    plt.subplot(312)
-    x = data_dict["trace_enab"][0][:, trace_index] * 1e6
-    y = data_dict["trace_enab"][1][:, trace_index] * 1e3
-    (p2,) = plt.plot(x, y, color="#DBB40C", label="Enable")
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax = plt.gca()
-    ax.set_xticklabels([])
-    plt.ylim([-10, 100])
-    plt.yticks([0, 50])
-    plt.grid(axis="x")
-
-    plt.subplot(313)
-    x = data_dict["trace_chan_out"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_out"][1][:, trace_index] * 1e3
-
-    (p3,) = plt.plot(x, y, color="#740F15", label="Output")
-    plt.grid(axis="x")
-    plt.xlabel("Time [$\mu$s]")
-    plt.ylim([-150, 800])
-    plt.yticks([0, 500])
-    # plt.hlines(data_dict["threshold_bert"].flatten()[TRACE_INDEX]*1e3, x[0], x[-1], color="red", ls="-", lw=1)
-    ax = plt.gca()
-    plt.sca(ax)
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax.set_xticklabels([f"{i:.1f}" for i in np.linspace(x[0], x[-1], 11)])
-    if legend:
-        plt.legend(
-            [p1, p2, p3],
-            ["Input", "Enable", "Output"],
-            loc="center",
-            bbox_to_anchor=(0.5, -1.5),
-            ncol=3,
-            frameon=False,
-        )
-    fig = plt.gcf()
-    fig.supylabel("Voltage [mV]")
-
-    return ax
-
-
-def plot_trace_stack_read(ax, data_dict: dict, trace_index: int):
-    plt.subplots_adjust(hspace=0.0, wspace=0.0)
-    plt.subplot(311)
-    x = data_dict["trace_chan_in"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_in"][1][:, trace_index] * 1e3
-    (p1,) = plt.plot(x, y, color="#08519C", label="Input")
-    plt.xticks(np.linspace(x[0], x[-1], 11), labels=None)
-
-    plot_message(plt.gca(), data_dict["bitmsg_channel"][0])
-
-    if data_dict["bitmsg_channel"][0][1] == "0":
-        plot_trace_zoom(x, y, 0.9, 2.1)
-        plot_trace_zoom(x, y, 4.9, 6.1)
-
-    if data_dict["bitmsg_channel"][0][3] == "1":
-        plot_trace_zoom(x, y, 2.9, 4.1)
-        plot_trace_zoom(x, y, 6.9, 8.1)
-
-    ax = plt.gca()
-    ax.set_xticklabels([])
-    plt.ylim([-150, 900])
-    plt.yticks([0, 500])
-    plt.grid(axis="x")
-
-    plt.subplot(312)
-    x = data_dict["trace_enab"][0][:, trace_index] * 1e6
-    y = data_dict["trace_enab"][1][:, trace_index] * 1e3
-    (p2,) = plt.plot(x, y, color="#DBB40C", label="Enable")
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax = plt.gca()
-    ax.set_xticklabels([])
-    plt.ylim([-10, 100])
-    plt.yticks([0, 50])
-    plt.grid(axis="x")
-
-    plt.subplot(313)
-    x = data_dict["trace_chan_out"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_out"][1][:, trace_index] * 1e3
-
-    (p3,) = plt.plot(x, y, color="#740F15", label="Output")
-    plt.grid(axis="x")
-    plt.xlabel("Time [$\mu$s]")
-    plt.ylim([-150, 800])
-    plt.yticks([0, 500])
-    ax = plt.gca()
-    plt.sca(ax)
-    plt.xticks(np.linspace(x[0], x[-1], 11))
-    ax.set_xticklabels([f"{i:.1f}" for i in np.linspace(x[0], x[-1], 11)])
-
-    plt.legend(
-        [p1, p2, p3],
-        ["Input", "Enable", "Output"],
-        loc="center",
-        bbox_to_anchor=(0.5, -1.5),
-        ncol=3,
-        frameon=False,
-    )
-    fig = plt.gcf()
-    fig.supylabel("Voltage [mV]")
-
     return ax
 
 
@@ -392,38 +310,49 @@ def plot_voltage_trace(
     return ax
 
 
-def plot_trace_stack_1D(axes: List[Axes], data_dict: dict) -> List[Axes]:
+def plot_trace_stack_1D(
+    axes: List[Axes], data_dict: dict, trace_index: int = 0
+) -> List[Axes]:
     if len(axes) != 3:
         raise ValueError("The number of axes must be 3.")
 
+    chan_in_x = data_dict.get("trace_chan_in")[0] * 1e6
+    chan_in_y = data_dict.get("trace_chan_in")[1] * 1e3
+    chan_out_x = data_dict.get("trace_chan_out")[0] * 1e6
+    chan_out_y = data_dict.get("trace_chan_out")[1] * 1e3
+    enab_in_x = data_dict.get("trace_enab")[0] * 1e6
+    enab_in_y = data_dict.get("trace_enab")[1] * 1e3
+
+    if chan_in_x.ndim == 2:
+        chan_in_x = chan_in_x[:, trace_index]
+        chan_in_y = chan_in_y[:, trace_index]
+        chan_out_x = chan_out_x[:, trace_index]
+        chan_out_y = chan_out_y[:, trace_index]
+        enab_in_x = enab_in_x[:, trace_index]
+        enab_in_y = enab_in_y[:, trace_index]
+    
+    bitmsg_channel = data_dict.get("bitmsg_channel")[0]
+    bitmsg_enable = data_dict.get("bitmsg_enable")[0]
+
     ax = axes[0]
-    x = data_dict["trace_chan_in"][0] * 1e6
-    y = data_dict["trace_chan_in"][1] * 1e3
-    plot_voltage_trace(ax, x, y)
+    plot_voltage_trace(ax, chan_in_x, chan_in_y, color="C0", label="Input")
+    ax.legend(loc="upper left")
 
-    if (
-        data_dict["bitmsg_enable"][0][1] == "W"
-        and data_dict["bitmsg_channel"][0][1] != "N"
-    ):
-        plot_trace_zoom(ax, x, y, 0.9, 2.1)
-        plot_trace_zoom(ax, x, y, 4.9, 6.1)
+    if bitmsg_enable[1] == "W" and bitmsg_channel[1] != "N":
+        plot_trace_zoom(ax, chan_in_x, chan_in_y, 0.9, 2.1)
+        plot_trace_zoom(ax, chan_in_x, chan_in_y, 4.9, 6.1)
 
-    if (
-        data_dict["bitmsg_enable"][0][3] == "W"
-        and data_dict["bitmsg_channel"][0][3] != "N"
-    ):
-        plot_trace_zoom(ax, x, y, 2.9, 4.1)
-        plot_trace_zoom(ax, x, y, 6.9, 8.1)
+    if bitmsg_enable[3] == "W" and bitmsg_channel[3] != "N":
+        plot_trace_zoom(ax, chan_in_x, chan_in_y, 2.9, 4.1)
+        plot_trace_zoom(ax, chan_in_x, chan_in_y, 6.9, 8.1)
 
     ax = axes[1]
-    x = data_dict["trace_enab"][0] * 1e6
-    y = data_dict["trace_enab"][1] * 1e3
-    plot_voltage_trace(ax, x, y)
+    plot_voltage_trace(ax, enab_in_x, enab_in_y, color="C1", label="Enable")
+    ax.legend(loc="upper left")
 
     ax = axes[2]
-    x = data_dict["trace_chan_out"][0] * 1e6
-    y = data_dict["trace_chan_out"][1] * 1e3
-    plot_voltage_trace(ax, x, y)
+    plot_voltage_trace(ax, chan_out_x, chan_out_y, color="C2", label="Output")
+    ax.legend(loc="upper left")
 
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
