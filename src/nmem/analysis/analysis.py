@@ -48,6 +48,7 @@ def text_from_bit(bit: str) -> str:
     else:
         return None
 
+
 def text_from_bit_v2(bit: str):
     if bit == "0":
         return "WR0"
@@ -255,7 +256,7 @@ def plot_read_sweep(
     state_markers: bool = False,
     **kwargs,
 ) -> Axes:
-    read_currents = data_dict.get("y")[:,:,0] * 1e6
+    read_currents = data_dict.get("y")[:, :, 0] * 1e6
     value = data_dict.get(value_name).flatten()
     variable = data_dict.get(variable_name).flatten()[0]
 
@@ -281,7 +282,10 @@ def plot_read_sweep(
     ax.set_ylabel("Normalized Bit Error Rate")
     return ax
 
-def plot_read_sweep_array(ax: Axes, data_dict: dict, value_name: str, variable_name: str) -> Axes:
+
+def plot_read_sweep_array(
+    ax: Axes, data_dict: dict, value_name: str, variable_name: str
+) -> Axes:
     for key in data_dict.keys():
         plot_read_sweep(ax, data_dict[key], value_name, variable_name)
 
@@ -340,6 +344,7 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
     ax.tick_params(axis="both", which="major", pad=-1)
 
     return ax
+
 
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
     num_meas = data_dict.get("num_meas")[0][0]
@@ -410,7 +415,7 @@ def plot_trace_stack_1D(
         chan_out_y = chan_out_y[:, trace_index]
         enab_in_x = enab_in_x[:, trace_index]
         enab_in_y = enab_in_y[:, trace_index]
-    
+
     bitmsg_channel = data_dict.get("bitmsg_channel")[0]
     bitmsg_enable = data_dict.get("bitmsg_enable")[0]
 
@@ -528,11 +533,11 @@ def plot_array(
         cmap = cmap.reversed()
 
     if log:
-        im = ax.matshow(ztotal, cmap=cmap, norm=LogNorm(vmin=1e-6, vmax=1e-2))
+        ax.matshow(ztotal, cmap=cmap, norm=LogNorm(vmin=1e-6, vmax=1e-2))
     else:
-        im = ax.matshow(ztotal, cmap=cmap)
+        ax.matshow(ztotal, cmap=cmap)
 
-    if title is not None:
+    if title:
         ax.set_title(title)
 
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
@@ -540,7 +545,6 @@ def plot_array(
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
     ax.tick_params(axis="both", length=0)
-
     ax = plot_text_labels(ax, xloc, yloc, ztotal, log)
 
     return ax
@@ -648,62 +652,15 @@ def plot_cell_param(ax: Axes, param: str) -> Axes:
     )
     return ax
 
-
-def find_peak(data_dict: dict) -> float:
-    x = data_dict["x"][0][:, 1] * 1e6
-    y = data_dict["y"][0][:, 0] * 1e6
-
-    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
-    w1r0 = data_dict["write_1_read_0"][0].flatten()
-    z = w1r0 + w0r1
-    ztotal = z.reshape((len(y), len(x)), order="F")
-
-    dx = x[1] - x[0]
-    dy = y[1] - y[0]
-
-    # Find the maximum critical current using np.diff
-    diff = np.diff(ztotal, axis=0)
-
-    xfit, yfit = find_enable_relation(data_dict)
-    # xfit = xfit[:-8]
-    # yfit = yfit[:-8]
-
-    plt.scatter(xfit, yfit)
-
-    # Plot a fit line to the scatter points
-    plot_fit(xfit, yfit)
-
-    plt.imshow(
-        ztotal,
-        extent=[
-            (-0.5 * dx + x[0]),
-            (0.5 * dx + x[-1]),
-            (-0.5 * dy + y[0]),
-            (0.5 * dy + y[-1]),
-        ],
-        aspect="auto",
-        origin="lower",
-        cmap="viridis",
-    )
-    plt.xticks(np.linspace(x[0], x[-1], len(x)))
-    plt.yticks(np.linspace(y[0], y[-1], len(y)))
-    plt.xlabel("Enable Current [$\mu$A]")
-    plt.ylabel("Channel Current [$\mu$A]")
-    plt.title(f"Cell {data_dict['cell']}")
-    cbar = plt.colorbar()
-    cbar.set_label("Counts")
-    return ztotal
-
-
-def plot_fit(xfit, yfit):
+def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
-    plt.scatter(xfit, yfit, color="#08519C")
-    xplot = np.linspace(190, 310, 10)
-    plt.plot(xplot, p(xplot), "--", color="#740F15")
-    plt.text(
+    ax.scatter(xfit, yfit, color="#08519C")
+    xplot = np.linspace(min(xfit), max(xfit), 10)
+    ax.plot(xplot, p(xplot), "--", color="#740F15")
+    ax.text(
         0.1,
-        0.9,
+        0.1,
         f"{p[1]:.3f}x + {p[0]:.3f}",
         fontsize=12,
         color="red",
@@ -711,30 +668,29 @@ def plot_fit(xfit, yfit):
         transform=plt.gca().transAxes,
     )
 
+    return ax
 
-def plot_enable_current_relation(data_dict: dict):
-    x = data_dict["x"][0][:, 1] * 1e6
-    y = data_dict["y"][0][:, 0] * 1e6
 
-    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
-    w1r0 = data_dict["write_1_read_0"][0].flatten()
-    z = w1r0 + w0r1
+def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
+    x: np.ndarray = data_dict.get("x")[0][:, 1] * 1e6
+    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
+
+    w0r1: np.ndarray = 100 - data_dict.get("write_0_read_1")[0].flatten()
+    w1r0: np.ndarray = data_dict.get("write_1_read_0")[0].flatten()
+    z: np.ndarray = w1r0 + w0r1
     ztotal = z.reshape((len(y), len(x)), order="F")
 
     dx = x[1] - x[0]
     dy = y[1] - y[0]
 
-    # Find the maximum critical current using np.diff
-    diff = np.diff(ztotal, axis=0)
+    xfit, yfit = get_fitting_points(x, y, ztotal)
 
-    xfit, yfit = find_enable_relation(data_dict)
-
-    plt.scatter(xfit, yfit)
+    ax.scatter(xfit, yfit)
 
     # Plot a fit line to the scatter points
-    plot_fit(xfit, yfit)
+    plot_fit(ax, xfit, yfit)
 
-    plt.imshow(
+    ax.matshow(
         ztotal,
         extent=[
             (-0.5 * dx + x[0]),
@@ -746,15 +702,10 @@ def plot_enable_current_relation(data_dict: dict):
         origin="lower",
         cmap="viridis",
     )
-    # plt.xticks(np.linspace(200, 300, 3))
-    # plt.yticks(np.linspace(300, 900, 3))
-    plt.xlim(180, 320)
-    plt.ylim(280, 920)
-    plt.xlabel("Enable Current [$\mu$A]")
-    plt.ylabel("Channel Current [$\mu$A]")
-    plt.title("Enable Current Relation")
-    plt.grid()
-    plt.show()
+    ax.xaxis.tick_bottom()
+    ax.xaxis.set_major_locator(MaxNLocator(len(x)))
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
+    ax.yaxis.set_major_locator(MultipleLocator(50))    
 
     return ztotal
 
@@ -775,38 +726,28 @@ def find_max_critical_current(data):
     return np.mean(y[mid_idx])
 
 
-def find_enable_relation(data_dict: dict):
-    x = data_dict["x"][0][:, 0] * 1e6
-    y = data_dict["y"][0][:, 0] * 1e6
+def get_fitting_points(
+    x: np.ndarray, y: np.ndarray, ztotal: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
 
-    w0r1 = data_dict["write_0_read_1"][0].flatten()
-    w1r0 = 100 - data_dict["write_1_read_0"][0].flatten()
-    z = w1r0 + w0r1
-    ztotal = z.reshape((len(y), len(x)), order="F")
-
-    # Find the maximum critical current using total counts
     mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0) / 2)
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
-    print(xfit)
     yfit = y[mid_idx[0]][xfit_idx]
-
     return xfit, yfit
 
 
-def plot_slice(data_dict: dict):
-    w0r1 = 100 - data_dict["write_0_read_1"][0].flatten()
-    w1r0 = data_dict["write_1_read_0"][0].flatten()
+def plot_slice(ax: Axes, data_dict: dict) -> Axes:
+    w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten()
     z = w1r0 + w0r1
     ztotal = z.reshape(
         (data_dict["y"][0].shape[0], data_dict["x"][0].shape[0]),
         order="F",
     )
-    cmap = plt.cm.viridis(np.linspace(0, 1, ztotal.shape[1]))
-    for enable_current_index in range(ztotal.shape[1]):
-        enable_current = data_dict["x"][0][enable_current_index, 1] * 1e6
-        plt.plot(
-            data_dict["y"][0][:, 0] * 1e6,
-            ztotal[:, enable_current_index],
-            label=f"enable current = {enable_current:.2f} $\mu$A",
-            color=cmap[enable_current_index],
-        )
+    x = data_dict.get("y")[0][:, 0] * 1e6
+    ax.plot(
+        x,
+        ztotal,
+    )
+
+    return ax
