@@ -13,6 +13,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.calculations.calculations import (
     calculate_read_currents,
+    calculate_heater_power,
+    htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
 
@@ -91,6 +93,58 @@ def find_edge(data: np.ndarray) -> list:
         neg_edge2 = 0
         pos_edge2 = 0
     return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
+
+
+def initialize_dict(array_size: tuple) -> dict:
+    return {
+        "write_current": np.zeros(array_size),
+        "write_current_norm": np.zeros(array_size),
+        "read_current": np.zeros(array_size),
+        "read_current_norm": np.zeros(array_size),
+        "slope": np.zeros(array_size),
+        "intercept": np.zeros(array_size),
+        "x_intercept": np.zeros(array_size),
+        "resistance": np.zeros(array_size),
+        "bit_error_rate": np.zeros(array_size),
+        "max_critical_current": np.zeros(array_size),
+        "enable_write_current": np.zeros(array_size),
+        "enable_write_current_norm": np.zeros(array_size),
+        "enable_read_current": np.zeros(array_size),
+        "enable_read_current_norm": np.zeros(array_size),
+        "enable_write_power": np.zeros(array_size),
+        "enable_read_power": np.zeros(array_size),
+    }
+
+def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
+    param_dict["write_current"][y, x] = cell["write_current"] * 1e6
+    param_dict["read_current"][y, x] = cell["read_current"] * 1e6
+    param_dict["enable_write_current"][y, x] = cell["enable_write_current"] * 1e6
+    param_dict["enable_read_current"][y, x] = cell["enable_read_current"] * 1e6
+    param_dict["slope"][y, x] = cell["slope"]
+    param_dict["intercept"][y, x] = cell["intercept"]
+    param_dict["resistance"][y, x] = cell["resistance_cryo"]
+    param_dict["bit_error_rate"][y, x] = cell.get("min_bit_error_rate", np.nan)
+    param_dict["max_critical_current"][y, x] = cell.get("max_critical_current", np.nan) * 1e6
+    if cell["intercept"] != 0:
+        write_critical_current = htron_critical_current(
+            cell["enable_write_current"] * 1e6, cell["slope"], cell["intercept"]
+        )
+        read_critical_current = htron_critical_current(
+            cell["enable_read_current"] * 1e6, cell["slope"], cell["intercept"]
+        )
+        param_dict["x_intercept"][y, x] = -cell["intercept"] / cell["slope"]
+        param_dict["write_current_norm"][y, x] = cell["write_current"] * 1e6 / write_critical_current
+        param_dict["read_current_norm"][y, x] = cell["read_current"] * 1e6 / read_critical_current
+        param_dict["enable_write_power"][y, x] = calculate_heater_power(
+            cell["enable_write_current"] * 1e-6, cell["resistance_cryo"]
+        )
+        param_dict["enable_write_current_norm"][y, x] = cell["enable_write_current"] * 1e6 / param_dict["x_intercept"][y, x]
+        param_dict["enable_read_power"][y, x] = calculate_heater_power(
+            cell["enable_read_current"] * 1e-6, cell["resistance_cryo"]
+        )
+        param_dict["enable_read_current_norm"][y, x] = cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
+    return param_dict
+
 
 
 def polygon_under_graph(x, y):
