@@ -12,8 +12,8 @@ from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.calculations.calculations import (
-    calculate_read_currents,
     calculate_heater_power,
+    calculate_read_currents,
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS

@@ -1,15 +1,10 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 from nmem.analysis.analysis import (
     convert_location_to_coordinates,
-    plot_array,
     initialize_dict,
+    plot_array,
     process_cell,
-)
-from nmem.calculations.calculations import (
-    calculate_heater_power,
-    htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
 
