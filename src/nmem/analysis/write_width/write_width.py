@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy.io as sio
-from matplotlib.axes import Axes
-from nmem.analysis.analysis import plot_read_sweep, plot_read_sweep_array
+
+from nmem.analysis.analysis import plot_read_sweep_array
+
 plt.rcParams["figure.figsize"] = [5, 3.5]
 plt.rcParams["font.size"] = 14
 

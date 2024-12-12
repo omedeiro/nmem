@@ -15,6 +15,8 @@ if __name__ == "__main__":
     markers = ["o", "s", "D", "^"]
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     # colors = np.flipud(colors)
+    fig, ax = plt.subplots()
+
     for file in files:
         datafile = os.path.join("data", file)
         cell = file.split("_")[-2]
@@ -29,7 +31,7 @@ if __name__ == "__main__":
         yfit_sorted = yfit[np.argsort(xfit)]
         print(f"Cell: {cell} max Ic = {yfit_sorted[0]}")
         print(f"Fit resutls: {np.polyfit(xfit, yfit, 1)}")
-        plt.plot(
+        ax.plot(
             xfit_sorted,
             yfit_sorted,
             label=f"Cell {cell}",
@@ -37,10 +39,8 @@ if __name__ == "__main__":
             color=colors[column],
         )
 
-    plt.xlabel("Enable Current [$\mu$A]")
-    plt.ylabel("Critical Current [$\mu$A]")
-    ax = plt.gca()
+    ax.set_xlabel("Enable Current [$\mu$A]")
+    ax.set_ylabel("Critical Current [$\mu$A]")
     ax.set_ylim(bottom=0)
-    # plt.title("Enable Current Relation")
-    plt.legend(loc="lower left", ncol=2, frameon=False, fontsize=12)
-    plt.show()
+
+    ax.legend(loc="lower left", ncol=2, frameon=False, fontsize=12)
