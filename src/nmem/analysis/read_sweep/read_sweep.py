@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 
 from nmem.analysis.analysis import (
-    plot_measurement,
+    plot_bit_error_rate,
     plot_trace_stack_1D,
     plot_voltage_hist,
 )
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
 
     fig, ax = plt.subplots()
-    ax = plot_measurement(ax, data_hist)
+    ax = plot_bit_error_rate(ax, data_hist)
 
     fig, ax = plt.subplots()
     read_zero_voltage = data_hist.get("read_zero_top")[0][:, TRACE_INDEX] * 1e3
