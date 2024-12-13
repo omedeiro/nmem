@@ -51,11 +51,24 @@ def calculate_branch_currents(
     retrap_ratio: float,
     width_ratio: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    ichl = calculate_critical_current(T, Tc, width_ratio)
-    irhl = calculate_retrapping_current(T, Tc, retrap_ratio * width_ratio)
-    ichr = calculate_critical_current(T, Tc, 1)
-    irhr = calculate_retrapping_current(T, Tc, retrap_ratio)
+    ichl: np.ndarray = calculate_critical_current(T, Tc, width_ratio)
+    irhl: np.ndarray = calculate_retrapping_current(T, Tc, retrap_ratio * width_ratio)
+    ichr: np.ndarray = calculate_critical_current(T, Tc, 1)
+    irhr: np.ndarray = calculate_retrapping_current(T, Tc, retrap_ratio)
     return ichl, irhl, ichr, irhr
+
+
+def calculate_offsets(
+    T: np.ndarray,
+    Tc: float,
+    retrap_ratio: float,
+    width_ratio: float,
+) -> Tuple[np.ndarray, np.ndarray]:
+    ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
+    imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
+    gap = imin - ichr
+    diff = imax - ichl
+    return gap, diff
 
 
 def calculate_state_currents(
@@ -66,30 +79,18 @@ def calculate_state_currents(
     alpha: float,
     persistent_current: float,
 ) -> tuple:
+    ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
     imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
-    diff = imax - imin
-    gap = imin - 1
-    fa = imax + diff - retrap_ratio
-    fb = imin + gap - diff - persistent_current
-    fc = (width_ratio - persistent_current) / alpha - gap
-
-    ichl = calculate_critical_current(T, Tc, width_ratio)
-    irhl = calculate_retrapping_current(T, Tc, retrap_ratio * width_ratio)
-
-    ichr = calculate_critical_current(T, Tc, 1)
-    irhr = calculate_retrapping_current(T, Tc, retrap_ratio)
-
-    imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
-    gap = imin - 1
-    diff = imax - imin
-
-    i0 = (ichr + irhl) + diff - retrap_ratio
-    i1 = (ichl + irhr) + gap - diff - persistent_current
-
-    fa = i0
-    fb = i1
+    gap, diff = calculate_offsets(T, Tc, retrap_ratio, width_ratio)
+    if isinstance(gap, np.ndarray):
+        gap = gap[0]
+        diff = diff[0]
+        irhr = irhr[0]
+    fa = imax
+    fb = imin - persistent_current
     fc = (ichl - persistent_current) / alpha
-    return fa, fb, fc
+    fB = fb + persistent_current
+    return fa, fb, fc, fB
 
 
 def plot_critical_current(
@@ -141,32 +142,17 @@ def plot_min_max_currents(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     return ax
 
 
-# def plot_gap_current(ax: Axes, T, Tc, retrap_ratio: float, width_ratio: float) -> Axes:
-#     imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
-#     gap = imin - 1
-#     ax.fill_between(
-#         [-0.2, 0.2],
-#         imin,
-#         1,
-#         color="purple",
-#         alpha=0.1,
-#     )
-#     ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
-#     ax.hlines(1 + gap, -0.2, 0.2, color="purple", linestyle="--")
-#     return ax
-
-
 def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     Tc = data_dict.get("critical_temp")
     retrap_ratio = data_dict.get("retrap_ratio")
     width_ratio = data_dict.get("width_ratio")
     persistent_current = data_dict.get("persistent_current")
     alpha = data_dict.get("alpha")
-    i0, i1, fc = calculate_state_currents(
+    fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
-    lower_bound = np.maximum(i1, fc)
-    upper_bound = i0
+    lower_bound = np.maximum(fb, fc)
+    upper_bound = fa
     ax.fill_between(
         T,
         lower_bound,
@@ -177,17 +163,18 @@ def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     )
     return ax
 
+
 def plot_inverting_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     Tc = data_dict.get("critical_temp")
     retrap_ratio = data_dict.get("retrap_ratio")
     width_ratio = data_dict.get("width_ratio")
     persistent_current = data_dict.get("persistent_current")
     alpha = data_dict.get("alpha")
-    i0, i1, fc = calculate_state_currents(
+    fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
-    lower_bound = np.minimum(np.maximum(i0, fc), i1)
-    upper_bound = np.minimum(i0, np.minimum(i1, fc))
+    lower_bound = np.minimum(fa, np.minimum(fB, fc))  # big Z
+    upper_bound = np.minimum(np.maximum(fa, fc), fb)
     ax.fill_between(
         T,
         lower_bound,
@@ -210,13 +197,13 @@ def plot_state_currents_line(
     persistent_current = data_dict.get("persistent_current")
     Tc = data_dict.get("critical_temp")
 
-    i0, i1, i2 = calculate_state_currents(
+    i0, i1, i2, i3 = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
     ax.plot(T, i0, label="State 0", color="k", ls="-")
     ax.plot(T, i1, label="State 1", color="k", ls="--")
-    ax.plot(T, i2, label="State 2", color="k", ls=":")
+    # ax.plot(T, i2, label="State 2", color="k", ls=":")
     return ax
 
 
@@ -229,7 +216,7 @@ def plot_state_currents(
     alpha: float,
     persistent_current: float,
 ) -> Axes:
-    fa, fb, fc = calculate_state_currents(
+    fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
     ax.hlines(fa, -0.4, 0.4, color="blue", linestyle="--")
@@ -276,7 +263,7 @@ def plot_branch_currents(
     # ax.set_ylabel("Current")
     ax.set_title(f"$r$: {retrap_ratio:.3f}, $w$: {width_ratio:.3f}")
 
-    fa, fb, fc = calculate_state_currents(
+    fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
@@ -328,18 +315,20 @@ if __name__ == "__main__":
     ALPHA = 0.563
     RETRAP = 0.573
     WIDTH = 1 / 2.13
-    PERSISTENT = 100 / 860
+    PERSISTENT = 30 / 860
     CRITICAL_TEMP = 12.3
 
     data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
 
-    retrap_list = [0.5, 0.6, RETRAP]
-    width_list = [0.5, 0.4, WIDTH]
+    retrap_list = [RETRAP, RETRAP, RETRAP]
+    width_list = [WIDTH, WIDTH, WIDTH]
+    persistent_list = [-0.03, 0.0, 0.03]
     temp = np.linspace(0, 10, 1000)
     fig, axs = plt.subplots(2, 3, figsize=(7, 4))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
         data_dict["retrap_ratio"] = retrap_ratio
         data_dict["width_ratio"] = width_ratio
+        data_dict["persistent_current"] = persistent_list[i]
 
         plot_branch_currents(
             axs[0, i],
@@ -385,12 +374,12 @@ if __name__ == "__main__":
         axs[1, i].legend(ncol=2)
         plot_nominal_region(axs[1, i], temp, data_dict)
         plot_inverting_region(axs[1, i], temp, data_dict)
-        axs[1,i].set_ylim(0, 1.5)
-        # axs[1, i].text(
-        #     0.1,
-        #     0.9,
-        #     f"$I_{{P}}: {PERSISTENT:.3f}I_{{c}}$",
-        #     transform=axs[1, i].transAxes,
-        # )
+        axs[1, i].set_ylim(0, 1.5)
+        axs[1, i].text(
+            0.1,
+            0.08,
+            f"$I_{{P}}: {persistent_list[i]:.2f}I_{{c}}$",
+            transform=axs[1, i].transAxes,
+        )
     fig.tight_layout()
     plt.savefig("state_currents.pdf", bbox_inches="tight")
