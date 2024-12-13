@@ -57,6 +57,47 @@ def plot_gap_current(ax: Axes, retrap_ratio: float, width_ratio: float) -> Axes:
     return ax
 
 
+def calculate_state_currents(
+    retrap_ratio: float, width_ratio: float, alpha: float, persistent_current: float
+) -> tuple:
+    imin, imax = calculate_min_max_currents(retrap_ratio, width_ratio)
+    diff = imax - imin
+    gap = imin - 1
+    fa = imax + diff - retrap_ratio
+    fb = imin + gap - diff - persistent_current
+    fc = (width_ratio - persistent_current) / alpha - gap
+    return fa, fb, fc
+    # ax.hlines(1 - diff, 0, 1, color="green", linestyle="--")
+    # ax.text(1, 1 - diff, "1-diff", ha="left", va="center", fontsize=8)
+    # ax.hlines(diff, 0, 1, color="green", linestyle="--")
+    # ax.text(1, diff, "diff", ha="left", va="center", fontsize=8)
+
+    # ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
+    # ax.hlines(width_ratio + gap, -0.2, 0.2, color="green", linestyle="--")
+
+    # fa = imax + diff - retrap_ratio
+    # ax.hlines(fa, -0.2, 0, color="green", linestyle="--")
+    # ax.text(-0.2, fa, "top-nom", ha="right", va="center", fontsize=8)
+
+    # fb = imin + gap - diff - persistent_current
+    # ax.text(-0.2, fb, "bot-nom", ha="right", va="center", fontsize=8)
+
+    # fc = (width_ratio - persistent_current) / alpha - gap
+    # ax.text(-0.2, fc, "bot-inv", ha="right", va="center", fontsize=8)
+
+def plot_state_currents(
+    ax: Axes,
+    retrap_ratio: float,
+    width_ratio: float,
+    alpha: float,
+    persistent_current: float,
+) -> Axes:
+    fa, fb, fc = calculate_state_currents(retrap_ratio, width_ratio, alpha, persistent_current)
+    ax.hlines(fa, -0.4, 0.4, color="blue", linestyle="--")
+    ax.hlines(fb, -0.4, 0.4, color="red", linestyle="--")
+    ax.hlines(fc, -0.4, 0.4, color="red", linestyle="--")
+    return ax
+
 def plot_branch_currents(
     ax: Axes,
     alpha: float,
@@ -91,37 +132,19 @@ def plot_branch_currents(
     # ax.set_ylabel("Current")
     ax.set_title(f"$r$: {retrap_ratio:.3f}, $w$: {width_ratio:.3f}")
 
-    # diff = imax - imin
+    fa, fb, fc = calculate_state_currents(retrap_ratio, width_ratio, alpha, persistent_current)
 
-    # ax.hlines(1 - diff, 0, 1, color="green", linestyle="--")
-    # ax.text(1, 1 - diff, "1-diff", ha="left", va="center", fontsize=8)
-    # ax.hlines(diff, 0, 1, color="green", linestyle="--")
-    # ax.text(1, diff, "diff", ha="left", va="center", fontsize=8)
-
-    # ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
-    # ax.hlines(width_ratio + gap, -0.2, 0.2, color="green", linestyle="--")
-
-    # fa = imax + diff - retrap_ratio
-    # ax.hlines(fa, -0.2, 0, color="green", linestyle="--")
-    # ax.text(-0.2, fa, "top-nom", ha="right", va="center", fontsize=8)
-
-    # fb = imin + gap - diff - persistent_current
-    # ax.text(-0.2, fb, "bot-nom", ha="right", va="center", fontsize=8)
-
-    # fc = (width_ratio - persistent_current) / alpha - gap
-    # ax.text(-0.2, fc, "bot-inv", ha="right", va="center", fontsize=8)
-
-    # ax.fill_between(
-    #     [-0.4, 0.4], fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
-    # )
-    # ax.fill_between(
-    #     [-0.4, 0.4],
-    #     np.min([fa, np.min([fb, fc])]),
-    #     np.min([np.max([fa, fc]), fb]),
-    #     color="red",
-    #     alpha=0.1,
-    #     hatch="\\\\\\\\",
-    # )
+    ax.fill_between(
+        [-0.4, 0.4], fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
+    )
+    ax.fill_between(
+        [-0.4, 0.4],
+        np.min([fa, np.min([fb, fc])]),
+        np.min([np.max([fa, fc]), fb]),
+        color="red",
+        alpha=0.1,
+        hatch="\\\\\\\\",
+    )
 
     return ax
 
@@ -156,7 +179,8 @@ def calculate_retrapping_current(
 def calculate_retrapping_current_norm(
     T: np.ndarray, Tc: float, retrap_ratio: float
 ) -> np.ndarray:
-    return retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
+    Ir = retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
+    return Ir
 
 
 def plot_retrapping_current(
@@ -180,8 +204,8 @@ def plot_retrapping_current(
 def plot_retrapping_current_norm(
     ax: Axes, T: np.ndarray, Tc: float, retrap_ratio: float, **kwargs
 ) -> Axes:
-    Ic = calculate_retrapping_current_norm(T, Tc, retrap_ratio)
-    ax.plot(T, Ic, **kwargs)
+    Ir = calculate_retrapping_current_norm(T, Tc, retrap_ratio)
+    ax.plot(T, Ir, **kwargs)
     return ax
 
 
@@ -193,8 +217,8 @@ if __name__ == "__main__":
     TEMPERATURE = 0.5
     CRITICAL_TEMP = 12.3
 
-    retrap_list = [0.5, 0.9, RETRAP]
-    width_list = [0.5, 0.9, WIDTH]
+    retrap_list = [0.5, 0.6, RETRAP]
+    width_list = [0.5, 0.4, WIDTH]
     temp = np.linspace(0, 10, 1000)
     fig, axs = plt.subplots(2, 3, figsize=(7, 4))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
@@ -202,9 +226,9 @@ if __name__ == "__main__":
         plot_branch_currents(
             axs[0, i], ALPHA, retrap_ratio, width_ratio, PERSISTENT, TEMPERATURE
         )
+        plot_max_current(axs[0, i], retrap_ratio, width_ratio)
+        plot_gap_current(axs[0, i], retrap_ratio, width_ratio)
         axs[0, i].text(0.1, 0.9, "$T=0$", transform=axs[0, i].transAxes)
-        # plot_max_current(ax, retrap_ratio, width_ratio)
-        # plot_gap_current(ax, retrap_ratio, width_ratio)
 
         plot_critical_current(
             axs[1, i], temp, CRITICAL_TEMP, 1.0, color="r", label="$I_{{c, H_R}}(T)$"
