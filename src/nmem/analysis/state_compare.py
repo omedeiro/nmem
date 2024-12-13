@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 
-font_path = "/home/omedeiro/Inter-Regular.otf"  
+font_path = "/home/omedeiro/Inter-Regular.otf"
 
 # font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 
@@ -23,12 +23,14 @@ plt.rcParams["legend.fontsize"] = 5
 plt.rcParams["legend.frameon"] = False
 plt.rcParams["axes.labelpad"] = 0.5
 
+
 def calculate_min_max_currents(retrap_ratio: float, width_ratio: float) -> tuple:
     imax = 1 + retrap_ratio * width_ratio
     imin = retrap_ratio + width_ratio
     return imin, imax
 
-def plot_max_current(ax:Axes, retrap_ratio: float, width_ratio: float) -> Axes:
+
+def plot_max_current(ax: Axes, retrap_ratio: float, width_ratio: float) -> Axes:
     imin, imax = calculate_min_max_currents(retrap_ratio, width_ratio)
     ax.hlines(imax, -0.2, 0.2, color="green", linestyle="--")
     ax.hlines(imin, -0.2, 0.2, color="green", linestyle="--")
@@ -54,8 +56,9 @@ def plot_gap_current(ax: Axes, retrap_ratio: float, width_ratio: float) -> Axes:
     ax.hlines(1 + gap, -0.2, 0.2, color="purple", linestyle="--")
     return ax
 
+
 def plot_branch_currents(
-    ax: Axes, 
+    ax: Axes,
     alpha: float,
     retrap_ratio: float,
     width_ratio: float,
@@ -95,7 +98,6 @@ def plot_branch_currents(
     # ax.hlines(diff, 0, 1, color="green", linestyle="--")
     # ax.text(1, diff, "diff", ha="left", va="center", fontsize=8)
 
-
     # ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
     # ax.hlines(width_ratio + gap, -0.2, 0.2, color="green", linestyle="--")
 
@@ -124,24 +126,115 @@ def plot_branch_currents(
     return ax
 
 
+def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
+    return Ic0 * (1 - (T / Tc) ** (3 / 2))
+
+
+def plot_critical_current(
+    ax: Axes, T: np.ndarray, Tc: float, Ic0: float, **kwargs
+) -> Axes:
+    Ic = calculate_critical_current(T, Tc, Ic0)
+    ax.plot(T, Ic, **kwargs)
+    ax.set_xlabel("Temperature (K)")
+    ax.set_ylabel("Critical Current (au)")
+    return ax
+
+
+def calculate_retrapping_current(
+    T: np.ndarray,
+    Tc: float,
+    ht_coef: float,
+    width: float,
+    thickness: float,
+    resistivity: float,
+) -> np.ndarray:
+    return ((ht_coef * (width**2) * Tc * thickness * resistivity) ** (1 / 2)) * (
+        1 - (T / Tc)
+    ) ** (1 / 2)
+
+
+def calculate_retrapping_current_norm(
+    T: np.ndarray, Tc: float, retrap_ratio: float
+) -> np.ndarray:
+    return retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
+
+
+def plot_retrapping_current(
+    ax: Axes,
+    T: np.ndarray,
+    Tc: float,
+    ht_coef: float,
+    width: float,
+    thickness: float,
+    resistivity: float,
+    **kwargs,
+) -> Axes:
+    Ic = calculate_retrapping_current(T, Tc, ht_coef, width, thickness, resistivity)
+    ax.plot(T, Ic, **kwargs)
+    ax.set_xlabel("Temperature (K)")
+    ax.set_ylabel("Retrapping Current (au)")
+    ax.set_title("Retrapping Current vs Temperature")
+    return ax
+
+
+def plot_retrapping_current_norm(
+    ax: Axes, T: np.ndarray, Tc: float, retrap_ratio: float, **kwargs
+) -> Axes:
+    Ic = calculate_retrapping_current_norm(T, Tc, retrap_ratio)
+    ax.plot(T, Ic, **kwargs)
+    return ax
+
+
 if __name__ == "__main__":
     ALPHA = 0.563
     RETRAP = 0.573
     WIDTH = 1 / 2.13
     PERSISTENT = 0 / 860
     TEMPERATURE = 0.5
+    CRITICAL_TEMP = 12.3
 
-    fig, axs = plt.subplots(1, 3, figsize=(7, 3.5/2))
-    plot_branch_currents(axs[0], ALPHA, 0.5, 0.5, PERSISTENT, TEMPERATURE)
-    plot_max_current(axs[0], 0.5, 0.5)
-    plot_gap_current(axs[0], 0.5, 0.5)
+    retrap_list = [0.5, 0.9, RETRAP]
+    width_list = [0.5, 0.9, WIDTH]
+    temp = np.linspace(0, 10, 1000)
+    fig, axs = plt.subplots(2, 3, figsize=(7, 4))
+    for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
 
-    plot_branch_currents(axs[1], ALPHA, RETRAP, WIDTH, PERSISTENT, TEMPERATURE)
-    plot_max_current(axs[1], RETRAP, WIDTH)
-    plot_gap_current(axs[1], RETRAP, WIDTH)
+        plot_branch_currents(
+            axs[0, i], ALPHA, retrap_ratio, width_ratio, PERSISTENT, TEMPERATURE
+        )
+        axs[0, i].text(0.1, 0.9, "$T=0$", transform=axs[0, i].transAxes)
+        # plot_max_current(ax, retrap_ratio, width_ratio)
+        # plot_gap_current(ax, retrap_ratio, width_ratio)
 
-    plot_branch_currents(axs[2], ALPHA, 0.3, 0.3, PERSISTENT, TEMPERATURE)
-    plot_max_current(axs[2], 0.3, 0.3)
+        plot_critical_current(
+            axs[1, i], temp, CRITICAL_TEMP, 1.0, color="r", label="$I_{{c, H_R}}(T)$"
+        )
+        plot_retrapping_current_norm(
+            axs[1, i],
+            temp,
+            CRITICAL_TEMP,
+            retrap_ratio,
+            color="r",
+            ls="--",
+            label="$I_{{r, H_R}}(T)$",
+        )
 
-    fig.subplots_adjust(wspace=0.5)
-    plt.show()
+        plot_critical_current(
+            axs[1, i],
+            temp,
+            CRITICAL_TEMP,
+            width_ratio,
+            color="b",
+            label="$I_{{c, H_L}}(T)$",
+        )
+        plot_retrapping_current_norm(
+            axs[1, i],
+            temp,
+            CRITICAL_TEMP,
+            retrap_ratio * width_ratio,
+            color="b",
+            ls="--",
+            label="$I_{{r, H_L}}(T)$",
+        )
+        axs[1, i].legend()
+    fig.tight_layout()
