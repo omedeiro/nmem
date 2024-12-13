@@ -257,9 +257,8 @@ def plot_read_current(
         vmin=-1000,
         vmax=1000,
     )
-    print(np.max(inv_region))
     ax.set_xlabel("Channel Critical Current ($I_{C, CH}(I_{RE})$)) [uA]")
-    ax.set_ylabel("HERESet Read Current [uA]")
+    ax.set_ylabel("Set Read Current [uA]")
     # ax.legend(["Nominal Region", "Inverting Region"])
     cbar = plt.colorbar(c2)
     cbar.set_label("Signed Read Current [uA]")
