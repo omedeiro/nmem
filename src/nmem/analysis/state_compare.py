@@ -130,6 +130,7 @@ def plot_max_current(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
 
     return ax
 
+
 def plot_min_max_currents(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     Tc = data_dict.get("critical_temp")
     retrap_ratio = data_dict.get("retrap_ratio")
@@ -155,6 +156,49 @@ def plot_min_max_currents(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
 #     return ax
 
 
+def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
+    Tc = data_dict.get("critical_temp")
+    retrap_ratio = data_dict.get("retrap_ratio")
+    width_ratio = data_dict.get("width_ratio")
+    persistent_current = data_dict.get("persistent_current")
+    alpha = data_dict.get("alpha")
+    i0, i1, fc = calculate_state_currents(
+        T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
+    )
+    lower_bound = np.maximum(i1, fc)
+    upper_bound = i0
+    ax.fill_between(
+        T,
+        lower_bound,
+        upper_bound,
+        color="blue",
+        alpha=0.1,
+        hatch="////",
+    )
+    return ax
+
+def plot_inverting_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
+    Tc = data_dict.get("critical_temp")
+    retrap_ratio = data_dict.get("retrap_ratio")
+    width_ratio = data_dict.get("width_ratio")
+    persistent_current = data_dict.get("persistent_current")
+    alpha = data_dict.get("alpha")
+    i0, i1, fc = calculate_state_currents(
+        T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
+    )
+    lower_bound = np.minimum(np.maximum(i0, fc), i1)
+    upper_bound = np.minimum(i0, np.minimum(i1, fc))
+    ax.fill_between(
+        T,
+        lower_bound,
+        upper_bound,
+        color="red",
+        alpha=0.1,
+        hatch="\\\\\\\\",
+    )
+    return ax
+
+
 def plot_state_currents_line(
     ax: Axes,
     T: np.ndarray,
@@ -166,55 +210,13 @@ def plot_state_currents_line(
     persistent_current = data_dict.get("persistent_current")
     Tc = data_dict.get("critical_temp")
 
-    ichl = calculate_critical_current(T, Tc, width_ratio)
-    irhl = calculate_retrapping_current(T, Tc, retrap_ratio * width_ratio)
-
-    ichr = calculate_critical_current(T, Tc, 1)
-    irhr = calculate_retrapping_current(T, Tc, retrap_ratio)
-
-    imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
-    gap = imin - 1
-    diff = imax - imin
-
-    i0 = (ichr + irhl) + diff - retrap_ratio
-    i1 = (ichl + irhr) + gap - diff - persistent_current
-
-    # ax.plot(T, i0, label="fa")
-    # ax.plot(T, i1, label="fb")
-    # ax.plot(T, (ichl - persistent_current) / alpha, label="fc")
-
-    fa = i0
-    fb = i1
-    fc = (ichl - persistent_current) / alpha
-    ax.fill_between(T, fa, np.maximum(fb, fc), color="blue", alpha=0.1, hatch="////")
-    ax.fill_between(
-        T,
-        np.minimum(fa, np.minimum(fb, fc)),
-        np.minimum(np.maximum(fa, fc), fb),
-        color="red",
-        alpha=0.1,
-        hatch="\\\\\\\\",
+    i0, i1, i2 = calculate_state_currents(
+        T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
-    # ax.hlines(1 - diff, 0, 1, color="green", linestyle="--")
-    # ax.text(1, 1 - diff, "1-diff", ha="left", va="center", fontsize=8)
-    # ax.hlines(diff, 0, 1, color="green", linestyle="--")
-    # ax.text(1, diff, "diff", ha="left", va="center", fontsize=8)
-
-    # ax.text(0, 1 + gap / 2, "gap", ha="center", va="center", fontsize=8)
-    # ax.hlines(width_ratio + gap, -0.2, 0.2, color="green", linestyle="--")
-
-    # fa = imax + diff - retrap_ratio
-    # ax.hlines(fa, -0.2, 0, color="green", linestyle="--")
-    # ax.text(-0.2, fa, "top-nom", ha="right", va="center", fontsize=8)
-
-    # fb = imin + gap - diff - persistent_current
-    # ax.text(-0.2, fb, "bot-nom", ha="right", va="center", fontsize=8)
-
-    # fc = (width_ratio - persistent_current) / alpha - gap
-    # ax.text(-0.2, fc, "bot-inv", ha="right", va="center", fontsize=8)
-    ax.set_ylim(0, 1.5)
-
+    ax.plot(T, i0, label="State 0", color="k", ls="-")
+    ax.plot(T, i1, label="State 1", color="k", ls="--")
+    ax.plot(T, i2, label="State 2", color="k", ls=":")
     return ax
 
 
@@ -326,8 +328,7 @@ if __name__ == "__main__":
     ALPHA = 0.563
     RETRAP = 0.573
     WIDTH = 1 / 2.13
-    PERSISTENT = 30 / 860
-    TEMPERATURE = 0.5
+    PERSISTENT = 100 / 860
     CRITICAL_TEMP = 12.3
 
     data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
@@ -348,10 +349,15 @@ if __name__ == "__main__":
         plot_max_current(axs[0, i], temp[0], data_dict)
         axs[0, i].text(0.1, 0.9, "$T=0$", transform=axs[0, i].transAxes)
 
-        label_list = ["$I_{{c, H_R}}(T)$", "$I_{{r, H_R}}(T)$", "$I_{{c, H_L}}(T)$", "$I_{{r, H_L}}(T)$"]
+        label_list = [
+            "$I_{{c, H_R}}(T)$",
+            "$I_{{r, H_R}}(T)$",
+            "$I_{{c, H_L}}(T)$",
+            "$I_{{r, H_L}}(T)$",
+        ]
         color_list = ["r", "r", "b", "b"]
         linestyle_list = ["-", "--", "-", "--"]
-        Ic0_list = [1, retrap_ratio, width_ratio, width_ratio*retrap_ratio]
+        Ic0_list = [1, retrap_ratio, width_ratio, width_ratio * retrap_ratio]
         for j in range(4):
             if j % 2 == 0:
                 plot_critical_current(
@@ -373,12 +379,13 @@ if __name__ == "__main__":
                     color=color_list[j],
                     linestyle=linestyle_list[j],
                 )
-            
-        # plot_state_currents_line(
-        #     axs[1, i], temp, data_dict)
-        # plot_min_max_currents(axs[1, i], temp, data_dict)
-        axs[1, i].legend()
 
+        plot_state_currents_line(axs[1, i], temp, data_dict)
+        # plot_min_max_currents(axs[1, i], temp, data_dict)
+        axs[1, i].legend(ncol=2)
+        plot_nominal_region(axs[1, i], temp, data_dict)
+        plot_inverting_region(axs[1, i], temp, data_dict)
+        axs[1,i].set_ylim(0, 1.5)
         # axs[1, i].text(
         #     0.1,
         #     0.9,
@@ -386,3 +393,4 @@ if __name__ == "__main__":
         #     transform=axs[1, i].transAxes,
         # )
     fig.tight_layout()
+    plt.savefig("state_currents.pdf", bbox_inches="tight")
