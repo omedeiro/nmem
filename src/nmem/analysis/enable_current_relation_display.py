@@ -1,7 +1,5 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
-
 from nmem.analysis.analysis import import_directory, plot_enable_current_relation
 
 plt.rcParams["figure.figsize"] = [5.5, 5.5]
@@ -25,6 +23,5 @@ def display_all(file_path: str):
 
 
 if __name__ == "__main__":
-
     # display_all("data")
     display_all("data2")

@@ -18,7 +18,9 @@ plt.rcParams["figure.figsize"] = [10, 12]
 
 
 def write_sweep(b, measurement_settings, measurement_name):
-    measurement_settings["x"] = [252e-6]#np.linspace(240e-6, 270e-6, 11)  # Enable Write Current
+    measurement_settings["x"] = [
+        252e-6
+    ]  # np.linspace(240e-6, 270e-6, 11)  # Enable Write Current
     measurement_settings["y"] = np.linspace(500e-6, 600e-6, 8)  # Write Current
 
     b, measurement_settings, save_dict = nm.run_write_sweep(b, measurement_settings)
@@ -37,7 +39,9 @@ def write_sweep(b, measurement_settings, measurement_name):
 
 
 def read_sweep(b, measurement_settings, measurement_name):
-    measurement_settings["x"] = [218e-6]#np.linspace(190e-6, 230e-6, 8)  # Enable Read Current
+    measurement_settings["x"] = [
+        218e-6
+    ]  # np.linspace(190e-6, 230e-6, 8)  # Enable Read Current
     measurement_settings["y"] = np.linspace(650e-6, 700e-6, 8)  # Read Current
 
     b, measurement_settings, save_dict = nm.run_read_sweep(b, measurement_settings)

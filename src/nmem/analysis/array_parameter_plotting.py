@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-
 from nmem.analysis.analysis import (
     convert_location_to_coordinates,
     initialize_dict,
@@ -12,8 +11,6 @@ from nmem.measurement.cells import CELLS
 plt.rcParams["font.size"] = 10
 
 
-
-
 if __name__ == "__main__":
     xloc_list = []
     yloc_list = []
@@ -24,7 +21,8 @@ if __name__ == "__main__":
         param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
         xloc_list.append(xloc)
         yloc_list.append(yloc)
-    
+
     fig, ax = plt.subplots()
-    plot_array(ax, xloc_list, yloc_list, param_dict["write_current"], "Write Current [$\mu$A]")
-  
+    plot_array(
+        ax, xloc_list, yloc_list, param_dict["write_current"], "Write Current [$\mu$A]"
+    )

@@ -10,7 +10,6 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
 from nmem.calculations.calculations import (
     calculate_heater_power,
     calculate_read_currents,
@@ -115,6 +114,7 @@ def initialize_dict(array_size: tuple) -> dict:
         "enable_read_power": np.zeros(array_size),
     }
 
+
 def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
     param_dict["write_current"][y, x] = cell["write_current"] * 1e6
     param_dict["read_current"][y, x] = cell["read_current"] * 1e6
@@ -124,7 +124,9 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
     param_dict["intercept"][y, x] = cell["intercept"]
     param_dict["resistance"][y, x] = cell["resistance_cryo"]
     param_dict["bit_error_rate"][y, x] = cell.get("min_bit_error_rate", np.nan)
-    param_dict["max_critical_current"][y, x] = cell.get("max_critical_current", np.nan) * 1e6
+    param_dict["max_critical_current"][y, x] = (
+        cell.get("max_critical_current", np.nan) * 1e6
+    )
     if cell["intercept"] != 0:
         write_critical_current = htron_critical_current(
             cell["enable_write_current"] * 1e6, cell["slope"], cell["intercept"]
@@ -133,18 +135,25 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
             cell["enable_read_current"] * 1e6, cell["slope"], cell["intercept"]
         )
         param_dict["x_intercept"][y, x] = -cell["intercept"] / cell["slope"]
-        param_dict["write_current_norm"][y, x] = cell["write_current"] * 1e6 / write_critical_current
-        param_dict["read_current_norm"][y, x] = cell["read_current"] * 1e6 / read_critical_current
+        param_dict["write_current_norm"][y, x] = (
+            cell["write_current"] * 1e6 / write_critical_current
+        )
+        param_dict["read_current_norm"][y, x] = (
+            cell["read_current"] * 1e6 / read_critical_current
+        )
         param_dict["enable_write_power"][y, x] = calculate_heater_power(
             cell["enable_write_current"] * 1e-6, cell["resistance_cryo"]
         )
-        param_dict["enable_write_current_norm"][y, x] = cell["enable_write_current"] * 1e6 / param_dict["x_intercept"][y, x]
+        param_dict["enable_write_current_norm"][y, x] = (
+            cell["enable_write_current"] * 1e6 / param_dict["x_intercept"][y, x]
+        )
         param_dict["enable_read_power"][y, x] = calculate_heater_power(
             cell["enable_read_current"] * 1e-6, cell["resistance_cryo"]
         )
-        param_dict["enable_read_current_norm"][y, x] = cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
+        param_dict["enable_read_current_norm"][y, x] = (
+            cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
+        )
     return param_dict
-
 
 
 def polygon_under_graph(x, y):
@@ -374,7 +383,6 @@ def plot_read_sweep_array_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 
 
 def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
-
     cmap = plt.get_cmap("RdBu")
     colors = cmap(np.linspace(0, 1, 5))
 
@@ -706,6 +714,7 @@ def plot_cell_param(ax: Axes, param: str) -> Axes:
     )
     return ax
 
+
 def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
@@ -724,6 +733,7 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
 
     return ax
 
+
 def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     x = data_dict.get("x")[0][:, 1] * 1e6
     y = data_dict.get("y")[0][:, 0] * 1e6
@@ -733,8 +743,8 @@ def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray
     ztotal = z.reshape((len(y), len(x)), order="F")
     return x, y, ztotal
 
+
 def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
-    
     x, y, ztotal = construct_array(data_dict)
     dx, dy = np.diff(x)[0], np.diff(y)[0]
     xfit, yfit = get_fitting_points(x, y, ztotal)
@@ -759,7 +769,7 @@ def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
     ax.xaxis.tick_bottom()
     ax.xaxis.set_major_locator(MaxNLocator(len(x)))
     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
-    ax.yaxis.set_major_locator(MultipleLocator(50))    
+    ax.yaxis.set_major_locator(MultipleLocator(50))
 
     return ztotal
 
@@ -783,7 +793,6 @@ def find_max_critical_current(data):
 def get_fitting_points(
     x: np.ndarray, y: np.ndarray, ztotal: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
-
     mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0) / 2)
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
     yfit = y[mid_idx[0]][xfit_idx]
