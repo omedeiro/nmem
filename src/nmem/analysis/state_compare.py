@@ -203,25 +203,27 @@ def plot_state_currents_line(
 
     ax.plot(T, i0, label="State 0", color="k", ls="-")
     ax.plot(T, i1, label="State 1", color="k", ls="--")
-    # ax.plot(T, i2, label="State 2", color="k", ls=":")
+    ax.plot(T, i2, label="State 2", color="k", ls=":")
     return ax
 
 
 def plot_state_currents(
     ax: Axes,
     T: float,
-    Tc: float,
-    retrap_ratio: float,
-    width_ratio: float,
-    alpha: float,
-    persistent_current: float,
+    data_dict: dict,
 ) -> Axes:
+    alpha = data_dict.get("alpha")
+    retrap_ratio = data_dict.get("retrap_ratio")
+    width_ratio = data_dict.get("width_ratio")
+    persistent_current = data_dict.get("persistent_current")
+    Tc = data_dict.get("critical_temp")
+
     fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
-    ax.hlines(fa, -0.4, 0.4, color="blue", linestyle="--")
-    ax.hlines(fb, -0.4, 0.4, color="red", linestyle="--")
-    ax.hlines(fc, -0.4, 0.4, color="red", linestyle="--")
+    ax.hlines(fa, ax.get_xlim()[0], ax.get_xlim()[1], color="black", linestyle="-")
+    ax.hlines(fb, ax.get_xlim()[0], ax.get_xlim()[1], color="black", linestyle="--")
+    ax.hlines(fc, ax.get_xlim()[0], ax.get_xlim()[1], color="black", linestyle=":")
     return ax
 
 
@@ -242,10 +244,10 @@ def plot_branch_currents(
     ax.hlines(ichl, -1, 0, color="blue", linestyle="--")
     ax.hlines(irhl, -1, 0, color="blue", linestyle=":")
 
-    ax.fill_between([0, 1], retrap_ratio, 1, color="red", alpha=0.1)
-    ax.fill_between(
-        [-1, 0], width_ratio, width_ratio * retrap_ratio, color="blue", alpha=0.1
-    )
+    # ax.fill_between([0, 1], retrap_ratio, 1, color="red", alpha=0.1)
+    # ax.fill_between(
+    #     [-1, 0], width_ratio, width_ratio * retrap_ratio, color="blue", alpha=0.1
+    # )
 
     ax.set_xticks([-0.5, 0.5])
     ax.set_xticklabels(["Left", "Right"])
@@ -268,10 +270,10 @@ def plot_branch_currents(
     )
 
     ax.fill_between(
-        [-0.4, 0.4], fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
+        ax.get_xlim(), fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
     )
     ax.fill_between(
-        [-0.4, 0.4],
+        ax.get_xlim(),
         np.min([fa, np.min([fb, fc])]),
         np.min([np.max([fa, fc]), fb]),
         color="red",
@@ -320,22 +322,23 @@ if __name__ == "__main__":
 
     data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
 
-    retrap_list = [RETRAP, RETRAP, RETRAP]
-    width_list = [WIDTH, WIDTH, WIDTH]
-    persistent_list = [-0.03, 0.0, 0.03]
+    retrap_list = [0.5, 0.5, RETRAP]
+    width_list = [0.5, 0.33, WIDTH]
+    persistent_list = [0.1, 0.1, 0.1]
     temp = np.linspace(0, 10, 1000)
     fig, axs = plt.subplots(2, 3, figsize=(7, 4))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
         data_dict["retrap_ratio"] = retrap_ratio
         data_dict["width_ratio"] = width_ratio
         data_dict["persistent_current"] = persistent_list[i]
-
         plot_branch_currents(
             axs[0, i],
             temp[0],
             data_dict,
         )
-        plot_max_current(axs[0, i], temp[0], data_dict)
+        plot_state_currents(axs[0, i], temp[0], data_dict)
+
+        # plot_max_current(axs[0, i], temp[0], data_dict)
         axs[0, i].text(0.1, 0.9, "$T=0$", transform=axs[0, i].transAxes)
 
         label_list = [
@@ -371,7 +374,7 @@ if __name__ == "__main__":
 
         plot_state_currents_line(axs[1, i], temp, data_dict)
         # plot_min_max_currents(axs[1, i], temp, data_dict)
-        axs[1, i].legend(ncol=2)
+        axs[1, 0].legend(loc="upper left", ncol=3, fontsize=5)
         plot_nominal_region(axs[1, i], temp, data_dict)
         plot_inverting_region(axs[1, i], temp, data_dict)
         axs[1, i].set_ylim(0, 1.5)
