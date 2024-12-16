@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import find_state_currents, plot_read_sweep
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
