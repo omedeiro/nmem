@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
 from nmem.analysis.analysis import plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [6, 4]
@@ -8,7 +7,6 @@ plt.rcParams["font.size"] = 14
 
 
 if __name__ == "__main__":
-    
     data0 = sio.loadmat(
         "SPG806_20240920_nMem_parameter_sweep_D6_A4_C1_2024-09-20 16-43-58.mat"
     )

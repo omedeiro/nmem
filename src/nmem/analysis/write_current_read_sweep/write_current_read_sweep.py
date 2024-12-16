@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
 from matplotlib.pyplot import Axes
-
 from nmem.analysis.analysis import (
     plot_read_sweep,
     plot_read_sweep_array,
@@ -27,7 +26,6 @@ def plot_read_sweep_multiple(ax: Axes, data_dict: dict) -> Axes:
 
 
 if __name__ == "__main__":
-
     current_cell = "C4"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
     HTRON_INTERCEPT = CELLS[current_cell]["intercept"]

@@ -1,15 +1,12 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
-
 from nmem.analysis.analysis import find_state_currents, plot_read_sweep
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 14
-
 
 
 def plot_enable_write_sweep_grid(data_dict: dict, save: bool = False) -> None:

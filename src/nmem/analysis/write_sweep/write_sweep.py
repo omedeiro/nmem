@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
 from nmem.analysis.analysis import (
     plot_bit_error_rate,
     plot_trace_stack_1D,
@@ -33,12 +32,10 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(3, 1)
     ax = plot_trace_stack_1D(axs, data_on, trace_index=TRACE_INDEX)
 
-
     # Plots with the enable off
     fig, ax = plt.subplots()
     ax = plot_bit_error_rate(ax, data_off)
     ax.set_xlabel("Write Current [$\mu$A]")
-
 
     fig, ax = plt.subplots(3, 1)
     ax = plot_trace_stack_1D(ax, data_off, trace_index=TRACE_INDEX)

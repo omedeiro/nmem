@@ -313,7 +313,6 @@ def calculate_one_state_current(
 def calculate_persistent_currents(
     data_dict: dict,
 ) -> np.ndarray:
-
     left_critical_currents_mesh: np.ndarray = data_dict.get(
         "left_critical_currents_mesh"
     )

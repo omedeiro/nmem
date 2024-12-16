@@ -3,7 +3,6 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-
 from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
 
 plt.rcParams["figure.figsize"] = [5.7, 5]

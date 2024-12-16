@@ -1,8 +1,9 @@
+from typing import Tuple
+
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from typing import Tuple
 
 font_path = "/home/omedeiro/Inter-Regular.otf"
 
