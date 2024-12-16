@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
-
 from nmem.analysis.analysis import import_directory
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
@@ -102,7 +101,7 @@ def get_critical_currents(data_list: list) -> Tuple[list, list]:
         std_critical_current = np.std(current_time_trend)
         critical_currents.append(avg_critical_current)
         critical_currents_std.append(std_critical_current)
-        
+
     return critical_currents, critical_currents_std
 
 
@@ -203,6 +202,7 @@ def plot_critical_currents_inset(ax: Axes, data_list: list, save: bool = False) 
         plt.savefig("critical_currents_inset.pdf", bbox_inches="tight")
 
     return ax
+
 
 def plot_combined_figure(ax: Axes, data_list: list, save: bool = False) -> Axes:
     ax[0, 0].axis("off")

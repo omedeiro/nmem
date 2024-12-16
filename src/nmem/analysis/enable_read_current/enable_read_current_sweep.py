@@ -5,7 +5,6 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.pyplot import Axes
 from matplotlib.ticker import MultipleLocator
-
 from nmem.analysis.analysis import (
     plot_analytical,
     plot_read_sweep_array_3d,
@@ -40,7 +39,6 @@ def plot_stack(
     data_dict: list[dict],
     persistent_current: list[float],
 ) -> list[Axes]:
-
     for i in range(len(axs)):
         data_dict[i]["persistent_current"] = persistent_current[i]
         axs[i] = plot_analytical(axs[i], data_dict[i])

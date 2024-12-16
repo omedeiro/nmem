@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager
-
 from nmem.analysis.analysis import (
     convert_location_to_coordinates,
     initialize_dict,
@@ -10,7 +9,7 @@ from nmem.analysis.analysis import (
 )
 from nmem.measurement.cells import CELLS
 
-# font_path = "/home/omedeiro/Inter-Regular.otf"  
+# font_path = "/home/omedeiro/Inter-Regular.otf"
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 
 font_manager.fontManager.addfont(font_path)
@@ -67,17 +66,60 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         [
-            ["bit_error", "write", "read", ],
-            ["bit_error", "enable_write", "enable_read", ],
+            [
+                "bit_error",
+                "write",
+                "read",
+            ],
+            [
+                "bit_error",
+                "enable_write",
+                "enable_read",
+            ],
         ],
         # per_subplot_kw={"bit_error": {"projection": "3d"}},
     )
-    plot_array(axs["bit_error"], xloc_list, yloc_list, param_dict["bit_error_rate"], log=True, cmap=plt.get_cmap("Blues").reversed())
+    plot_array(
+        axs["bit_error"],
+        xloc_list,
+        yloc_list,
+        param_dict["bit_error_rate"],
+        log=True,
+        cmap=plt.get_cmap("Blues").reversed(),
+    )
 
-    plot_array(axs["write"], xloc_list, yloc_list, param_dict["write_current"], log=False, cmap=plt.get_cmap("Reds"))
-    plot_array(axs["read"], xloc_list, yloc_list, param_dict["read_current"], log=False, cmap=plt.get_cmap("Blues"))
-    plot_array(axs["enable_write"], xloc_list, yloc_list, param_dict["enable_write_current"], log=False, cmap=plt.get_cmap("Reds"))
-    plot_array(axs["enable_read"], xloc_list, yloc_list, param_dict["enable_read_current"], log=False, cmap=plt.get_cmap("Blues"))
+    plot_array(
+        axs["write"],
+        xloc_list,
+        yloc_list,
+        param_dict["write_current"],
+        log=False,
+        cmap=plt.get_cmap("Reds"),
+    )
+    plot_array(
+        axs["read"],
+        xloc_list,
+        yloc_list,
+        param_dict["read_current"],
+        log=False,
+        cmap=plt.get_cmap("Blues"),
+    )
+    plot_array(
+        axs["enable_write"],
+        xloc_list,
+        yloc_list,
+        param_dict["enable_write_current"],
+        log=False,
+        cmap=plt.get_cmap("Reds"),
+    )
+    plot_array(
+        axs["enable_read"],
+        xloc_list,
+        yloc_list,
+        param_dict["enable_read_current"],
+        log=False,
+        cmap=plt.get_cmap("Blues"),
+    )
 
     fig.patch.set_visible(False)
     # plt.savefig("main_analysis.pdf", bbox_inches="tight")

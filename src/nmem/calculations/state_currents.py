@@ -15,8 +15,8 @@ def calculate_branch_currents(
 
     return list1, list2
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     state_currents = [620, 640]
     persistent_current = 1
     alpha = 0.32

@@ -95,7 +95,6 @@ def plot_persistent_current(
     total_persistent_current: np.ndarray,
     width_ratio: float,
 ) -> Axes:
-
     c = ax.pcolormesh(
         left_critical_currents_mesh,
         write_currents_mesh,

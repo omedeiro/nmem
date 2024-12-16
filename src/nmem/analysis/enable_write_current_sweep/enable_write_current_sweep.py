@@ -7,7 +7,6 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
@@ -35,7 +34,6 @@ def polygon_under_graph(x: np.ndarray, y: np.ndarray) -> list:
 
 
 def plot_waterfall(ax: Axes3D, data_dict: dict) -> Axes3D:
-
     cmap = plt.get_cmap("viridis")
     colors = cmap(np.linspace(0, 1, len(data_dict)))
     verts_list = []

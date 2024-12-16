@@ -27,7 +27,7 @@ def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axe
     ax.set_yscale("log")
     ax.set_xlabel("Enable Write Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    
+
     ax.xaxis.tick_top()
     ax.xaxis.set_label_position("top")
     ax.xaxis.set_major_locator(MultipleLocator(5))
@@ -41,7 +41,7 @@ def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axe
     return ax
 
 
-def plot_write_sweep_fine(ax:Axes, data_dict: dict) -> Axes:
+def plot_write_sweep_fine(ax: Axes, data_dict: dict) -> Axes:
     for key in data_dict.keys():
         ax = plot_enable_write_sweep_single(ax, data_dict, key)
     return ax

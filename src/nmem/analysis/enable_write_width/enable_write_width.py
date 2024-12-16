@@ -8,7 +8,6 @@ plt.rcParams["font.size"] = 14
 
 
 def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, **kwargs) -> Axes:
-
     read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
     ber = data_dict.get("bit_error_rate").flatten()
     enable_write_width = data_dict.get("enable_write_width").flatten()[0]
