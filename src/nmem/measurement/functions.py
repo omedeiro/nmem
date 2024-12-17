@@ -324,7 +324,6 @@ def setup_scope_bert(
     division_one: tuple = (9.5, 10.0),
 ):
     scope_horizontal_scale = measurement_settings.get("scope_horizontal_scale")
-    scope_timespan = measurement_settings.get("scope_timespan")
     scope_sample_rate = measurement_settings.get("scope_sample_rate")
     num_meas = measurement_settings.get("num_meas")
 
@@ -1145,19 +1144,19 @@ def plot_array(
     ax.set_ylabel(y_name)
     xv, yv = np.meshgrid(x, y, indexing="ij")
 
-    if norm:
-        plt.clim([0, 1])
-        cbar = plt.colorbar(ticks=np.linspace(0, 1, 11))
-    else:
-        cbar = plt.colorbar()
-    cbar.ax.set_ylabel(c_name, rotation=270)
-    ax.contour(xv, yv, np.reshape(ctotal, (len(y), len(x))).T, [0.05, 0.1])
-    measurement_name = data_dict["measurement_name"]
-    sample_name = data_dict["sample_name"]
-    time_str = data_dict["time_str"]
+    # if norm:
+    #     plt.clim([0, 1])
+    #     cbar = plt.colorbar(ticks=np.linspace(0, 1, 11))
+    # else:
+    #     cbar = plt.colorbar()
+    # cbar.ax.set_ylabel(c_name, rotation=270)
+    # ax.contour(xv, yv, np.reshape(ctotal, (len(y), len(x))).T, [0.05, 0.1])
+    # measurement_name = data_dict["measurement_name"]
+    # sample_name = data_dict["sample_name"]
+    # time_str = data_dict["time_str"]
 
-    fig = plt.gcf()
-    fig.suptitle(f"{sample_name} -- {measurement_name} \n {time_str}")
+    # fig = plt.gcf()
+    # fig.suptitle(f"{sample_name} -- {measurement_name} \n {time_str}")
 
     return ax
 
@@ -1422,13 +1421,13 @@ def run_measurement(
 def run_sweep(
     b: nTron,
     measurement_settings: dict,
-    parameter_x: str,
-    parameter_y: str,
+    sweep_parameter_x: str,
+    sweep_parameter_y: str,
     save_traces: bool = False,
     plot_measurement=False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
     division_one: Tuple[float, float] = (9.5, 10),
-):
+) -> dict:
     save_dict = {}
 
     setup_scope_bert(
@@ -1437,8 +1436,8 @@ def run_sweep(
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
-            measurement_settings[parameter_x] = x
-            measurement_settings[parameter_y] = y
+            measurement_settings[sweep_parameter_x] = x
+            measurement_settings[sweep_parameter_y] = y
             cell = b.properties["Save File"]["cell"]
             slope = measurement_settings["CELLS"][cell]["slope"]
             intercept = measurement_settings["CELLS"][cell]["intercept"]
@@ -1551,10 +1550,6 @@ def run_sweep(
             else:
                 save_dict = update_dict(save_dict, data_dict)
 
-    final_dict = {
-        **measurement_settings,
-        **save_dict,
-    }
     return save_dict
 
 
@@ -1639,45 +1634,47 @@ def plot_ber_sweep(
 ) -> Axes:
     x = measurement_settings.get("x")
     y = measurement_settings.get("y")
+
+    print(f"len(x): {len(x)}, len(y): {len(y)}")
     if len(x) > 1 and len(y) > 1:
         plot_array(ax, save_dict, C, A, B)
 
-        plot_array(
-            ax,
-            save_dict,
-            "write_0_read_1",
-            A,
-            B,
-            cmap=plt.get_cmap("Reds", 100),
-            norm=False,
-        )
+    #     plot_array(
+    #         ax,
+    #         save_dict,
+    #         "write_0_read_1",
+    #         A,
+    #         B,
+    #         cmap=plt.get_cmap("Reds", 100),
+    #         norm=False,
+    #     )
 
-        plot_array(
-            ax,
-            save_dict,
-            "write_1_read_0",
-            A,
-            B,
-            cmap=plt.get_cmap("Blues", 100),
-            norm=False,
-        )
+    #     plot_array(
+    #         ax,
+    #         save_dict,
+    #         "write_1_read_0",
+    #         A,
+    #         B,
+    #         cmap=plt.get_cmap("Blues", 100),
+    #         norm=False,
+    #     )
 
     if len(x) == 1 and len(y) > 1:
         plot_parameter(ax, save_dict, B, C, color="#808080")
-        plot_parameter(
-            ax, save_dict, B, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
-        )
-        plot_parameter(
-            ax, save_dict, B, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
-        )
+        # plot_parameter(
+        #     ax, save_dict, B, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
+        # )
+        # plot_parameter(
+        #     ax, save_dict, B, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
+        # )
 
     if len(y) == 1 and len(x) > 1:
         plot_parameter(ax, save_dict, A, C, color="#808080")
-        plot_parameter(
-            ax, save_dict, A, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
-        )
-        plot_parameter(
-            ax, save_dict, A, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
-        )
+        # plot_parameter(
+        #     ax, save_dict, A, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
+        # )
+        # plot_parameter(
+        #     ax, save_dict, A, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
+        # )
 
     return ax

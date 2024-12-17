@@ -150,8 +150,7 @@ if __name__ == "__main__":
         **fast_write,
         **fast_read,
         **two_nulls,
-        "threshold_bert": 0.35,
-        "threshold_enforced": 0.35,
+        "voltage_threshold": 0.35,
     }
 
     current_settings = {
@@ -169,7 +168,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 500
-    sweep_length = 11
+    sweep_length = 4
 
     measurement_settings.update(
         {
@@ -192,13 +191,13 @@ if __name__ == "__main__":
     read_sweep = True
     if read_sweep:
         parameter_y = "read_current"
-        measurement_settings["y"] = np.array([current_settings["read_current"]])
-        # measurement_settings["y"] = np.linspace(750e-6, 850e-6, sweep_length)
+        # measurement_settings["y"] = np.array([current_settings["read_current"]])
+        measurement_settings["y"] = np.linspace(750e-6, 850e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
     else:
         parameter_y = "write_current"
         # measurement_settings["y"] = np.array([current_settings["write_current"]])
-        measurement_settings["y"] = np.linspace(00e-6, 200e-6, sweep_length)
+        measurement_settings["y"] = np.linspace(100e-6, 200e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
     save_dict = nm.run_sweep(
@@ -217,7 +216,10 @@ if __name__ == "__main__":
         b.properties, measurement_settings["measurement_name"], save_dict
     )
     save_dict["time_str"] = time_str
+
+    fig, ax = plt.subplots()
     nm.plot_ber_sweep(
+        ax,
         save_dict,
         measurement_settings,
         file_path,
