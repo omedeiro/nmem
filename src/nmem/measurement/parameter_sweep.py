@@ -168,7 +168,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 500
-    sweep_length = 4
+    sweep_length = 3
 
     measurement_settings.update(
         {
@@ -200,7 +200,7 @@ if __name__ == "__main__":
         measurement_settings["y"] = np.linspace(100e-6, 200e-6, sweep_length)
         measurement_settings[parameter_y] = measurement_settings["y"][0]
 
-    save_dict = nm.run_sweep(
+    data_dict = nm.run_sweep(
         b,
         measurement_settings,
         parameter_x,
@@ -213,24 +213,35 @@ if __name__ == "__main__":
     b.properties["measurement_settings"] = measurement_settings
 
     file_path, time_str = qf.save(
-        b.properties, measurement_settings["measurement_name"], save_dict
+        b.properties, measurement_settings["measurement_name"], data_dict
     )
-    save_dict["time_str"] = time_str
 
     fig, ax = plt.subplots()
     nm.plot_ber_sweep(
         ax,
-        save_dict,
-        measurement_settings,
-        file_path,
+        data_dict,
         parameter_x,
         parameter_y,
         "bit_error_rate",
     )
+    nm.plot_ber_sweep(
+        ax,
+        data_dict,
+        parameter_x,
+        parameter_y,
+        "write_0_read_1_norm",
+    )
+    nm.plot_ber_sweep(
+        ax,
+        data_dict,
+        parameter_x,
+        parameter_y,
+        "write_1_read_0_norm",
+    )
+    nm.plot_header(fig, data_dict)
+    fig.subplots_adjust(top=0.85)
 
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
-
+    nm.set_awg_off(b)
     nm.write_dict_to_file(file_path, measurement_settings)
 
     t2 = time.time()

@@ -5,12 +5,12 @@ Created on Fri Nov  3 14:01:31 2023
 @author: omedeiro
 """
 
+import collections.abc
 import time
 from datetime import datetime
 from time import sleep
 from typing import List, Tuple
 
-import matplotlib as mpl
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -305,13 +305,15 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
         current_cell,
     ]
     sample_name = str("-".join(sample_name))
-    date_str = time.strftime("%Y%m%d")
+    date_str = time.strftime("%Y-%m-%d")
+    time_str = time.strftime("%Y%m%d%H%M%S")
     measurement_name = f"{date_str}_{measurement_name}"
 
     measurement_settings = {
         "measurement_name": measurement_name,
         "sample_name": sample_name,
         "cell": current_cell,
+        "time_str": time_str,
     }
 
     return measurement_settings, b
@@ -388,6 +390,13 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     b.inst.awg.set_arb_sync()
     sleep(1)
 
+def set_awg_on(b: nTron)->None:
+    b.inst.awg.set_output(True, 1)
+    b.inst.awg.set_output(True, 2)
+
+def set_awg_off(b: nTron)->None:
+    b.inst.awg.set_output(False, 1)
+    b.inst.awg.set_output(False, 2)
 
 def create_waveforms(
     num_samples: int = 256,
@@ -907,36 +916,36 @@ def plot_waveforms(
     return axs, distance, full_params0, full_params1
 
 
-def plot_trend(
-    ax: Axes,
-    y: np.ndarray,
-    label: str,
-    color: str,
-    x: np.ndarray = None,
-    params: tuple = None,
-    m: float = 1,
-):
-    if x is None:
-        x = np.arange(0, len(y), 1)
+# def plot_trend(
+#     ax: Axes,
+#     y: np.ndarray,
+#     label: str,
+#     color: str,
+#     x: np.ndarray = None,
+#     params: tuple = None,
+#     m: float = 1,
+# ):
+#     if x is None:
+#         x = np.arange(0, len(y), 1)
 
-    ax.plot(x, y, ls="none", marker="o", label=label, color=color)
-    if len(x) > 1:
-        if params is not None:
-            ax.plot(
-                [x[0], x[-1]],
-                np.tile(params[0] + params[1] * m, 2),
-                color=np.subtract(1, mpl.colors.to_rgb(color)),
-                linewidth=2,
-                label=f"{label}",
-            )
-            ax.plot(
-                [x[0], x[-1]],
-                np.tile(params[0] - params[1] * m, 2),
-                color=np.subtract(1, mpl.colors.to_rgb(color)),
-                linewidth=2,
-            )
+#     ax.plot(x, y, ls="none", marker="o", label=label, color=color)
+#     if len(x) > 1:
+#         if params is not None:
+#             ax.plot(
+#                 [x[0], x[-1]],
+#                 np.tile(params[0] + params[1] * m, 2),
+#                 color=np.subtract(1, mpl.colors.to_rgb(color)),
+#                 linewidth=2,
+#                 label=f"{label}",
+#             )
+#             ax.plot(
+#                 [x[0], x[-1]],
+#                 np.tile(params[0] - params[1] * m, 2),
+#                 color=np.subtract(1, mpl.colors.to_rgb(color)),
+#                 linewidth=2,
+#             )
 
-    return ax
+#     return ax
 
 
 def plot_ber(ax: Axes, x: np.ndarray, y: np.ndarray, ber: np.ndarray) -> Axes:
@@ -963,89 +972,124 @@ def plot_ber(ax: Axes, x: np.ndarray, y: np.ndarray, ber: np.ndarray) -> Axes:
     return ax
 
 
-def plot_waveforms_bert(
-    axs: List[Axes], data_dict: dict, measurement_settings: dict
-) -> List[Axes]:
-    trace_chan_in = data_dict.get("trace_chan_in", [0, 0])
-    trace_chan_out = data_dict.get("trace_chan_out", [0, 0])
-    trace_enab = data_dict.get("trace_enab", [0, 0])
-    read_zero_top = data_dict.get("read_zero_top", [0, 0])
-    read_one_top = data_dict.get("read_one_top", [0, 0])
+def filter_first(value):
+    if isinstance(value, collections.abc.Iterable) and not isinstance(
+        value, (str, bytes)
+    ):
+        return np.asarray(value).flatten()[0]
+    return value
 
-    channel_voltage = measurement_settings.get("channel_voltage", 0)
-    enable_voltage = measurement_settings.get("enable_voltage", 0)
-    read_current = measurement_settings.get("read_current", 0)
-    write_current = measurement_settings.get("write_current", 0)
-    enable_read_current = measurement_settings.get("enable_read_current", 0)
-    enable_write_current = measurement_settings.get("enable_write_current", 0)
-    bitmsg_channel = measurement_settings.get("bitmsg_channel", 0)
-    bitmsg_enable = measurement_settings.get("bitmsg_enable", 0)
-    measurement_name = measurement_settings.get("measurement_name", 0)
-    sample_name = measurement_settings.get("sample_name", 0)
-    scope_timespan = measurement_settings.get("scope_timespan", 0)
-    threshold = measurement_settings.get("voltage_threshold")
-    write_width = measurement_settings.get("write_width")
-    read_width = measurement_settings.get("read_width")
-    enable_write_width = measurement_settings.get("enable_write_width")
-    enable_read_width = measurement_settings.get("enable_read_width")
-    enable_write_phase = measurement_settings.get("enable_write_phase")
-    enable_read_phase = measurement_settings.get("enable_read_phase")
+
+def plot_header(fig: plt.Figure, data_dict: dict) -> plt.Figure:
+    sample_name: str = filter_first(data_dict.get("sample_name"))
+    measurement_name: str = filter_first(data_dict.get("measurement_name"))
+    time_str: str = filter_first(data_dict.get("time_str"))
+    channel_voltage: float = filter_first(data_dict.get("channel_voltage"))
+    enable_voltage: float = filter_first(data_dict.get("enable_voltage"))
+    write_current: float = filter_first(data_dict.get("write_current"))
+    read_current: float = filter_first(data_dict.get("read_current"))
+    enable_write_current: float = filter_first(data_dict.get("enable_write_current"))
+    enable_read_current: float = filter_first(data_dict.get("enable_read_current"))
+    bitmsg_channel: str = filter_first(data_dict.get("bitmsg_channel"))
+    bitmsg_enable: str = filter_first(data_dict.get("bitmsg_enable"))
+    write_width: int = filter_first(data_dict.get("write_width"))
+    read_width: int = filter_first(data_dict.get("read_width"))
+    enable_write_width: int = filter_first(data_dict.get("enable_write_width"))
+    enable_read_width: int = filter_first(data_dict.get("enable_read_width"))
+    enable_write_phase: int = filter_first(data_dict.get("enable_write_phase"))
+    enable_read_phase: int = filter_first(data_dict.get("enable_read_phase"))
+
+    fig.suptitle(
+        (
+            f"{sample_name} -- {measurement_name} -- {time_str}\n"
+            f"Vcpp: {channel_voltage * 1e3:.1f} mV, Vepp: {enable_voltage * 1e3:.1f} mV\n"
+            f"Write Current: {write_current * 1e6:.1f} uA, Read Current: {read_current * 1e6:.0f} uA\n"
+            f"Enable Write Current: {enable_write_current * 1e6:.1f} uA, Enable Read Current: {enable_read_current * 1e6:.1f} uA\n"
+            f"Channel Message: {bitmsg_channel}, Channel Enable: {bitmsg_enable}\n"
+            f"Write Width: {write_width}, Read Width: {read_width}, \n"
+            f"Enable Write Width: {enable_write_width}, Enable Read Width: {enable_read_width}, "
+            f"Enable Write Phase: {enable_write_phase}, Enable Read Phase: {enable_read_phase}"
+        )
+    )
+
+    return fig
+
+
+
+def plot_waveform(ax: Axes, waveform: np.ndarray, **kwargs) -> Axes:
+    ax.plot(waveform[0] * 1e6, waveform[1] * 1e3, **kwargs)
+    ax.legend(loc=4)
+    ax.set_ylabel("voltage (mV)")
+    ax.set_xlabel("time (us)")
+    ax.set_ymargin(0.3)
+    return ax
+
+
+def plot_trend(ax: Axes, trend: np.ndarray, **kwargs) -> Axes:
+    ax.plot(trend, ls="none", marker="o", **kwargs)
+    ax.set_ylabel("read voltage (V)")
+    ax.set_xlabel("sample")
+    ax.legend(loc=4)
+    ax.set_ylim([0, 0.65])
+    return ax
+
+
+def plot_waveforms_bert(
+    axs: List[Axes],
+    data_dict: dict,
+) -> List[Axes]:
+    trace_chan_in = data_dict.get("trace_chan_in")
+    trace_chan_out = data_dict.get("trace_chan_out")
+    trace_enab = data_dict.get("trace_enab")
+    read_zero_top = data_dict.get("read_zero_top")
+    read_one_top = data_dict.get("read_one_top")
+
+    scope_timespan = data_dict.get("scope_timespan")
+    threshold = data_dict.get("voltage_threshold")
+    bitmsg_channel = data_dict.get("bitmsg_channel")
+    bitmsg_enable = data_dict.get("bitmsg_enable")
 
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
     C1 = 45
     C2 = 135
-    axs[0].plot(
-        trace_chan_in[0] * 1e6,
-        trace_chan_in[1] * 1e3,
-        label="input signal",
-        color=cmap[C1, :],
-    )
-    axs[0].legend(loc=4)
-    axs[0].set_ylabel("voltage (mV)")
-    axs[0].set_xlabel("time (us)")
-    axs[0].set_xlim((0, scope_timespan * 1e6))
-    axs[0].set_ylim((-200, 1200))
-    plot_message(axs[0], bitmsg_channel)
 
-    axs[1].plot(
-        trace_chan_out[0] * 1e6,
-        trace_chan_out[1] * 1e3,
-        label="channel",
-        color=cmap[C1, :],
-    )
-    axs[1].hlines(
-        threshold * 1e3, 0, len(trace_chan_in[0]), color="r", label="threshold"
-    )
-    axs[1].set_xlabel("time (us)")
-    axs[1].set_ylabel("volage (mV)")
-    axs[1].legend(loc=4)
-    axs[1].set_xlim((0, scope_timespan * 1e6))
-    axs[1].set_ylim((-200, 700))
-    plot_message(axs[1], bitmsg_channel)
-
-    axs[2].plot(
-        trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color=cmap[C1, :]
-    )
-    axs[2].legend(loc=4)
-    axs[2].set_ylabel("voltage (mV)")
-    axs[2].set_xlabel("time (us)")
-    axs[2].set_xlim((0, scope_timespan * 1e6))
-    axs[2].set_ylim((0, 300))
-    plot_message(axs[2], bitmsg_enable)
+    waveform_dict = {
+        0: {
+            "waveform": trace_chan_in,
+            "label": "input signal",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_channel,
+        },
+        1: {
+            "waveform": trace_chan_out,
+            "label": "channel",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_channel,
+        },
+        2: {
+            "waveform": trace_enab,
+            "label": "enable",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_enable,
+        },
+    }
+    for key in waveform_dict.keys():
+        plot_waveform(
+            axs[key],
+            waveform_dict[key].get("waveform"),
+            label=waveform_dict[key].get("label"),
+            color=waveform_dict[key].get("color"),
+        )
+        plot_message(axs[key], waveform_dict[key].get("bit_message"))
 
     plot_trend(axs[3], read_zero_top, label="READ 0", color=cmap[C1, :])
     plot_trend(axs[3], read_one_top, label="READ 1", color=cmap[C2, :])
     axs[3].hlines(threshold, 0, len(read_zero_top), color="r", label="threshold")
-    axs[3].set_ylim([0, 0.6])
-    axs[3].set_ylabel("read voltage (V)")
-    axs[3].set_xlabel("sample")
-    axs[3].legend(loc=4)
 
     fig = plt.gcf()
-    fig.suptitle(
-        f"{sample_name} -- {measurement_name} \n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Write Current:{write_current*1e6:.1f}, Read Current:{read_current*1e6:.0f}uA, \n enable_write_current:{enable_write_current*1e6:.1f}, enable_read_current:{enable_read_current*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}, \n write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
-    )
+
+    plot_header(fig, data_dict)
 
     fig.tight_layout()
 
@@ -1067,37 +1111,10 @@ def plot_parameter(
     x = data_dict.get(x_name)[xindex].flatten().reshape(x_length, y_length)
     y = data_dict.get(y_name)[yindex].flatten().reshape(x_length, y_length)
     ax.plot(x.flatten(), y.flatten(), marker="o", label=y_name, **kwargs)
-    ax.set_xticks(rotation=60)
     ax.set_xlabel(x_name)
     ax.set_ylabel(y_name)
     ax.legend()
 
-    measurement_name = data_dict["measurement_name"]
-    sample_name = data_dict["sample_name"]
-
-    time_str = data_dict["time_str"]
-
-    channel_voltage = data_dict["channel_voltage"].flatten()
-    enable_voltage = data_dict["enable_voltage"].flatten()
-    read_current = data_dict["read_current"].flatten()
-    write_current = data_dict["write_current"].flatten()
-    enable_read_current = data_dict["enable_read_current"].flatten()
-    enable_write_current = data_dict["enable_write_current"].flatten()
-    bitmsg_channel = data_dict["bitmsg_channel"]
-    bitmsg_enable = data_dict["bitmsg_enable"]
-    write_width = data_dict["write_width"]
-    read_width = data_dict["read_width"]
-    enable_write_width = data_dict["enable_write_width"]
-    enable_read_width = data_dict["enable_read_width"]
-    enable_write_phase = data_dict["enable_write_phase"]
-    enable_read_phase = data_dict["enable_read_phase"]
-
-    fig = plt.gcf()
-    fig.suptitle(
-        f"{sample_name} -- {measurement_name} \n {time_str} \n Vcpp:{channel_voltage[0]*1e3:.1f}mV, Vepp:{enable_voltage[0]*1e3:.1f}mV, Write Current:{write_current[0]*1e6:.1f}uA, Read Current:{read_current[0]*1e6:.0f}uA, \n enable_write_current:{enable_write_current[0]*1e6:.1f}, enable_read_current:{enable_read_current[0]*1e6:.1f} \n Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable} \n, write width: {write_width}, read width: {read_width}, enable write width: {enable_write_width}, enable read width: {enable_read_width}, \nenable write phase: {enable_write_phase}, enable read phase: {enable_read_phase}"
-    )
-
-    print(f"min {y_name} ({y.min():3.2e}) at {x_name} = {x[y.argmin()]:3.2e}")
     return ax
 
 
@@ -1142,21 +1159,6 @@ def plot_array(
     ax.set_yticks(np.linspace(ystart, ystop, len(y)))
     ax.set_xlabel(x_name)
     ax.set_ylabel(y_name)
-    xv, yv = np.meshgrid(x, y, indexing="ij")
-
-    # if norm:
-    #     plt.clim([0, 1])
-    #     cbar = plt.colorbar(ticks=np.linspace(0, 1, 11))
-    # else:
-    #     cbar = plt.colorbar()
-    # cbar.ax.set_ylabel(c_name, rotation=270)
-    # ax.contour(xv, yv, np.reshape(ctotal, (len(y), len(x))).T, [0.05, 0.1])
-    # measurement_name = data_dict["measurement_name"]
-    # sample_name = data_dict["sample_name"]
-    # time_str = data_dict["time_str"]
-
-    # fig = plt.gcf()
-    # fig.suptitle(f"{sample_name} -- {measurement_name} \n {time_str}")
 
     return ax
 
@@ -1182,7 +1184,7 @@ def run_bitwise(b: nTron, measurement_settings: dict):
 
 def run_realtime_bert(
     b: nTron, measurement_settings: dict, channel: str = "F5"
-) -> Tuple[dict, dict]:
+) -> dict:
     num_meas = measurement_settings.get("num_meas")
     threshold = measurement_settings.get("voltage_threshold")
 
@@ -1221,7 +1223,7 @@ def run_realtime_bert(
 
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
-
+    bit_error_rate = calculate_bit_error_rate(write_1_read_0, write_0_read_1, num_meas)
     result_dict = {
         "write_0_read_1": write_0_read_1,
         "write_1_read_0": write_1_read_0,
@@ -1229,8 +1231,9 @@ def run_realtime_bert(
         "write_1_read_0_norm": write_1_read_0_norm,
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
+        "bit_error_rate": bit_error_rate,
     }
-    return result_dict, measurement_settings
+    return result_dict
 
 
 def run_sequence_bert(b: nTron, measurement_settings: dict):
@@ -1373,10 +1376,9 @@ def run_bitwise_measurement(b: nTron, measurement_settings: dict):
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
-    save_traces: bool = True,
     plot: bool = False,
     ramp_read: bool = False,
-):
+) -> dict:
     measurement_settings = calculate_voltage(measurement_settings)
     bitmsg_channel: str = measurement_settings.get("bitmsg_channel")
     bitmsg_enable: str = measurement_settings.get("bitmsg_enable")
@@ -1395,27 +1397,19 @@ def run_measurement(
 
     b.inst.scope.clear_sweeps()
 
-    meas_dict, measurement_settings = run_realtime_bert(b, measurement_settings)
-
-    trace_dict = get_traces(b, scope_samples)
+    data_dict = run_realtime_bert(b, measurement_settings)
+    data_dict.update(get_traces(b, scope_samples))
+    data_dict.update(measurement_settings)
 
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
-    bit_error_rate = calculate_bit_error_rate(
-        meas_dict["write_1_read_0"], meas_dict["write_0_read_1"], num_meas
-    )
-    DATA_DICT = {
-        **meas_dict,
-        **trace_dict,
-        "bit_error_rate": bit_error_rate,
-    }
-    print(f"Bit Error Rate: {bit_error_rate:.2e}")
     if plot:
         fig, axs = plt.subplots(4, 1, figsize=(10, 10))
-        plot_waveforms_bert(axs, DATA_DICT, measurement_settings)
+        plot_waveforms_bert(axs, data_dict)
+        plt.show()
 
-    return DATA_DICT, measurement_settings
+    return data_dict
 
 
 def run_sweep(
@@ -1436,8 +1430,8 @@ def run_sweep(
 
     for x in measurement_settings["x"]:
         for y in measurement_settings["y"]:
-            measurement_settings[sweep_parameter_x] = x
-            measurement_settings[sweep_parameter_y] = y
+            measurement_settings.update({sweep_parameter_x: x})
+            measurement_settings.update({sweep_parameter_y: y})
             cell = b.properties["Save File"]["cell"]
             slope = measurement_settings["CELLS"][cell]["slope"]
             intercept = measurement_settings["CELLS"][cell]["intercept"]
@@ -1453,22 +1447,21 @@ def run_sweep(
             else:
                 max_heater_current = np.nan
 
-            data_dict, measurment_settings = run_measurement(
+            data_dict = run_measurement(
                 b,
                 measurement_settings,
-                save_traces,
                 plot=plot_measurement,
                 ramp_read=False,
             )
 
             data_dict.update(measurement_settings)
             enable_write_power = calculate_heater_power(
-                measurement_settings["enable_write_current"],
-                measurement_settings["CELLS"][cell]["resistance_cryo"],
+                data_dict["enable_write_current"],
+                data_dict["CELLS"][cell]["resistance_cryo"],
             )
             enable_read_power = calculate_heater_power(
-                measurement_settings["enable_read_current"],
-                measurement_settings["CELLS"][cell]["resistance_cryo"],
+                data_dict["enable_read_current"],
+                data_dict["CELLS"][cell]["resistance_cryo"],
             )
             param_dict = {
                 "Write Current [uA]": [measurement_settings["write_current"] * 1e6],
@@ -1532,25 +1525,28 @@ def run_sweep(
                 measurement_settings["CELLS"][cell]["resistance_cryo"],
             )
             if data_dict["bit_error_rate"] < 0.01:
-                write_voltage_high = np.mean(data_dict["read_one_top"][1])
-                write_voltage_low = np.mean(data_dict["read_zero_top"][1])
-                switch_voltage = write_voltage_high - write_voltage_low
-                switch_voltage_preamp = switch_voltage / 10 ** (MITEQ_AMP_GAIN / 20)
-                switch_power = (
-                    switch_voltage_preamp * measurement_settings["read_current"]
+                switch_power, write_power = calculate_power(data_dict)
+                data_dict.update(
+                    {"switch_power": switch_power, "write_power": write_power}
                 )
-                switch_impedance = (
-                    switch_voltage_preamp / measurement_settings["read_current"]
-                )
-                write_power = (
-                    switch_impedance * measurement_settings["write_current"] ** 2
-                )
+
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
             else:
                 save_dict = update_dict(save_dict, data_dict)
 
     return save_dict
+
+
+def calculate_power(data_dict: dict):
+    write_voltage_high = np.mean(data_dict["read_one_top"][1])
+    write_voltage_low = np.mean(data_dict["read_zero_top"][1])
+    switch_voltage = write_voltage_high - write_voltage_low
+    switch_voltage_preamp = switch_voltage / 10 ** (MITEQ_AMP_GAIN / 20)
+    switch_power = switch_voltage_preamp * data_dict["read_current"]
+    switch_impedance = switch_voltage_preamp / data_dict["read_current"]
+    write_power = switch_impedance * data_dict["write_current"] ** 2
+    return switch_power, write_power
 
 
 def run_sweep_subset(
@@ -1578,7 +1574,7 @@ def run_sweep_subset(
                 y > measurement_settings["y_subset"][idx][0]
                 and y < measurement_settings["y_subset"][idx][-1]
             ):
-                data_dict, measurement_settings = run_measurement(
+                data_dict = run_measurement(
                     b,
                     measurement_settings,
                     save_traces,
@@ -1625,56 +1621,19 @@ def run_sweep_subset(
 
 def plot_ber_sweep(
     ax: Axes,
-    save_dict: dict,
-    measurement_settings: dict,
-    file_path: str,
+    data_dict: dict,
     A: str,
     B: str,
     C: str,
 ) -> Axes:
-    x = measurement_settings.get("x")
-    y = measurement_settings.get("y")
+    x = data_dict.get("x")
+    y = data_dict.get("y")
 
-    print(f"len(x): {len(x)}, len(y): {len(y)}")
     if len(x) > 1 and len(y) > 1:
-        plot_array(ax, save_dict, C, A, B)
-
-    #     plot_array(
-    #         ax,
-    #         save_dict,
-    #         "write_0_read_1",
-    #         A,
-    #         B,
-    #         cmap=plt.get_cmap("Reds", 100),
-    #         norm=False,
-    #     )
-
-    #     plot_array(
-    #         ax,
-    #         save_dict,
-    #         "write_1_read_0",
-    #         A,
-    #         B,
-    #         cmap=plt.get_cmap("Blues", 100),
-    #         norm=False,
-    #     )
-
-    if len(x) == 1 and len(y) > 1:
-        plot_parameter(ax, save_dict, B, C, color="#808080")
-        # plot_parameter(
-        #     ax, save_dict, B, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
-        # )
-        # plot_parameter(
-        #     ax, save_dict, B, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
-        # )
-
-    if len(y) == 1 and len(x) > 1:
-        plot_parameter(ax, save_dict, A, C, color="#808080")
-        # plot_parameter(
-        #     ax, save_dict, A, "write_0_read_1_norm", ax=ax, color=(0.68, 0.12, 0.1)
-        # )
-        # plot_parameter(
-        #     ax, save_dict, A, "write_1_read_0_norm", ax=ax, color=(0.16, 0.21, 0.47)
-        # )
+        plot_array(ax, data_dict, C, A, B)
+    elif len(x) == 1:
+        plot_parameter(ax, data_dict, B, C)
+    elif len(y) == 1:
+        plot_parameter(ax, data_dict, A, C)
 
     return ax
