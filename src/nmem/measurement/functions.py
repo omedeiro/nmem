@@ -106,6 +106,14 @@ def construct_currents(
     return bias_current_array
 
 
+def filter_first(value):
+    if isinstance(value, collections.abc.Iterable) and not isinstance(
+        value, (str, bytes)
+    ):
+        return np.asarray(value).flatten()[0]
+    return value
+
+
 def get_param_mean(param: np.ndarray) -> np.ndarray:
     if round(param[2], 5) > round(param[5], 5):
         prm = param[0:2]
@@ -291,6 +299,22 @@ def calculate_bit_error_rate(
     return bit_error_rate
 
 
+def calculate_power(data_dict: dict):
+    one_voltage = data_dict.get("read_one_top")[1]
+    zero_voltage = data_dict.get("read_zero_top")[1]
+    read_current = data_dict.get("read_current")
+    write_current = data_dict.get("write_current")
+
+    write_voltage_high = np.mean(one_voltage)
+    write_voltage_low = np.mean(zero_voltage)
+    switch_voltage = write_voltage_high - write_voltage_low
+    switch_voltage_preamp = switch_voltage / 10 ** (MITEQ_AMP_GAIN / 20)
+    switch_power = switch_voltage_preamp * read_current
+    switch_impedance = switch_voltage_preamp / read_current
+    write_power = switch_impedance * write_current**2
+    return switch_power, switch_impedance, write_power
+
+
 def initilize_measurement(config: str, measurement_name: str) -> dict:
     b = nTron(config)
 
@@ -317,6 +341,37 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
     }
 
     return measurement_settings, b
+
+
+def initialize_data_dict(measurement_settings: dict) -> dict:
+    scope_num_samples = measurement_settings.get("scope_num_samples")
+    num_meas = measurement_settings.get("num_meas")
+
+    data_dict = {
+        "trace_chan_in": np.empty((2, scope_num_samples)),
+        "trace_chan_out": np.empty((2, scope_num_samples)),
+        "trace_enab": np.empty((2, scope_num_samples)),
+        "read_zero_top": np.empty((1, num_meas)),
+        "read_one_top": np.empty((1, num_meas)),
+        "write_0_read_1": np.nan,
+        "write_1_read_0": np.nan,
+        "write_0_read_1_norm": np.nan,
+        "write_1_read_0_norm": np.nan,
+        "channel_voltage": np.nan,
+        "enable_voltage": np.nan,
+        "bit_error_rate": np.nan,
+    }
+    return data_dict
+
+
+def set_awg_on(b: nTron) -> None:
+    b.inst.awg.set_output(True, 1)
+    b.inst.awg.set_output(True, 2)
+
+
+def set_awg_off(b: nTron) -> None:
+    b.inst.awg.set_output(False, 1)
+    b.inst.awg.set_output(False, 2)
 
 
 def setup_scope_bert(
@@ -390,13 +445,6 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     b.inst.awg.set_arb_sync()
     sleep(1)
 
-def set_awg_on(b: nTron)->None:
-    b.inst.awg.set_output(True, 1)
-    b.inst.awg.set_output(True, 2)
-
-def set_awg_off(b: nTron)->None:
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
 
 def create_waveforms(
     num_samples: int = 256,
@@ -462,6 +510,72 @@ def create_waveforms_edge(
     waveform[stop : stop + edge] = np.linspace(height, 0, edge)
 
     return waveform
+
+
+def create_dataframe(data_dict: dict) -> pd.DataFrame:
+    write_current = data_dict.get("write_current")
+    read_current = data_dict.get("read_current")
+    enable_write_current = data_dict.get("enable_write_current")
+    enable_read_current = data_dict.get("enable_read_current")
+    cell = data_dict.get("cell")
+    max_heater_current = data_dict["CELLS"][cell].get("max_heater_current", 1.0)
+    write_critical_current = calculate_critical_current(
+        enable_write_current * 1e6, data_dict["CELLS"][cell]
+    )
+    read_critical_current = calculate_critical_current(
+        enable_read_current * 1e6, data_dict["CELLS"][cell]
+    )
+
+    enable_write_power = calculate_heater_power(
+        data_dict["enable_write_current"],
+        data_dict["CELLS"][cell]["resistance_cryo"],
+    )
+    enable_read_power = calculate_heater_power(
+        data_dict["enable_read_current"],
+        data_dict["CELLS"][cell]["resistance_cryo"],
+    )
+    switch_power, switch_impedance, write_power = calculate_power(data_dict)
+
+    param_dict = {
+        "Write Current [uA]": [write_current * 1e6],
+        "Read Current [uA]": [read_current * 1e6],
+        "Enable Write Current [uA]": [enable_write_current * 1e6],
+        "Enable Read Current [uA]": [enable_read_current * 1e6],
+        "Write Critical Current [uA]": [write_critical_current],
+        "Write Enable Fraction": [enable_write_current * 1e6 / max_heater_current],
+        "Read Critical Current [uA]": [read_critical_current],
+        "Read Enable Fraction": [enable_read_current * 1e6 / max_heater_current],
+        "Max Heater Current [uA]": [max_heater_current],
+        "Enable Write Power [uW]": [enable_write_power * 1e6],
+        "Enable Read Power [uW]": [enable_read_power * 1e6],
+        "Switch Power [uW]": [switch_power * 1e6],
+        "Switch Impedance [Ohm]": [switch_impedance],
+        "Write Power [uW]": [write_power * 1e6],
+        "Write / Read Ratio": [data_dict["wr_ratio"]],
+        "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
+        "Write 0 Read 1": [data_dict["write_0_read_1"]],
+        "Write 1 Read 0": [data_dict["write_1_read_0"]],
+        "Bit Error Rate": [data_dict["bit_error_rate"]],
+    }
+    if write_current > 0:
+        param_dict.update(
+            {
+                "Write Bias Fraction": [
+                    write_current / (write_critical_current * 1e-6)
+                ],
+            }
+        )
+
+    if read_current > 0:
+        param_dict.update(
+            {
+                "Read Bias Fraction": [read_current / (read_critical_current * 1e-6)],
+            }
+        )
+    pd.set_option("display.float_format", "{:.3f}".format)
+    param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
+    param_df.columns = ["Value"]
+    return param_df
 
 
 def write_waveforms(b: nTron, write_string: str, chan: int):
@@ -972,14 +1086,6 @@ def plot_ber(ax: Axes, x: np.ndarray, y: np.ndarray, ber: np.ndarray) -> Axes:
     return ax
 
 
-def filter_first(value):
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
-
-
 def plot_header(fig: plt.Figure, data_dict: dict) -> plt.Figure:
     sample_name: str = filter_first(data_dict.get("sample_name"))
     measurement_name: str = filter_first(data_dict.get("measurement_name"))
@@ -1011,9 +1117,8 @@ def plot_header(fig: plt.Figure, data_dict: dict) -> plt.Figure:
             f"Enable Write Phase: {enable_write_phase}, Enable Read Phase: {enable_read_phase}"
         )
     )
-
+    fig.subplots_adjust(top=0.85)
     return fig
-
 
 
 def plot_waveform(ax: Axes, waveform: np.ndarray, **kwargs) -> Axes:
@@ -1163,6 +1268,26 @@ def plot_array(
     return ax
 
 
+def plot_ber_sweep(
+    ax: Axes,
+    data_dict: dict,
+    A: str,
+    B: str,
+    C: str,
+) -> Axes:
+    x = data_dict.get("x")
+    y = data_dict.get("y")
+
+    if len(x) > 1 and len(y) > 1:
+        plot_array(ax, data_dict, C, A, B)
+    elif len(x) == 1:
+        plot_parameter(ax, data_dict, B, C)
+    elif len(y) == 1:
+        plot_parameter(ax, data_dict, A, C)
+
+    return ax
+
+
 def run_bitwise(b: nTron, measurement_settings: dict):
     b.inst.scope.set_trigger_mode("Stop")
     sleep(0.1)
@@ -1200,20 +1325,13 @@ def run_realtime_bert(
 
     b.inst.scope.set_trigger_mode("Stop")
 
-    # This assumes that the measurements are always zero then one.
-    read_zero_top = b.inst.scope.get_wf_data("F5")
-    read_one_top = b.inst.scope.get_wf_data("F6")
+    result_dict = get_results(b, num_meas, threshold)
 
-    read_zero_top = read_zero_top[1][0:num_meas]
-    read_one_top = read_one_top[1][0:num_meas]
+    return result_dict
 
-    read_zero_top = read_zero_top.flatten()
-    read_one_top = read_one_top.flatten()
 
-    if len(read_zero_top) < num_meas:
-        read_zero_top.resize(num_meas, refcheck=False)
-    if len(read_one_top) < num_meas:
-        read_one_top.resize(num_meas, refcheck=False)
+def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
+    read_zero_top, read_one_top = get_trend(b, num_meas)
 
     # READ 1: above threshold (voltage)
     write_0_read_1 = np.array([(read_zero_top > threshold).sum()])
@@ -1236,18 +1354,7 @@ def run_realtime_bert(
     return result_dict
 
 
-def run_sequence_bert(b: nTron, measurement_settings: dict):
-    num_meas = measurement_settings.get("num_meas")
-    threshold = measurement_settings.get("voltage_threshold")
-
-    b.inst.scope.clear_sweeps()
-    sleep(0.1)
-    b.inst.scope.set_trigger_mode("Single")
-    sleep(1)
-    while b.inst.scope.get_trigger_mode() != "Stopped\n":
-        sleep(1)
-        print("sampling...")
-
+def get_trend(b: nTron, num_meas: int) -> Tuple[np.ndarray, np.ndarray]:
     read_zero_top = b.inst.scope.get_wf_data("F5")
     read_one_top = b.inst.scope.get_wf_data("F6")
 
@@ -1262,23 +1369,24 @@ def run_sequence_bert(b: nTron, measurement_settings: dict):
     if len(read_one_top) < num_meas:
         read_one_top.resize(num_meas, refcheck=False)
 
-    # READ 1: above threshold (voltage)
-    write_0_read_1 = (read_zero_top > threshold).sum()
+    return read_zero_top, read_one_top
 
-    # READ 0: below threshold (no voltage)
-    write_1_read_0 = (read_one_top < threshold).sum()
 
-    write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
-    write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
+def run_sequence_bert(b: nTron, measurement_settings: dict):
+    num_meas = measurement_settings.get("num_meas")
+    threshold = measurement_settings.get("voltage_threshold")
 
-    return (
-        read_zero_top,
-        read_one_top,
-        write_0_read_1,
-        write_1_read_0,
-        write_0_read_1_norm,
-        write_1_read_0_norm,
-    )
+    b.inst.scope.clear_sweeps()
+    sleep(0.1)
+    b.inst.scope.set_trigger_mode("Single")
+    sleep(1)
+    while b.inst.scope.get_trigger_mode() != "Stopped\n":
+        sleep(1)
+        print("sampling...")
+
+    result_dict = get_results(b, num_meas, threshold)
+
+    return result_dict
 
 
 def run_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5e3):
@@ -1353,8 +1461,7 @@ def run_bitwise_measurement(b: nTron, measurement_settings: dict):
     bits = run_bitwise(b, measurement_settings)
 
     print(bits)
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
+    set_awg_off(b)
 
     # bit_error_rate = calculate_bit_error_rate(
     #     meas_dict["write_1_read_0"], meas_dict["write_0_read_1"], num_meas
@@ -1401,8 +1508,7 @@ def run_measurement(
     data_dict.update(get_traces(b, scope_samples))
     data_dict.update(measurement_settings)
 
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
+    set_awg_off(b)
 
     if plot:
         fig, axs = plt.subplots(4, 1, figsize=(10, 10))
@@ -1417,7 +1523,6 @@ def run_sweep(
     measurement_settings: dict,
     sweep_parameter_x: str,
     sweep_parameter_y: str,
-    save_traces: bool = False,
     plot_measurement=False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
     division_one: Tuple[float, float] = (9.5, 10),
@@ -1432,103 +1537,20 @@ def run_sweep(
         for y in measurement_settings["y"]:
             measurement_settings.update({sweep_parameter_x: x})
             measurement_settings.update({sweep_parameter_y: y})
-            cell = b.properties["Save File"]["cell"]
-            slope = measurement_settings["CELLS"][cell]["slope"]
-            intercept = measurement_settings["CELLS"][cell]["intercept"]
-            cell_dict = measurement_settings["CELLS"][cell]
-            write_critical_current = calculate_critical_current(
-                measurement_settings["enable_write_current"] * 1e6, cell_dict
-            )
-            read_critical_current = calculate_critical_current(
-                measurement_settings["enable_read_current"] * 1e6, cell_dict
-            )
-            if slope != 0:
-                max_heater_current = -intercept / slope
-            else:
-                max_heater_current = np.nan
 
-            data_dict = run_measurement(
-                b,
-                measurement_settings,
-                plot=plot_measurement,
-                ramp_read=False,
+            data_dict = initialize_data_dict(measurement_settings)
+            data_dict.update(
+                run_measurement(
+                    b,
+                    measurement_settings,
+                    plot=plot_measurement,
+                    ramp_read=False,
+                )
             )
 
             data_dict.update(measurement_settings)
-            enable_write_power = calculate_heater_power(
-                data_dict["enable_write_current"],
-                data_dict["CELLS"][cell]["resistance_cryo"],
-            )
-            enable_read_power = calculate_heater_power(
-                data_dict["enable_read_current"],
-                data_dict["CELLS"][cell]["resistance_cryo"],
-            )
-            param_dict = {
-                "Write Current [uA]": [measurement_settings["write_current"] * 1e6],
-                "Read Current [uA]": [measurement_settings["read_current"] * 1e6],
-                "Enable Write Current [uA]": [
-                    measurement_settings["enable_write_current"] * 1e6
-                ],
-                "Enable Read Current [uA]": [
-                    measurement_settings["enable_read_current"] * 1e6
-                ],
-                "Write Critical Current [uA]": [write_critical_current],
-                "Write Enable Fraction": [
-                    measurement_settings["enable_write_current"]
-                    * 1e6
-                    / max_heater_current
-                ],
-                "Read Critical Current [uA]": [read_critical_current],
-                "Read Enable Fraction": [
-                    measurement_settings["enable_read_current"]
-                    * 1e6
-                    / max_heater_current
-                ],
-                "Max Heater Current [uA]": [max_heater_current],
-                "Write / Read Ratio": [data_dict["wr_ratio"]],
-                "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
-                "Enable Write Power [uW]": [enable_write_power * 1e6],
-                "Enable Read Power [uW]": [enable_read_power * 1e6],
-                "Write 0 Read 1": [data_dict["write_0_read_1"]],
-                "Write 1 Read 0": [data_dict["write_1_read_0"]],
-                "Bit Error Rate": [data_dict["bit_error_rate"]],
-            }
-            if measurement_settings["write_current"] > 0:
-                param_dict.update(
-                    {
-                        "Write Bias Fraction": [
-                            measurement_settings["write_current"]
-                            / (write_critical_current * 1e-6)
-                        ],
-                    }
-                )
 
-            if measurement_settings["read_current"] > 0:
-                param_dict.update(
-                    {
-                        "Read Bias Fraction": [
-                            measurement_settings["read_current"]
-                            / (read_critical_current * 1e-6)
-                        ],
-                    }
-                )
-            pd.set_option("display.float_format", "{:.3f}".format)
-            param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
-            param_df.columns = ["Value"]
-
-            enable_write_power = calculate_heater_power(
-                measurement_settings["enable_write_current"],
-                measurement_settings["CELLS"][cell]["resistance_cryo"],
-            )
-            enable_read_power = calculate_heater_power(
-                measurement_settings["enable_read_current"],
-                measurement_settings["CELLS"][cell]["resistance_cryo"],
-            )
-            if data_dict["bit_error_rate"] < 0.01:
-                switch_power, write_power = calculate_power(data_dict)
-                data_dict.update(
-                    {"switch_power": switch_power, "write_power": write_power}
-                )
+            param_dataframe = create_dataframe(data_dict)
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
@@ -1536,17 +1558,6 @@ def run_sweep(
                 save_dict = update_dict(save_dict, data_dict)
 
     return save_dict
-
-
-def calculate_power(data_dict: dict):
-    write_voltage_high = np.mean(data_dict["read_one_top"][1])
-    write_voltage_low = np.mean(data_dict["read_zero_top"][1])
-    switch_voltage = write_voltage_high - write_voltage_low
-    switch_voltage_preamp = switch_voltage / 10 ** (MITEQ_AMP_GAIN / 20)
-    switch_power = switch_voltage_preamp * data_dict["read_current"]
-    switch_impedance = switch_voltage_preamp / data_dict["read_current"]
-    write_power = switch_impedance * data_dict["write_current"] ** 2
-    return switch_power, write_power
 
 
 def run_sweep_subset(
@@ -1617,23 +1628,3 @@ def run_sweep_subset(
         **save_dict,
     }
     return save_dict
-
-
-def plot_ber_sweep(
-    ax: Axes,
-    data_dict: dict,
-    A: str,
-    B: str,
-    C: str,
-) -> Axes:
-    x = data_dict.get("x")
-    y = data_dict.get("y")
-
-    if len(x) > 1 and len(y) > 1:
-        plot_array(ax, data_dict, C, A, B)
-    elif len(x) == 1:
-        plot_parameter(ax, data_dict, B, C)
-    elif len(y) == 1:
-        plot_parameter(ax, data_dict, A, C)
-
-    return ax

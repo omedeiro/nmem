@@ -168,7 +168,7 @@ if __name__ == "__main__":
     }
 
     NUM_MEAS = 500
-    sweep_length = 3
+    sweep_length = 6
 
     measurement_settings.update(
         {
@@ -239,7 +239,7 @@ if __name__ == "__main__":
         "write_1_read_0_norm",
     )
     nm.plot_header(fig, data_dict)
-    fig.subplots_adjust(top=0.85)
+    plt.savefig(f"{file_path}_ber_sweep.png")
 
     nm.set_awg_off(b)
     nm.write_dict_to_file(file_path, measurement_settings)
