@@ -450,7 +450,7 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     b.inst.awg.set_arb_sample_rate(sample_rate, 2)
 
     b.inst.awg.set_arb_sync()
-    sleep(1)
+    sleep(.1)
 
 
 def create_waveforms(
@@ -727,7 +727,6 @@ def replace_bit(bitmsg: str, i: int, bit: str) -> str:
 
 
 def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
-    # b.inst.scope.set_sample_mode('Realtime')
     sleep(1)
     b.inst.scope.set_trigger_mode("Single")
     sleep(0.1)
@@ -755,7 +754,7 @@ def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
     trace_enab = np.resize(trace_enab, (2, scope_samples))
 
     b.inst.scope.set_trigger_mode("Normal")
-    sleep(1e-2)
+    sleep(0.1)
 
     trace_dict: dict = {
         "trace_chan_in": trace_chan_in,
@@ -828,7 +827,6 @@ def plot_message(ax: plt.Axes, message: str):
             message_dict[bit],
             ha="center",
             va="center",
-            fontsize=14,
         )
 
     return ax
@@ -1047,8 +1045,6 @@ def plot_ber_sweep(
     data_dict: dict,
     parameter_z: str,
 ) -> Axes:
-    sweep_parameter_x: str = data_dict.get("sweep_parameter_x")
-    sweep_parameter_y: str = data_dict.get("sweep_parameter_y")
 
     plot_array(ax, data_dict, parameter_z)
 
