@@ -25,6 +25,7 @@ from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
+from nmem.analysis.analysis import get_fitting_points, plot_fit
 from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
 
 
@@ -329,7 +330,7 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
         current_cell,
     ]
     sample_name = str("-".join(sample_name))
-    date_str = time.strftime("%Y-%m-%d")
+    date_str = time.strftime("%Y%m%d")
     time_str = time.strftime("%Y%m%d%H%M%S")
     measurement_name = f"{date_str}_{measurement_name}"
 
@@ -346,6 +347,8 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
 def initialize_data_dict(measurement_settings: dict) -> dict:
     scope_num_samples = measurement_settings.get("scope_num_samples")
     num_meas = measurement_settings.get("num_meas")
+    sweep_x_len = len(measurement_settings.get("x"))
+    sweep_y_len = len(measurement_settings.get("y"))
 
     data_dict = {
         "trace_chan_in": np.empty((2, scope_num_samples)),
@@ -357,9 +360,13 @@ def initialize_data_dict(measurement_settings: dict) -> dict:
         "write_1_read_0": np.nan,
         "write_0_read_1_norm": np.nan,
         "write_1_read_0_norm": np.nan,
+        "total_switches": np.nan,
+        "total_switches_norm": np.nan,
         "channel_voltage": np.nan,
         "enable_voltage": np.nan,
         "bit_error_rate": np.nan,
+        "sweep_x_len": sweep_x_len,
+        "sweep_y_len": sweep_y_len,
     }
     return data_dict
 
@@ -827,239 +834,7 @@ def plot_message(ax: plt.Axes, message: str):
     return ax
 
 
-def plot_histogram(
-    ax: Axes, y: np.ndarray, label: str, color: str, previous_params: list = [0]
-) -> Tuple[Axes, np.ndarray, np.ndarray]:
-    y = y[y > 300]
 
-    if len(previous_params) == 1:
-        ax, param, full_params = plot_hist_bimodal(ax, y, label=f"{label}", color=color)
-
-    else:
-        # expected = (800, 8, 0.05, 1000, 8, 0.05)
-        ax, param, full_params = plot_hist_bimodal(
-            ax, y, label=f"{label}", color=color, expected=previous_params
-        )
-    return ax, param, full_params
-
-
-def plot_hist_bimodal(
-    ax: Axes,
-    y: np.ndarray,
-    label: str,
-    color: str,
-    expected: tuple = (700, 10, 0.01, 1040, 10, 0.05),
-):
-    binwidth = 4
-    h, edges, _ = ax.hist(
-        y,
-        bins=range(300, 1200 + binwidth, binwidth),
-        label=label,
-        color=color,
-        density=True,
-    )
-    binwidth = np.diff(edges).mean()
-    edges = (edges[1:] + edges[:-1]) / 2  # for len(x)==len(y)
-    x = np.linspace(edges[1], edges[-1], 2000)
-
-    try:
-        full_params, cov = bimodal_fit(edges, h, expected)
-        ax.plot(x, bimodal(x, *full_params), color="k", linewidth=1)
-        lbl = "b"
-        params = get_param_mean(full_params)
-
-    except Exception:
-        try:
-            full_params, cov = bimodal_fit(edges, h, (700, 10, 0.02, 1040, 10, 0.02))
-            lbl = "b"
-            ax.plot(x, bimodal(x, *full_params), color="k", linewidth=1)
-            lbl = "b"
-            params = get_param_mean(full_params)
-
-        except Exception:
-            full_params, cov = bimodal_fit(edges, h, (700, 10, 0.02, 750, 10, 0.02))
-            lbl = "b"
-            params = get_param_mean(full_params)
-
-    if (abs(np.array([full_params[2], full_params[5]])) < 1e-5).any() is True:
-        try:
-            ax.plot(x, bimodal(x, *params), color="k", linewidth=1)
-            full_params = params
-            params = get_param_mean(params)
-            lbl = "b"
-        except Exception:
-            params = norm.fit(y)
-            pdf = norm.pdf(x, *params) * h.sum() * binwidth
-            ax.plot(x, pdf, color="k", linewidth=1)
-            full_params = np.array(
-                [params[0], params[1], expected[2], params[0], params[1], expected[5]]
-            )
-            lbl = "g"
-
-    if (np.array([full_params[1], full_params[4]]) < 3).any() is True:
-        try:
-            params = norm.fit(y)
-            expected = np.array([params[0] - 20, 12, 0.05, params[0] + 20, 10, 0.05])
-            params, cov = bimodal_fit(edges, h, expected)
-            ax.plot(x, bimodal(x, *params), color="k", linewidth=1)
-            lbl = "b"
-            full_params = np.array(
-                [params[0], params[1], expected[2], params[0], params[1], expected[5]]
-            )
-        except Exception:
-            params = norm.fit(y)
-            pdf = norm.pdf(x, *params) * h.sum() * binwidth
-            ax.plot(x, pdf, color="k", linewidth=1)
-            full_params = np.array(
-                [params[0], params[1], expected[2], params[0], params[1], expected[5]]
-            )
-            lbl = "g"
-
-    ax.plot(
-        [params[0] + abs(params[1]), params[0] + abs(params[1])],
-        [0, 0.1],
-        color="k",
-        linewidth=0.5,
-        label=f"{lbl}{abs(params[1]):.2f}",
-    )
-
-    ax.plot(
-        [params[0] - abs(params[1]), params[0] - abs(params[1])],
-        [0, 0.1],
-        color="k",
-        linewidth=0.5,
-    )
-    return ax, params, full_params
-
-
-def plot_waveforms(
-    axs: List[Axes],
-    data_dict: dict,
-    measurement_settings: dict,
-    previous_params: list = [0],
-):
-    i0 = data_dict.get("i0")
-    i1 = data_dict.get("i1")
-
-    trace_chan_in = data_dict.get("trace_chan_in")
-    trace_chan_out = data_dict.get("trace_chan_out")
-    trace_enab = data_dict.get("trace_enab")
-
-    numpoints = int((len(trace_chan_in[1]) - 1) / 2)
-
-    axs[0].plot(
-        trace_chan_out[0] * 1e6,
-        trace_chan_out[1] * 1e3,
-        label="channel",
-        color="C4",
-    )
-    axs[0].legend(loc=4)
-    axs[0].ylim((-700, 700))
-    axs[0].set_ylabel("volage (mV)")
-
-    axs[1].plot(trace_enab[0] * 1e6, trace_enab[1] * 1e3, label="enable", color="C1")
-    axs[1].legend(loc=4)
-    axs[1].set_ylabel("volage (mV)")
-    axs[1].set_xlabel("time (us)")
-    axs[1].set_ylim((0, 300))
-    axs[1].set_xlim((0, 10))
-
-    y0 = i0[i0 > 0] * 1e6
-    y0 = y0[y0 < 1100]
-
-    y1 = i1[i1 > 0] * 1e6
-    y1 = y1[y1 < 1100]
-
-    if len(previous_params) > 1:
-        pparams0 = previous_params[0]
-        pparams1 = previous_params[1]
-
-    else:
-        pparams0 = [0]
-        pparams1 = [0]
-
-    axs[2], param0, full_params0 = plot_histogram(
-        axs[2], y0, label="READ 0", color="C0", previous_params=pparams0
-    )
-    axs[2], param1, full_params1 = plot_histogram(
-        axs[2], y1, label="READ 1", color="C2", previous_params=pparams1
-    )
-    axs[2].xlim([300, 1200])
-    axs[2].ylim([-0.01, 0.08])
-
-    distance = param0[0] - param1[0]
-
-    axs[2].set_xlabel("read current (uA)")
-    axs[2].set_ylabel("pdf")
-    # plt.xlim([150, 350])
-    axs[2].legend(loc=2)
-
-    axs[3] = plot_trend(
-        axs[3], i0[i0 > 0] * 1e6, label="READ 0", color="C0", params=param0
-    )
-    axs[3] = plot_trend(
-        axs[3], i1[i1 > 0] * 1e6, label="READ 1", color="C2", params=param1
-    )
-    axs[3].set_ylim([300, 1200])
-    axs[3].set_ylabel("read current (uA)")
-    axs[3].set_xlabel("sample")
-
-    channel_voltage = measurement_settings.get("channel_voltage")
-    enable_voltage = measurement_settings.get("enable_voltage")
-    read_current = measurement_settings.get("read_current")
-    write_current = measurement_settings.get("write_current")
-    enable_read_current = measurement_settings.get("enable_read_current")
-    enable_write_current = measurement_settings.get("enable_write_current")
-    bitmsg_channel = measurement_settings.get("bitmsg_channel")
-    bitmsg_enable = measurement_settings.get("bitmsg_enable")
-
-    fig = axs[0].get_figure()
-    fig.suptitle(
-        f"Write Current:{write_current*1e6:.1f}uA, Read Current:{read_current*1e6:.0f}uA, "
-        f"\n enable_write_current:{enable_write_current*1e6:.1f}uA, enable_read_current:{enable_read_current*1e6:.1f}uA"
-        f"\n Vcpp:{channel_voltage*1e3:.1f}mV, Vepp:{enable_voltage*1e3:.1f}mV, Channel_message: {bitmsg_channel}, Channel_enable: {bitmsg_enable}"
-    )
-
-    fig.tight_layout()
-
-    saves = 0
-    if saves == 1:
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        plt.savefig(f"figure_{timestamp}.png")
-
-    return axs, distance, full_params0, full_params1
-
-
-# def plot_trend(
-#     ax: Axes,
-#     y: np.ndarray,
-#     label: str,
-#     color: str,
-#     x: np.ndarray = None,
-#     params: tuple = None,
-#     m: float = 1,
-# ):
-#     if x is None:
-#         x = np.arange(0, len(y), 1)
-
-#     ax.plot(x, y, ls="none", marker="o", label=label, color=color)
-#     if len(x) > 1:
-#         if params is not None:
-#             ax.plot(
-#                 [x[0], x[-1]],
-#                 np.tile(params[0] + params[1] * m, 2),
-#                 color=np.subtract(1, mpl.colors.to_rgb(color)),
-#                 linewidth=2,
-#                 label=f"{label}",
-#             )
-#             ax.plot(
-#                 [x[0], x[-1]],
-#                 np.tile(params[0] - params[1] * m, 2),
-#                 color=np.subtract(1, mpl.colors.to_rgb(color)),
-#                 linewidth=2,
-#             )
-
-#     return ax
 
 
 def plot_ber(ax: Axes, x: np.ndarray, y: np.ndarray, ber: np.ndarray) -> Axes:
@@ -1203,87 +978,79 @@ def plot_waveforms_bert(
 
 def plot_parameter(
     ax: Axes,
-    data_dict: dict,
-    x_name: str,
-    y_name: str,
-    xindex: int = 0,
-    yindex: int = 0,
+    x: np.ndarray,
+    y: np.ndarray,
     **kwargs,
 ):
-    x_length: int = data_dict.get("x").shape[1]
-    y_length: int = data_dict.get("y").shape[1]
-
-    x = data_dict.get(x_name)[xindex].flatten().reshape(x_length, y_length)
-    y = data_dict.get(y_name)[yindex].flatten().reshape(x_length, y_length)
-    ax.plot(x.flatten(), y.flatten(), marker="o", label=y_name, **kwargs)
-    ax.set_xlabel(x_name)
-    ax.set_ylabel(y_name)
-    ax.legend()
+    ax.plot(x, y, marker="o", **kwargs)
 
     return ax
 
 
-def plot_array(
-    ax: Axes,
-    data_dict: dict,
-    c_name: str,
-    x_name: str = "x",
-    y_name: str = "y",
-    cmap=None,
-    norm=False,
-):
-    x = data_dict.get("x")[0][0, :] * 1e6
-    y = data_dict.get("y")[0][:, 0] * 1e6
-    c = data_dict.get(c_name)
-
-    ctotal = c.reshape((len(y), len(x)), order="F")
-
+def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
     dx = x[1] - x[0]
     xstart = x[0]
     xstop = x[-1]
     dy = y[1] - y[0]
     ystart = y[0]
     ystop = y[-1]
+    return [
+        (-0.5 * dx + xstart),
+        (0.5 * dx + xstop),
+        (-0.5 * dy + ystart),
+        (0.5 * dy + ystop),
+    ]
+
+
+def plot_array(
+    ax: Axes,
+    data_dict: dict,
+    c_name: str,
+    cmap=None,
+    norm=False,
+):
+    x_name: str = data_dict.get("sweep_parameter_x")
+    y_name: str = data_dict.get("sweep_parameter_y")
+    x, y, zarray = build_array(data_dict, c_name)
+    zextent = get_extent(x, y, zarray)
 
     if not cmap:
         cmap = plt.get_cmap("RdBu", 100).reversed()
 
-    ax.imshow(
-        ctotal,
-        extent=[
-            (-0.5 * dx + xstart),
-            (0.5 * dx + xstop),
-            (-0.5 * dy + ystart),
-            (0.5 * dy + ystop),
-        ],
+    if norm:
+        cmax = 1
+        cmin = 0
+    else:
+        cmax = np.nanmax(zarray)
+        cmin = 0
+
+    ax.matshow(
+        zarray,
+        extent=zextent,
         aspect="auto",
         origin="lower",
         cmap=cmap,
+        vmin=cmin,
+        vmax=cmax,
     )
-    ax.set_xticks(np.linspace(xstart, xstop, len(x)), rotation=45)
-    ax.set_yticks(np.linspace(ystart, ystop, len(y)))
     ax.set_xlabel(x_name)
     ax.set_ylabel(y_name)
 
+    xfit, yfit = get_fitting_points(x, y, zarray)
+    ax.plot(xfit, yfit, "ro")
+    plot_fit(ax, xfit, yfit)
     return ax
 
 
 def plot_ber_sweep(
     ax: Axes,
     data_dict: dict,
-    A: str,
-    B: str,
-    C: str,
+    parameter_z: str,
 ) -> Axes:
-    x = data_dict.get("x")
-    y = data_dict.get("y")
+    sweep_parameter_x: str = data_dict.get("sweep_parameter_x")
+    sweep_parameter_y: str = data_dict.get("sweep_parameter_y")
 
-    if len(x) > 1 and len(y) > 1:
-        plot_array(ax, data_dict, C, A, B)
-    elif len(x) == 1:
-        plot_parameter(ax, data_dict, B, C)
-    elif len(y) == 1:
-        plot_parameter(ax, data_dict, A, C)
+    plot_array(ax, data_dict, parameter_z)
 
     return ax
 
@@ -1317,7 +1084,7 @@ def run_realtime_bert(
     sleep(0.5)
     b.inst.scope.clear_sweeps()
     sleep(0.1)
-    with tqdm(total=num_meas) as pbar:
+    with tqdm(total=num_meas, leave=False) as pbar:
         while b.inst.scope.get_num_sweeps(channel) < num_meas:
             sleep(0.1)
             n = b.inst.scope.get_num_sweeps(channel)
@@ -1342,6 +1109,9 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
     write_0_read_1_norm = write_0_read_1 / (num_meas * 2)
     write_1_read_0_norm = write_1_read_0 / (num_meas * 2)
     bit_error_rate = calculate_bit_error_rate(write_1_read_0, write_0_read_1, num_meas)
+
+    total_switches = write_0_read_1 + (num_meas - write_1_read_0)
+    total_switches_norm = total_switches / (num_meas * 2)
     result_dict = {
         "write_0_read_1": write_0_read_1,
         "write_1_read_0": write_1_read_0,
@@ -1350,6 +1120,8 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
         "bit_error_rate": bit_error_rate,
+        "total_switches": total_switches,
+        "total_switches_norm": total_switches_norm,
     }
     return result_dict
 
@@ -1484,16 +1256,9 @@ def run_measurement(
     b: nTron,
     measurement_settings: dict,
     plot: bool = False,
-    ramp_read: bool = False,
 ) -> dict:
     measurement_settings = calculate_voltage(measurement_settings)
-    bitmsg_channel: str = measurement_settings.get("bitmsg_channel")
-    bitmsg_enable: str = measurement_settings.get("bitmsg_enable")
-    sample_rate: float = measurement_settings.get("sample_rate")
-    channel_voltage: float = measurement_settings.get("channel_voltage")
-    enable_voltage: float = measurement_settings.get("enable_voltage")
     scope_samples: int = int(measurement_settings.get("scope_num_samples"))
-    num_meas: int = measurement_settings.get("num_meas")
 
     ######################################################
 
@@ -1563,58 +1328,40 @@ def run_sweep(
 def run_sweep_subset(
     b: nTron,
     measurement_settings: dict,
-    parameter_x: str,
-    parameter_y: str,
-    save_traces: bool = False,
     plot_measurement: bool = False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
     division_one: Tuple[float, float] = (9.5, 10),
 ) -> dict:
     save_dict = {}
+    sweep_parameter_x: str = measurement_settings.get("sweep_parameter_x")
+    sweep_parameter_y: str = measurement_settings.get("sweep_parameter_y")
+    xarray: np.ndarray = measurement_settings.get("x")
+    yarray: np.ndarray = measurement_settings.get("y")
 
     setup_scope_bert(
         b, measurement_settings, division_zero=division_zero, division_one=division_one
     )
-    for idx, x in enumerate(measurement_settings["x"]):
-        for y in measurement_settings["y"]:
-            measurement_settings[parameter_x] = x
-            measurement_settings[parameter_y] = y
+    for idx, x in enumerate(xarray):
+        for _, y in enumerate(yarray):
+
+            measurement_settings.update({sweep_parameter_x: x})
+            measurement_settings.update({sweep_parameter_y: y})
+
             measurement_settings = calculate_voltage(measurement_settings)
 
+            data_dict = initialize_data_dict(measurement_settings)
             if (
                 y > measurement_settings["y_subset"][idx][0]
                 and y < measurement_settings["y_subset"][idx][-1]
             ):
-                data_dict = run_measurement(
-                    b,
-                    measurement_settings,
-                    save_traces,
-                    plot=plot_measurement,
-                    ramp_read=False,
+                data_dict.update(
+                    run_measurement(
+                        b,
+                        measurement_settings,
+                        plot=plot_measurement,
+                    )
                 )
                 data_dict.update(measurement_settings)
-
-            else:
-                data_dict = {
-                    "trace_chan_in": np.empty(
-                        (2, measurement_settings["scope_num_samples"])
-                    ),
-                    "trace_chan_out": np.empty(
-                        (2, measurement_settings["scope_num_samples"])
-                    ),
-                    "trace_enab": np.empty(
-                        (2, measurement_settings["scope_num_samples"])
-                    ),
-                    "write_0_read_1": np.nan,
-                    "write_1_read_0": np.nan,
-                    "write_0_read_1_norm": np.nan,
-                    "write_1_read_0_norm": np.nan,
-                    "read_zero_top": np.empty((1, measurement_settings["num_meas"])),
-                    "read_one_top": np.empty((1, measurement_settings["num_meas"])),
-                    "channel_voltage": np.nan,
-                    "enable_voltage": np.nan,
-                    "bit_error_rate": np.nan,
-                }
 
             data_dict.update(measurement_settings)
 
@@ -1623,8 +1370,52 @@ def run_sweep_subset(
             else:
                 save_dict = update_dict(save_dict, data_dict)
 
-    final_dict = {
-        **measurement_settings,
-        **save_dict,
-    }
     return save_dict
+
+
+def build_array(
+    data_dict: dict, parameter_z: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
+    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
+    z: np.ndarray = data_dict.get(parameter_z)
+
+    zarray = z.reshape((len(y), len(x)), order="F")
+
+    return x, y, zarray
+
+
+def plot_slice(
+    ax: Axes,
+    data_dict: dict,
+    parameter_z: str,
+) -> Axes:
+    sweep_parameter_x: str = data_dict.get("sweep_parameter_x")
+    sweep_parameter_y: str = data_dict.get("sweep_parameter_y")
+    x, y, zarray = build_array(data_dict, parameter_z)
+    cmap = plt.cm.viridis(np.linspace(0, 1, 200))
+    xfit, yfit = get_fitting_points(x, y, zarray)
+    for i in range(len(x)):
+        plot_parameter(ax, y, zarray[:, i], label=f"{sweep_parameter_x} = {x[i]:.1f}")
+    # if len(x) == 1 and len(y) > 1:
+    #     plot_parameter(ax, data_dict, B, C)
+    # if len(y) == 1 and len(x) > 1:
+    #     plot_parameter(ax, data_dict, A, C)
+    ax.legend()
+    ax.set_xlabel(sweep_parameter_y)
+    ax.set_ylabel(parameter_z)
+    return ax
+
+
+if __name__ == "__main__":
+    import scipy.io as sio
+
+    data_dict = sio.loadmat(
+        r"S:\SC\Measurements\SPG806\D6\A4\20241218_nMem_measure_enable_response\C2\SPG806_20241218_nMem_measure_enable_response_D6_A4_C2_2024-12-18 10-42-02.mat"
+    )
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    plot_slice(ax, data_dict, "total_switches_norm")
+
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    plot_array(ax, data_dict, "total_switches_norm")
