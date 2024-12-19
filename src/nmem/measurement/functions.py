@@ -50,6 +50,24 @@ def bimodal_fit(
     return params, cov
 
 
+def build_array(
+    data_dict: dict, parameter_z: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
+    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
+    z: np.ndarray = data_dict.get(parameter_z)
+
+    zarray = z.reshape((len(y), len(x)), order="F")
+
+    return x, y, zarray
+
+
+def write_dict_to_file(file_path: str, save_dict: dict) -> None:
+    with open(f"{file_path}_measurement_settings.txt", "w") as file:
+        for key, value in save_dict.items():
+            file.write(f"{key}: {value}\n")
+
+
 def read_sweep_scaled(
     measurement_settings: dict,
     current_cell: str,
@@ -148,12 +166,6 @@ def update_dict(dict1: dict, dict2: dict) -> dict:
     return result_dict
 
 
-def write_dict_to_file(file_path: str, save_dict: dict) -> None:
-    with open(f"{file_path}_measurement_settings.txt", "w") as file:
-        for key, value in save_dict.items():
-            file.write(f"{key}: {value}\n")
-
-
 def voltage2current(voltage: float, channel: int, measurement_settings: dict) -> float:
     cell: str = measurement_settings.get("cell")
     heater_dict: dict = measurement_settings.get("HEATERS")[int(cell[1])]
@@ -170,6 +182,138 @@ def voltage2current(voltage: float, channel: int, measurement_settings: dict) ->
             voltage * (spice_heater_voltage / spice_input_voltage) / heater_resistance
         )
     return current
+
+
+def create_dataframe(data_dict: dict) -> pd.DataFrame:
+    write_current = data_dict.get("write_current")
+    read_current = data_dict.get("read_current")
+    enable_write_current = data_dict.get("enable_write_current")
+    enable_read_current = data_dict.get("enable_read_current")
+    cell = data_dict.get("cell")
+    max_heater_current = data_dict["CELLS"][cell].get("max_heater_current", 1.0)
+    write_critical_current = calculate_critical_current(
+        enable_write_current * 1e6, data_dict["CELLS"][cell]
+    )
+    read_critical_current = calculate_critical_current(
+        enable_read_current * 1e6, data_dict["CELLS"][cell]
+    )
+
+    enable_write_power = calculate_heater_power(
+        data_dict["enable_write_current"],
+        data_dict["CELLS"][cell]["resistance_cryo"],
+    )
+    enable_read_power = calculate_heater_power(
+        data_dict["enable_read_current"],
+        data_dict["CELLS"][cell]["resistance_cryo"],
+    )
+    switch_power, switch_impedance, write_power = calculate_power(data_dict)
+
+    param_dict = {
+        "Write Current [uA]": [write_current * 1e6],
+        "Read Current [uA]": [read_current * 1e6],
+        "Enable Write Current [uA]": [enable_write_current * 1e6],
+        "Enable Read Current [uA]": [enable_read_current * 1e6],
+        "Write Critical Current [uA]": [write_critical_current],
+        "Write Enable Fraction": [enable_write_current * 1e6 / max_heater_current],
+        "Read Critical Current [uA]": [read_critical_current],
+        "Read Enable Fraction": [enable_read_current * 1e6 / max_heater_current],
+        "Max Heater Current [uA]": [max_heater_current],
+        "Enable Write Power [uW]": [enable_write_power * 1e6],
+        "Enable Read Power [uW]": [enable_read_power * 1e6],
+        "Switch Power [uW]": [switch_power * 1e6],
+        "Switch Impedance [Ohm]": [switch_impedance],
+        "Write Power [uW]": [write_power * 1e6],
+        "Write / Read Ratio": [data_dict["wr_ratio"]],
+        "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
+        "Write 0 Read 1": [data_dict["write_0_read_1"]],
+        "Write 1 Read 0": [data_dict["write_1_read_0"]],
+        "Bit Error Rate": [data_dict["bit_error_rate"]],
+    }
+    if write_current > 0:
+        param_dict.update(
+            {
+                "Write Bias Fraction": [
+                    write_current / (write_critical_current * 1e-6)
+                ],
+            }
+        )
+
+    if read_current > 0:
+        param_dict.update(
+            {
+                "Read Bias Fraction": [read_current / (read_critical_current * 1e-6)],
+            }
+        )
+    pd.set_option("display.float_format", "{:.3f}".format)
+    param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
+    param_df.columns = ["Value"]
+    return param_df
+
+
+def create_waveforms(
+    num_samples: int = 256,
+    width: int = 30,
+    height: int = 1,
+    phase: int = 0,
+    ramp: bool = False,
+) -> np.ndarray:
+    """
+    Create waveforms with specified parameters.
+
+    Parameters:
+        num_samples (int): The number of samples in the waveform. Default is 256.
+        width (int): The width of the waveform. Default is 30.
+        height (int): The height of the waveform. Default is 1.
+        phase (int): The phase shift of the waveform. Default is 0.
+        ramp (bool): Whether to create a ramp waveform. Default is False.
+
+    Returns:
+        numpy.ndarray: The generated waveform.
+
+    """
+    waveform = np.zeros(num_samples)
+
+    middle = np.floor(num_samples / 2) + phase
+    half = np.floor(width / 2)
+    start = int(middle - half)
+    stop = int(start + width)
+
+    if start < 0:
+        start = 0
+    if stop > num_samples:
+        stop = int(num_samples)
+
+    if ramp:
+        waveform[start:stop] = np.linspace(0, height, int(np.floor(width)))
+    else:
+        waveform[start:stop] = height
+
+    return waveform
+
+
+def create_waveforms_edge(
+    num_samples: int = 256,
+    width: int = 30,
+    height: int = 1,
+    phase: int = 0,
+    edge: int = 5,
+) -> np.ndarray:
+    waveform = np.zeros(num_samples)
+    middle = np.floor(num_samples / 2) + phase
+    half = np.floor(width / 2)
+    start = int(middle - half)
+    stop = int(start + width)
+
+    if start < 0:
+        start = edge
+    if stop > num_samples:
+        stop = int(num_samples) - edge
+
+    waveform[start:stop] = height
+    waveform[start - edge : start] = np.linspace(0, height, edge)
+    waveform[stop : stop + edge] = np.linspace(height, 0, edge)
+
+    return waveform
 
 
 def current2voltage(current: float, channel: int, measurement_settings: dict) -> float:
@@ -281,14 +425,6 @@ def calculate_currents(
         ydiff = np.subtract(y0, y1)
 
     return time_zero, time_one, current_zero, current_one, distance, x, y0, y1
-
-
-def calculate_error_rate(t0: np.ndarray, t1: np.ndarray, num_meas: int):
-    w0r1 = len(np.argwhere(t0 > 0))
-    w1r0 = num_meas - len(np.argwhere(t1 > 0))
-
-    ber = (w0r1 + w1r0) / (2 * num_meas)
-    return ber, w0r1, w1r0
 
 
 def calculate_bit_error_rate(
@@ -450,139 +586,7 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     b.inst.awg.set_arb_sample_rate(sample_rate, 2)
 
     b.inst.awg.set_arb_sync()
-    sleep(.1)
-
-
-def create_waveforms(
-    num_samples: int = 256,
-    width: int = 30,
-    height: int = 1,
-    phase: int = 0,
-    ramp: bool = False,
-) -> np.ndarray:
-    """
-    Create waveforms with specified parameters.
-
-    Parameters:
-        num_samples (int): The number of samples in the waveform. Default is 256.
-        width (int): The width of the waveform. Default is 30.
-        height (int): The height of the waveform. Default is 1.
-        phase (int): The phase shift of the waveform. Default is 0.
-        ramp (bool): Whether to create a ramp waveform. Default is False.
-
-    Returns:
-        numpy.ndarray: The generated waveform.
-
-    """
-    waveform = np.zeros(num_samples)
-
-    middle = np.floor(num_samples / 2) + phase
-    half = np.floor(width / 2)
-    start = int(middle - half)
-    stop = int(start + width)
-
-    if start < 0:
-        start = 0
-    if stop > num_samples:
-        stop = int(num_samples)
-
-    if ramp:
-        waveform[start:stop] = np.linspace(0, height, int(np.floor(width)))
-    else:
-        waveform[start:stop] = height
-
-    return waveform
-
-
-def create_waveforms_edge(
-    num_samples: int = 256,
-    width: int = 30,
-    height: int = 1,
-    phase: int = 0,
-    edge: int = 5,
-) -> np.ndarray:
-    waveform = np.zeros(num_samples)
-    middle = np.floor(num_samples / 2) + phase
-    half = np.floor(width / 2)
-    start = int(middle - half)
-    stop = int(start + width)
-
-    if start < 0:
-        start = edge
-    if stop > num_samples:
-        stop = int(num_samples) - edge
-
-    waveform[start:stop] = height
-    waveform[start - edge : start] = np.linspace(0, height, edge)
-    waveform[stop : stop + edge] = np.linspace(height, 0, edge)
-
-    return waveform
-
-
-def create_dataframe(data_dict: dict) -> pd.DataFrame:
-    write_current = data_dict.get("write_current")
-    read_current = data_dict.get("read_current")
-    enable_write_current = data_dict.get("enable_write_current")
-    enable_read_current = data_dict.get("enable_read_current")
-    cell = data_dict.get("cell")
-    max_heater_current = data_dict["CELLS"][cell].get("max_heater_current", 1.0)
-    write_critical_current = calculate_critical_current(
-        enable_write_current * 1e6, data_dict["CELLS"][cell]
-    )
-    read_critical_current = calculate_critical_current(
-        enable_read_current * 1e6, data_dict["CELLS"][cell]
-    )
-
-    enable_write_power = calculate_heater_power(
-        data_dict["enable_write_current"],
-        data_dict["CELLS"][cell]["resistance_cryo"],
-    )
-    enable_read_power = calculate_heater_power(
-        data_dict["enable_read_current"],
-        data_dict["CELLS"][cell]["resistance_cryo"],
-    )
-    switch_power, switch_impedance, write_power = calculate_power(data_dict)
-
-    param_dict = {
-        "Write Current [uA]": [write_current * 1e6],
-        "Read Current [uA]": [read_current * 1e6],
-        "Enable Write Current [uA]": [enable_write_current * 1e6],
-        "Enable Read Current [uA]": [enable_read_current * 1e6],
-        "Write Critical Current [uA]": [write_critical_current],
-        "Write Enable Fraction": [enable_write_current * 1e6 / max_heater_current],
-        "Read Critical Current [uA]": [read_critical_current],
-        "Read Enable Fraction": [enable_read_current * 1e6 / max_heater_current],
-        "Max Heater Current [uA]": [max_heater_current],
-        "Enable Write Power [uW]": [enable_write_power * 1e6],
-        "Enable Read Power [uW]": [enable_read_power * 1e6],
-        "Switch Power [uW]": [switch_power * 1e6],
-        "Switch Impedance [Ohm]": [switch_impedance],
-        "Write Power [uW]": [write_power * 1e6],
-        "Write / Read Ratio": [data_dict["wr_ratio"]],
-        "Enable Write / Read Ratio": [data_dict["ewr_ratio"]],
-        "Write 0 Read 1": [data_dict["write_0_read_1"]],
-        "Write 1 Read 0": [data_dict["write_1_read_0"]],
-        "Bit Error Rate": [data_dict["bit_error_rate"]],
-    }
-    if write_current > 0:
-        param_dict.update(
-            {
-                "Write Bias Fraction": [
-                    write_current / (write_critical_current * 1e-6)
-                ],
-            }
-        )
-
-    if read_current > 0:
-        param_dict.update(
-            {
-                "Read Bias Fraction": [read_current / (read_critical_current * 1e-6)],
-            }
-        )
-    pd.set_option("display.float_format", "{:.3f}".format)
-    param_df = pd.DataFrame(param_dict.values(), index=param_dict.keys())
-    param_df.columns = ["Value"]
-    return param_df
+    sleep(0.1)
 
 
 def write_waveforms(b: nTron, write_string: str, chan: int):
@@ -611,22 +615,20 @@ def load_waveforms(
 ):
     ww = measurement_settings.get("write_width")
     rw = measurement_settings.get("read_width")
-
-    wr_ratio = measurement_settings.get("write_current") / measurement_settings.get(
-        "read_current"
-    )
-
     eww = measurement_settings.get("enable_write_width")
     erw = measurement_settings.get("enable_read_width")
-
+    write_current = measurement_settings.get("write_current")
+    read_current = measurement_settings.get("read_current")
     ew_phase = measurement_settings.get("enable_write_phase")
     er_phase = measurement_settings.get("enable_read_phase")
-
-    ewr_ratio = measurement_settings.get(
-        "enable_write_current"
-    ) / measurement_settings.get("enable_read_current")
-
+    enable_write_current = measurement_settings.get("enable_write_current")
+    enable_read_current = measurement_settings.get("enable_read_current")
     num_points = measurement_settings.get("num_points", 256)
+
+    wr_ratio = write_current / read_current if read_current != 0 else 0
+    ewr_ratio = (
+        enable_write_current / enable_read_current if enable_read_current != 0 else 0
+    )
 
     if wr_ratio >= 1:
         write_0 = create_waveforms_edge(width=ww, height=-1, edge=1)
@@ -724,6 +726,21 @@ def write_sequence(
 
 def replace_bit(bitmsg: str, i: int, bit: str) -> str:
     return bitmsg[:i] + bit + bitmsg[i + 1 :]
+
+
+def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
+    dx = x[1] - x[0]
+    xstart = x[0]
+    xstop = x[-1]
+    dy = y[1] - y[0]
+    ystart = y[0]
+    ystop = y[-1]
+    return [
+        (-0.5 * dx + xstart),
+        (0.5 * dx + xstop),
+        (-0.5 * dy + ystart),
+        (0.5 * dy + ystop),
+    ]
 
 
 def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
@@ -829,33 +846,6 @@ def plot_message(ax: plt.Axes, message: str):
             va="center",
         )
 
-    return ax
-
-
-
-
-
-def plot_ber(ax: Axes, x: np.ndarray, y: np.ndarray, ber: np.ndarray) -> Axes:
-    dx = x[1] - x[0]
-    xstart = x[0]
-    xstop = x[-1]
-    dy = y[1] - y[0]
-    ystart = y[0]
-    ystop = y[-1]
-
-    cmap = plt.get_cmap("RdBu", 100).reversed()
-    ax.imshow(
-        np.reshape(ber, (len(x), len(y))),
-        extent=[
-            (-0.5 * dx + xstart),
-            (0.5 * dx + xstop),
-            (-0.5 * dy + ystart),
-            (0.5 * dy + ystop),
-        ],
-        aspect="auto",
-        origin="lower",
-        cmap=cmap,
-    )
     return ax
 
 
@@ -985,21 +975,6 @@ def plot_parameter(
     return ax
 
 
-def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
-    dx = x[1] - x[0]
-    xstart = x[0]
-    xstop = x[-1]
-    dy = y[1] - y[0]
-    ystart = y[0]
-    ystop = y[-1]
-    return [
-        (-0.5 * dx + xstart),
-        (0.5 * dx + xstop),
-        (-0.5 * dy + ystart),
-        (0.5 * dy + ystop),
-    ]
-
-
 def plot_array(
     ax: Axes,
     data_dict: dict,
@@ -1037,17 +1012,6 @@ def plot_array(
     xfit, yfit = get_fitting_points(x, y, zarray)
     ax.plot(xfit, yfit, "ro")
     plot_fit(ax, xfit, yfit)
-    return ax
-
-
-def plot_ber_sweep(
-    ax: Axes,
-    data_dict: dict,
-    parameter_z: str,
-) -> Axes:
-
-    plot_array(ax, data_dict, parameter_z)
-
     return ax
 
 
@@ -1140,112 +1104,58 @@ def get_trend(b: nTron, num_meas: int) -> Tuple[np.ndarray, np.ndarray]:
     return read_zero_top, read_one_top
 
 
-def run_sequence_bert(b: nTron, measurement_settings: dict):
-    num_meas = measurement_settings.get("num_meas")
-    threshold = measurement_settings.get("voltage_threshold")
+# def run_sequence_bert(b: nTron, measurement_settings: dict):
+#     num_meas = measurement_settings.get("num_meas")
+#     threshold = measurement_settings.get("voltage_threshold")
 
-    b.inst.scope.clear_sweeps()
-    sleep(0.1)
-    b.inst.scope.set_trigger_mode("Single")
-    sleep(1)
-    while b.inst.scope.get_trigger_mode() != "Stopped\n":
-        sleep(1)
-        print("sampling...")
+#     b.inst.scope.clear_sweeps()
+#     sleep(0.1)
+#     b.inst.scope.set_trigger_mode("Single")
+#     sleep(1)
+#     while b.inst.scope.get_trigger_mode() != "Stopped\n":
+#         sleep(1)
+#         print("sampling...")
 
-    result_dict = get_results(b, num_meas, threshold)
+#     result_dict = get_results(b, num_meas, threshold)
 
-    return result_dict
-
-
-def run_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5e3):
-    b.inst.scope.clear_sweeps()
-    sleep(0.1)
-    b.inst.scope.set_trigger_mode("Single")
-    sleep(1)
-    while b.inst.scope.get_trigger_mode() != "Stopped\n":
-        sleep(1)
-        print("sampling...")
-
-    t1 = b.inst.scope.get_wf_data("F1")
-    t0 = b.inst.scope.get_wf_data("F2")
-
-    save_full_dict = 0
-    if save_full_dict == 1:
-        full_dict = {}
-        for c in ["C1", "C2", "C3", "C4"]:
-            x, y = b.inst.scope.get_wf_data(channel=c)
-            interval = abs(x[0] - x[1])
-            xlist = []
-            ylist = []
-            totdp = np.int64(np.size(x) / num_meas)
-
-            for j in range(num_meas):
-                xx = x[0 + j * totdp : totdp + j * totdp] - totdp * interval * j
-                yy = y[0 + j * totdp : totdp + j * totdp]
-
-                xlist.append(xx[0 : int(num_samples)])
-                ylist.append(yy[0 : int(num_samples)])
-
-            data_dict = {c + "x": xlist, c + "y": ylist}
-            full_dict.update(data_dict)
-    else:
-        full_dict = {}
-
-    return t0, t1, full_dict
+#     return result_dict
 
 
-def run_sequence_v1(b: nTron, num_meas: int = 100):
-    b.inst.scope.set_trigger_mode("Stop")
-    sleep(0.1)
+# def run_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5e3):
+#     b.inst.scope.clear_sweeps()
+#     sleep(0.1)
+#     b.inst.scope.set_trigger_mode("Single")
+#     sleep(1)
+#     while b.inst.scope.get_trigger_mode() != "Stopped\n":
+#         sleep(1)
+#         print("sampling...")
 
-    sleep(0.1)
-    b.inst.scope.set_segments(50)
-    sleep(0.5)
-    b.inst.scope.set_trigger_mode("Normal")
-    sleep(1)
-    b.inst.scope.clear_sweeps()
-    while b.inst.scope.get_num_sweeps() < num_meas:
-        sleep(0.1)
-        n = b.inst.scope.get_num_sweeps()
-        print(f"sampling...{n} / {num_meas}")
+#     t1 = b.inst.scope.get_wf_data("F1")
+#     t0 = b.inst.scope.get_wf_data("F2")
 
-    t0 = b.inst.scope.get_wf_data("F1")
+#     save_full_dict = 0
+#     if save_full_dict == 1:
+#         full_dict = {}
+#         for c in ["C1", "C2", "C3", "C4"]:
+#             x, y = b.inst.scope.get_wf_data(channel=c)
+#             interval = abs(x[0] - x[1])
+#             xlist = []
+#             ylist = []
+#             totdp = np.int64(np.size(x) / num_meas)
 
-    t1 = b.inst.scope.get_wf_data("F2")
+#             for j in range(num_meas):
+#                 xx = x[0 + j * totdp : totdp + j * totdp] - totdp * interval * j
+#                 yy = y[0 + j * totdp : totdp + j * totdp]
 
-    return t0, t1
+#                 xlist.append(xx[0 : int(num_samples)])
+#                 ylist.append(yy[0 : int(num_samples)])
 
+#             data_dict = {c + "x": xlist, c + "y": ylist}
+#             full_dict.update(data_dict)
+#     else:
+#         full_dict = {}
 
-def run_bitwise_measurement(b: nTron, measurement_settings: dict):
-    measurement_settings = calculate_voltage(measurement_settings)
-
-    setup_waveform(b, measurement_settings)
-
-    b.inst.awg.set_output(True, 1)
-    b.inst.awg.set_output(True, 2)
-
-    b.inst.scope.clear_sweeps()
-
-    bits = run_bitwise(b, measurement_settings)
-
-    print(bits)
-    set_awg_off(b)
-
-    # bit_error_rate = calculate_bit_error_rate(
-    #     meas_dict["write_1_read_0"], meas_dict["write_0_read_1"], num_meas
-    # )
-    # DATA_DICT = {
-    #     **meas_dict,
-    #     "trace_chan_in": trace_chan_in,
-    #     "trace_chan_out": trace_chan_out,
-    #     "trace_enab": trace_enab,
-    #     "bit_error_rate": bit_error_rate,
-    # }
-    # print(f"Bit Error Rate: {bit_error_rate:.2e}")
-    # if plot:
-    #     plot_waveforms_bert(DATA_DICT, measurement_settings)
-
-    # return DATA_DICT
+#     return t0, t1, full_dict
 
 
 def run_measurement(
@@ -1337,48 +1247,53 @@ def run_sweep_subset(
     setup_scope_bert(
         b, measurement_settings, division_zero=division_zero, division_one=division_one
     )
-    for idx, x in enumerate(xarray):
-        for _, y in enumerate(yarray):
 
-            measurement_settings.update({sweep_parameter_x: x})
-            measurement_settings.update({sweep_parameter_y: y})
-
-            measurement_settings = calculate_voltage(measurement_settings)
-
-            data_dict = initialize_data_dict(measurement_settings)
-            if (
-                y > measurement_settings["y_subset"][idx][0]
-                and y < measurement_settings["y_subset"][idx][-1]
-            ):
-                data_dict.update(
-                    run_measurement(
-                        b,
-                        measurement_settings,
-                        plot=plot_measurement,
-                    )
+    total_iterations = len(xarray) * len(yarray)
+    with tqdm(total=total_iterations, desc="Running sweep") as pbar:
+        for idx, x in enumerate(xarray):
+            switch_flag = 0
+            for _, y in enumerate(yarray):
+                print(
+                    f"sweeping {sweep_parameter_x} = {x*1e6:.1f}, {sweep_parameter_y} = {y*1e6:.1f}"
                 )
+
+                measurement_settings.update({sweep_parameter_x: x})
+                measurement_settings.update({sweep_parameter_y: y})
+
+                measurement_settings = calculate_voltage(measurement_settings)
+
+                data_dict = initialize_data_dict(measurement_settings)
+                if (
+                    y > measurement_settings["y_subset"][idx][0]
+                    and y < measurement_settings["y_subset"][idx][-1]
+                    and switch_flag < 2
+                ):
+                    data_dict.update(
+                        run_measurement(
+                            b,
+                            measurement_settings,
+                            plot=plot_measurement,
+                        )
+                    )
+                    data_dict.update(measurement_settings)
+
                 data_dict.update(measurement_settings)
 
-            data_dict.update(measurement_settings)
+                if len(save_dict.items()) == 0:
+                    save_dict = data_dict
+                else:
+                    save_dict = update_dict(save_dict, data_dict)
 
-            if len(save_dict.items()) == 0:
-                save_dict = data_dict
-            else:
-                save_dict = update_dict(save_dict, data_dict)
 
+                pbar.update(1)
+                total_switches_norm = data_dict.get("total_switches_norm", 0.0)
+                if isinstance(total_switches_norm, np.ndarray):
+                    total_switches_norm = total_switches_norm[0]
+                if total_switches_norm==1 and switch_flag==0:
+                    switch_flag += 1
+                
+                print(f"total switches: {total_switches_norm:.2f}")
     return save_dict
-
-
-def build_array(
-    data_dict: dict, parameter_z: str
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
-    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
-    z: np.ndarray = data_dict.get(parameter_z)
-
-    zarray = z.reshape((len(y), len(x)), order="F")
-
-    return x, y, zarray
 
 
 def plot_slice(
@@ -1389,14 +1304,10 @@ def plot_slice(
     sweep_parameter_x: str = data_dict.get("sweep_parameter_x")
     sweep_parameter_y: str = data_dict.get("sweep_parameter_y")
     x, y, zarray = build_array(data_dict, parameter_z)
-    cmap = plt.cm.viridis(np.linspace(0, 1, 200))
-    xfit, yfit = get_fitting_points(x, y, zarray)
+
     for i in range(len(x)):
         plot_parameter(ax, y, zarray[:, i], label=f"{sweep_parameter_x} = {x[i]:.1f}")
-    # if len(x) == 1 and len(y) > 1:
-    #     plot_parameter(ax, data_dict, B, C)
-    # if len(y) == 1 and len(x) > 1:
-    #     plot_parameter(ax, data_dict, A, C)
+
     ax.legend()
     ax.set_xlabel(sweep_parameter_y)
     ax.set_ylabel(parameter_z)
