@@ -41,13 +41,12 @@ if __name__ == "__main__":
         "enable_read_phase": -7,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
-        "threshold_bert": 0.33,
-        "threshold_enforced": 0.33,
+        "voltage_threshold": 0.4,
     }
 
     current_settings = CELLS[current_cell]
 
-    NUM_MEAS = 50000
+    NUM_MEAS = 5000
 
     measurement_settings.update(
         {
@@ -68,21 +67,18 @@ if __name__ == "__main__":
         division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
-    save_dict, measurement_settings = nm.run_measurement(
+    data_dict = nm.run_measurement(
         b,
         measurement_settings,
         plot=True,
     )
-    b.properties["measurement_settings"] = measurement_settings
 
     file_path, time_str = qf.save(
-        b.properties, measurement_settings["measurement_name"], save_dict
+        b.properties, data_dict.get("measurement_name"), data_dict
     )
-    save_dict["time_str"] = time_str
-
-    b.inst.awg.set_output(True, 1)
-    b.inst.awg.set_output(True, 2)
-
     nm.write_dict_to_file(file_path, measurement_settings)
+
+    nm.set_awg_off(b)
+
     t2 = time.time()
     print(f"run time {(t2-t1)/60:.2f} minutes")
