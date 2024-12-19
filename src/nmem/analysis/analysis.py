@@ -142,13 +142,13 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
             cell["read_current"] * 1e6 / read_critical_current
         )
         param_dict["enable_write_power"][y, x] = calculate_heater_power(
-            cell["enable_write_current"] * 1e-6, cell["resistance_cryo"]
+            cell["enable_write_current"], cell["resistance_cryo"]
         )
         param_dict["enable_write_current_norm"][y, x] = (
             cell["enable_write_current"] * 1e6 / param_dict["x_intercept"][y, x]
         )
         param_dict["enable_read_power"][y, x] = calculate_heater_power(
-            cell["enable_read_current"] * 1e-6, cell["resistance_cryo"]
+            cell["enable_read_current"], cell["resistance_cryo"]
         )
         param_dict["enable_read_current_norm"][y, x] = (
             cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
