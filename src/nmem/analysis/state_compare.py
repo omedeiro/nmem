@@ -202,9 +202,9 @@ def plot_state_currents_line(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
-    ax.plot(T, i0, label="State 0", color="k", ls="-")
-    ax.plot(T, i1, label="State 1", color="k", ls="--")
-    ax.plot(T, i2, label="State 2", color="k", ls=":")
+    ax.plot(T, i0, label="$I_{{0}}$", color="k", ls="-")
+    ax.plot(T, i1, label="$I_{{1}}$", color="k", ls="--")
+    ax.plot(T, i2, label="$I_{{0,inv}}$", color="k", ls=":")
     return ax
 
 
@@ -264,7 +264,7 @@ def plot_branch_currents(
 
     ax.set_xlabel("hTron")
     # ax.set_ylabel("Current")
-    ax.set_title(f"$r$: {retrap_ratio:.3f}, $w$: {width_ratio:.3f}")
+    ax.set_title(f"$\\alpha$={alpha:.3f}, $r$={retrap_ratio:.3f}, $w$={width_ratio:.3f}")
 
     fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
@@ -323,9 +323,9 @@ if __name__ == "__main__":
 
     data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
 
-    retrap_list = [0.5, 0.5, RETRAP]
-    width_list = [0.5, 0.33, WIDTH]
-    persistent_list = [0.1, 0.1, 0.1]
+    retrap_list = [RETRAP, RETRAP, RETRAP]
+    width_list = [WIDTH, WIDTH, WIDTH]
+    persistent_list = [0.0, 0.1, 0.2]
     temp = np.linspace(0, 10, 1000)
     fig, axs = plt.subplots(2, 3, figsize=(7, 4))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
@@ -382,7 +382,7 @@ if __name__ == "__main__":
         axs[1, i].text(
             0.1,
             0.08,
-            f"$I_{{P}}: {persistent_list[i]:.2f}I_{{c}}$",
+            f"$I_{{P}}= {persistent_list[i]:.2f}I_{{c}}$",
             transform=axs[1, i].transAxes,
         )
     fig.tight_layout()
