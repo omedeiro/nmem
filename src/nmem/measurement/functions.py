@@ -1192,12 +1192,12 @@ def run_measurement(
 def run_sweep(
     b: nTron,
     measurement_settings: dict,
-    sweep_parameter_x: str,
-    sweep_parameter_y: str,
     plot_measurement=False,
     division_zero: Tuple[float, float] = (4.5, 5.5),
     division_one: Tuple[float, float] = (9.5, 10),
 ) -> dict:
+    sweep_parameter_x: str = measurement_settings.get("sweep_parameter_x")
+    sweep_parameter_y: str = measurement_settings.get("sweep_parameter_y")
     save_dict = {}
 
     setup_scope_bert(
@@ -1215,7 +1215,6 @@ def run_sweep(
                     b,
                     measurement_settings,
                     plot=plot_measurement,
-                    ramp_read=False,
                 )
             )
 
@@ -1254,7 +1253,11 @@ def run_sweep_subset(
             switch_flag = 0
             for _, y in enumerate(yarray):
                 print(
-                    f"sweeping {sweep_parameter_x} = {x*1e6:.1f}, {sweep_parameter_y} = {y*1e6:.1f}"
+                    (
+                        f"sweeping {sweep_parameter_x} = {x*1e6:.1f}, "
+                        f"{sweep_parameter_y} = {y*1e6:.1f}, "
+                        f"switch_flag = {switch_flag}"
+                    )
                 )
 
                 measurement_settings.update({sweep_parameter_x: x})
@@ -1284,14 +1287,13 @@ def run_sweep_subset(
                 else:
                     save_dict = update_dict(save_dict, data_dict)
 
-
                 pbar.update(1)
                 total_switches_norm = data_dict.get("total_switches_norm", 0.0)
                 if isinstance(total_switches_norm, np.ndarray):
                     total_switches_norm = total_switches_norm[0]
-                if total_switches_norm==1 and switch_flag==0:
+                if total_switches_norm == 1 and switch_flag < 2:
                     switch_flag += 1
-                
+
                 print(f"total switches: {total_switches_norm:.2f}")
     return save_dict
 
@@ -1305,8 +1307,9 @@ def plot_slice(
     sweep_parameter_y: str = data_dict.get("sweep_parameter_y")
     x, y, zarray = build_array(data_dict, parameter_z)
 
+    cmap = plt.cm.viridis(np.linspace(0, 1, len(x)))
     for i in range(len(x)):
-        plot_parameter(ax, y, zarray[:, i], label=f"{sweep_parameter_x} = {x[i]:.1f}")
+        plot_parameter(ax, y, zarray[:, i], label=f"{sweep_parameter_x} = {x[i]:.1f}", color=cmap[i, :])
 
     ax.legend()
     ax.set_xlabel(sweep_parameter_y)
