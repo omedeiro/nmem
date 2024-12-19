@@ -217,29 +217,23 @@ if __name__ == "__main__":
     )
 
     fig, ax = plt.subplots()
-    nm.plot_ber_sweep(
+    nm.plot_array(
         ax,
         data_dict,
-        parameter_x,
-        parameter_y,
         "bit_error_rate",
     )
-    nm.plot_ber_sweep(
+    nm.plot_array(
         ax,
         data_dict,
-        parameter_x,
-        parameter_y,
         "write_0_read_1_norm",
     )
-    nm.plot_ber_sweep(
+    nm.plot_array(
         ax,
         data_dict,
-        parameter_x,
-        parameter_y,
         "write_1_read_0_norm",
     )
-    nm.plot_header(fig, data_dict)
-    plt.savefig(f"{file_path}_ber_sweep.png")
+    fig = nm.plot_header(fig, data_dict)
+    fig.savefig(f"{file_path}_ber_sweep.png")
 
     nm.set_awg_off(b)
     nm.write_dict_to_file(file_path, measurement_settings)
