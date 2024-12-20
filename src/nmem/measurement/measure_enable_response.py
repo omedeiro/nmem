@@ -53,7 +53,7 @@ if __name__ == "__main__":
         "scope_num_samples": NUM_SAMPLES,
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
-    NUM_MEAS = 500
+    NUM_MEAS = 100
 
     measurement_settings.update(
         {
@@ -66,28 +66,30 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "sweep_parameter_x": "enable_read_current",
             "sweep_parameter_y": "read_current",
-            "voltage_threshold": 0.35,
+            "voltage_threshold": 0.42,
         }
     )
     current_cell = measurement_settings.get("cell")
 
-    measurement_settings["x"] = np.linspace(220e-6, 300e-6, 7)
+    # measurement_settings["x"] = np.linspace(200e-6, 300e-6, 15)
+    # measurement_settings["y"] = np.linspace(00e-6, 1000e-6, 81)
 
-    measurement_settings["y"] = np.linspace(500e-6, 850e-6, 51)
+    measurement_settings["x"] = np.linspace(0e-6, 400e-6, 21)
+    measurement_settings["y"] = np.linspace(0e-6, 1000e-6, 81)
 
     measurement_settings["x_subset"] = measurement_settings.get("x")
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
         CELLS[current_cell]["intercept"] * 1e-6,
-        .05,
+        0.3,
         CELLS[current_cell]["max_critical_current"],
     )
 
     data_dict = nm.run_sweep_subset(
         b,
         measurement_settings,
-        plot_measurement=True,
+        plot_measurement=False,
         division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
@@ -95,15 +97,15 @@ if __name__ == "__main__":
         b.properties, data_dict.get("measurement_name"), data_dict
     )
 
-
     fig, ax = plt.subplots()
-    nm.plot_ber_sweep(
+    nm.plot_array(
         ax,
         data_dict,
         "total_switches_norm",
     )
     cbar = fig.colorbar(ax.get_children()[0], ax=ax)
     cbar.set_label("Total Switches Normalized")
+    nm.plot_header(fig, data_dict)
     plt.savefig(f"{file_path}_fit.png")
     plt.show()
 
@@ -113,7 +115,8 @@ if __name__ == "__main__":
         data_dict,
         "total_switches_norm",
     )
-    plt.show()
+    nm.plot_header(fig, data_dict)
+    plt.savefig(f"{file_path}_slice.png")
 
     nm.set_awg_off(b)
 
