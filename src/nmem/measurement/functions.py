@@ -453,6 +453,33 @@ def calculate_power(data_dict: dict):
     return switch_power, switch_impedance, write_power
 
 
+def calculate_channel_temperature(
+    substrate_temperature: float,
+    critical_temperature: float,
+    enable_current: float,
+    enable_current_suppress: float,
+) -> float:
+    n = 2
+    channel_temperature = (
+        (critical_temperature**4 - substrate_temperature**4)
+        * (enable_current / enable_current_suppress) ** n
+        + substrate_temperature**4
+    ) ** (1 / 4)
+    return channel_temperature
+
+
+def calculate_channel_current_density(
+    channel_temperature: float,
+    critical_temperature: float,
+    substrate_temperature: float,
+    Ic0: float,
+) -> float:
+    jc = Ic0 / (1 - (substrate_temperature / critical_temperature) ** 3) ** 2.1
+
+    jsw = jc * (1 - (channel_temperature / critical_temperature) ** 3) ** 2.1
+    return jsw
+
+
 def initilize_measurement(config: str, measurement_name: str) -> dict:
     b = nTron(config)
 
@@ -774,7 +801,7 @@ def get_filename(data_dict: dict) -> str:
     measurement_name: str = data_dict.get("measurement_name")
     time_str: str = data_dict.get("time_str")
     return (
-        f"{sample_name}_{measurement_name}_{device_name}_{device_type}_{cell_name}.mat"
+        f"{sample_name}_{measurement_name}_{device_name}_{device_type}_{cell_name}"
     )
 
 
@@ -893,7 +920,7 @@ def plot_message(ax: plt.Axes, message: str):
 
 
 def plot_header(fig: plt.Figure, data_dict: dict) -> plt.Figure:
-    sample_name: str = filter_first(data_dict.get("sample_name"))
+    sample_name: str = filter_first(data_dict.get("full_sample_name"))
     measurement_name: str = filter_first(data_dict.get("measurement_name"))
     time_str: str = filter_first(data_dict.get("time_str"))
     channel_voltage: float = filter_first(data_dict.get("channel_voltage"))
@@ -1052,10 +1079,6 @@ def plot_array(
     ax.set_xlabel(x_name)
     ax.set_ylabel(y_name)
     ax.xaxis.set_ticks_position("bottom")
-
-    xfit, yfit = get_fitting_points(x, y, zarray)
-    ax.plot(xfit, yfit, "ro")
-    plot_fit(ax, xfit, yfit)
     return ax
 
 
@@ -1287,6 +1310,9 @@ def run_sweep_subset(
 ) -> dict:
     file_path: str = measurement_settings.get("file_path")
     file_name: str = measurement_settings.get("file_name")
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+
     logging.basicConfig(
         level=logging.INFO,  # Adjust the logging level as needed
         format="%(asctime)s - %(levelname)s - %(message)s",
@@ -1384,28 +1410,61 @@ def plot_slice(
     ax.set_ylabel(parameter_z)
     return ax
 
-def calculate_temperatures(enable_currents:np.ndarray, Ic0: float, Tc: float, slope: float, intercept: float) -> Tuple[np.ndarray, np.ndarray]:
-    T = Tc * (1-(slope*enable_currents+intercept)/Ic0)**(2/3)
-    return T
+
+# def calculate_temperatures(
+#     enable_currents: np.ndarray, Ic0: float, Tc: float, slope: float, intercept: float
+# ) -> Tuple[np.ndarray, np.ndarray]:
+#     T = Tc * (1 - (slope * enable_currents + intercept) / Ic0) ** (0.66)
+#     return T
+
+def plot_fitting(ax: Axes, x: np.ndarray, y: np.ndarray, zarray) -> Axes:
+    xfit, yfit = get_fitting_points(x, y, zarray)
+
+    Ic0 = yfit[0]
+
+    xfit = np.where(yfit < 0.95 * Ic0, xfit, np.nan)
+    yfit = np.where(yfit < 0.95 * Ic0, yfit, np.nan)
+
+    # REmove nans
+    xfit = xfit[~np.isnan(xfit)]
+    yfit = yfit[~np.isnan(yfit)]
+
+    ax.plot(xfit, yfit, "ro")
+    plot_fit(ax, xfit, yfit)
+
+    return ax
+
+def get_plateau_index(x: np.ndarray, y: np.ndarray) -> int:
+    plateau_height = 0.98 * y[0]
+    plateau_index = np.where(y < plateau_height)[0][0]
+    
+    return plateau_index
+
 
 if __name__ == "__main__":
     import scipy.io as sio
 
     data_dict = sio.loadmat(
-        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C2\SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 11-41-40.mat"
+        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C2\SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-44-29.mat"
     )
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    plot_slice(ax, data_dict, "total_switches_norm")
+    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    # plot_slice(ax, data_dict, "total_switches_norm")
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    plot_array(ax, data_dict, "total_switches_norm")
+    ax = plot_array(ax, data_dict, "total_switches_norm")
 
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
     xfit, yfit = get_fitting_points(x, y, ztotal)
+    ax = plot_fitting(ax, x, y, ztotal)
+    ax.set_aspect("equal")
+    plateau_index = get_plateau_index(xfit, yfit)
+    print(f"Plateau index: {plateau_index}")
+    Ic0 = np.mean(yfit[:plateau_index])
+    ax.hlines(Ic0*1.01, 0, xfit[plateau_index], color="g", label="Ic0")
+    ax.plot(xfit[plateau_index], yfit[plateau_index], color="g", marker="o", markersize=20)
 
+    # temps = calculate_temperatures(xfit, 900, 12.3, -2.7, 1350)
 
-    temps = calculate_temperatures(xfit, 900, 12.3, -2.7, 1350)
-
-    fig, ax = plt.subplots()
-    ax.plot(xfit, temps)
+    # fig, ax = plt.subplots()
+    # ax.plot(xfit, temps)
