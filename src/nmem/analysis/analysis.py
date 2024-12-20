@@ -718,13 +718,14 @@ def plot_cell_param(ax: Axes, param: str) -> Axes:
 def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
+    x_intercept = -z[1] / z[0]   
     ax.scatter(xfit, yfit, color="#08519C")
-    xplot = np.linspace(min(xfit), max(xfit), 10)
+    xplot = np.linspace(0, x_intercept, 10)
     ax.plot(xplot, p(xplot), "--", color="#740F15")
     ax.text(
         0.1,
         0.1,
-        f"{p[1]:.3f}x + {p[0]:.3f}",
+        f"{p[1]:.3f}x + {p[0]:.3f}\n$x_{{int}}$ = {x_intercept:.2f}",
         fontsize=12,
         color="red",
         backgroundcolor="white",
