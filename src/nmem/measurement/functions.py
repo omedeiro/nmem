@@ -4,13 +4,13 @@ Created on Fri Nov  3 14:01:31 2023
 
 @author: omedeiro
 """
-
+import os
 import collections.abc
 import time
 from datetime import datetime
 from time import sleep
 from typing import List, Tuple
-
+import qnnpy.functions.functions as qf
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -19,13 +19,14 @@ from qnnpy.functions.ntron import nTron
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
-
+import logging
+from logging import Logger
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
     htron_critical_current,
 )
-from nmem.analysis.analysis import get_fitting_points, plot_fit
+from nmem.analysis.analysis import get_fitting_points, plot_fit, construct_array
 from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
 
 
@@ -459,24 +460,28 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
     b.inst.awg.write("SOURce2:FUNCtion:ARBitrary:FILTer OFF")
 
     current_cell = b.properties["Save File"]["cell"]
-    sample_name = [
+    full_sample_name = [
         b.sample_name,
         b.device_type,
         b.device_name,
         current_cell,
     ]
-    sample_name = str("-".join(sample_name))
+    full_sample_name = str("-".join(full_sample_name))
     date_str = time.strftime("%Y%m%d")
     time_str = time.strftime("%Y%m%d%H%M%S")
     measurement_name = f"{date_str}_{measurement_name}"
-
     measurement_settings = {
         "measurement_name": measurement_name,
-        "sample_name": sample_name,
+        "full_sample_name": full_sample_name,
+        "sample_name": b.sample_name,
         "cell": current_cell,
+        "device_name": b.device_name,
+        "device_type": b.device_type,
         "time_str": time_str,
     }
-
+    file_path = get_filepath(measurement_settings)
+    file_name = get_filename(measurement_settings)
+    measurement_settings.update({"file_path": file_path, "file_name": file_name})
     return measurement_settings, b
 
 
@@ -743,6 +748,36 @@ def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
     ]
 
 
+def get_filepath(data_dict: dict) -> str:
+    root_dir = "S:\SC\Measurements"
+    sample_name: str = data_dict.get("sample_name")
+    device_type: str = data_dict.get("device_type")
+    device_name: str = data_dict.get("device_name")
+    measurement_name: str = data_dict.get("measurement_name")
+    cell_name: str = data_dict.get("cell")
+    file_path = os.path.join(
+        root_dir,
+        sample_name,
+        device_type,
+        device_name,
+        measurement_name,
+        cell_name,
+    )
+    return file_path
+
+
+def get_filename(data_dict: dict) -> str:
+    sample_name: str = data_dict.get("sample_name")
+    device_type: str = data_dict.get("device_type")
+    device_name: str = data_dict.get("device_name")
+    cell_name: str = data_dict.get("cell")
+    measurement_name: str = data_dict.get("measurement_name")
+    time_str: str = data_dict.get("time_str")
+    return (
+        f"{sample_name}_{measurement_name}_{device_name}_{device_type}_{cell_name}.mat"
+    )
+
+
 def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
     sleep(1)
     b.inst.scope.set_trigger_mode("Single")
@@ -826,6 +861,14 @@ def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
         sleep(1e-4)
 
     return data0, data1, data2, data3
+
+
+def get_threshold(b: nTron, logger: Logger = None) -> float:
+    threshold = b.inst.scope.get_parameter_value("P9")
+
+    if logger:
+        logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
+    return threshold
 
 
 def plot_message(ax: plt.Axes, message: str):
@@ -1008,6 +1051,7 @@ def plot_array(
     )
     ax.set_xlabel(x_name)
     ax.set_ylabel(y_name)
+    ax.xaxis.set_ticks_position("bottom")
 
     xfit, yfit = get_fitting_points(x, y, zarray)
     ax.plot(xfit, yfit, "ro")
@@ -1035,10 +1079,13 @@ def run_bitwise(b: nTron, measurement_settings: dict):
 
 
 def run_realtime_bert(
-    b: nTron, measurement_settings: dict, channel: str = "F5"
+    b: nTron,
+    measurement_settings: dict,
+    channel: str = "F5",
+    logger: Logger = None,
 ) -> dict:
     num_meas = measurement_settings.get("num_meas")
-    threshold = measurement_settings.get("voltage_threshold")
+    # threshold = measurement_settings.get("voltage_threshold")
 
     b.inst.scope.set_trigger_mode("Normal")
     sleep(0.5)
@@ -1051,7 +1098,7 @@ def run_realtime_bert(
             pbar.update(n - pbar.n)
 
     b.inst.scope.set_trigger_mode("Stop")
-
+    threshold = get_threshold(b, logger=logger)
     result_dict = get_results(b, num_meas, threshold)
 
     return result_dict
@@ -1162,6 +1209,7 @@ def run_measurement(
     b: nTron,
     measurement_settings: dict,
     plot: bool = False,
+    logger: Logger = None,
 ) -> dict:
     measurement_settings = calculate_voltage(measurement_settings)
     scope_samples: int = int(measurement_settings.get("scope_num_samples"))
@@ -1175,7 +1223,7 @@ def run_measurement(
 
     b.inst.scope.clear_sweeps()
 
-    data_dict = run_realtime_bert(b, measurement_settings)
+    data_dict = run_realtime_bert(b, measurement_settings, logger=logger)
     data_dict.update(get_traces(b, scope_samples))
     data_dict.update(measurement_settings)
 
@@ -1237,6 +1285,16 @@ def run_sweep_subset(
     division_zero: Tuple[float, float] = (4.5, 5.5),
     division_one: Tuple[float, float] = (9.5, 10),
 ) -> dict:
+    file_path: str = measurement_settings.get("file_path")
+    file_name: str = measurement_settings.get("file_name")
+    logging.basicConfig(
+        level=logging.INFO,  # Adjust the logging level as needed
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        filename=f"{file_path}/{file_name}.log",
+        filemode="a",
+    )
+    logger = logging.getLogger("measurement_log")
+
     save_dict = {}
     sweep_parameter_x: str = measurement_settings.get("sweep_parameter_x")
     sweep_parameter_y: str = measurement_settings.get("sweep_parameter_y")
@@ -1252,13 +1310,6 @@ def run_sweep_subset(
         for idx, x in enumerate(xarray):
             switch_flag = 0
             for _, y in enumerate(yarray):
-                print(
-                    (
-                        f"sweeping {sweep_parameter_x} = {x*1e6:.1f}, "
-                        f"{sweep_parameter_y} = {y*1e6:.1f}, "
-                        f"switch_flag = {switch_flag}"
-                    )
-                )
 
                 measurement_settings.update({sweep_parameter_x: x})
                 measurement_settings.update({sweep_parameter_y: y})
@@ -1266,6 +1317,16 @@ def run_sweep_subset(
                 measurement_settings = calculate_voltage(measurement_settings)
 
                 data_dict = initialize_data_dict(measurement_settings)
+
+                logger.info(
+                    "Sweeping %s = %.1f µm, %s = %.1f µm, switch_flag = %d",
+                    sweep_parameter_x,
+                    x * 1e6,
+                    sweep_parameter_y,
+                    y * 1e6,
+                    switch_flag,
+                )
+
                 if (
                     y > measurement_settings["y_subset"][idx][0]
                     and y < measurement_settings["y_subset"][idx][-1]
@@ -1276,6 +1337,7 @@ def run_sweep_subset(
                             b,
                             measurement_settings,
                             plot=plot_measurement,
+                            logger=logger,
                         )
                     )
                     data_dict.update(measurement_settings)
@@ -1294,7 +1356,7 @@ def run_sweep_subset(
                 if total_switches_norm == 1 and switch_flag < 2:
                     switch_flag += 1
 
-                print(f"total switches: {total_switches_norm:.2f}")
+                logging.info("Total switches: %.2f", total_switches_norm)
     return save_dict
 
 
@@ -1309,19 +1371,28 @@ def plot_slice(
 
     cmap = plt.cm.viridis(np.linspace(0, 1, len(x)))
     for i in range(len(x)):
-        plot_parameter(ax, y, zarray[:, i], label=f"{sweep_parameter_x} = {x[i]:.1f}", color=cmap[i, :])
+        plot_parameter(
+            ax,
+            y,
+            zarray[:, i],
+            label=f"{sweep_parameter_x} = {x[i]:.1f}",
+            color=cmap[i, :],
+        )
 
     ax.legend()
     ax.set_xlabel(sweep_parameter_y)
     ax.set_ylabel(parameter_z)
     return ax
 
+def calculate_temperatures(enable_currents:np.ndarray, Ic0: float, Tc: float, slope: float, intercept: float) -> Tuple[np.ndarray, np.ndarray]:
+    T = Tc * (1-(slope*enable_currents+intercept)/Ic0)**(2/3)
+    return T
 
 if __name__ == "__main__":
     import scipy.io as sio
 
     data_dict = sio.loadmat(
-        r"S:\SC\Measurements\SPG806\D6\A4\20241218_nMem_measure_enable_response\C2\SPG806_20241218_nMem_measure_enable_response_D6_A4_C2_2024-12-18 10-42-02.mat"
+        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C2\SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 11-41-40.mat"
     )
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
@@ -1329,3 +1400,12 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     plot_array(ax, data_dict, "total_switches_norm")
+
+    x, y, ztotal = build_array(data_dict, "total_switches_norm")
+    xfit, yfit = get_fitting_points(x, y, ztotal)
+
+
+    temps = calculate_temperatures(xfit, 900, 12.3, -2.7, 1350)
+
+    fig, ax = plt.subplots()
+    ax.plot(xfit, temps)
