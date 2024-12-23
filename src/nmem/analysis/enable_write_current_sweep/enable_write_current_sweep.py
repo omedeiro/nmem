@@ -7,6 +7,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 4]
