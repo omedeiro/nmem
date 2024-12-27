@@ -729,7 +729,7 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
         fontsize=12,
         color="red",
         backgroundcolor="white",
-        transform=plt.gca().transAxes,
+        transform=ax.transAxes,
     )
 
     return ax
