@@ -110,20 +110,20 @@ if __name__ == "__main__":
         axs["enable_write"],
         xloc_list,
         yloc_list,
-        param_dict["enable_write_power"]*1e6,
+        param_dict["enable_write_current"],
         log=False,
         cmap=plt.get_cmap("Reds"),
     )
-    axs["enable_write"].set_title("Enable Write Power (uW)")
+    axs["enable_write"].set_title("Enable Write Current (uA)")
     plot_array(
         axs["enable_read"],
         xloc_list,
         yloc_list,
-        param_dict["enable_read_power"]*1e6,
+        param_dict["enable_read_current"],
         log=False,
         cmap=plt.get_cmap("Blues"),
     )
-    axs["enable_read"].set_title("Enable Read Power (uW)")
+    axs["enable_read"].set_title("Enable Read Current (uA)")
 
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.patch.set_visible(False)
