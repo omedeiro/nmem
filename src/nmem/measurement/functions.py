@@ -800,9 +800,7 @@ def get_filename(data_dict: dict) -> str:
     cell_name: str = data_dict.get("cell")
     measurement_name: str = data_dict.get("measurement_name")
     time_str: str = data_dict.get("time_str")
-    return (
-        f"{sample_name}_{measurement_name}_{device_name}_{device_type}_{cell_name}"
-    )
+    return f"{sample_name}_{measurement_name}_{device_name}_{device_type}_{cell_name}"
 
 
 def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
@@ -1411,33 +1409,39 @@ def plot_slice(
     return ax
 
 
+def filter_plateau(
+    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    xfit = np.where(yfit < plateau_height, xfit, np.nan)
+    yfit = np.where(yfit < plateau_height, yfit, np.nan)
+
+    # REmove nans
+    xfit = xfit[~np.isnan(xfit)]
+    yfit = yfit[~np.isnan(yfit)]
+    print(f"length x = {len(xfit)}")
+    return xfit, yfit
+
+
 # def calculate_temperatures(
 #     enable_currents: np.ndarray, Ic0: float, Tc: float, slope: float, intercept: float
 # ) -> Tuple[np.ndarray, np.ndarray]:
 #     T = Tc * (1 - (slope * enable_currents + intercept) / Ic0) ** (0.66)
 #     return T
 
-def plot_fitting(ax: Axes, x: np.ndarray, y: np.ndarray, zarray) -> Axes:
-    xfit, yfit = get_fitting_points(x, y, zarray)
 
-    Ic0 = yfit[0]
+def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes:
 
-    xfit = np.where(yfit < 0.95 * Ic0, xfit, np.nan)
-    yfit = np.where(yfit < 0.95 * Ic0, yfit, np.nan)
-
-    # REmove nans
-    xfit = xfit[~np.isnan(xfit)]
-    yfit = yfit[~np.isnan(yfit)]
-
-    ax.plot(xfit, yfit, "ro")
+    # xfit, yfit = filter_plateau(xfit, yfit, 0.98 * Ic0)
+    ax.plot(xfit, yfit, **kwargs)
     plot_fit(ax, xfit, yfit)
 
     return ax
 
+
 def get_plateau_index(x: np.ndarray, y: np.ndarray) -> int:
     plateau_height = 0.98 * y[0]
     plateau_index = np.where(y < plateau_height)[0][0]
-    
+
     return plateau_index
 
 
@@ -1447,24 +1451,17 @@ if __name__ == "__main__":
     data_dict = sio.loadmat(
         r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C2\SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-44-29.mat"
     )
+    data_dict2 = sio.loadmat(
+        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C3\SPG806_20241220_nMem_measure_enable_response_D6_A4_C3_2024-12-20 17-28-57.mat"
+    )
 
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    # plot_slice(ax, data_dict, "total_switches_norm")
+    split_idx = 10
 
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-    ax = plot_array(ax, data_dict, "total_switches_norm")
 
-    x, y, ztotal = build_array(data_dict, "total_switches_norm")
+    fig, axs = plt.subplots(1, 2, figsize=(10, 10))
+    x, y, ztotal = build_array(data_dict2, "total_switches_norm")
     xfit, yfit = get_fitting_points(x, y, ztotal)
-    ax = plot_fitting(ax, x, y, ztotal)
-    ax.set_aspect("equal")
-    plateau_index = get_plateau_index(xfit, yfit)
-    print(f"Plateau index: {plateau_index}")
-    Ic0 = np.mean(yfit[:plateau_index])
-    ax.hlines(Ic0*1.01, 0, xfit[plateau_index], color="g", label="Ic0")
-    ax.plot(xfit[plateau_index], yfit[plateau_index], color="g", marker="o", markersize=20)
-
-    # temps = calculate_temperatures(xfit, 900, 12.3, -2.7, 1350)
-
-    # fig, ax = plt.subplots()
-    # ax.plot(xfit, temps)
+    plot_fitting(
+        axs[0], xfit[split_idx + 1 :], yfit[split_idx + 1 :], label="C3", linestyle="-"
+    )
+    plot_fitting(axs[1], xfit[:split_idx], yfit[:split_idx], label="C3", linestyle="-")
