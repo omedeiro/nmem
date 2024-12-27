@@ -154,10 +154,10 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 155e-6,
-        "read_current": 750e-6,
-        "enable_write_current": 410e-6,
-        "enable_read_current": 180e-6,
+        "write_current": 36e-6,
+        "read_current": 736e-6,
+        "enable_write_current": 567e-6,
+        "enable_read_current": 144e-6,
     }
 
     scope_settings = {
@@ -179,41 +179,26 @@ if __name__ == "__main__":
             "HEATERS": HEATERS,
             "num_meas": NUM_MEAS,
             "spice_device_current": SPICE_DEVICE_CURRENT,
-            "x": 0,
-            "y": 0,
+            "sweep_parameter_x": "enable_write_current",
+            "sweep_parameter_y": "read_current",
+            "voltage_threshold": 0.42,
         }
     )
-    parameter_x = "enable_write_current"
-    measurement_settings["x"] = np.array([measurement_settings[parameter_x]])
-    # measurement_settings["x"] = np.linspace(00e-6, 550e-6, sweep_length)
-    measurement_settings[parameter_x] = measurement_settings["x"][0]
+    current_cell = measurement_settings.get("cell")
 
-    read_sweep = True
-    if read_sweep:
-        parameter_y = "read_current"
-        # measurement_settings["y"] = np.array([current_settings["read_current"]])
-        measurement_settings["y"] = np.linspace(750e-6, 850e-6, sweep_length)
-        measurement_settings[parameter_y] = measurement_settings["y"][0]
-    else:
-        parameter_y = "write_current"
-        # measurement_settings["y"] = np.array([current_settings["write_current"]])
-        measurement_settings["y"] = np.linspace(100e-6, 200e-6, sweep_length)
-        measurement_settings[parameter_y] = measurement_settings["y"][0]
+    measurement_settings["x"] = np.linspace(400e-6, 567e-6, 6)
+
+    measurement_settings["y"] = np.linspace(700e-6, 800e-6, 21)
 
     data_dict = nm.run_sweep(
         b,
         measurement_settings,
-        parameter_x,
-        parameter_y,
         plot_measurement=True,
         division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
-
-    b.properties["measurement_settings"] = measurement_settings
-
     file_path, time_str = qf.save(
-        b.properties, measurement_settings["measurement_name"], data_dict
+        b.properties, data_dict.get("measurement_name"), data_dict
     )
 
     fig, ax = plt.subplots()
@@ -222,11 +207,15 @@ if __name__ == "__main__":
         data_dict,
         "bit_error_rate",
     )
+    fig, ax = plt.subplots()
+
     nm.plot_array(
         ax,
         data_dict,
         "write_0_read_1_norm",
     )
+    fig, ax = plt.subplots()
+
     nm.plot_array(
         ax,
         data_dict,
