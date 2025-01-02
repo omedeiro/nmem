@@ -142,13 +142,13 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
             cell["read_current"] * 1e6 / read_critical_current
         )
         param_dict["enable_write_power"][y, x] = calculate_heater_power(
-            cell["enable_write_current"] * 1e-6, cell["resistance_cryo"]
+            cell["enable_write_current"], cell["resistance_cryo"]
         )
         param_dict["enable_write_current_norm"][y, x] = (
             cell["enable_write_current"] * 1e6 / param_dict["x_intercept"][y, x]
         )
         param_dict["enable_read_power"][y, x] = calculate_heater_power(
-            cell["enable_read_current"] * 1e-6, cell["resistance_cryo"]
+            cell["enable_read_current"], cell["resistance_cryo"]
         )
         param_dict["enable_read_current_norm"][y, x] = (
             cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
@@ -718,17 +718,18 @@ def plot_cell_param(ax: Axes, param: str) -> Axes:
 def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
+    x_intercept = -z[1] / z[0]   
     ax.scatter(xfit, yfit, color="#08519C")
-    xplot = np.linspace(min(xfit), max(xfit), 10)
+    xplot = np.linspace(0, x_intercept, 10)
     ax.plot(xplot, p(xplot), "--", color="#740F15")
     ax.text(
         0.1,
         0.1,
-        f"{p[1]:.3f}x + {p[0]:.3f}",
+        f"{p[1]:.3f}x + {p[0]:.3f}\n$x_{{int}}$ = {x_intercept:.2f}",
         fontsize=12,
         color="red",
         backgroundcolor="white",
-        transform=plt.gca().transAxes,
+        transform=ax.transAxes,
     )
 
     return ax

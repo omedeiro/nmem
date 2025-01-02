@@ -87,7 +87,7 @@ if __name__ == "__main__":
         log=True,
         cmap=plt.get_cmap("Blues").reversed(),
     )
-
+    axs["bit_error"].set_title("Bit Error Rate")
     plot_array(
         axs["write"],
         xloc_list,
@@ -96,6 +96,7 @@ if __name__ == "__main__":
         log=False,
         cmap=plt.get_cmap("Reds"),
     )
+    axs["write"].set_title("Write Current (uA)")
     plot_array(
         axs["read"],
         xloc_list,
@@ -104,6 +105,7 @@ if __name__ == "__main__":
         log=False,
         cmap=plt.get_cmap("Blues"),
     )
+    axs["read"].set_title("Read Current (uA)")
     plot_array(
         axs["enable_write"],
         xloc_list,
@@ -112,6 +114,7 @@ if __name__ == "__main__":
         log=False,
         cmap=plt.get_cmap("Reds"),
     )
+    axs["enable_write"].set_title("Enable Write Current (uA)")
     plot_array(
         axs["enable_read"],
         xloc_list,
@@ -120,6 +123,8 @@ if __name__ == "__main__":
         log=False,
         cmap=plt.get_cmap("Blues"),
     )
+    axs["enable_read"].set_title("Enable Read Current (uA)")
 
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.patch.set_visible(False)
-    # plt.savefig("main_analysis.pdf", bbox_inches="tight")
+    plt.savefig("main_analysis.pdf", bbox_inches="tight")

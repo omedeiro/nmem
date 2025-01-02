@@ -5,7 +5,6 @@ import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
 import nmem.measurement.functions as nm
-from nmem.analysis.analysis import find_peak
 from nmem.measurement.cells import (
     CELLS,
     CONFIG,
@@ -47,6 +46,7 @@ if __name__ == "__main__":
         "enable_write_current": 0e-6,
         "enable_read_current": 150e-6,
     }
+
     scope_settings = {
         "scope_horizontal_scale": HORIZONTAL_SCALE[FREQ_IDX],
         "scope_timespan": HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS,
@@ -64,61 +64,64 @@ if __name__ == "__main__":
             "HEATERS": HEATERS,
             "num_meas": NUM_MEAS,
             "spice_device_current": SPICE_DEVICE_CURRENT,
-            "x": 0,
-            "y": 0,
-            "threshold_bert": 0.2,
+            "sweep_parameter_x": "enable_read_current",
+            "sweep_parameter_y": "read_current",
+            "voltage_threshold": 0.42,
         }
     )
-    current_cell = measurement_settings["cell"]
+    current_cell = measurement_settings.get("cell")
 
-    parameter_x = "enable_read_current"
-    # measurement_settings["x"] = np.array([250e-6])
-    measurement_settings["x"] = np.linspace(200e-6, 300e-6, 8)
-    parameter_y = "read_current"
-    # measurement_settings["y"] = [400e-6]
-    measurement_settings["y"] = np.linspace(300e-6, 600e-6, 61)
-    print(f"Slope: {CELLS[current_cell]['slope']}")
-    print(f"Intercept: {CELLS[current_cell]['intercept']}")
-    measurement_settings["x_subset"] = measurement_settings["x"]
+    # measurement_settings["x"] = np.linspace(200e-6, 300e-6, 15)
+    # measurement_settings["y"] = np.linspace(00e-6, 1000e-6, 81)
+
+    measurement_settings["x"] = np.linspace(0e-6, 400e-6, 21)
+    measurement_settings["y"] = np.linspace(0e-6, 1000e-6, 81)
+
+    measurement_settings["x_subset"] = measurement_settings.get("x")
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
         CELLS[current_cell]["intercept"] * 1e-6,
-        0.1,
+        0.3,
         CELLS[current_cell]["max_critical_current"],
     )
 
-    save_dict = nm.run_sweep_subset(
+    data_dict = nm.run_sweep_subset(
         b,
         measurement_settings,
-        parameter_x,
-        parameter_y,
         plot_measurement=False,
-        division_zero=(1.9, 2.5),
+        division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
-    save_dict["trace_chan_in"] = save_dict["trace_chan_in"][:, :, 1]
-    save_dict["trace_chan_out"] = save_dict["trace_chan_out"][:, :, 1]
-    save_dict["trace_enab"] = save_dict["trace_enab"][:, :, 1]
     file_path, time_str = qf.save(
-        b.properties, measurement_settings["measurement_name"], save_dict
-    )
-    save_dict["time_str"] = time_str
-    nm.plot_ber_sweep(
-        save_dict,
-        measurement_settings,
-        file_path,
-        parameter_x,
-        parameter_y,
-        "bit_error_rate",
+        b.properties, data_dict.get("measurement_name"), data_dict
     )
 
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
-
-    nm.write_dict_to_file(file_path, save_dict)
-    t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
-
-    find_peak(save_dict)
+    fig, ax = plt.subplots()
+    nm.plot_array(
+        ax,
+        data_dict,
+        "total_switches_norm",
+    )
+    cbar = fig.colorbar(ax.get_children()[0], ax=ax)
+    cbar.set_label("Total Switches Normalized")
+    nm.plot_header(fig, data_dict)
     plt.savefig(f"{file_path}_fit.png")
+    plt.show()
+
+    fig, ax = plt.subplots()
+    nm.plot_slice(
+        ax,
+        data_dict,
+        "total_switches_norm",
+    )
+    nm.plot_header(fig, data_dict)
+    plt.savefig(f"{file_path}_slice.png")
+
+    nm.set_awg_off(b)
+
+    nm.write_dict_to_file(file_path, data_dict)
+    print(f"run time {(time.time()-t1)/60:.2f} minutes")
+
+    # find_peak(data_dict)
+    # plt.savefig(f"{file_path}_fit.png")
