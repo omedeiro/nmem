@@ -143,7 +143,7 @@ def plot_min_max_currents(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
     return ax
 
 
-def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
+def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict, **kwargs) -> Axes:
     Tc = data_dict.get("critical_temp")
     retrap_ratio = data_dict.get("retrap_ratio")
     width_ratio = data_dict.get("width_ratio")
@@ -161,11 +161,12 @@ def plot_nominal_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
         color="blue",
         alpha=0.1,
         hatch="////",
+        **kwargs,
     )
     return ax
 
 
-def plot_inverting_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
+def plot_inverting_region(ax: Axes, T: np.ndarray, data_dict: dict, **kwargs) -> Axes:
     Tc = data_dict.get("critical_temp")
     retrap_ratio = data_dict.get("retrap_ratio")
     width_ratio = data_dict.get("width_ratio")
@@ -183,6 +184,7 @@ def plot_inverting_region(ax: Axes, T: np.ndarray, data_dict: dict) -> Axes:
         color="red",
         alpha=0.1,
         hatch="\\\\\\\\",
+        **kwargs,
     )
     return ax
 
@@ -191,6 +193,7 @@ def plot_state_currents_line(
     ax: Axes,
     T: np.ndarray,
     data_dict: dict,
+    states=[0, 1, 2],
 ):
     alpha = data_dict.get("alpha")
     retrap_ratio = data_dict.get("retrap_ratio")
@@ -202,9 +205,15 @@ def plot_state_currents_line(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
-    ax.plot(T, i0, label="$I_{{0}}$", color="k", ls="-")
-    ax.plot(T, i1, label="$I_{{1}}$", color="k", ls="--")
-    ax.plot(T, i2, label="$I_{{0,inv}}$", color="k", ls=":")
+    for i in states:
+        if i == 0:
+            ax.plot(T, i0, label="$I_{{0}}$", color="k", ls="-")
+        elif i == 1:
+            ax.plot(T, i1, label="$I_{{1}}$", color="k", ls="--")
+        elif i == 2:
+            ax.plot(T, i2, label="$I_{{0,inv}}$", color="k", ls=":")
+        elif i == 3:
+            ax.plot(T, i3, label="$I_{{P}}$", color="k", ls="-.")
     return ax
 
 
@@ -264,14 +273,22 @@ def plot_branch_currents(
 
     ax.set_xlabel("hTron")
     # ax.set_ylabel("Current")
-    ax.set_title(f"$\\alpha$={alpha:.3f}, $r$={retrap_ratio:.3f}, $w$={width_ratio:.3f}")
+    ax.set_title(
+        f"$\\alpha$={alpha:.3f}, $r$={retrap_ratio:.3f}, $w$={width_ratio:.3f}"
+    )
 
     fa, fb, fc, fB = calculate_state_currents(
         T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
     )
 
     ax.fill_between(
-        ax.get_xlim(), fa, np.max([fb, fc]), color="blue", alpha=0.1, hatch="////"
+        ax.get_xlim(),
+        fa,
+        np.max([fb, fc]),
+        color="blue",
+        alpha=0.1,
+        hatch="////",
+        label="Nominal Region",
     )
     ax.fill_between(
         ax.get_xlim(),
@@ -280,6 +297,7 @@ def plot_branch_currents(
         color="red",
         alpha=0.1,
         hatch="\\\\\\\\",
+        label="Inverting Region",
     )
 
     return ax
@@ -318,7 +336,7 @@ if __name__ == "__main__":
     ALPHA = 0.563
     RETRAP = 0.573
     WIDTH = 1 / 2.13
-    PERSISTENT = 30 / 860
+    PERSISTENT = 0.1
     CRITICAL_TEMP = 12.3
 
     data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
@@ -327,7 +345,7 @@ if __name__ == "__main__":
     width_list = [WIDTH, WIDTH, WIDTH]
     persistent_list = [0.0, 0.1, 0.2]
     temp = np.linspace(0, 10, 1000)
-    fig, axs = plt.subplots(2, 3, figsize=(7, 4))
+    fig, axs = plt.subplots(3, 3, figsize=(7, 7))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
         data_dict["retrap_ratio"] = retrap_ratio
         data_dict["width_ratio"] = width_ratio
@@ -340,8 +358,13 @@ if __name__ == "__main__":
         plot_state_currents(axs[0, i], temp[0], data_dict)
 
         # plot_max_current(axs[0, i], temp[0], data_dict)
-        axs[0, i].text(0.1, 0.9, "$T=0$", transform=axs[0, i].transAxes)
-
+        axs[0, i].text(0.1, 0.1, "$T=0$", transform=axs[0, i].transAxes)
+        axs[0, i].text(
+            0.1,
+            0.05,
+            f"$I_{{P}}= {persistent_list[i]:.2f}I_{{c}}$",
+            transform=axs[0, i].transAxes,
+        )
         label_list = [
             "$I_{{c, H_R}}(T)$",
             "$I_{{r, H_R}}(T)$",
@@ -376,8 +399,8 @@ if __name__ == "__main__":
         plot_state_currents_line(axs[1, i], temp, data_dict)
         # plot_min_max_currents(axs[1, i], temp, data_dict)
         axs[1, 0].legend(loc="upper left", ncol=3, fontsize=5)
-        plot_nominal_region(axs[1, i], temp, data_dict)
-        plot_inverting_region(axs[1, i], temp, data_dict)
+        plot_nominal_region(axs[1, i], temp, data_dict, label="Nominal Region")
+        plot_inverting_region(axs[1, i], temp, data_dict, label="Inverting Region")
         axs[1, i].set_ylim(0, 1.5)
         axs[1, i].text(
             0.1,
@@ -385,5 +408,104 @@ if __name__ == "__main__":
             f"$I_{{P}}= {persistent_list[i]:.2f}I_{{c}}$",
             transform=axs[1, i].transAxes,
         )
+
+    plot_state_currents_line(axs[2, 0], temp, data_dict, states=[0])
+    axs[2, 0].fill_between(
+        temp,
+        np.zeros_like(temp),
+        calculate_critical_current(temp, CRITICAL_TEMP, 1),
+        color="red",
+        alpha=0.1,
+        label="$I_{{C, H_R}}$",
+    )
+    axs[2, 0].fill_between(
+        temp,
+        calculate_critical_current(temp, CRITICAL_TEMP, 1),
+        calculate_critical_current(temp, CRITICAL_TEMP, 1)
+        + calculate_retrapping_current(temp, CRITICAL_TEMP, width_ratio * retrap_ratio),
+        color="blue",
+        alpha=0.1,
+        label="$I_{{R, H_L}}$",
+    )
+    axs[2, 0].set_ylim(0, 1.5)
+    axs[2, 0].legend(loc="upper left", ncol=3, fontsize=5)
+    axs[2, 0].text(
+        0.1,
+        0.08,
+        f"$I_{{P}}= {persistent_list[0]:.2f}I_{{c}}$",
+        transform=axs[2, 0].transAxes,
+    )
+
+    plot_state_currents_line(axs[2, 1], temp, data_dict, states=[1])
+    axs[2, 1].fill_between(
+        temp,
+        np.zeros_like(temp),
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio),
+        color="blue",
+        alpha=0.1,
+        label="$I_{{C, H_L}}$",
+    )
+    axs[2, 1].fill_between(
+        temp,
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio),
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio)
+        + calculate_retrapping_current(temp, CRITICAL_TEMP, retrap_ratio),
+        color="red",
+        alpha=0.1,
+        label="$I_{{R, H_R}}$",
+    )
+    axs[2, 1].fill_between(
+        temp,
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio)
+        + calculate_retrapping_current(temp, CRITICAL_TEMP, retrap_ratio),
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio)
+        + calculate_retrapping_current(temp, CRITICAL_TEMP, retrap_ratio)
+        - PERSISTENT * 2,
+        color="purple",
+        alpha=0.1,
+        label="$2*I_{{P}}$",
+    )
+    axs[2, 1].set_ylim(0, 1.5)
+    axs[2, 1].legend(loc="upper left", ncol=3, fontsize=5)
+    axs[2, 1].text(
+        0.1,
+        0.08,
+        f"$I_{{P}}= {persistent_list[1]:.2f}I_{{c}}$",
+        transform=axs[2, 1].transAxes
+    )
+
+    plot_state_currents_line(axs[2, 2], temp, data_dict, states=[2])
+    axs[2, 2].fill_between(
+        temp,
+        np.zeros_like(temp),
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio),
+        color="blue",
+        alpha=0.1,
+        label="$I_{{C, H_L}}$",
+    )
+    axs[2, 2].fill_between(
+        temp,
+        calculate_critical_current(temp, CRITICAL_TEMP, width_ratio),
+        (calculate_critical_current(temp, CRITICAL_TEMP, width_ratio) - 2 * PERSISTENT)
+        / ALPHA,
+        color="purple",
+        alpha=0.1,
+        label="$(I_{{C, H_L}}-2*I_P)/\\alpha$",
+    )
+    axs[2, 2].set_ylim(0, 1.5)
+    axs[2, 2].legend(loc="upper left", ncol=3, fontsize=5)
+    axs[2, 2].text(
+        0.1,
+        0.08,
+        f"$I_{{P}}= {persistent_list[2]:.2f}I_{{c}}$",
+        transform=axs[2, 2].transAxes,
+    )
+    for i in range(3):
+        axs[2,i].set_xlabel("Temperature (K)")
+        axs[2,i].set_ylabel("Critical Current (au)")
+    axs[0, 0].legend(loc="upper left", ncol=3, fontsize=5)
+
+
     fig.tight_layout()
+
     plt.savefig("state_currents.pdf", bbox_inches="tight")
