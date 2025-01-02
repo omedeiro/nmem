@@ -58,8 +58,10 @@ def build_array(
     y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
     z: np.ndarray = data_dict.get(parameter_z)
 
-    zarray = z.reshape((len(y), len(x)), order="F")
+    xlength = data_dict.get("sweep_x_len")
+    ylength = data_dict.get("sweep_y_len")
 
+    zarray = z.reshape((xlength, ylength), order="F")
     return x, y, zarray
 
 
@@ -157,7 +159,7 @@ def update_dict(dict1: dict, dict2: dict) -> dict:
     result_dict = {}
 
     for key in dict1.keys():
-        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
+        if isinstance(dict1[key], np.ndarray):
             try:
                 result_dict[key] = np.dstack([dict1[key], dict2[key]])
             except Exception:
@@ -1398,7 +1400,7 @@ def plot_slice(
         plot_parameter(
             ax,
             y,
-            zarray[:, i],
+            zarray[i, :],
             label=f"{sweep_parameter_x} = {x[i]:.1f}",
             color=cmap[i, :],
         )
@@ -1460,19 +1462,17 @@ if __name__ == "__main__":
     xfit, yfit = get_fitting_points(x, y, ztotal)
     axs.plot(xfit, yfit, label="C2", linestyle="-")
     split_idx = 7
-    plot_fitting(axs, xfit[split_idx + 1:], yfit[split_idx + 1:])
+    plot_fitting(axs, xfit[split_idx + 1 :], yfit[split_idx + 1 :])
 
     split_idx = 10
     x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
-
-
 
     xfit, yfit = get_fitting_points(x2, y2, ztotal2)
     axs.plot(xfit, yfit, label="C3", linestyle="-")
     axs.legend()
     axs.set_ylim([0, 1000])
     axs.set_xlim([0, 500])
-    
+
     fig, axs = plt.subplots(1, 2, figsize=(10, 10))
 
     plot_fitting(
