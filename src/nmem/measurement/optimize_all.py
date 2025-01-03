@@ -31,15 +31,17 @@ from nmem.measurement.cells import (
 from nmem.measurement.optimize import (
     objective,
     optimize_bias,
+    optimize_read,
+    optimize_write,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
 
 def run_optimize(meas_dict: dict):
-    meas_dict, space, x0, b = optimize_bias(meas_dict)
+    # meas_dict, space, x0, b = optimize_bias(meas_dict)
     # meas_dict, space, x0, b = optimize_read(meas_dict)
-    # meas_dict, space, x0, b = optimize_write(meas_dict)
+    meas_dict, space, x0, b = optimize_write(meas_dict)
 
     opt_result = gp_minimize(
         partial(objective, meas_dict=meas_dict, space=space, b=b),
@@ -106,19 +108,17 @@ if __name__ == "__main__":
         **fast_write,
         **fast_read,
         **two_nulls,
-        "threshold_bert": 0.35,
-        "threshold_enforced": 0.35,
     }
 
     current_settings = {
-        "write_current": 191e-6,
-        "read_current": 755e-6,
-        "enable_write_current": 432e-6,
-        "enable_read_current": 120e-6,
+        "write_current": 131e-6,
+        "read_current": 645e-6,
+        "enable_write_current": 514e-6,
+        "enable_read_current": 263e-6,
     }
 
-    NUM_MEAS = 1000
-    NUM_CALLS = 200
+    NUM_MEAS = 200
+    NUM_CALLS = 100
     measurement_settings = {
         **waveform_settings,
         **current_settings,
@@ -129,7 +129,9 @@ if __name__ == "__main__":
         "spice_device_current": SPICE_DEVICE_CURRENT,
         "x": 0,
         "y": 0,
-        # "threshold_bert": 0.2,
+        "sweep_parameter_x": "enable_read_current",
+        "sweep_parameter_y": "read_current",
+        "voltage_threshold": 0.42,
     }
 
     meas_dict, b = nm.initilize_measurement(CONFIG, "nMem_optimize")
@@ -155,8 +157,7 @@ if __name__ == "__main__":
     print(f"optimal parameters: {opt_res.x}")
     print(f"optimal function value: {opt_res.fun}")
 
-    b.inst.awg.set_output(False, 1)
-    b.inst.awg.set_output(False, 2)
+    nm.set_awg_off(b)
 
     nm.write_dict_to_file(file_path, measurement_settings)
     nm.write_dict_to_file(file_path, dict(opt_res))

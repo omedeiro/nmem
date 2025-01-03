@@ -57,8 +57,9 @@ if __name__ == "__main__":
             "HEATERS": HEATERS,
             "num_meas": NUM_MEAS,
             "spice_device_current": SPICE_DEVICE_CURRENT,
-            "x": 0,
-            "y": 0,
+            "sweep_parameter_x": "enable_read_current",
+            "sweep_parameter_y": "read_current",
+            "voltage_threshold": 0.42,
         }
     )
     nm.setup_scope_bert(

@@ -61,8 +61,11 @@ def build_array(
     y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
     z: np.ndarray = data_dict.get(parameter_z)
 
-    zarray = z.reshape((len(y), len(x)), order="F")
+    xlength: int = filter_first(data_dict.get("sweep_x_len"))
+    ylength: int = filter_first(data_dict.get("sweep_y_len"))
 
+    # X, Y reversed in reshape
+    zarray = z.reshape((ylength, xlength), order="F")
     return x, y, zarray
 
 
@@ -87,6 +90,65 @@ def construct_currents(
         bias_current_array[heater_currents == heater_current] = bias_currents
 
     return bias_current_array
+
+
+def filter_first(value):
+    if isinstance(value, collections.abc.Iterable) and not isinstance(
+        value, (str, bytes)
+    ):
+        return np.asarray(value).flatten()[0]
+    return value
+
+
+def get_param_mean(param: np.ndarray) -> np.ndarray:
+    if round(param[2], 5) > round(param[5], 5):
+        prm = param[0:2]
+    else:
+        prm = param[3:5]
+    return prm
+
+
+def reject_outliers(data: np.ndarray, m: float = 2.0) -> Tuple[np.ndarray, np.ndarray]:
+    ind = abs(data - np.mean(data)) < m * np.std(data)
+    if len(ind[ind is False]) < 50:
+        data = data[ind]
+        print(f"Samples rejected {len(ind[ind is False])}")
+        rejectInd = np.invert(ind)
+    else:
+        rejectInd = None
+    return data, rejectInd
+
+
+def update_dict(dict1: dict, dict2: dict) -> dict:
+    result_dict = {}
+
+    for key in dict1.keys():
+        if isinstance(dict1[key], np.ndarray):
+            try:
+                result_dict[key] = np.dstack([dict1[key], dict2[key]])
+            except Exception:
+                print(f"could not stack {key}")
+        else:
+            result_dict[key] = dict1[key]
+    return result_dict
+
+
+def voltage2current(voltage: float, channel: int, measurement_settings: dict) -> float:
+    cell: str = measurement_settings.get("cell")
+    heater_dict: dict = measurement_settings.get("HEATERS")[int(cell[1])]
+    spice_device_current: float = measurement_settings.get("spice_device_current")
+    spice_input_voltage: float = heater_dict.get("spice_input_voltage")
+    spice_heater_voltage: float = heater_dict.get("spice_heater_voltage")
+    heater_resistance: float = measurement_settings["CELLS"][cell].get(
+        "resistance_cryo"
+    )
+    if channel == 1:
+        current = spice_device_current * (voltage / spice_input_voltage)
+    if channel == 2:
+        current = (
+            voltage * (spice_heater_voltage / spice_input_voltage) / heater_resistance
+        )
+    return current
 
 
 def create_dataframe(data_dict: dict) -> pd.DataFrame:
@@ -430,20 +492,31 @@ def filter_first(value):
         return np.asarray(value).flatten()[0]
     return value
 
+def initialize_data_dict(measurement_settings: dict) -> dict:
+    scope_num_samples: int = measurement_settings.get("scope_num_samples")
+    num_meas: int = measurement_settings.get("num_meas")
+    sweep_x_len: int = len(measurement_settings.get("x"))
+    sweep_y_len: int = len(measurement_settings.get("y"))
 
-def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
-    dx = x[1] - x[0]
-    xstart = x[0]
-    xstop = x[-1]
-    dy = y[1] - y[0]
-    ystart = y[0]
-    ystop = y[-1]
-    return [
-        (-0.5 * dx + xstart),
-        (0.5 * dx + xstop),
-        (-0.5 * dy + ystart),
-        (0.5 * dy + ystop),
-    ]
+    data_dict = {
+        "trace_chan_in": np.empty((2, scope_num_samples)),
+        "trace_chan_out": np.empty((2, scope_num_samples)),
+        "trace_enab": np.empty((2, scope_num_samples)),
+        "read_zero_top": np.empty((1, num_meas)),
+        "read_one_top": np.empty((1, num_meas)),
+        "write_0_read_1": np.array([np.nan]),
+        "write_1_read_0": np.array([np.nan]),
+        "write_0_read_1_norm": np.array([np.nan]),
+        "write_1_read_0_norm": np.array([np.nan]),
+        "total_switches": np.array([np.nan]),
+        "total_switches_norm": np.array([np.nan]),
+        "channel_voltage": np.array([np.nan]),
+        "enable_voltage": np.array([np.nan]),
+        "bit_error_rate": np.array([np.nan]),
+        "sweep_x_len": sweep_x_len,
+        "sweep_y_len": sweep_y_len,
+    }
+    return data_dict
 
 
 def get_filepath(data_dict: dict) -> str:
@@ -621,6 +694,20 @@ def get_threshold(b: nTron, logger: Logger = None) -> float:
         logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return threshold
 
+def get_extent(x: np.ndarray, y: np.ndarray) -> List[float]:
+    dx = x[1] - x[0]
+    xstart = x[0]
+    xstop = x[-1]
+    dy = y[1] - y[0]
+    ystart = y[0]
+    ystop = y[-1]
+    return [
+        (-0.5 * dx + xstart),
+        (0.5 * dx + xstop),
+        (-0.5 * dy + ystart),
+        (0.5 * dy + ystop),
+    ]
+
 
 def get_plateau_index(x: np.ndarray, y: np.ndarray) -> int:
     plateau_height = 0.98 * y[0]
@@ -761,6 +848,10 @@ def load_waveforms(
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {enabr}")
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
+    if threshold < 0.1:
+        threshold = 0.25
+    if logger:
+        logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return
 
 
@@ -921,7 +1012,7 @@ def plot_array(
     x_name: str = data_dict.get("sweep_parameter_x")
     y_name: str = data_dict.get("sweep_parameter_y")
     x, y, zarray = build_array(data_dict, c_name)
-    zextent = get_extent(x, y, zarray)
+    zextent = get_extent(x, y)
 
     if not cmap:
         cmap = plt.get_cmap("RdBu", 100).reversed()
