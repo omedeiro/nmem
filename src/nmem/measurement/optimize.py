@@ -55,7 +55,7 @@ def optimize_bias(meas_dict: dict):
         Real(50, 600, name="enable_read_current"),
     ]
 
-    x0 = [191, 755, 432, 120]
+    x0 = [131, 640, 514, 262]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -125,11 +125,11 @@ def optimize_read(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(50, 300, name="enable_read_current"),
+        Real(50, 400, name="enable_read_current"),
         Real(500, 850, name="read_current"),
     ]
 
-    x0 = [170, 750]
+    x0 = [262, 640]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -153,10 +153,10 @@ def optimize_write(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(200, 600, name="enable_write_current"),
+        Real(50, 500, name="enable_write_current"),
         Real(10, 300, name="write_current"),
     ]
-    x0 = [460, 180]
+    x0 = [460, 131]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -220,10 +220,10 @@ def objective(x, meas_dict: dict, space: list, b: nTron):
     print(x)
     meas_dict = update_space(meas_dict, space, x)
 
-    data_dict, measurement_settings = nm.run_measurement(b, meas_dict, plot=False)
+    data_dict = nm.run_measurement(b, meas_dict, plot=False)
 
     qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
     return objective_primary(
-        data_dict["write_1_read_0"], data_dict["write_0_read_1"], meas_dict["num_meas"]
+        data_dict["write_1_read_0"], data_dict["write_0_read_1"], data_dict["num_meas"]
     )
