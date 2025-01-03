@@ -718,7 +718,7 @@ def plot_cell_param(ax: Axes, param: str) -> Axes:
 def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
-    x_intercept = -z[1] / z[0]   
+    x_intercept = -z[1] / z[0]
     ax.scatter(xfit, yfit, color="#08519C")
     xplot = np.linspace(0, x_intercept, 10)
     ax.plot(xplot, p(xplot), "--", color="#740F15")
