@@ -332,19 +332,7 @@ def create_data_dict(
     }
 
 
-if __name__ == "__main__":
-    ALPHA = 0.563
-    RETRAP = 0.573
-    WIDTH = 1 / 2.13
-    PERSISTENT = 0.1
-    CRITICAL_TEMP = 12.3
-
-    data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
-
-    retrap_list = [RETRAP, RETRAP, RETRAP]
-    width_list = [WIDTH, WIDTH, WIDTH]
-    persistent_list = [0.0, 0.1, 0.2]
-    temp = np.linspace(0, 10, 1000)
+def create_state_current_plot():
     fig, axs = plt.subplots(3, 3, figsize=(7, 7))
     for i, (retrap_ratio, width_ratio) in enumerate(zip(retrap_list, width_list)):
         data_dict["retrap_ratio"] = retrap_ratio
@@ -509,3 +497,20 @@ if __name__ == "__main__":
     fig.tight_layout()
 
     plt.savefig("state_currents.pdf", bbox_inches="tight")
+    plt.show()
+
+if __name__ == "__main__":
+    ALPHA = 0.563
+    RETRAP = 0.573
+    WIDTH = 1 / 2.13
+    PERSISTENT = 0.1
+    CRITICAL_TEMP = 12.3
+
+    data_dict = create_data_dict(ALPHA, RETRAP, WIDTH, PERSISTENT, CRITICAL_TEMP)
+
+    retrap_list = [RETRAP, RETRAP, RETRAP]
+    width_list = [WIDTH, WIDTH, WIDTH]
+    persistent_list = [0.0, 0.1, 0.2]
+    temp = np.linspace(0, 10, 1000)
+
+    create_state_current_plot()
