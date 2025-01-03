@@ -116,7 +116,7 @@ CELLS = {
         "enable_read_current": 158.803e-6,
         # "slope": -4.286,
         # "intercept": 1501.429,
-        "slope": -2.4, # two sig figs
+        "slope": -2.4,  # two sig figs
         "intercept": 1300,
         "resistance": 509.6,
         "resistance_cryo": 281.8,

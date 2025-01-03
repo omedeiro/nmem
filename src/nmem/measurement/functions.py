@@ -4,29 +4,32 @@ Created on Fri Nov  3 14:01:31 2023
 
 @author: omedeiro
 """
-import os
+
 import collections.abc
+import logging
+import os
 import time
 from datetime import datetime
+from logging import Logger
 from time import sleep
 from typing import List, Tuple
-import qnnpy.functions.functions as qf
+
 import numpy as np
 import pandas as pd
+import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from qnnpy.functions.ntron import nTron
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
-import logging
-from logging import Logger
+
+from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
     htron_critical_current,
 )
-from nmem.analysis.analysis import get_fitting_points, plot_fit, construct_array
 from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
 
 
@@ -971,7 +974,6 @@ def plot_slice(
 
 
 def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes:
-
     # xfit, yfit = filter_plateau(xfit, yfit, 0.98 * Ic0)
     ax.plot(xfit, yfit, **kwargs)
     plot_fit(ax, xfit, yfit)
@@ -1132,7 +1134,6 @@ def run_sweep_subset(
         for idx, x in enumerate(xarray):
             switch_flag = 0
             for _, y in enumerate(yarray):
-
                 measurement_settings.update({sweep_parameter_x: x})
                 measurement_settings.update({sweep_parameter_y: y})
 

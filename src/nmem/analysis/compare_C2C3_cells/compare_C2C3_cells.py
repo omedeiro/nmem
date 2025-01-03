@@ -1,11 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.io as sio
 from nmem.analysis.analysis import get_fitting_points
 from nmem.measurement.functions import build_array, plot_fitting
-import scipy.io as sio
-
-
-
 
 if __name__ == "__main__":
     data_dict = sio.loadmat(
@@ -22,12 +19,10 @@ if __name__ == "__main__":
     xfit, yfit = get_fitting_points(x, y, ztotal)
     axs.plot(xfit, yfit, label="C2", linestyle="-")
     split_idx = 7
-    plot_fitting(axs, xfit[split_idx + 1:], yfit[split_idx + 1:])
+    plot_fitting(axs, xfit[split_idx + 1 :], yfit[split_idx + 1 :])
 
     split_idx = 10
     x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
-
-
 
     xfit, yfit = get_fitting_points(x2, y2, ztotal2)
     axs.plot(xfit, yfit, label="C3", linestyle="-")

@@ -459,7 +459,7 @@ def create_state_current_plot():
         0.1,
         0.08,
         f"$I_{{P}}= {persistent_list[1]:.2f}I_{{c}}$",
-        transform=axs[2, 1].transAxes
+        transform=axs[2, 1].transAxes,
     )
 
     plot_state_currents_line(axs[2, 2], temp, data_dict, states=[2])
@@ -489,15 +489,15 @@ def create_state_current_plot():
         transform=axs[2, 2].transAxes,
     )
     for i in range(3):
-        axs[2,i].set_xlabel("Temperature (K)")
-        axs[2,i].set_ylabel("Critical Current (au)")
+        axs[2, i].set_xlabel("Temperature (K)")
+        axs[2, i].set_ylabel("Critical Current (au)")
     axs[0, 0].legend(loc="upper left", ncol=3, fontsize=5)
-
 
     fig.tight_layout()
 
     plt.savefig("state_currents.pdf", bbox_inches="tight")
     plt.show()
+
 
 if __name__ == "__main__":
     ALPHA = 0.563
