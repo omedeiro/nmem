@@ -81,8 +81,8 @@ if __name__ == "__main__":
     measurement_settings["y_subset"] = construct_currents(
         measurement_settings["x"],
         CELLS[current_cell]["slope"],
-        CELLS[current_cell]["intercept"] * 1e-6,
-        0.3,
+        CELLS[current_cell]["y-intercept"] * 1e-6,
+        0.2,
         CELLS[current_cell]["max_critical_current"],
     )
 
