@@ -58,10 +58,11 @@ def build_array(
     y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
     z: np.ndarray = data_dict.get(parameter_z)
 
-    xlength = data_dict.get("sweep_x_len")
-    ylength = data_dict.get("sweep_y_len")
+    xlength: int = filter_first(data_dict.get("sweep_x_len"))
+    ylength: int = filter_first(data_dict.get("sweep_y_len"))
 
-    zarray = z.reshape((xlength, ylength), order="F")
+    # X, Y reversed in reshape
+    zarray = z.reshape((ylength, xlength), order="F")
     return x, y, zarray
 
 
@@ -515,10 +516,10 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
 
 
 def initialize_data_dict(measurement_settings: dict) -> dict:
-    scope_num_samples = measurement_settings.get("scope_num_samples")
-    num_meas = measurement_settings.get("num_meas")
-    sweep_x_len = len(measurement_settings.get("x"))
-    sweep_y_len = len(measurement_settings.get("y"))
+    scope_num_samples: int = measurement_settings.get("scope_num_samples")
+    num_meas: int = measurement_settings.get("num_meas")
+    sweep_x_len: int = len(measurement_settings.get("x"))
+    sweep_y_len: int = len(measurement_settings.get("y"))
 
     data_dict = {
         "trace_chan_in": np.empty((2, scope_num_samples)),
@@ -762,7 +763,7 @@ def replace_bit(bitmsg: str, i: int, bit: str) -> str:
     return bitmsg[:i] + bit + bitmsg[i + 1 :]
 
 
-def get_extent(x: np.ndarray, y: np.ndarray, zarray: np.ndarray) -> List[float]:
+def get_extent(x: np.ndarray, y: np.ndarray) -> List[float]:
     dx = x[1] - x[0]
     xstart = x[0]
     xstop = x[-1]
@@ -893,6 +894,8 @@ def get_traces_sequence(b: nTron, num_meas: int = 100, num_samples: int = 5000):
 def get_threshold(b: nTron, logger: Logger = None) -> float:
     threshold = b.inst.scope.get_parameter_value("P9")
 
+    if threshold < 0.1:
+        threshold = 0.25
     if logger:
         logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return threshold
@@ -1400,7 +1403,7 @@ def plot_slice(
         plot_parameter(
             ax,
             y,
-            zarray[i, :],
+            zarray[:, i],
             label=f"{sweep_parameter_x} = {x[i]:.1f}",
             color=cmap[i, :],
         )
