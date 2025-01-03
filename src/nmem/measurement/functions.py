@@ -1058,7 +1058,7 @@ def plot_array(
     x_name: str = data_dict.get("sweep_parameter_x")
     y_name: str = data_dict.get("sweep_parameter_y")
     x, y, zarray = build_array(data_dict, c_name)
-    zextent = get_extent(x, y, zarray)
+    zextent = get_extent(x, y)
 
     if not cmap:
         cmap = plt.get_cmap("RdBu", 100).reversed()
