@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
 from nmem.analysis.analysis import import_directory
+from nmem.measurement.functions import calculate_channel_temperature
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
@@ -179,7 +180,14 @@ def plot_critical_currents_abs(ax: Axes, data_list: list, save: bool = False) ->
     ax.set_ylabel("$I_{{C}}$ [$\mu$A]", labelpad=-1)
     ax.set_ylim([0, 400])
     ax.set_xlim([0, 500])
-    ax.legend(frameon=False)
+    ax.legend(frameon=False, loc="upper left", handlelength=0.5, labelspacing=0.1)
+
+    ax2 = ax.twinx()
+    temp = calculate_channel_temperature(1.3, 12.3, np.abs(heater_currents), 500)
+    ax2.plot(np.abs(heater_currents), temp, color="black", linewidth=0.5)
+    ax2.set_ylim([0, 13])
+    ax2.set_ylabel("Temperature [K]")
+    ax2.hlines([1.3, 12.3], 0, 500, color="black", linestyle="--", linewidth=0.5)
 
     if save:
         plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
