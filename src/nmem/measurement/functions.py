@@ -481,7 +481,7 @@ def filter_plateau(
     # REmove nans
     xfit = xfit[~np.isnan(xfit)]
     yfit = yfit[~np.isnan(yfit)]
-    print(f"length x = {len(xfit)}")
+
     return xfit, yfit
 
 
@@ -491,6 +491,7 @@ def filter_first(value):
     ):
         return np.asarray(value).flatten()[0]
     return value
+
 
 def initialize_data_dict(measurement_settings: dict) -> dict:
     scope_num_samples: int = measurement_settings.get("scope_num_samples")
@@ -694,6 +695,7 @@ def get_threshold(b: nTron, logger: Logger = None) -> float:
         logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return threshold
 
+
 def get_extent(x: np.ndarray, y: np.ndarray) -> List[float]:
     dx = x[1] - x[0]
     xstart = x[0]
@@ -848,9 +850,6 @@ def load_waveforms(
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {enabr}")
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
-    if threshold < 0.1:
-        threshold = 0.25
-
     return
 
 
@@ -942,7 +941,6 @@ def plot_waveforms_bert(
     threshold = data_dict.get("voltage_threshold")
     bitmsg_channel = data_dict.get("bitmsg_channel")
     bitmsg_enable = data_dict.get("bitmsg_enable")
-
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
     C1 = 45
@@ -1112,7 +1110,7 @@ def run_realtime_bert(
     b.inst.scope.set_trigger_mode("Stop")
     threshold = get_threshold(b, logger=logger)
     result_dict = get_results(b, num_meas, threshold)
-
+    result_dict.update({"voltage_threshold": threshold})
     return result_dict
 
 
@@ -1126,7 +1124,17 @@ def run_measurement(
     scope_samples: int = int(measurement_settings.get("scope_num_samples"))
 
     ######################################################
-
+    if logger is None:
+        file_path: str = measurement_settings.get("file_path")
+        file_name: str = measurement_settings.get("file_name")
+        logging.basicConfig(
+            level=logging.INFO,  # Adjust the logging level as needed
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            filename=f"{file_path}/{file_name}.log",
+            filemode="a",
+        )
+        logger = logging.getLogger("measurement_log")
+        
     setup_waveform(b, measurement_settings)
 
     b.inst.awg.set_output(True, 1)
@@ -1362,7 +1370,6 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     channel_voltage = measurement_settings.get("channel_voltage")
     enable_voltage = measurement_settings.get("enable_voltage")
     sample_rate = measurement_settings.get("sample_rate")
-    ramp_read = measurement_settings.get("ramp_read", False)
 
     if enable_voltage > 300e-3:
         raise ValueError("enable voltage too high")
@@ -1375,11 +1382,11 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     if enable_voltage == 0:
         bitmsg_enable = "N" * len(bitmsg_enable)
 
-    write_sequence(b, bitmsg_channel, 1, measurement_settings, ramp_read=ramp_read)
+    write_sequence(b, bitmsg_channel, 1, measurement_settings)
     b.inst.awg.set_vpp(channel_voltage, 1)
     b.inst.awg.set_arb_sample_rate(sample_rate, 1)
 
-    write_sequence(b, bitmsg_enable, 2, measurement_settings, ramp_read=ramp_read)
+    write_sequence(b, bitmsg_enable, 2, measurement_settings)
     b.inst.awg.set_vpp(enable_voltage, 2)
     b.inst.awg.set_arb_sample_rate(sample_rate, 2)
 
@@ -1425,7 +1432,6 @@ def write_sequence(
     message: str,
     channel: int,
     measurement_settings: dict,
-    ramp_read: bool = True,
 ):
     write1 = '"INT:\WRITE1.ARB"'
     write0 = '"INT:\WRITE0.ARB"'
@@ -1460,7 +1466,7 @@ def write_sequence(
     write_string = ",".join(write_string)
     # print(write_string)
 
-    load_waveforms(b, measurement_settings, chan=channel, ramp_read=ramp_read)
+    load_waveforms(b, measurement_settings, chan=channel)
     write_waveforms(b, write_string, channel)
 
 
