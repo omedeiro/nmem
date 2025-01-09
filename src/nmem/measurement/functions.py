@@ -1172,27 +1172,35 @@ def run_sweep(
     )
 
     for x in measurement_settings["x"]:
+        switch_flag = 0
         for y in measurement_settings["y"]:
             measurement_settings.update({sweep_parameter_x: x})
             measurement_settings.update({sweep_parameter_y: y})
 
             data_dict = initialize_data_dict(measurement_settings)
-            data_dict.update(
-                run_measurement(
-                    b,
-                    measurement_settings,
-                    plot=plot_measurement,
+
+            if switch_flag < 4:
+                data_dict.update(
+                    run_measurement(
+                        b,
+                        measurement_settings,
+                        plot=plot_measurement,
+                    )
                 )
-            )
 
             data_dict.update(measurement_settings)
-
-            param_dataframe = create_dataframe(data_dict)
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
             else:
                 save_dict = update_dict(save_dict, data_dict)
+
+
+            total_switches_norm = data_dict.get("total_switches_norm", 0.0)
+            if isinstance(total_switches_norm, np.ndarray):
+                total_switches_norm = total_switches_norm[0]
+            if total_switches_norm == 1 and switch_flag < 4:
+                switch_flag += 1
 
     return save_dict
 
