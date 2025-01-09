@@ -101,7 +101,7 @@ def initialize_dict(array_size: tuple) -> dict:
         "read_current": np.zeros(array_size),
         "read_current_norm": np.zeros(array_size),
         "slope": np.zeros(array_size),
-        "intercept": np.zeros(array_size),
+        "y_intercept": np.zeros(array_size),
         "x_intercept": np.zeros(array_size),
         "resistance": np.zeros(array_size),
         "bit_error_rate": np.zeros(array_size),
@@ -121,20 +121,20 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
     param_dict["enable_write_current"][y, x] = cell["enable_write_current"] * 1e6
     param_dict["enable_read_current"][y, x] = cell["enable_read_current"] * 1e6
     param_dict["slope"][y, x] = cell["slope"]
-    param_dict["intercept"][y, x] = cell["intercept"]
+    param_dict["y_intercept"][y, x] = cell["y_intercept"]
     param_dict["resistance"][y, x] = cell["resistance_cryo"]
     param_dict["bit_error_rate"][y, x] = cell.get("min_bit_error_rate", np.nan)
     param_dict["max_critical_current"][y, x] = (
         cell.get("max_critical_current", np.nan) * 1e6
     )
-    if cell["intercept"] != 0:
+    if cell["y_intercept"] != 0:
         write_critical_current = htron_critical_current(
-            cell["enable_write_current"] * 1e6, cell["slope"], cell["intercept"]
+            cell["enable_write_current"] * 1e6, cell["slope"], cell["y_intercept"]
         )
         read_critical_current = htron_critical_current(
-            cell["enable_read_current"] * 1e6, cell["slope"], cell["intercept"]
+            cell["enable_read_current"] * 1e6, cell["slope"], cell["y_intercept"]
         )
-        param_dict["x_intercept"][y, x] = -cell["intercept"] / cell["slope"]
+        param_dict["x_intercept"][y, x] = -cell["y_intercept"] / cell["slope"]
         param_dict["write_current_norm"][y, x] = (
             cell["write_current"] * 1e6 / write_critical_current
         )
