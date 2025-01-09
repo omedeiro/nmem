@@ -12,6 +12,7 @@ import os
 import scipy.io as sio
 from nmem.measurement.cells import CELLS
 
+
 def plot_grid(axs, dict_list):
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
@@ -38,11 +39,27 @@ def plot_grid(axs, dict_list):
             marker=markers[row],
             markeredgecolor="k",
         )
+        enable_read_current = CELLS[cell].get("enable_read_current")*1e6
+        enable_write_current = CELLS[cell].get("enable_write_current")*1e6
+        axs[row, column].vlines(
+            [enable_write_current],
+            *axs[row, column].get_ylim(),
+            linestyle="--",
+            color="grey",
+            label="Enable Write Current",
+        )
+        axs[row, column].vlines(
+            [enable_read_current],
+            *axs[row, column].get_ylim(),
+            linestyle="--",
+            color="r",
+            label="Enable Read Current",
+        )
 
         # axs[row, column].set_xlabel("Enable Current ($\mu$A)")
         # axs[row, column].set_ylabel("Critical Current ($\mu$A)")
-        axs[row, column].legend(loc="upper right")
-        axs[row, column].set_xlim(0, 500)
+        # axs[row, column].legend(loc="upper right")
+        axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1000)
         # axs[row, column].set_aspect("equal")
 
@@ -139,7 +156,7 @@ def plot_all_cells():
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
         # plot_fitting(axs, xfit, yfit, color="k")
 
-        x = np.linspace(0, -avg_intercept/avg_slope, 100)
+        x = np.linspace(0, -avg_intercept / avg_slope, 100)
         y = avg_slope * x + avg_intercept
         axs.plot(x, y, color="k", linestyle="--")
         axs.plot()
@@ -159,22 +176,26 @@ def get_average_response(cell_dict):
     intercept = np.mean(intercept_list)
     return slope, intercept
 
+
 def plot_enable_write_temperature():
     fig, ax = plt.subplots()
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
     for cell in CELLS.keys():
         xint = CELLS[cell].get("x_intercept")
-        x = CELLS[cell].get("enable_write_current")*1e6
+        x = CELLS[cell].get("enable_write_current") * 1e6
         temp = calculate_channel_temperature(1.3, 12.3, x, xint)
         column = ord(cell[0]) - ord("A")
         row = int(cell[1]) - 1
-        ax.plot(x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row])
+        ax.plot(
+            x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
     ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Channel Temperature (K)")
     ax.set_ylim(0, 13)
     ax.hlines(12.3, 0, 500, linestyle="--")
+
 
 def plot_enable_read_temperature():
     fig, ax = plt.subplots()
@@ -182,11 +203,13 @@ def plot_enable_read_temperature():
     markers = ["o", "s", "D", "^"]
     for cell in CELLS.keys():
         xint = CELLS[cell].get("x_intercept")
-        x = CELLS[cell].get("enable_read_current")*1e6
+        x = CELLS[cell].get("enable_read_current") * 1e6
         temp = calculate_channel_temperature(1.3, 12.3, x, xint)
         column = ord(cell[0]) - ord("A")
         row = int(cell[1]) - 1
-        ax.plot(x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row])
+        ax.plot(
+            x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
     ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
     ax.set_xlabel("Enable Read Current ($\mu$A)")
     ax.set_ylabel("Channel Temperature (K)")
@@ -198,6 +221,13 @@ if __name__ == "__main__":
     # plot_full_grid()
     # plot_all_cells()
 
+    # dict_list = import_directory("data")
+    # fig, ax = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+    # plot_column(ax, dict_list)
+    # plt.show()
+
     dict_list = import_directory("data")
-    fig, ax = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
-    plot_column(ax, dict_list)
+    fig, axs = plt.subplots(4,4, figsize=(12, 12), sharex=True, sharey=True)
+    plot_grid(axs, dict_list)
+
+    
