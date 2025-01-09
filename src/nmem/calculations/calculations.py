@@ -61,7 +61,7 @@ def calculate_critical_current(
     critical_current : float
         The critical current of the device in microamps."""
     slope = cell_dict["slope"]
-    intercept = cell_dict["intercept"]
+    intercept = cell_dict["y_intercept"]
     critical_current = htron_critical_current(heater_current, slope, intercept)
     if critical_current > (cell_dict.get("max_critical_current", np.inf) * 1e6):
         return cell_dict["max_critical_current"] * 1e6
@@ -74,7 +74,7 @@ def calculate_heater_current(
     cell_dict: dict,
 ) -> float:
     slope = cell_dict["slope"]
-    intercept = cell_dict["intercept"]
+    intercept = cell_dict["y_intercept"]
     return htron_heater_current(channel_current, slope, intercept)
 
 
