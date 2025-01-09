@@ -134,3 +134,8 @@ if __name__ == "__main__":
     xfit, yfit = get_fitting_points(x, y, ztotal)
     xfit, yfit = filter_plateau(xfit, yfit, yfit[0]*0.9)
     plot_fitting(axs, xfit, yfit)
+    axs.set_xlabel("Enable Current ($\mu$A)")
+    axs.set_ylabel("Channel Current ($\mu$A)")
+    axs.set_aspect("equal")
+    nm.plot_header(fig, data_dict)
+    plt.savefig(f"{file_path}_fitting.png")
