@@ -16,6 +16,30 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
+import collections
+
+
+def build_array(
+    data_dict: dict, parameter_z: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
+    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
+    z: np.ndarray = data_dict.get(parameter_z)
+
+    xlength: int = filter_first(data_dict.get("sweep_x_len"))
+    ylength: int = filter_first(data_dict.get("sweep_y_len"))
+
+    # X, Y reversed in reshape
+    zarray = z.reshape((ylength, xlength), order="F")
+    return x, y, zarray
+
+
+def filter_first(value):
+    if isinstance(value, collections.abc.Iterable) and not isinstance(
+        value, (str, bytes)
+    ):
+        return np.asarray(value).flatten()[0]
+    return value
 
 
 def import_directory(file_path: str) -> list:
@@ -735,18 +759,20 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     return ax
 
 
-def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x = data_dict.get("x")[0][:, 1] * 1e6
-    y = data_dict.get("y")[0][:, 0] * 1e6
-    w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten()
-    z = w1r0 + w0r1
-    ztotal = z.reshape((len(y), len(x)), order="F")
-    return x, y, ztotal
+# def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+#     x = data_dict.get("x")[0][:, 1] * 1e6
+#     y = data_dict.get("y")[0][:, 0] * 1e6
+#     w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
+#     w1r0 = data_dict.get("write_1_read_0")[0].flatten()
+#     z = w1r0 + w0r1
+#     ztotal = z.reshape((len(y), len(x)), order="F")
+#     return x, y, ztotal
 
 
-def plot_enable_current_relation(ax: Axes, data_dict: dict) -> Axes:
-    x, y, ztotal = construct_array(data_dict)
+def plot_enable_current_relation(
+    ax: Axes, data_dict: dict, parameter_z: str = "total_switches_norm"
+) -> Axes:
+    x, y, ztotal = build_array(data_dict, parameter_z)
     dx, dy = np.diff(x)[0], np.diff(y)[0]
     xfit, yfit = get_fitting_points(x, y, ztotal)
 
@@ -800,15 +826,8 @@ def get_fitting_points(
     return xfit, yfit
 
 
-def plot_slice(ax: Axes, data_dict: dict) -> Axes:
-    w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten()
-    z = w1r0 + w0r1
-    ztotal = z.reshape(
-        (data_dict["y"][0].shape[0], data_dict["x"][0].shape[0]),
-        order="F",
-    )
-    x = data_dict.get("y")[0][:, 0] * 1e6
+def plot_slice(ax: Axes, data_dict: dict, parameter_z: str = "bit_error_rate") -> Axes:
+    x, y, ztotal = build_array(data_dict, parameter_z)
     ax.plot(
         x,
         ztotal,
