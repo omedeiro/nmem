@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
+from nmem.analysis.analysis import build_array, get_fitting_points, plot_fit
 
 plt.rcParams["figure.figsize"] = [5.7, 5]
 plt.rcParams["font.size"] = 16
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
         measurement_dict = sio.loadmat(datafile)
         measurement_dict["cell"] = cell
-        x, y, ztotal = construct_array(measurement_dict)
+        x, y, ztotal = build_array(measurement_dict, "bit_error_rate")
         xfit, yfit = get_fitting_points(x, y, ztotal)
         plot_fit(ax, xfit, yfit)
 
