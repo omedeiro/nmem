@@ -56,13 +56,13 @@ def plot_grid(axs, dict_list):
             label="Enable Read Current",
         )
 
-        # axs[row, column].set_xlabel("Enable Current ($\mu$A)")
-        # axs[row, column].set_ylabel("Critical Current ($\mu$A)")
-        # axs[row, column].legend(loc="upper right")
+        
+        axs[row, column].legend(loc="upper right")
         axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1000)
         # axs[row, column].set_aspect("equal")
-
+    axs[-1, 0].set_xlabel("Enable Current ($\mu$A)")
+    axs[-1, 0].set_ylabel("Critical Current ($\mu$A)")
     return axs
 
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     # plt.show()
 
     dict_list = import_directory("data")
-    fig, axs = plt.subplots(4,4, figsize=(12, 12), sharex=True, sharey=True)
+    fig, axs = plt.subplots(4,4, figsize=(20, 20), sharex=True, sharey=True)
     plot_grid(axs, dict_list)
 
     
