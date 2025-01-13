@@ -49,13 +49,13 @@ def optimize_bias(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(10, 300, name="write_current"),
-        Real(500, 850, name="read_current"),
-        Real(50, 600, name="enable_write_current"),
-        Real(50, 600, name="enable_read_current"),
+        Real(50, 250, name="write_current"),
+        Real(600, 870, name="read_current"),
+        Real(200, 550, name="enable_write_current"),
+        Real(50, 300, name="enable_read_current"),
     ]
 
-    x0 = [131, 640, 514, 262]
+    x0 = [155, 820, 415, 114]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -129,7 +129,7 @@ def optimize_read(meas_dict: dict):
         Real(500, 850, name="read_current"),
     ]
 
-    x0 = [262, 640]
+    x0 = [120, 800]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -153,10 +153,10 @@ def optimize_write(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(50, 500, name="enable_write_current"),
-        Real(10, 300, name="write_current"),
+        Real(150, 500, name="enable_write_current"),
+        Real(50, 300, name="write_current"),
     ]
-    x0 = [460, 131]
+    x0 = [460, 155]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -216,11 +216,12 @@ def optimize_all(meas_dict: dict):
     return meas_dict, space, x0, b
 
 
-def objective(x, meas_dict: dict, space: list, b: nTron):
-    print(x)
+def objective(x, meas_dict: dict, space: list, b: nTron, logger=None):
+    if logger is not None:
+        logger.info(f"Current x: {x}")
     meas_dict = update_space(meas_dict, space, x)
 
-    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+    data_dict = nm.run_measurement(b, meas_dict, plot=False, logger=logger)
 
     qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
