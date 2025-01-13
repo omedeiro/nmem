@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
 from matplotlib.axes import Axes
-
+from nmem.analysis.measure_enable_response.enable_analysis import plot_all_cells
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
@@ -151,6 +151,31 @@ def create_combined_plot(data_dict: dict, save=False):
     plt.show()
 
 
+def create_combined_plot_v2(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(7.087, 3.543))
+    subfigs = fig.subfigures(
+        2,
+        3,
+    )
+    ax = subfigs[1, 1].subplots(4, 1)
+    subfigs[1, 1].subplots_adjust(hspace=0.0)
+    subfigs[1, 1].supylabel("Voltage [V]", x=-0.05)
+    subfigs[1, 1].supxlabel("Time [ns]")
+    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
+    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
+    ax[2].legend(["Read 0", "Read 1"], frameon=False)
+
+    axfit = subfigs[1, 2].add_subplot()
+    plot_all_cells(axfit)
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
 if __name__ == "__main__":
     data_dict = {
         0: sio.loadmat(
@@ -182,4 +207,4 @@ if __name__ == "__main__":
         ),
     }
 
-    create_combined_plot(data_dict, save=False)
+    create_combined_plot_v2(data_dict, save=True)
