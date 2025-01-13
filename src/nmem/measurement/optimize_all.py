@@ -39,9 +39,9 @@ plt.rcParams["figure.figsize"] = [10, 12]
 
 
 def run_optimize(meas_dict: dict):
-    # meas_dict, space, x0, b = optimize_bias(meas_dict)
+    meas_dict, space, x0, b = optimize_bias(meas_dict)
     # meas_dict, space, x0, b = optimize_read(meas_dict)
-    meas_dict, space, x0, b = optimize_write(meas_dict)
+    # meas_dict, space, x0, b = optimize_write(meas_dict)
 
     opt_result = gp_minimize(
         partial(objective, meas_dict=meas_dict, space=space, b=b),
@@ -111,14 +111,14 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 131e-6,
-        "read_current": 645e-6,
-        "enable_write_current": 514e-6,
-        "enable_read_current": 263e-6,
+        "write_current": 155e-6,
+        "read_current": 820e-6,
+        "enable_write_current": 461e-6,
+        "enable_read_current": 72e-6,
     }
 
-    NUM_MEAS = 200
-    NUM_CALLS = 100
+    NUM_MEAS = 500
+    NUM_CALLS = 40
     measurement_settings = {
         **waveform_settings,
         **current_settings,
@@ -131,7 +131,6 @@ if __name__ == "__main__":
         "y": 0,
         "sweep_parameter_x": "enable_read_current",
         "sweep_parameter_y": "read_current",
-        "voltage_threshold": 0.42,
     }
 
     meas_dict, b = nm.initilize_measurement(CONFIG, "nMem_optimize")
@@ -142,7 +141,6 @@ if __name__ == "__main__":
         division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
-
     opt_res, measurement_settings = run_optimize(measurement_settings)
 
     measurement_name = measurement_settings["measurement_name"]
