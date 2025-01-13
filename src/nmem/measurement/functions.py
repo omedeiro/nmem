@@ -24,7 +24,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
+from nmem.analysis.analysis import get_fitting_points, plot_fit
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
@@ -54,19 +54,7 @@ def bimodal_fit(
     return params, cov
 
 
-def build_array(
-    data_dict: dict, parameter_z: str
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
-    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
-    z: np.ndarray = data_dict.get(parameter_z)
 
-    xlength: int = filter_first(data_dict.get("sweep_x_len"))
-    ylength: int = filter_first(data_dict.get("sweep_y_len"))
-
-    # X, Y reversed in reshape
-    zarray = z.reshape((ylength, xlength), order="F")
-    return x, y, zarray
 
 
 def construct_currents(
@@ -92,12 +80,6 @@ def construct_currents(
     return bias_current_array
 
 
-def filter_first(value):
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
 
 
 def get_param_mean(param: np.ndarray) -> np.ndarray:
@@ -1126,6 +1108,7 @@ def run_measurement(
     ######################################################
     if logger is None:
         file_path: str = measurement_settings.get("file_path")
+        os.makedirs(file_path, exist_ok=True)
         file_name: str = measurement_settings.get("file_name")
         logging.basicConfig(
             level=logging.INFO,  # Adjust the logging level as needed
