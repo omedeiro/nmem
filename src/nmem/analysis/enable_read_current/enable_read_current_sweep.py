@@ -8,6 +8,7 @@ from matplotlib.ticker import MultipleLocator
 from nmem.analysis.analysis import (
     plot_analytical,
     plot_read_sweep_array_3d,
+    plot_read_sweep_array,
     plot_threshold,
     plot_voltage_trace,
 )
@@ -421,7 +422,7 @@ if __name__ == "__main__":
 
     current_cell = "C1"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
-    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
+    HTRON_INTERCEPT = CELLS[current_cell]["y_intercept"]
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.213
     ALPHA = 0.563
@@ -447,4 +448,6 @@ if __name__ == "__main__":
         PERSISTENT_CURRENT,
     )
 
-    manuscript_figure()
+    # manuscript_figure()
+    fig, ax = plt.subplots()
+    plot_read_sweep_array(ax, enable_read_310_dict, "bit_error_rate", "enable_read_current")
