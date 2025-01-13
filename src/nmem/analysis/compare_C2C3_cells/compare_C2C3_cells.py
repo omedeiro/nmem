@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from nmem.analysis.analysis import get_fitting_points
-from nmem.measurement.functions import build_array, plot_fitting
+from nmem.analysis.analysis import get_fitting_points, build_array
+from nmem.measurement.functions import plot_fitting
 
 
 def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
@@ -11,7 +11,7 @@ def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
     temp_substrate: float = data_dict.get("substrate_temperature", 1.3)
 
     ih = data_dict.get("x")[0][:, 0]
-    ih_max = data_dict.get("x-intercept", 500e-6)
+    ih_max = data_dict.get("x_intercept", 500e-6)
 
     return _calculate_channel_temperature(temp_critical, temp_substrate, ih, ih_max)
 
