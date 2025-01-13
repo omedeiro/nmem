@@ -75,6 +75,8 @@ if __name__ == "__main__":
     file_path, time_str = qf.save(
         b.properties, data_dict.get("measurement_name"), data_dict
     )
+    print(f"Bit Error Rate: {data_dict['bit_error_rate']}")
+
     nm.write_dict_to_file(file_path, measurement_settings)
 
     nm.set_awg_off(b)
