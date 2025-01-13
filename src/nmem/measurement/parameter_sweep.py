@@ -150,11 +150,10 @@ if __name__ == "__main__":
         **fast_write,
         **fast_read,
         **two_nulls,
-        "voltage_threshold": 0.35,
     }
 
     current_settings = {
-        "write_current": 36e-6,
+        "write_current": 100e-6,
         "read_current": 736e-6,
         "enable_write_current": 567e-6,
         "enable_read_current": 144e-6,
@@ -167,8 +166,8 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 500
-    sweep_length = 6
+    NUM_MEAS = 2000
+    sweep_length = 31
 
     measurement_settings.update(
         {
@@ -181,19 +180,18 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "sweep_parameter_x": "enable_write_current",
             "sweep_parameter_y": "read_current",
-            "voltage_threshold": 0.42,
         }
     )
     current_cell = measurement_settings.get("cell")
 
-    measurement_settings["x"] = np.linspace(400e-6, 567e-6, 6)
+    measurement_settings["x"] = np.array([567e-6])
 
-    measurement_settings["y"] = np.linspace(700e-6, 800e-6, 21)
+    measurement_settings["y"] = np.linspace(500e-6, 900e-6, sweep_length)
 
     data_dict = nm.run_sweep(
         b,
         measurement_settings,
-        plot_measurement=True,
+        plot_measurement=False,
         division_zero=(5.9, 6.5),
         division_one=(5.9, 6.5),
     )
@@ -201,28 +199,38 @@ if __name__ == "__main__":
         b.properties, data_dict.get("measurement_name"), data_dict
     )
 
-    fig, ax = plt.subplots()
-    nm.plot_array(
-        ax,
-        data_dict,
-        "bit_error_rate",
-    )
-    fig, ax = plt.subplots()
+    if data_dict["sweep_x_len"] > 1:
+        fig, ax = plt.subplots()
+        nm.plot_array(
+            ax,
+            data_dict,
+            "bit_error_rate",
+        )
 
-    nm.plot_array(
-        ax,
-        data_dict,
-        "write_0_read_1_norm",
-    )
-    fig, ax = plt.subplots()
+        fig, ax = plt.subplots()
+        nm.plot_array(
+            ax,
+            data_dict,
+            "write_0_read_1_norm",
+        )
 
-    nm.plot_array(
-        ax,
-        data_dict,
-        "write_1_read_0_norm",
-    )
-    fig = nm.plot_header(fig, data_dict)
-    fig.savefig(f"{file_path}_ber_sweep.png")
+        fig, ax = plt.subplots()
+        nm.plot_array(
+            ax,
+            data_dict,
+            "write_1_read_0_norm",
+        )
+        fig = nm.plot_header(fig, data_dict)
+        fig.savefig(f"{file_path}_ber_sweep.png")
+    else:
+        fig, ax = plt.subplots()
+        nm.plot_slice(
+            ax,
+            data_dict,
+            "bit_error_rate",
+        )
+        fig = nm.plot_header(fig, data_dict)
+        fig.savefig(f"{file_path}_ber_sweep.png")
 
     nm.set_awg_off(b)
     nm.write_dict_to_file(file_path, measurement_settings)
