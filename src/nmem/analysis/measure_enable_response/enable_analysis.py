@@ -1,9 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from nmem.analysis.analysis import import_directory, plot_enable_current_relation
+from nmem.analysis.analysis import (
+    import_directory,
+    plot_enable_current_relation,
+    build_array,
+)
 from nmem.measurement.functions import (
     plot_fitting,
-    build_array,
     filter_plateau,
     get_fitting_points,
     calculate_channel_temperature,
@@ -11,7 +14,7 @@ from nmem.measurement.functions import (
 import os
 import scipy.io as sio
 from nmem.measurement.cells import CELLS
-
+from matplotlib.axes import Axes
 
 def plot_grid(axs, dict_list):
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
@@ -39,8 +42,8 @@ def plot_grid(axs, dict_list):
             marker=markers[row],
             markeredgecolor="k",
         )
-        enable_read_current = CELLS[cell].get("enable_read_current")*1e6
-        enable_write_current = CELLS[cell].get("enable_write_current")*1e6
+        enable_read_current = CELLS[cell].get("enable_read_current") * 1e6
+        enable_write_current = CELLS[cell].get("enable_write_current") * 1e6
         axs[row, column].vlines(
             [enable_write_current],
             *axs[row, column].get_ylim(),
@@ -56,7 +59,6 @@ def plot_grid(axs, dict_list):
             label="Enable Read Current",
         )
 
-        
         axs[row, column].legend(loc="upper right")
         axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1000)
@@ -134,9 +136,8 @@ def plot_full_grid():
     plt.show()
 
 
-def plot_all_cells():
-    dict_list = import_directory("data")
-    fig, axs = plt.subplots()
+def plot_all_cells(ax: Axes) -> Axes:
+    dict_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\measure_enable_response\data")
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
     avg_slope, avg_intercept = get_average_response(CELLS)
@@ -151,18 +152,20 @@ def plot_all_cells():
         ztotal = dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
         # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
-        axs.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
+        ax.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
 
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-        # plot_fitting(axs, xfit, yfit, color="k")
+        # plot_fitting(ax, xfit, yfit, color="k")
 
         x = np.linspace(0, -avg_intercept / avg_slope, 100)
         y = avg_slope * x + avg_intercept
-        axs.plot(x, y, color="k", linestyle="--")
-        axs.plot()
-        axs.set_xlabel("Enable Current ($\mu$A)")
-        axs.set_ylabel("Critical Current ($\mu$A)")
-        axs.legend(loc="lower left", ncol=4)
+        ax.plot(x, y, color="k", linestyle="--")
+        ax.plot()
+        ax.set_xlabel("Enable Current ($\mu$A)")
+        ax.set_ylabel("Critical Current ($\mu$A)")
+        ax.legend(loc="lower left", ncol=4)
+        ax.text(0.25, 0.85, "$I_{{ch}}(I_{{enable}})$", transform=ax.transAxes, fontsize=12)
+    return ax
 
 
 def get_average_response(cell_dict):
@@ -226,8 +229,9 @@ if __name__ == "__main__":
     # plot_column(ax, dict_list)
     # plt.show()
 
-    dict_list = import_directory("data")
-    fig, axs = plt.subplots(4,4, figsize=(20, 20), sharex=True, sharey=True)
-    plot_grid(axs, dict_list)
+    # dict_list = import_directory("data")
+    # fig, axs = plt.subplots(4,4, figsize=(20, 20), sharex=True, sharey=True)
+    # plot_grid(axs, dict_list)
 
-    
+    fig, ax = plt.subplots()
+    plot_all_cells(ax)
