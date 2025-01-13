@@ -25,15 +25,13 @@ if __name__ == "__main__":
         )
         enable_read_current = data.get("enable_read_current") * 1e6
         cell = data.get("cell")[0]
-        print(f"cell: {cell}")
         max_enable_read_current = (
-            data["CELLS"][cell][0][0]["x_intercept"].flatten()[0].flatten()[0]
+            filter_first(data["CELLS"][cell][0][0]["x_intercept"])
         )
 
         enable_read_temp = calculate_channel_temperature(
             1.3, 12.3, enable_read_current, max_enable_read_current
         )
-        print(f"enable_read_temp: {filter_first(enable_read_temp)}")
 
     ax.legend()
     ax.set_ylim([0, 1])
