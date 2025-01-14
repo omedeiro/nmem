@@ -617,15 +617,15 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
     total_switches = write_0_read_1 + (num_meas - write_1_read_0)
     total_switches_norm = total_switches / (num_meas * 2)
     result_dict = {
-        "write_0_read_1": write_0_read_1,
-        "write_1_read_0": write_1_read_0,
-        "write_0_read_1_norm": write_0_read_1_norm,
-        "write_1_read_0_norm": write_1_read_0_norm,
+        "write_0_read_1": np.array([write_0_read_1]),
+        "write_1_read_0": np.array([write_1_read_0]),
+        "write_0_read_1_norm": np.array([write_0_read_1_norm]),
+        "write_1_read_0_norm": np.array([write_1_read_0_norm]),
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
-        "bit_error_rate": bit_error_rate,
-        "total_switches": total_switches,
-        "total_switches_norm": total_switches_norm,
+        "bit_error_rate": np.array([bit_error_rate]),
+        "total_switches": np.array([total_switches]),
+        "total_switches_norm": np.array([total_switches_norm]),
     }
     return result_dict
 
