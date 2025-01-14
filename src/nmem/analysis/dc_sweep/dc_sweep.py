@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import import_directory
 from nmem.measurement.functions import calculate_channel_temperature
 

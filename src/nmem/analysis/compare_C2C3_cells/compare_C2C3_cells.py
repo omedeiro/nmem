@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from nmem.analysis.analysis import get_fitting_points, build_array
+
+from nmem.analysis.analysis import build_array, get_fitting_points
 from nmem.measurement.functions import plot_fitting
 
 

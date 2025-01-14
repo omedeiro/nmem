@@ -1,14 +1,14 @@
-import scipy.io as sio
-from nmem.analysis.analysis import (
-    plot_slice,
-    import_directory,
-    build_array,
-    filter_first,
-)
-from nmem.measurement.functions import calculate_channel_temperature
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+from nmem.analysis.analysis import (
+    build_array,
+    filter_first,
+    import_directory,
+)
+from nmem.measurement.functions import calculate_channel_temperature
 
 if __name__ == "__main__":
     data_list = import_directory(os.getcwd())

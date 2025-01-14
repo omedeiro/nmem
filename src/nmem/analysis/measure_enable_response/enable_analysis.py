@@ -1,20 +1,19 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+
 from nmem.analysis.analysis import (
     import_directory,
-    plot_enable_current_relation,
-    build_array,
 )
+from nmem.measurement.cells import CELLS
 from nmem.measurement.functions import (
-    plot_fitting,
+    calculate_channel_temperature,
     filter_plateau,
     get_fitting_points,
-    calculate_channel_temperature,
+    plot_fitting,
 )
-import os
-import scipy.io as sio
-from nmem.measurement.cells import CELLS
-from matplotlib.axes import Axes
+
 
 def plot_grid(axs, dict_list):
     colors = plt.cm.viridis(np.linspace(0, 1, 4))

@@ -18,11 +18,11 @@ from nmem.measurement.cells import (
     SPICE_DEVICE_CURRENT,
 )
 from nmem.measurement.functions import (
-    construct_currents,
     build_array,
+    construct_currents,
+    filter_plateau,
     get_fitting_points,
     plot_fitting,
-    filter_plateau,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]

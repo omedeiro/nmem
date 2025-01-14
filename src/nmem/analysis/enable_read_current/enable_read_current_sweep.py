@@ -5,10 +5,11 @@ import numpy as np
 import scipy.io as sio
 from matplotlib.pyplot import Axes
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import (
     plot_analytical,
-    plot_read_sweep_array_3d,
     plot_read_sweep_array,
+    plot_read_sweep_array_3d,
     plot_threshold,
     plot_voltage_trace,
 )

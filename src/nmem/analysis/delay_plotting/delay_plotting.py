@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
 from matplotlib.axes import Axes
+
 from nmem.analysis.measure_enable_response.enable_analysis import plot_all_cells
+
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
