@@ -9,14 +9,12 @@ import collections.abc
 import logging
 import os
 import time
-from datetime import datetime
 from logging import Logger
 from time import sleep
 from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from qnnpy.functions.ntron import nTron
@@ -24,7 +22,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.analysis import get_fitting_points, plot_fit, build_array
+from nmem.analysis.analysis import build_array, plot_fit
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
@@ -79,26 +77,6 @@ def construct_currents(
 
     return bias_current_array
 
-
-
-
-def get_param_mean(param: np.ndarray) -> np.ndarray:
-    if round(param[2], 5) > round(param[5], 5):
-        prm = param[0:2]
-    else:
-        prm = param[3:5]
-    return prm
-
-
-def reject_outliers(data: np.ndarray, m: float = 2.0) -> Tuple[np.ndarray, np.ndarray]:
-    ind = abs(data - np.mean(data)) < m * np.std(data)
-    if len(ind[ind is False]) < 50:
-        data = data[ind]
-        print(f"Samples rejected {len(ind[ind is False])}")
-        rejectInd = np.invert(ind)
-    else:
-        rejectInd = None
-    return data, rejectInd
 
 
 def update_dict(dict1: dict, dict2: dict) -> dict:
@@ -732,31 +710,6 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
     return measurement_settings, b
 
 
-def initialize_data_dict(measurement_settings: dict) -> dict:
-    scope_num_samples = measurement_settings.get("scope_num_samples")
-    num_meas = measurement_settings.get("num_meas")
-    sweep_x_len = len(measurement_settings.get("x"))
-    sweep_y_len = len(measurement_settings.get("y"))
-
-    data_dict = {
-        "trace_chan_in": np.empty((2, scope_num_samples)),
-        "trace_chan_out": np.empty((2, scope_num_samples)),
-        "trace_enab": np.empty((2, scope_num_samples)),
-        "read_zero_top": np.empty((1, num_meas)),
-        "read_one_top": np.empty((1, num_meas)),
-        "write_0_read_1": np.nan,
-        "write_1_read_0": np.nan,
-        "write_0_read_1_norm": np.nan,
-        "write_1_read_0_norm": np.nan,
-        "total_switches": np.nan,
-        "total_switches_norm": np.nan,
-        "channel_voltage": np.nan,
-        "enable_voltage": np.nan,
-        "bit_error_rate": np.nan,
-        "sweep_x_len": sweep_x_len,
-        "sweep_y_len": sweep_y_len,
-    }
-    return data_dict
 
 
 def load_waveforms(
@@ -1384,19 +1337,6 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     b.inst.awg.set_arb_sync()
     sleep(0.1)
 
-
-def update_dict(dict1: dict, dict2: dict) -> dict:
-    result_dict = {}
-
-    for key in dict1.keys():
-        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
-            try:
-                result_dict[key] = np.dstack([dict1[key], dict2[key]])
-            except Exception:
-                print(f"could not stack {key}")
-        else:
-            result_dict[key] = dict1[key]
-    return result_dict
 
 
 def write_dict_to_file(file_path: str, save_dict: dict) -> None:
