@@ -7,6 +7,9 @@ Save File:
   device name: A4 # XY Cords A1 in NW corner. D1 in NE corner. 
   cell: C3  # XY Cords A1 in NW corner. D1 in NE corner. 
 
+iv_sweep:
+  series_resistance: 1
+  series_resistance_g: 1
 
 AWG:
   name: Agilent33250a
