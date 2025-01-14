@@ -75,7 +75,7 @@ def create_data_dict(
 if __name__ == "__main__":
     current_cell = "C1"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
-    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
+    HTRON_INTERCEPT = CELLS[current_cell]["y_intercept"]
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.213
     ALPHA = 0.563
