@@ -1,3 +1,4 @@
+import collections
 import os
 from typing import List, Literal, Tuple
 
@@ -10,13 +11,13 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     calculate_read_currents,
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
-import collections
 
 
 def build_array(
@@ -26,8 +27,8 @@ def build_array(
     y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
     z: np.ndarray = data_dict.get(parameter_z)
 
-    xlength: int = filter_first(data_dict.get("sweep_x_len"))
-    ylength: int = filter_first(data_dict.get("sweep_y_len"))
+    xlength: int = filter_first(data_dict.get("sweep_x_len", len(x)))
+    ylength: int = filter_first(data_dict.get("sweep_y_len", len(y)))
 
     # X, Y reversed in reshape
     zarray = z.reshape((ylength, xlength), order="F")
