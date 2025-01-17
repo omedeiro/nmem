@@ -18,7 +18,7 @@ def calculate_right_critical_currents(
     enable_write_currents: np.ndarray, cell: str, width_ratio: float, iretrap: float
 ) -> np.ndarray:
     channel_critical_current = (enable_write_currents * cell["slope"]) + cell[
-        "intercept"
+        "y_intercept"
     ]
     right_critical_current = channel_critical_current * (
         1 + ((1 / width_ratio) * iretrap)
@@ -45,7 +45,7 @@ def plot_waterfall(ax: Axes3D, data_dict: dict) -> Axes3D:
         current_cell = data["cell"][0]
         left_critical_currents = (
             enable_write_currents * CELLS[current_cell]["slope"]
-        ) + CELLS[current_cell]["intercept"]
+        ) + CELLS[current_cell]["y_intercept"]
         ber = data["bit_error_rate"].flatten()
         write_current = data["write_current"].flatten()[0] * 1e6
         zlist.append(write_current)
