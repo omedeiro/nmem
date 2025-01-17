@@ -56,12 +56,11 @@ def plot_message(ax: Axes, message: str) -> Axes:
     return ax
 
 
-def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, color: str) -> Axes:
+def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, **kwargs) -> Axes:
     ax.plot(
         (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
-        data_dict[trace_name][1, :],
-        label=trace_name,
-        color=color,
+        data_dict[trace_name][1, :]*1e3,
+        **kwargs
     )
     return ax
 
@@ -73,7 +72,7 @@ def plot_hist(ax: Axes, data_dict: dict) -> Axes:
         range=(0.2, 0.6),
         bins=100,
         label="Read 0",
-        color="#345F90",
+        color="#1966ff",
     )
     ax.hist(
         data_dict["read_one_top"][0, :],
@@ -81,7 +80,7 @@ def plot_hist(ax: Axes, data_dict: dict) -> Axes:
         range=(0.2, 0.6),
         bins=100,
         label="Read 1",
-        color="#B3252C",
+        color="#ff1423",
     )
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Counts")
@@ -159,16 +158,20 @@ def create_combined_plot_v2(data_dict: dict, save=False):
         2,
         3,
     )
-    ax = subfigs[1, 1].subplots(4, 1)
-    subfigs[1, 1].subplots_adjust(hspace=0.0)
+    ax = subfigs[1, 1].subplots(2, 1)
+    # subfigs[1, 1].subplots_adjust(hspace=0.0)
     subfigs[1, 1].supylabel("Voltage [V]", x=-0.05)
-    subfigs[1, 1].supxlabel("Time [ns]")
-    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
-    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
-    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
-    ax[2].legend(["Read 0", "Read 1"], frameon=False)
+    # subfigs[1, 1].supxlabel("Time [ns]")
+    ax2 = ax[0].twinx()
+    ax3 = ax[1].twinx()
+    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", color="#293689", label="Write")
+    plot_trace_averaged(ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423" , label="Enable Write")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_read1_avg", color="#ff14f0", linestyle="--", label="Read 1")
+    plot_trace_averaged(ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read")
+    ax[1].legend(["Read 0", "Read 1"], frameon=False)
+    ax[1].set_xlabel("Time [$\mu$s]")
+    ax2.set_ylabel("[V]")
 
     axfit = subfigs[1, 2].add_subplot()
     plot_all_cells(axfit)
@@ -176,6 +179,63 @@ def create_combined_plot_v2(data_dict: dict, save=False):
     if save:
         plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
     plt.show()
+
+
+def create_combined_plot_v3(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")    
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write")
+    plot_trace_averaged(ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423" , label="Enable Write")
+    plot_trace_averaged(ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0")
+    plot_trace_averaged(ax_dict["B"], data_dict[4], "trace_read1_avg", color="#ff14f0", linestyle="--", label="Read 1")
+    plot_trace_averaged(ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read")
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_all_cells(ax_dict["C"])
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v4(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")    
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write")
+    plot_trace_averaged(ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423" , label="Enable Write")
+    plot_trace_averaged(ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0")
+    plot_trace_averaged(ax_dict["B"], data_dict[4], "trace_read1_avg", color="#ff14f0", linestyle="--", label="Read 1")
+    plot_trace_averaged(ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read")
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_hist(ax_dict["C"], data_dict[3])
+
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
 
 
 if __name__ == "__main__":
@@ -209,4 +269,4 @@ if __name__ == "__main__":
         ),
     }
 
-    create_combined_plot_v2(data_dict, save=True)
+    create_combined_plot_v4(data_dict, save=True)
