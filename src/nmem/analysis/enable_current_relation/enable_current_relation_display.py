@@ -16,7 +16,7 @@ def display_all(file_path: str):
             cell = "_"
 
         fig, ax = plt.subplots()
-        plot_enable_current_relation(ax, dict)
+        plot_enable_current_relation(ax, dict, "write_1_read_0_norm")
         ax.set_xlabel("Enable Current [$\mu$A]")
         ax.set_ylabel("Critical Current [$\mu$A]")
         ax.set_ylim(bottom=0)
