@@ -35,7 +35,7 @@ def build_array(
     return x, y, zarray
 
 
-def filter_first(value):
+def filter_first(value: any) -> any:
     if isinstance(value, collections.abc.Iterable) and not isinstance(
         value, (str, bytes)
     ):
@@ -372,10 +372,11 @@ def plot_read_sweep(
 
 
 def plot_read_sweep_array(
-    ax: Axes, data_dict: dict, value_name: str, variable_name: str
+    ax: Axes, data_dict: dict, value_name: str, variable_name: str, **kwargs
 ) -> Axes:
+    colors = plt.cm.viridis(np.linspace(0, 1, len(data_dict.keys())))
     for key in data_dict.keys():
-        plot_read_sweep(ax, data_dict[key], value_name, variable_name)
+        plot_read_sweep(ax, data_dict[key], value_name, variable_name, color=colors[key])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
