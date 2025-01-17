@@ -33,6 +33,7 @@ from nmem.measurement.optimize import (
     optimize_bias,
     optimize_read,
     optimize_write,
+    optimize_enable,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]
@@ -42,6 +43,7 @@ def run_optimize(meas_dict: dict):
     meas_dict, space, x0, b = optimize_bias(meas_dict)
     # meas_dict, space, x0, b = optimize_read(meas_dict)
     # meas_dict, space, x0, b = optimize_write(meas_dict)
+    # meas_dict, space, x0, b = optimize_enable(meas_dict)
 
     opt_result = gp_minimize(
         partial(objective, meas_dict=meas_dict, space=space, b=b),
@@ -50,7 +52,6 @@ def run_optimize(meas_dict: dict):
         verbose=True,
         x0=x0,
     )
-
     return opt_result, meas_dict
 
 
@@ -111,14 +112,15 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 155e-6,
-        "read_current": 820e-6,
-        "enable_write_current": 461e-6,
-        "enable_read_current": 72e-6,
+        "write_current": 40e-6,
+        "read_current": 675e-6,
+        "enable_write_current": 530e-6,
+        "enable_read_current": 144e-6,
     }
 
-    NUM_MEAS = 500
+    NUM_MEAS = 1000
     NUM_CALLS = 40
+
     measurement_settings = {
         **waveform_settings,
         **current_settings,
@@ -127,8 +129,6 @@ if __name__ == "__main__":
         "HEATERS": HEATERS,
         "num_meas": NUM_MEAS,
         "spice_device_current": SPICE_DEVICE_CURRENT,
-        "x": 0,
-        "y": 0,
         "sweep_parameter_x": "enable_read_current",
         "sweep_parameter_y": "read_current",
     }
