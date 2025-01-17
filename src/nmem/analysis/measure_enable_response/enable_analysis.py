@@ -5,12 +5,12 @@ from matplotlib.axes import Axes
 
 from nmem.analysis.analysis import (
     import_directory,
+    get_fitting_points,
 )
 from nmem.measurement.cells import CELLS
 from nmem.measurement.functions import (
     calculate_channel_temperature,
     filter_plateau,
-    get_fitting_points,
     plot_fitting,
 )
 
@@ -137,7 +137,7 @@ def plot_full_grid():
 
 def plot_all_cells(ax: Axes) -> Axes:
     dict_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\measure_enable_response\data")
-    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    colors = plt.cm.RdBu(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
     avg_slope, avg_intercept = get_average_response(CELLS)
 
