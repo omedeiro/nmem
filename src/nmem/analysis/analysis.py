@@ -100,7 +100,7 @@ def text_from_bit_v2(bit: str):
         return None
 
 
-def find_edge(data: np.ndarray) -> list:
+def get_state_index(data: np.ndarray) -> list:
     pos_data = np.argwhere(data > 0.55)
     neg_data = np.argwhere(data < 0.45)
 
@@ -108,14 +108,14 @@ def find_edge(data: np.ndarray) -> list:
         pos_edge1 = pos_data[0][0]
         neg_edge1 = pos_data[-1][0]
     else:
-        pos_edge1 = 0
-        neg_edge1 = 0
+        pos_edge1 = np.nan
+        neg_edge1 = np.nan
     if len(neg_data) > 0:
         neg_edge2 = neg_data[0][0]
         pos_edge2 = neg_data[-1][0]
     else:
-        neg_edge2 = 0
-        pos_edge2 = 0
+        neg_edge2 = np.nan
+        pos_edge2 = np.nan
     return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
 
 
@@ -289,32 +289,31 @@ def plot_enable(ax: Axes, data_dict: dict, trace_index: int):
     return ax
 
 
-def find_state_currents(data_dict: dict) -> Tuple[float, float]:
-    read_currents = data_dict["y"][:, :, 0].flatten() * 1e6
-    ber = data_dict["bit_error_rate"].flatten()
+def get_state_currents(
+    read_currents: np.ndarray, bit_error_rate: np.ndarray
+) -> Tuple[float, float]:
 
-    if np.max(ber) > 0.6:
-        max_ber = np.max(ber)
-        ber_threshold = 0.5 + (max_ber - 0.5) / 2
-        state1_current = read_currents[ber > ber_threshold][0]
-        state0_current = read_currents[ber > ber_threshold][-1]
-
-    else:
-        min_ber = np.min(ber)
-        ber_threshold = 0.5 - (0.5 - min_ber) / 2
-        state0_current = read_currents[ber < ber_threshold][0]
-        state1_current = read_currents[ber < ber_threshold][-1]
+    state_idx = get_state_index(bit_error_rate)
+    state0_current = np.nan
+    state1_current = np.nan
+    if state_idx[0] is not np.nan:
+        state0_current = read_currents[state_idx[0]]
+        state1_current = read_currents[state_idx[1]]
+    if state_idx[2] is not np.nan:
+        state0_current = read_currents[state_idx[2]]
+        state1_current = read_currents[state_idx[3]]
 
     return state0_current, state1_current
 
 
 def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
-    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
-    ber = data_dict.get("bit_error_rate").flatten()
-    state0_current, state1_current = find_state_currents(data_dict)
+    read_currents = get_read_currents(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
+
+    state0_current, state1_current = get_state_currents(read_currents, bit_error_rate)
     ax.plot(
         read_currents[read_currents == state0_current],
-        ber[read_currents == state0_current],
+        bit_error_rate[read_currents == state0_current],
         marker="D",
         markeredgecolor="k",
         linewidth=1.5,
@@ -323,12 +322,23 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
     )
     ax.plot(
         read_currents[read_currents == state1_current],
-        ber[read_currents == state1_current],
+        bit_error_rate[read_currents == state1_current],
         marker="P",
         markeredgecolor="k",
         linewidth=1.5,
         label="_state1",
         **kwargs,
+    )
+    ax.plot(
+        [
+            read_currents[read_currents == state0_current],
+            read_currents[read_currents == state1_current],
+        ],
+        [
+            bit_error_rate[read_currents == state0_current],
+            bit_error_rate[read_currents == state1_current],
+        ],
+        color="grey",
     )
 
     return ax
@@ -344,7 +354,7 @@ def plot_read_sweep(
     state_markers: bool = False,
     **kwargs,
 ) -> Axes:
-    read_currents = data_dict.get("y")[:, :, 0] * 1e6
+    read_currents = get_read_currents(data_dict)
     value = data_dict.get(value_name).flatten()
     variable = data_dict.get(variable_name).flatten()[0]
 
@@ -371,14 +381,52 @@ def plot_read_sweep(
     return ax
 
 
+def get_read_currents(data_dict: dict) -> np.ndarray:
+    read_currents = data_dict.get("y")[:, :, 0] * 1e6
+    return read_currents.flatten()
+
+
+def get_bit_error_rate(data_dict: dict) -> np.ndarray:
+    return data_dict.get("bit_error_rate").flatten()
+
+
+def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
+    num_meas = data_dict.get("num_meas")[0][0]
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
+    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
+    ber = (w1r0 + w0r1) / 2
+    return ber
+
+
 def plot_read_sweep_array(
     ax: Axes, data_dict: dict, value_name: str, variable_name: str, **kwargs
 ) -> Axes:
-    colors = plt.cm.viridis(np.linspace(0, 1, len(data_dict.keys())))
+    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_dict.keys())))
     for key in data_dict.keys():
-        plot_read_sweep(ax, data_dict[key], value_name, variable_name, color=colors[key])
+        plot_read_sweep(
+            ax, data_dict[key], value_name, variable_name, color=colors[key]
+        )
+        plot_edges(ax, data_dict, key)
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+    return ax
+
+
+def plot_edges(ax: Axes, data_dict: dict, key: str) -> Axes:
+    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_dict.keys())))
+    bit_error_rate = get_bit_error_rate(data_dict[key])
+    edges = get_state_index(bit_error_rate)
+
+    read_current = data_dict[key].get("y")[:, :, 0].flatten() * 1e6
+    for edge in edges:
+        if edge is not np.nan:
+            ax.plot(
+                read_current[edge],
+                bit_error_rate[edge],
+                marker="o",
+                color=colors[key],
+            )
+            ax.axvline(read_current[edge], color=colors[key], linestyle="--")
     return ax
 
 
@@ -412,12 +460,12 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
     cmap = plt.get_cmap("RdBu")
     colors = cmap(np.linspace(0, 1, 5))
 
-    read_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
-    ber = data_dict.get("bit_error_rate").flatten()
+    read_currents = get_bit_error_rate(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
     enable_read_current = data_dict.get("enable_read_current").flatten()[0] * 1e6
 
-    verts = polygon_nominal(read_currents, ber)
-    inv_verts = polygon_inverting(read_currents, ber)
+    verts = polygon_nominal(read_currents, bit_error_rate)
+    inv_verts = polygon_inverting(read_currents, bit_error_rate)
 
     poly = PolyCollection([verts], facecolors=colors[-1], alpha=0.6, edgecolors=None)
     poly_inv = PolyCollection(
@@ -435,29 +483,26 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 
 
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
-    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
-    ber = (w1r0 + w0r1) / 2
+    bit_error_rate = calculate_bit_error_rate(data_dict)
     measurement_param = data_dict.get("y")[0][:, 1] * 1e6
 
+    # ax.plot(
+    #     measurement_param,
+    #     w0r1,
+    #     color="#DBB40C",
+    #     label="Write 0 Read 1",
+    #     marker=".",
+    # )
+    # ax.plot(
+    #     measurement_param,
+    #     w1r0,
+    #     color="#740F15",
+    #     label="Write 1 Read 0",
+    #     marker=".",
+    # )
     ax.plot(
         measurement_param,
-        w0r1,
-        color="#DBB40C",
-        label="Write 0 Read 1",
-        marker=".",
-    )
-    ax.plot(
-        measurement_param,
-        w1r0,
-        color="#740F15",
-        label="Write 1 Read 0",
-        marker=".",
-    )
-    ax.plot(
-        measurement_param,
-        ber,
+        bit_error_rate,
         color="#08519C",
         label="Total Bit Error Rate",
         marker=".",
@@ -828,11 +873,38 @@ def get_fitting_points(
     return xfit, yfit
 
 
-def plot_slice(ax: Axes, data_dict: dict, parameter_z: str = "bit_error_rate") -> Axes:
+def plot_slice(
+    ax: Axes, data_dict: dict, parameter_z: str = "bit_error_rate", **kwargs
+) -> Axes:
     x, y, ztotal = build_array(data_dict, parameter_z)
-    ax.plot(
-        x,
-        ztotal,
-    )
+    if len(x) == 1:
+        x = y
+    ax.plot(x, ztotal, **kwargs)
 
     return ax
+
+
+if __name__ == "__main__":
+
+    data_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep\write_current_sweep_C3"
+    )
+    fig, ax = plt.subplots()
+
+    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_list)))
+    write_current_list = []
+    state_current_array = np.zeros((len(data_list), 4))
+    for i, data_dict in enumerate(data_list):
+        read_currents = get_read_currents(data_dict)
+        bit_error_rate = get_bit_error_rate(data_dict)
+        plot_slice(ax, data_dict, "bit_error_rate", color=colors[i])
+        state_idx = get_state_index(bit_error_rate)
+
+        state_currents = get_state_currents(read_currents, bit_error_rate)
+        plot_state_current_markers(ax, data_dict, color=colors[i])
+
+    plt.show()
+
+    # fig, ax = plt.subplots()
+    # for i in range(len(state_current_array)):
+    #     ax.plot(write_current_list, state_current_array[:,i], label=f"Data {i}")
