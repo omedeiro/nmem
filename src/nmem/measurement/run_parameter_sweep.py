@@ -153,7 +153,7 @@ if __name__ == "__main__":
     }
 
     current_settings = {
-        "write_current": 100e-6,
+        "write_current": 60e-6,
         "read_current": 736e-6,
         "enable_write_current": 567e-6,
         "enable_read_current": 144e-6,
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 2000
+    NUM_MEAS = 500
     sweep_length = 31
 
     measurement_settings.update(
@@ -179,14 +179,14 @@ if __name__ == "__main__":
             "num_meas": NUM_MEAS,
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "sweep_parameter_x": "enable_write_current",
-            "sweep_parameter_y": "read_current",
+            "sweep_parameter_y": "write_current",
         }
     )
     current_cell = measurement_settings.get("cell")
 
-    measurement_settings["x"] = np.array([567e-6])
+    measurement_settings["x"] = np.array([510e-6])
 
-    measurement_settings["y"] = np.linspace(500e-6, 900e-6, sweep_length)
+    measurement_settings["y"] = np.linspace(00e-6, 300e-6, sweep_length)
 
     data_dict = nm.run_sweep(
         b,
@@ -199,7 +199,7 @@ if __name__ == "__main__":
         b.properties, data_dict.get("measurement_name"), data_dict
     )
 
-    if data_dict["sweep_x_len"] > 1:
+    if data_dict["sweep_x_len"] > 1 and data_dict["sweep_y_len"] > 1:
         fig, ax = plt.subplots()
         nm.plot_array(
             ax,
