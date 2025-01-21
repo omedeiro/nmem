@@ -12,6 +12,7 @@ from nmem.analysis.analysis import (
     plot_read_sweep_array_3d,
     plot_threshold,
     plot_voltage_trace,
+    get_state_index,
 )
 from nmem.calculations.analytical_model import create_data_dict
 from nmem.measurement.cells import CELLS
@@ -451,4 +452,24 @@ if __name__ == "__main__":
 
     # manuscript_figure()
     fig, ax = plt.subplots()
-    plot_read_sweep_array(ax, enable_read_310_dict, "bit_error_rate", "enable_read_current")
+    plot_read_sweep_array(
+        ax, inverse_compare_dict, "bit_error_rate", "enable_read_current"
+    )
+    data_dict = inverse_compare_dict
+    for key in data_dict.keys():
+        edges = get_state_index(data_dict[key].get("bit_error_rate").flatten())
+        ber = data_dict[key].get("bit_error_rate").flatten()
+        read_current = data_dict[key].get("y")[:, :, 0].flatten()
+
+        colors = plt.cm.viridis(np.linspace(0, 1, len(edges)))
+        markers = ["o", "s", "d", "x"]
+        for i, edge in enumerate(edges):
+            ax.plot(
+                [read_current[edge] * 1e6],
+                [ber[edge]],
+                color=colors[i, :],
+                linestyle="--",
+                linewidth=1,
+                marker=markers[i],
+                markersize=5,
+            )
