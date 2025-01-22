@@ -8,11 +8,14 @@ from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
     get_state_index,
-    plot_analytical,
+    get_trace_data,
+    plot_stack,
     plot_read_sweep_array,
     plot_read_sweep_array_3d,
     plot_threshold,
     plot_voltage_trace,
+    get_bit_error_rate,
+    get_read_currents,
 )
 from nmem.calculations.analytical_model import create_data_dict
 from nmem.measurement.cells import CELLS
@@ -37,23 +40,11 @@ plt.rcParams["ytick.major.size"] = 1
 CURRENT_CELL = "C1"
 
 
-def plot_stack(
-    axs: list[Axes],
-    data_dict: list[dict],
-    persistent_current: list[float],
-) -> list[Axes]:
-    for i in range(len(axs)):
-        data_dict[i]["persistent_current"] = persistent_current[i]
-        axs[i] = plot_analytical(axs[i], data_dict[i])
-        axs[i].set_aspect("equal")
-    return axs
-
-
 def plot_data_delay_manu_dev(
     axs: List[Axes],
     data_dict_keyd: dict,
 ) -> List[Axes]:
-    """Plot data traces with annotations for delay manufacturing development."""
+
     cmap = plt.get_cmap("RdBu").reversed()
     colors = cmap(np.linspace(0, 1, 8))
 
@@ -61,15 +52,14 @@ def plot_data_delay_manu_dev(
 
     ax = axs[0]
     data_dict = data_dict_keyd[0]
-    x = data_dict.get("trace_chan_in")[0][:, INDEX] * 1e6
-    y = np.mean(data_dict.get("trace_chan_in")[1], axis=1) * 1e3
-
+    x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
+    y = np.mean(y, axis=1)
+    
     plot_voltage_trace(ax, x, y, color=colors[0])
 
     ax = axs[1]
     data_dict = data_dict_keyd[1]
-    x = data_dict.get("trace_chan_in")[0][:, INDEX] * 1e6
-    y = data_dict.get("trace_chan_in")[1][:, INDEX] * 1e3
+    x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
     plot_voltage_trace(ax, x, y, color=colors[-1])
 
     for idx, ax in enumerate(axs[2:]):
@@ -450,26 +440,28 @@ if __name__ == "__main__":
         PERSISTENT_CURRENT,
     )
 
-    # manuscript_figure()
+    manuscript_figure()
     fig, ax = plt.subplots()
     plot_read_sweep_array(
         ax, inverse_compare_dict, "bit_error_rate", "enable_read_current"
     )
-    data_dict = inverse_compare_dict
-    for key in data_dict.keys():
-        edges = get_state_index(data_dict[key].get("bit_error_rate").flatten())
-        ber = data_dict[key].get("bit_error_rate").flatten()
-        read_current = data_dict[key].get("y")[:, :, 0].flatten()
+    # data_dict = inverse_compare_dict
+    # for key in data_dict.keys():
+    #     edges = get_state_index(data_dict[key].get("bit_error_rate").flatten())
+    #     bit_error_rate = get_bit_error_rate(data_dict[key])
+    #     read_current = get_read_currents(data_dict[key])
 
-        colors = plt.cm.viridis(np.linspace(0, 1, len(edges)))
-        markers = ["o", "s", "d", "x"]
-        for i, edge in enumerate(edges):
-            ax.plot(
-                [read_current[edge] * 1e6],
-                [ber[edge]],
-                color=colors[i, :],
-                linestyle="--",
-                linewidth=1,
-                marker=markers[i],
-                markersize=5,
-            )
+
+    #     colors = plt.cm.viridis(np.linspace(0, 1, len(edges)))
+    #     markers = ["o", "s", "d", "x"]
+    #     for i, edge in enumerate(edges):
+    #         if not np.isnan(edge):
+    #             ax.plot(
+    #                 [read_current[edge] * 1e6],
+    #                 [bit_error_rate[edge]],
+    #                 color=colors[i, :],
+    #                 linestyle="--",
+    #                 linewidth=1,
+    #                 marker=markers[i],
+    #                 markersize=5,
+    #             )
