@@ -3,7 +3,7 @@ import scipy.io as sio
 from matplotlib.axes import Axes
 
 from nmem.analysis.measure_enable_response.enable_analysis import plot_all_cells
-
+from nmem.analysis.analysis import plot_message
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
@@ -22,38 +22,6 @@ plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
 
-def text_from_bit(bit: str) -> str:
-    if bit == "0":
-        return "0"
-    elif bit == "1":
-        return "1"
-    elif bit == "N":
-        return ""
-    elif bit == "R":
-        return ""
-    elif bit == "E":
-        return ""
-    elif bit == "W":
-        return ""
-    else:
-        return None
-
-
-def plot_message(ax: Axes, message: str) -> Axes:
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate(message):
-        text = text_from_bit(bit)
-        ax.text(
-            i + 0.5,
-            axheight * 0.5,
-            text,
-            ha="center",
-            va="center",
-            fontsize=7,
-            color="black",
-        )
-
-    return ax
 
 
 def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, **kwargs) -> Axes:
@@ -268,5 +236,17 @@ if __name__ == "__main__":
             "SPG806_20241119_nMem_parameter_sweep_D6_A4_B4_2024-11-19 10-52-23.mat"
         ),
     }
+
+    fig, ax = plt.subplots()
+    plot_delay(ax, data_dict)
+    plt.show()
+
+    fig, ax = plt.subplots()
+    plot_hist(ax, data_dict[3])
+    plt.show()
+
+    fig, ax = plt.subplots()
+    plot_bitstream(ax, data_dict[5], "trace_chan_out")
+    plt.show()
 
     create_combined_plot_v4(data_dict, save=True)
