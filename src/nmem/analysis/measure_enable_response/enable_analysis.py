@@ -1,10 +1,6 @@
 import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.axes import Axes
 
 from nmem.analysis.analysis import plot_all_cells
-from nmem.measurement.cells import CELLS
-
 
 if __name__ == "__main__":
     # plot_full_grid()

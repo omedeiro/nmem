@@ -1339,22 +1339,6 @@ def plot_combined_figure(ax: Axes, data_list: list, save: bool = False) -> Axes:
     return ax
 
 
-def plot_message(ax: Axes, message: str) -> Axes:
-    axheight = ax.get_ylim()[1]
-    for i, bit in enumerate(message):
-        text = get_text_from_bit(bit)
-        ax.text(
-            i + 0.5,
-            axheight * 0.5,
-            text,
-            ha="center",
-            va="center",
-            fontsize=7,
-            color="black",
-        )
-
-    return ax
-
 
 def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, **kwargs) -> Axes:
     ax.plot(
@@ -1816,12 +1800,3 @@ def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
     return ax
 
 
-def plot_read_temp_sweep_C3():
-    fig, axs = plt.subplots(2, 2, figsize=(12, 6))
-
-    plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
-    plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
-    plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
-    plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
-    axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
-    fig.subplots_adjust(hspace=0.5, wspace=0.3)

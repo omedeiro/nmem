@@ -5,7 +5,6 @@ Created on Fri Nov  3 14:01:31 2023
 @author: omedeiro
 """
 
-import collections.abc
 import logging
 import os
 import time
@@ -22,7 +21,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.analysis import build_array, plot_fit
+from nmem.analysis.analysis import build_array, filter_first, plot_fit
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,

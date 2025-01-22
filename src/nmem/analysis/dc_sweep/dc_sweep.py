@@ -1,10 +1,6 @@
-from typing import Tuple
 
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.axes import Axes
-from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
     import_directory,
@@ -12,7 +8,6 @@ from nmem.analysis.analysis import (
     plot_critical_currents_abs,
     plot_iv,
 )
-from nmem.measurement.functions import calculate_channel_temperature
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)

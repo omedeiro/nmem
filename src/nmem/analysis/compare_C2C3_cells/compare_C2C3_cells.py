@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy.io as sio
 
-from nmem.analysis.analysis import build_array, get_fitting_points, plot_channel_temperature
+from nmem.analysis.analysis import (
+    build_array,
+    get_fitting_points,
+    plot_channel_temperature,
+)
 from nmem.measurement.functions import plot_fitting
-
-
 
 if __name__ == "__main__":
     data_dict = sio.loadmat(

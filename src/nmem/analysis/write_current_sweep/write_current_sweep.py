@@ -1,18 +1,18 @@
-import os
 
 import matplotlib.pyplot as plt
-import numpy as np
 
-from nmem.analysis.analysis import (
-    build_array,
-    filter_first,
-    import_directory,
-    plot_write_sweep, 
-    plot_read_temp_sweep_C3
-)
-from nmem.measurement.functions import calculate_channel_temperature, calculate_critical_current
-from matplotlib.ticker import MultipleLocator
+from nmem.analysis.analysis import plot_write_sweep
 
+
+def plot_read_temp_sweep_C3():
+    fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+
+    plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
+    plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
+    plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
+    plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
+    axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+    fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
 
 if __name__ == "__main__":

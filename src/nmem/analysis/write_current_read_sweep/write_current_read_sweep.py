@@ -1,9 +1,7 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-from matplotlib.pyplot import Axes
 
 from nmem.analysis.analysis import (
-    plot_read_sweep,
     plot_read_sweep_array,
 )
 from nmem.measurement.cells import CELLS

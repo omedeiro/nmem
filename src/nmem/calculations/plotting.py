@@ -4,7 +4,6 @@ from cycler import cycler
 from matplotlib.axes import Axes
 
 
-
 def plot_htron_sweep(
     ax: Axes,
     write_currents: np.ndarray,

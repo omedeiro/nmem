@@ -7,12 +7,12 @@ from matplotlib.pyplot import Axes
 from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
+    get_state_index,
     plot_analytical,
     plot_read_sweep_array,
     plot_read_sweep_array_3d,
     plot_threshold,
     plot_voltage_trace,
-    get_state_index,
 )
 from nmem.calculations.analytical_model import create_data_dict
 from nmem.measurement.cells import CELLS
