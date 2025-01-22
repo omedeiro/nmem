@@ -170,7 +170,7 @@ def create_combined_plot_v2(data_dict: dict, save=False):
     plot_trace_averaged(ax[1], data_dict[4], "trace_read1_avg", color="#ff14f0", linestyle="--", label="Read 1")
     plot_trace_averaged(ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read")
     ax[1].legend(["Read 0", "Read 1"], frameon=False)
-    ax[1].set_xlabel("Time [$\mu$s]")
+    ax[1].set_xlabel("Time [ns]")
     ax2.set_ylabel("[V]")
 
     axfit = subfigs[1, 2].add_subplot()
@@ -197,7 +197,7 @@ def create_combined_plot_v3(data_dict: dict, save=False):
     ax2.set_ylabel("[mV]")
     ax3.legend()
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_xlabel("Time [ns]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
 
@@ -224,7 +224,7 @@ def create_combined_plot_v4(data_dict: dict, save=False):
     ax2.set_ylabel("[mV]")
     ax3.legend()
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_xlabel("Time [ns]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
 
