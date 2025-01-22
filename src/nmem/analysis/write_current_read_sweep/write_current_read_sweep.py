@@ -12,24 +12,10 @@ plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14
 
 
-CURRENT_CELL = "C1"
-
-
-def plot_read_sweep_multiple(ax: Axes, data_dict: dict) -> Axes:
-    for key in data_dict.keys():
-        ax = plot_read_sweep(ax, data_dict[key], "bit_error_rate", "write_current")
-
-    ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    ax.grid(True)
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    return ax
-
-
 if __name__ == "__main__":
     current_cell = "C4"
     HTRON_SLOPE = CELLS[current_cell]["slope"]
-    HTRON_INTERCEPT = CELLS[current_cell]["intercept"]
+    HTRON_INTERCEPT = CELLS[current_cell]["y_intercept"]
     WIDTH_LEFT = 0.1
     WIDTH_RIGHT = 0.213
     ALPHA = 0.563
