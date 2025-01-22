@@ -24,5 +24,5 @@ def display_all(file_path: str):
 
 
 if __name__ == "__main__":
-    # display_all("data")
+    display_all("data")
     display_all("data2")
