@@ -30,28 +30,6 @@ plt.rcParams["legend.frameon"] = False
 plt.rcParams["axes.labelpad"] = 0.5
 
 
-def plot_array_3d(
-    xloc, yloc, ztotal, title=None, log=False, norm=False, reverse=False, ax=None
-):
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    cmap = plt.cm.get_cmap("viridis")
-    if reverse:
-        cmap = plt.cm.get_cmap("viridis").reversed()
-
-    ax.bar3d(xloc, yloc, 0, 1, 1, ztotal.flatten(), shade=True)
-    if title is not None:
-        ax.set_title(title)
-    ax.set_xticks(range(4), ["A", "B", "C", "D"])
-    ax.set_yticks(range(4), ["1", "2", "3", "4"])
-    ax.set_zlim(0, np.nanmax(ztotal))
-    ax.patch.set_visible(False)
-
-    ax.tick_params(axis="both", which="major", labelsize=6, pad=0)
-    # ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
-
-    return ax
 
 
 if __name__ == "__main__":

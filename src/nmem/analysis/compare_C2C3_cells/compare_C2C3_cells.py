@@ -2,60 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-from nmem.analysis.analysis import build_array, get_fitting_points
+from nmem.analysis.analysis import build_array, get_fitting_points, plot_channel_temperature
 from nmem.measurement.functions import plot_fitting
 
-
-def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
-
-    temp_critical: float = data_dict.get("critical_temperature", 12.3)
-    temp_substrate: float = data_dict.get("substrate_temperature", 1.3)
-
-    ih = data_dict.get("x")[0][:, 0]
-    ih_max = data_dict.get("x_intercept", 500e-6)
-
-    return _calculate_channel_temperature(temp_critical, temp_substrate, ih, ih_max)
-
-
-def _calculate_channel_temperature(
-    temp_critical: float, temp_substrate: float, ih: np.ndarray, ih_max: float
-) -> np.ndarray:
-    N = 2.0
-    temp_channel = (
-        (temp_critical**4 - temp_substrate**4) * (ih / ih_max) ** N
-        + (temp_substrate**4)
-    ) ** 0.25
-    return temp_channel
-
-
-def calculate_critical_current(data_dict: dict) -> np.ndarray:
-    temp_critical = data_dict.get("critical_temperature", 12.3)
-    temp_substrate = data_dict.get("substrate_temperature", 1.3)
-    temp_channel = calculate_channel_temperature(data_dict)
-
-    ic_max = data_dict.get("max_critical_current", 900e-6)
-    return _calculate_critical_current(
-        temp_critical, temp_substrate, temp_channel, ic_max
-    )
-
-
-def _calculate_critical_current(
-    temp_critical: float, temp_substrate: float, temp_channel: np.ndarray, ic_max: float
-) -> np.ndarray:
-    ic_zero = ic_max / (1 + (temp_substrate / temp_critical) ** 3) ** 2.1
-
-    ic = ic_zero * (1 + (temp_channel / temp_critical) ** 3) ** 2.1
-    return ic
-
-
-def plot_channel_temperature(ax: plt.Axes, data_dict: dict) -> np.ndarray:
-    channel_temp = calculate_channel_temperature(data_dict)
-    heater_current = data_dict.get("x")[0][:, 0] * 1e6
-    ax.plot(heater_current, channel_temp, label="C2", linestyle="-")
-    ax.set_xlabel("Heater Current ($\mu$A)")
-    ax.set_ylabel("Channel Temperature (K)")
-
-    return ax
 
 
 if __name__ == "__main__":

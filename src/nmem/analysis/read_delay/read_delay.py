@@ -6,28 +6,7 @@ from matplotlib.axes import Axes
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 12
 
-
-def plot_read_delay(ax: Axes, data_dict: dict) -> Axes:
-    cmap = plt.get_cmap("Reds")
-    colors = cmap(np.linspace(0.2, 1, len(data_dict)))
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
-        ax.plot(
-            read_currents,
-            ber,
-            label=f"+{key}$\mu$s",
-            color=colors[key],
-            marker=".",
-            markeredgecolor="k",
-        )
-    ax.set_xlim(read_currents[0], read_currents[-1])
-    ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    ax.grid(True)
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1))
-
-    return ax
+from nmem.analysis.analysis import plot_read_delay
 
 
 if __name__ == "__main__":

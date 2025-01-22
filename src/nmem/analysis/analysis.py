@@ -19,6 +19,9 @@ from nmem.calculations.calculations import (
 )
 from nmem.measurement.cells import CELLS
 
+SUBSTRATE_TEMP = 1.3
+CRITICAL_TEMP = 12.3
+
 
 def build_array(
     data_dict: dict, parameter_z: str
@@ -35,7 +38,20 @@ def build_array(
     return x, y, zarray
 
 
-def filter_first(value: any) -> any:
+def filter_plateau(
+    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    xfit = np.where(yfit < plateau_height, xfit, np.nan)
+    yfit = np.where(yfit < plateau_height, yfit, np.nan)
+
+    # REmove nans
+    xfit = xfit[~np.isnan(xfit)]
+    yfit = yfit[~np.isnan(yfit)]
+
+    return xfit, yfit
+
+
+def filter_first(value) -> any:
     if isinstance(value, collections.abc.Iterable) and not isinstance(
         value, (str, bytes)
     ):
@@ -43,13 +59,113 @@ def filter_first(value: any) -> any:
     return value
 
 
-def import_directory(file_path: str) -> list:
-    data_list = []
-    files = get_file_names(file_path)
-    for file in files:
-        data = sio.loadmat(os.path.join(file_path, file))
-        data_list.append(data)
-    return data_list
+def convert_location_to_coordinates(location: str) -> tuple:
+    """Converts a location like 'A1' to coordinates (x, y)."""
+    column_letter = location[0]
+    row_number = int(location[1:]) - 1
+    column_number = ord(column_letter) - ord("A")
+    return column_number, row_number
+
+
+def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
+    num_meas = data_dict.get("num_meas")[0][0]
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
+    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
+    ber = (w1r0 + w0r1) / 2
+    return ber
+
+
+def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
+
+    critical_temperature: float = data_dict.get("critical_temperature", CRITICAL_TEMP)
+    substrate_temperature: float = data_dict.get(
+        "substrate_temperature", SUBSTRATE_TEMP
+    )
+
+    ih = data_dict.get("x").flatten()[0] * 1e6
+    cell = data_dict.get("cell")[0]
+    ih_max = CELLS[cell]["x_intercept"]
+
+    return _calculate_channel_temperature(
+        critical_temperature, substrate_temperature, ih, ih_max
+    )
+
+
+def _calculate_channel_temperature(
+    critical_temperature: float,
+    substrate_temperature: float,
+    ih: float,
+    ih_max: float,
+) -> np.ndarray:
+    N = 2.0
+
+    if ih_max == 0:
+        raise ValueError("ih_max cannot be zero to avoid division by zero.")
+
+    channel_temperature = (critical_temperature**4 - substrate_temperature**4) * (
+        (ih / ih_max) ** N
+    ) + substrate_temperature**4
+
+    channel_temperature = np.maximum(channel_temperature, 0)
+
+    temp_channel = np.power(channel_temperature, 0.25)
+    return temp_channel
+
+
+def calculate_critical_current(data_dict: dict) -> np.ndarray:
+    critical_temperature = data_dict.get("critical_temperature", 12.3)
+    channel_temperature = calculate_channel_temperature(data_dict)
+    ic_zero = get_critical_current_zero_temp(data_dict)
+
+    return _calculate_critical_current(
+        critical_temperature, channel_temperature, ic_zero
+    )
+
+
+def _calculate_critical_current(
+    critical_temperature: float,
+    substrate_temperature: float,
+    ic_max: float,
+) -> np.ndarray:
+    ic = ic_max * np.power(
+        (1 - np.power(substrate_temperature / critical_temperature, 3)), 2.1
+    )
+    return ic
+
+
+def get_current_cell(data_dict: dict) -> str:
+    cell = data_dict.get("cell")[0]
+    return cell
+
+
+def get_critical_current_zero_temp(data_dict: dict) -> np.ndarray:
+    cell = get_current_cell(data_dict)
+    switching_current = CELLS[cell]["max_critical_current"] * 1e6
+    substrate_temp = SUBSTRATE_TEMP
+    critical_temp = CRITICAL_TEMP
+
+    max_critical_current = switching_current / np.power(
+        1 - np.power(substrate_temp / critical_temp, 3), 2.1
+    )
+    return max_critical_current
+
+def get_enable_read_current(data_dict: dict) -> float:
+    return filter_first(data_dict.get("enable_read_current")) * 1e6
+
+def get_enable_write_current(data_dict: dict) -> float:
+    return filter_first(data_dict.get("enable_write_current")) * 1e6
+
+
+def get_average_response(cell_dict):
+    slope_list = []
+    intercept_list = []
+    for value in cell_dict.values():
+        slope_list.append(value.get("slope"))
+        intercept_list.append(value.get("y_intercept"))
+
+    slope = np.mean(slope_list)
+    intercept = np.mean(intercept_list)
+    return slope, intercept
 
 
 def get_file_names(file_path: str) -> list:
@@ -58,7 +174,7 @@ def get_file_names(file_path: str) -> list:
     return files
 
 
-def text_from_bit(bit: str) -> str:
+def get_text_from_bit(bit: str) -> str:
     if bit == "0":
         return "WR0"
     elif bit == "1":
@@ -75,7 +191,7 @@ def text_from_bit(bit: str) -> str:
         return None
 
 
-def text_from_bit_v2(bit: str):
+def get_text_from_bit_v2(bit: str) -> str:
     if bit == "0":
         return "WR0"
     elif bit == "1":
@@ -117,6 +233,94 @@ def get_state_index(data: np.ndarray) -> list:
         neg_edge2 = np.nan
         pos_edge2 = np.nan
     return [pos_edge1, neg_edge1, neg_edge2, pos_edge2]
+
+
+def get_read_currents(data_dict: dict) -> np.ndarray:
+    read_currents = data_dict.get("y")[:, :, 0] * 1e6
+    return read_currents.flatten()
+
+
+def get_bit_error_rate(data_dict: dict) -> np.ndarray:
+    return data_dict.get("bit_error_rate").flatten()
+
+
+def get_state_currents(
+    read_currents: np.ndarray, bit_error_rate: np.ndarray
+) -> Tuple[float, float]:
+
+    state_idx = get_state_index(bit_error_rate)
+    state0_current = np.nan
+    state1_current = np.nan
+    if state_idx[0] is not np.nan:
+        state0_current = read_currents[state_idx[0]]
+        state1_current = read_currents[state_idx[1]]
+    if state_idx[2] is not np.nan:
+        state0_current = read_currents[state_idx[2]]
+        state1_current = read_currents[state_idx[3]]
+
+    return state0_current, state1_current
+
+
+def get_critical_currents(data_list: list) -> Tuple[list, list]:
+    critical_currents = []
+    critical_currents_std = []
+    for data in data_list:
+        time = data.get("trace")[0, :]
+        voltage = data.get("trace")[1, :]
+
+        M = int(np.round(len(voltage), -2))
+        if len(voltage) > M:
+            voltage = voltage[:M]
+            time = time[:M]
+        else:
+            voltage = np.concatenate([voltage, np.zeros(M - len(voltage))])
+            time = np.concatenate([time, np.zeros(M - len(time))])
+
+        current_time_trend = (
+            data["vpp"]
+            / 2
+            / 10e3
+            * (data["time_trend"][1, :])
+            / (1 / (data["freq"] * 4))
+            * 1e6
+        )
+
+        avg_critical_current = np.mean(current_time_trend)
+        std_critical_current = np.std(current_time_trend)
+        critical_currents.append(avg_critical_current)
+        critical_currents_std.append(std_critical_current)
+
+    return critical_currents, critical_currents_std
+
+
+def get_fitting_points(
+    x: np.ndarray, y: np.ndarray, ztotal: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0) / 2)
+    xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
+    yfit = y[mid_idx[0]][xfit_idx]
+    return xfit, yfit
+
+
+def get_write_temperature(data_dict: dict) -> float:
+    enable_write_current = get_enable_write_current(data_dict)
+    cell = data_dict.get("cell")[0]
+    max_enable_current = filter_first(
+        data_dict["CELLS"][cell][0][0]["x_intercept"]
+    ).flatten()[0]
+    enable_write_temp = _calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
+    ).flatten()[0]
+    return enable_write_temp
+
+
+def import_directory(file_path: str) -> list:
+    data_list = []
+    files = get_file_names(file_path)
+    for file in files:
+        data = sio.loadmat(os.path.join(file_path, file))
+        data_list.append(data)
+    return data_list
 
 
 def initialize_dict(array_size: tuple) -> dict:
@@ -201,6 +405,16 @@ def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
     return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
+def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
+    channel_temp = calculate_channel_temperature(data_dict)
+    heater_current = data_dict.get("x")[0][:, 0] * 1e6
+    ax.plot(heater_current, channel_temp, **kwargs)
+    ax.set_xlabel("Heater Current ($\mu$A)")
+    ax.set_ylabel("Channel Temperature (K)")
+
+    return ax
+
+
 def plot_threshold(ax: Axes, start: int, end: int, threshold: float) -> Axes:
     ax.hlines(threshold, start, end, color="red", ls="-", lw=1)
     return ax
@@ -209,10 +423,15 @@ def plot_threshold(ax: Axes, start: int, end: int, threshold: float) -> Axes:
 def plot_message(ax: Axes, message: str) -> Axes:
     axheight = ax.get_ylim()[1]
     for i, bit in enumerate(message):
-        text = text_from_bit(bit)
+        text = get_text_from_bit(bit)
         ax.text(i + 0.5, axheight * 1.45, text, ha="center", va="center", fontsize=14)
 
     return ax
+
+def get_trace_data(data_dict: dict, trace_name:Literal["trace_chan_in", "trace_chan_out", "trace_enab"], trace_index: int) -> Tuple[np.ndarray, np.ndarray]:
+    x = data_dict[trace_name][0][:, trace_index] * 1e6
+    y = data_dict[trace_index][1][:, trace_index] * 1e3
+    return x, y
 
 
 def plot_trace_zoom(
@@ -231,8 +450,7 @@ def plot_trace_zoom(
 
 def plot_chan_in(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
     message = data_dict["bitmsg_channel"][0]
-    x = data_dict["trace_chan_in"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_in"][1][:, trace_index] * 1e3
+    x, y = get_trace_data(data_dict, "trace_chan_in", trace_index)
     ax.plot(x, y, color="#08519C")
     ax = plot_message(ax, message)
 
@@ -254,8 +472,8 @@ def plot_chan_in(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
 
 def plot_chan_out(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
     message = data_dict["bitmsg_channel"][0]
-    x = data_dict["trace_chan_out"][0][:, trace_index] * 1e6
-    y = data_dict["trace_chan_out"][1][:, trace_index] * 1e3
+    x, y = get_trace_data(data_dict, "trace_chan_out", trace_index)
+
     ax.plot(x, y, color="#740F15")
     ax = plot_message(ax, message)
 
@@ -276,8 +494,7 @@ def plot_chan_out(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
 
 
 def plot_enable(ax: Axes, data_dict: dict, trace_index: int):
-    x = data_dict["trace_enab"][0][:, trace_index] * 1e6
-    y = data_dict["trace_enab"][1][:, trace_index] * 1e3
+    x, y = get_trace_data(data_dict, "trace_enable", trace_index)
     ax.plot(x, y, color="#DBB40C")
 
     ax.set_xticks(np.linspace(x[0], x[-1], 11))
@@ -287,23 +504,6 @@ def plot_enable(ax: Axes, data_dict: dict, trace_index: int):
     ax.set_xlabel("Time [$\mu$s]")
     ax.set_ylabel("Voltage [mV]")
     return ax
-
-
-def get_state_currents(
-    read_currents: np.ndarray, bit_error_rate: np.ndarray
-) -> Tuple[float, float]:
-
-    state_idx = get_state_index(bit_error_rate)
-    state0_current = np.nan
-    state1_current = np.nan
-    if state_idx[0] is not np.nan:
-        state0_current = read_currents[state_idx[0]]
-        state1_current = read_currents[state_idx[1]]
-    if state_idx[2] is not np.nan:
-        state0_current = read_currents[state_idx[2]]
-        state1_current = read_currents[state_idx[3]]
-
-    return state0_current, state1_current
 
 
 def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
@@ -381,23 +581,6 @@ def plot_read_sweep(
     return ax
 
 
-def get_read_currents(data_dict: dict) -> np.ndarray:
-    read_currents = data_dict.get("y")[:, :, 0] * 1e6
-    return read_currents.flatten()
-
-
-def get_bit_error_rate(data_dict: dict) -> np.ndarray:
-    return data_dict.get("bit_error_rate").flatten()
-
-
-def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
-    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
-    ber = (w1r0 + w0r1) / 2
-    return ber
-
-
 def plot_read_sweep_array(
     ax: Axes, data_dict: dict, value_name: str, variable_name: str, **kwargs
 ) -> Axes:
@@ -409,6 +592,29 @@ def plot_read_sweep_array(
         plot_edges(ax, data_dict, key)
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+    return ax
+
+
+def plot_read_delay(ax: Axes, data_dict: dict) -> Axes:
+    cmap = plt.get_cmap("Reds")
+    colors = cmap(np.linspace(0.2, 1, len(data_dict)))
+    for key, data in data_dict.items():
+        read_currents = data["y"][:, :, 0].flatten() * 1e6
+        ber = data["bit_error_rate"].flatten()
+        ax.plot(
+            read_currents,
+            ber,
+            label=f"+{key}$\mu$s",
+            color=colors[key],
+            marker=".",
+            markeredgecolor="k",
+        )
+    ax.set_xlim(read_currents[0], read_currents[-1])
+    ax.set_xlabel("Read Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax.grid(True)
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1))
+
     return ax
 
 
@@ -462,7 +668,7 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 
     read_currents = get_bit_error_rate(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
-    enable_read_current = data_dict.get("enable_read_current").flatten()[0] * 1e6
+    enable_read_current = get_enable_read_current(data_dict)
 
     verts = polygon_nominal(read_currents, bit_error_rate)
     inv_verts = polygon_inverting(read_currents, bit_error_rate)
@@ -534,20 +740,17 @@ def plot_trace_stack_1D(
     if len(axes) != 3:
         raise ValueError("The number of axes must be 3.")
 
-    chan_in_x = data_dict.get("trace_chan_in")[0] * 1e6
-    chan_in_y = data_dict.get("trace_chan_in")[1] * 1e3
-    chan_out_x = data_dict.get("trace_chan_out")[0] * 1e6
-    chan_out_y = data_dict.get("trace_chan_out")[1] * 1e3
-    enab_in_x = data_dict.get("trace_enab")[0] * 1e6
-    enab_in_y = data_dict.get("trace_enab")[1] * 1e3
+    chan_in_x, chan_in_y = get_trace_data(data_dict, "trace_chan_in", trace_index)
+    chan_out_x, chan_out_y = get_trace_data(data_dict, "trace_chan_out", trace_index)
+    enab_in_x, enab_in_y = get_trace_data(data_dict, "trace_enab", trace_index)
 
-    if chan_in_x.ndim == 2:
-        chan_in_x = chan_in_x[:, trace_index]
-        chan_in_y = chan_in_y[:, trace_index]
-        chan_out_x = chan_out_x[:, trace_index]
-        chan_out_y = chan_out_y[:, trace_index]
-        enab_in_x = enab_in_x[:, trace_index]
-        enab_in_y = enab_in_y[:, trace_index]
+    # if chan_in_x.ndim == 2:
+    #     chan_in_x = chan_in_x[:, trace_index]
+    #     chan_in_y = chan_in_y[:, trace_index]
+    #     chan_out_x = chan_out_x[:, trace_index]
+    #     chan_out_y = chan_out_y[:, trace_index]
+    #     enab_in_x = enab_in_x[:, trace_index]
+    #     enab_in_y = enab_in_y[:, trace_index]
 
     bitmsg_channel = data_dict.get("bitmsg_channel")[0]
     bitmsg_enable = data_dict.get("bitmsg_enable")[0]
@@ -616,14 +819,6 @@ def plot_voltage_hist(ax: Axes, voltage: np.ndarray, **kwargs) -> Axes:
     return ax
 
 
-def convert_location_to_coordinates(location: str) -> tuple:
-    """Converts a location like 'A1' to coordinates (x, y)."""
-    column_letter = location[0]
-    row_number = int(location[1:]) - 1
-    column_number = ord(column_letter) - ord("A")
-    return column_number, row_number
-
-
 def plot_text_labels(
     ax: Axes, xloc: np.ndarray, yloc: np.ndarray, ztotal: np.ndarray, log: bool
 ) -> Axes:
@@ -679,6 +874,30 @@ def plot_array(
     ax.xaxis.set_label_position("top")
     ax.tick_params(axis="both", length=0)
     ax = plot_text_labels(ax, xloc, yloc, ztotal, log)
+
+    return ax
+
+
+def plot_array_3d(
+    xloc, yloc, ztotal, title=None, log=False, norm=False, reverse=False, ax=None
+):
+    if ax is None:
+        fig, ax = plt.subplots()
+
+    cmap = plt.cm.get_cmap("viridis")
+    if reverse:
+        cmap = plt.cm.get_cmap("viridis").reversed()
+
+    ax.bar3d(xloc, yloc, 0, 1, 1, ztotal.flatten(), shade=True)
+    if title is not None:
+        ax.set_title(title)
+    ax.set_xticks(range(4), ["A", "B", "C", "D"])
+    ax.set_yticks(range(4), ["1", "2", "3", "4"])
+    ax.set_zlim(0, np.nanmax(ztotal))
+    ax.patch.set_visible(False)
+
+    ax.tick_params(axis="both", which="major", labelsize=6, pad=0)
+    # ax = plot_text_labels(xloc, yloc, ztotal, log, ax=ax)
 
     return ax
 
@@ -849,13 +1068,7 @@ def plot_enable_current_relation(
 
 
 def find_max_critical_current(data):
-    x = data["x"][0][:, 1] * 1e6
-    y = data["y"][0][:, 0] * 1e6
-    w0r1 = data["write_0_read_1"][0].flatten()
-    w1r0 = 100 - data["write_1_read_0"][0].flatten()
-    z = w1r0 + w0r1
-    ztotal = z.reshape((len(y), len(x)), order="F")
-    ztotal = ztotal[:, 1]
+    _, y, ztotal = build_array(data, "bit_error_rate")
 
     # Find the maximum critical current using np.diff
     diff = np.diff(ztotal)
@@ -864,13 +1077,89 @@ def find_max_critical_current(data):
     return np.mean(y[mid_idx])
 
 
-def get_fitting_points(
-    x: np.ndarray, y: np.ndarray, ztotal: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    mid_idx = np.where(ztotal > np.nanmax(ztotal, axis=0) / 2)
-    xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
-    yfit = y[mid_idx[0]][xfit_idx]
-    return xfit, yfit
+# def plot_read_temp_sweep_C3():
+#     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+
+#     plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
+#     plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
+#     plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
+#     plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
+#     axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+#     fig.subplots_adjust(hspace=0.5, wspace=0.3)
+
+
+# def plot_write_sweep(ax, data_directory: str):
+#     data_list = import_directory(data_directory)
+#     colors = plt.cm.viridis(np.linspace(0, 1, len(data_list)))
+#     ax2 = ax.twinx()
+
+#     for data in [data_list[-7]]:
+
+#         cell = data.get("cell")[0]
+#         max_enable_current = filter_first(
+#             data["CELLS"][cell][0][0]["x_intercept"]
+#         ).flatten()[0]
+#         enable_read_current = filter_first(data.get("enable_read_current")) * 1e6
+#         enable_write_current = filter_first(data.get("enable_write_current")) * 1e6
+
+#         x, y, ztotal = build_array(data, "bit_error_rate")
+#         _, _, zswitch = build_array(data, "total_switches_norm")
+
+#         enable_write_temp = calculate_channel_temperature(
+#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_write_current, max_enable_current
+#         ).flatten()[0]
+#         ax.plot(
+#             y,
+#             ztotal,
+#             label=f"enable_write_current = {enable_write_current:.0f} $\mu$A, Write Temperature: {enable_write_temp:.2f} K",
+#             color=colors[data_list.index(data)],
+#         )
+#         ax2.plot(
+#             y,
+#             zswitch,
+#             label="_",
+#             color="grey",
+#             linewidth=0.5,
+#             linestyle=":",
+#         )
+
+#         write_Ic = calculate_critical_current(enable_read_current, CELLS[cell])
+#         print(f"Write Ic: {write_Ic}, enable_write_current: {enable_write_current}")
+#         ax.hlines(
+#             write_Ic, ax.get_xlim()[0], ax.get_xlim()[1], linestyle="--", color="k"
+#         )
+
+#         enable_read_temp = calculate_channel_temperature(
+#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_read_current, max_enable_current
+#         ).flatten()[0]
+#         enable_write_temp = calculate_channel_temperature(
+#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_write_current, max_enable_current
+#         ).flatten()[0]
+
+#     ax.set_title(
+#         f"Cell {cell} - Read Temperature: {enable_read_temp:.2f}, Write Temperature: {enable_write_temp:.2f} K"
+#     )
+#     ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+#     ax.set_ylim([0, 1])
+#     # ax.set_xlim([500, 900])
+#     ax.set_xlabel("Write Current ($\mu$A)")
+#     ax.set_ylabel("Bit Error Rate")
+#     ax2.set_ylim([0, 1])
+#     ax2.set_ylabel("Switching Probability")
+#     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
+#     ax.yaxis.set_major_locator(MultipleLocator(0.5))
+#     # calculate_critical_current(enable_read_current, data["CELLS"][cell][0][0])
+
+
+def plot_read_temp_sweep_C3():
+    fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+
+    plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
+    plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
+    plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
+    plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
+    axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+    fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
 
 def plot_slice(
@@ -884,27 +1173,655 @@ def plot_slice(
     return ax
 
 
-if __name__ == "__main__":
+def plot_iv_curve(ax: Axes, data_dict: dict, **kwargs) -> Axes:
+    time = data_dict.get("trace")[0, :]
+    voltage = data_dict.get("trace")[1, :]
 
-    data_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep\write_current_sweep_C3"
+    M = int(np.round(len(voltage), -2))
+    currentQuart = np.linspace(0, data_dict["vpp"] / 2 / 10e3, M // 4)
+    current = np.concatenate(
+        [-currentQuart, np.flip(-currentQuart), currentQuart, np.flip(currentQuart)]
     )
-    fig, ax = plt.subplots()
 
-    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_list)))
-    write_current_list = []
-    state_current_array = np.zeros((len(data_list), 4))
-    for i, data_dict in enumerate(data_list):
-        read_currents = get_read_currents(data_dict)
-        bit_error_rate = get_bit_error_rate(data_dict)
-        plot_slice(ax, data_dict, "bit_error_rate", color=colors[i])
-        state_idx = get_state_index(bit_error_rate)
+    if len(voltage) > M:
+        voltage = voltage[:M]
+        time = time[:M]
+    else:
+        voltage = np.concatenate([voltage, np.zeros(M - len(voltage))])
+        time = np.concatenate([time, np.zeros(M - len(time))])
 
-        state_currents = get_state_currents(read_currents, bit_error_rate)
-        plot_state_current_markers(ax, data_dict, color=colors[i])
+    ax.plot(voltage, current.flatten() * 1e6, **kwargs)
+    return ax
+
+
+def plot_iv(ax: Axes, data_list: list, save: bool = False) -> Axes:
+    colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(data_list) / 2) + 1))
+    colors = np.flipud(colors)
+    for i, data in enumerate(data_list):
+        heater_current = np.abs(data["heater_current"].flatten()[0] * 1e6)
+        ax = plot_iv_curve(
+            ax, data, color=colors[i], zorder=-i, label=f"{heater_current:.0f} µA"
+        )
+        if i == 10:
+            break
+    ax.set_ylim([-500, 500])
+    ax.set_xlabel("Voltage [V]")
+    ax.set_ylabel("Current [µA]", labelpad=-1)
+    ax.tick_params(direction="in", top=True, right=True)
+    ax.xaxis.set_major_locator(MultipleLocator(0.5))
+    ax.yaxis.set_major_locator(MultipleLocator(100))
+    ax.legend(frameon=False, handlelength=0.5, labelspacing=0.1)
+
+    if save:
+        plt.savefig("iv_curve.pdf", bbox_inches="tight")
+
+    return ax
+
+
+def plot_critical_currents(ax: Axes = None, data_list: list = None) -> Axes:
+    critical_currents, critical_currents_std = get_critical_currents(data_list)
+    cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
+    heater_currents = [data["heater_current"].flatten() * 1e6 for data in data_list]
+    ax.errorbar(
+        heater_currents,
+        critical_currents,
+        yerr=critical_currents_std,
+        fmt="o",
+        markersize=3,
+        color=cmap[0, :],
+    )
+    ax.tick_params(direction="in", top=True, right=True)
+    ax.set_xlabel("Heater Current [µA]")
+    ax.set_ylabel("Critical Current [µA]")
+    ax.set_ylim([0, 400])
+    return ax
+
+
+def plot_critical_currents_abs(ax: Axes, data_list: list, save: bool = False) -> Axes:
+    critical_currents, critical_currents_std = get_critical_currents(data_list)
+
+    cmap = plt.cm.coolwarm(np.linspace(0, 1, len(data_list)))
+    heater_currents = np.array(
+        [data["heater_current"].flatten() * 1e6 for data in data_list]
+    ).flatten()
+    positive_critical_currents = np.where(
+        heater_currents > 0, critical_currents, np.nan
+    )
+    negative_critical_currents = np.where(
+        heater_currents < 0, critical_currents, np.nan
+    )
+    ax.plot(
+        np.abs(heater_currents),
+        positive_critical_currents,
+        "o--",
+        color=cmap[0, :],
+        label="$+I_{{h}}$",
+        linewidth=0.5,
+        markersize=0.5,
+        markerfacecolor=cmap[0, :],
+    )
+    ax.plot(
+        np.abs(heater_currents),
+        negative_critical_currents,
+        "o--",
+        color=cmap[-5, :],
+        label="$-I_{{h}}$",
+        linewidth=0.5,
+        markersize=0.5,
+        markerfacecolor=cmap[-5, :],
+    )
+    ax.fill_between(
+        np.abs(heater_currents),
+        (positive_critical_currents + critical_currents_std),
+        (positive_critical_currents - critical_currents_std),
+        color=cmap[0, :],
+        alpha=0.3,
+        edgecolor="none",
+    )
+    ax.fill_between(
+        np.abs(heater_currents),
+        (negative_critical_currents + critical_currents_std),
+        (negative_critical_currents - critical_currents_std),
+        color=cmap[-5, :],
+        alpha=0.3,
+        edgecolor="none",
+    )
+    ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
+    ax.set_xlabel("$|I_{{h}}|$[$\mu$A]")
+
+    ax.set_ylabel("$I_{{C}}$ [$\mu$A]", labelpad=-1)
+    ax.set_ylim([0, 400])
+    ax.set_xlim([0, 500])
+    ax.legend(frameon=False, loc="upper left", handlelength=0.5, labelspacing=0.1)
+
+    ax2 = ax.twinx()
+    temp = _calculate_channel_temperature(1.3, 12.3, np.abs(heater_currents), 500)
+    ax2.plot(np.abs(heater_currents), temp, color="black", linewidth=0.5)
+    ax2.set_ylim([0, 13])
+    ax2.set_ylabel("Temperature [K]")
+    ax2.hlines([1.3, 12.3], 0, 500, color="black", linestyle="--", linewidth=0.5)
+
+    if save:
+        plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
+
+    return ax
+
+
+def plot_critical_currents_inset(ax: Axes, data_list: list, save: bool = False) -> Axes:
+    ax = plot_iv(ax, data_list)
+    fig = plt.gcf()
+    ax_inset = fig.add_axes([0.62, 0.25, 0.3125, 0.25])
+    ax_inset = plot_critical_currents_abs(ax_inset, data_list)
+    ax_inset.xaxis.tick_top()
+    ax_inset.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
+
+    ax_inset.xaxis.set_label_position("top")
+    ax_inset.xaxis.set_major_locator(MultipleLocator(0.1))
+
+    if save:
+        plt.savefig("critical_currents_inset.pdf", bbox_inches="tight")
+
+    return ax
+
+
+def plot_combined_figure(ax: Axes, data_list: list, save: bool = False) -> Axes:
+    ax[0, 0].axis("off")
+    ax[0, 1].axis("off")
+    ax[0, 2].axis("off")
+    ax[1, 0].axis("off")
+    ax[1, 1] = plot_iv(ax[1, 1], data_list)
+    ax[1, 2] = plot_critical_currents_abs(ax[1, 2], data_list)
+
+    if save:
+        plt.subplots_adjust(wspace=0.3)
+        plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
+
+    return ax
+
+
+def plot_message(ax: Axes, message: str) -> Axes:
+    axheight = ax.get_ylim()[1]
+    for i, bit in enumerate(message):
+        text = get_text_from_bit(bit)
+        ax.text(
+            i + 0.5,
+            axheight * 0.5,
+            text,
+            ha="center",
+            va="center",
+            fontsize=7,
+            color="black",
+        )
+
+    return ax
+
+
+def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, **kwargs) -> Axes:
+    ax.plot(
+        (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
+        data_dict[trace_name][1, :] * 1e3,
+        **kwargs,
+    )
+    return ax
+
+
+def plot_hist(ax: Axes, data_dict: dict) -> Axes:
+    ax.hist(
+        data_dict["read_zero_top"][0, :],
+        log=True,
+        range=(0.2, 0.6),
+        bins=100,
+        label="Read 0",
+        color="#1966ff",
+    )
+    ax.hist(
+        data_dict["read_one_top"][0, :],
+        log=True,
+        range=(0.2, 0.6),
+        bins=100,
+        label="Read 1",
+        color="#ff1423",
+    )
+    ax.set_xlabel("Voltage [V]")
+    ax.set_ylabel("Counts")
+    ax.legend()
+    return ax
+
+
+def plot_bitstream(ax: Axes, data_dict: dict, trace_name: str) -> Axes:
+    ax.plot(
+        data_dict[trace_name][0, :] * 1e6,
+        data_dict[trace_name][1, :],
+        label=trace_name,
+        color="#345F90",
+    )
+    plot_message(ax, data_dict["bitmsg_channel"][0])
+    return ax
+
+
+def plot_delay(ax: Axes, data_dict: dict) -> Axes:
+    bers = []
+    for i in range(4):
+        bers.append(data_dict[i]["bit_error_rate"][0])
+
+    ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o", color="#345F90")
+    ax.set_xlabel("Delay [$\mu$s]")
+    ax.set_ylabel("BER")
+
+    return ax
+
+
+def create_combined_plot(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(7, 3.5))
+    subfigs = fig.subfigures(
+        2,
+        3,
+        width_ratios=[0.3, 0.7, 0.3],
+        height_ratios=[0.4, 0.6],
+        wspace=-0.1,
+        hspace=0.0,
+    )
+    ax = subfigs[1, 0].subplots(4, 1)
+    subfigs[1, 0].subplots_adjust(hspace=0.0)
+    subfigs[1, 0].supylabel("Voltage [V]", x=-0.05)
+    subfigs[1, 0].supxlabel("Time [ns]")
+    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
+    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
+    ax[2].legend(["Read 0", "Read 1"], frameon=False)
+    axhist = subfigs[0, 2].add_subplot()
+    subfigs[0, 2].subplots_adjust(hspace=0.0)
+    plot_hist(axhist, data_dict[3])
+
+    axbits = subfigs[1, 1].subplots(4, 1)
+    plot_bitstream(axbits[0], data_dict[5], trace_name="trace_chan_out")
+    plot_bitstream(axbits[1], data_dict[6], trace_name="trace_chan_out")
+    plot_bitstream(axbits[2], data_dict[7], trace_name="trace_chan_out")
+    plot_bitstream(axbits[3], data_dict[8], trace_name="trace_chan_out")
+    subfigs[1, 1].supylabel("Voltage [V]", x=0.05)
+    subfigs[1, 1].supxlabel("Time [$\mu$s]")
+
+    axdelay = subfigs[1, 2].add_subplot()
+    plot_delay(axdelay, data_dict)
+
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("delay_plotting.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v2(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(7.087, 3.543))
+    subfigs = fig.subfigures(
+        2,
+        3,
+    )
+    ax = subfigs[1, 1].subplots(2, 1)
+    # subfigs[1, 1].subplots_adjust(hspace=0.0)
+    subfigs[1, 1].supylabel("Voltage [V]", x=-0.05)
+    # subfigs[1, 1].supxlabel("Time [ns]")
+    ax2 = ax[0].twinx()
+    ax3 = ax[1].twinx()
+    plot_trace_averaged(
+        ax[0], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax[1], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax[1],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax[1].legend(["Read 0", "Read 1"], frameon=False)
+    ax[1].set_xlabel("Time [$\mu$s]")
+    ax2.set_ylabel("[V]")
+
+    axfit = subfigs[1, 2].add_subplot()
+    plot_all_cells(axfit)
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v3(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(
+        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax_dict["B"],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_all_cells(ax_dict["C"])
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v4(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(
+        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax_dict["B"],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_hist(ax_dict["C"], data_dict[3])
+
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def plot_grid(axs, dict_list):
+    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    for dict in dict_list:
+        cell = dict.get("cell")[0]
+
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        x = dict["x"][0]
+        y = dict["y"][0]
+        ztotal = dict["ztotal"]
+        xfit, yfit = get_fitting_points(x, y, ztotal)
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+        axs[row, column].plot(
+            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
+
+        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+        plot_fit(
+            axs[row, column],
+            xfit,
+            yfit,
+            color=colors[column],
+            marker=markers[row],
+            markeredgecolor="k",
+        )
+        enable_read_current = CELLS[cell].get("enable_read_current") * 1e6
+        enable_write_current = CELLS[cell].get("enable_write_current") * 1e6
+        axs[row, column].vlines(
+            [enable_write_current],
+            *axs[row, column].get_ylim(),
+            linestyle="--",
+            color="grey",
+            label="Enable Write Current",
+        )
+        axs[row, column].vlines(
+            [enable_read_current],
+            *axs[row, column].get_ylim(),
+            linestyle="--",
+            color="r",
+            label="Enable Read Current",
+        )
+
+        axs[row, column].legend(loc="upper right")
+        axs[row, column].set_xlim(0, 600)
+        axs[row, column].set_ylim(0, 1000)
+        # axs[row, column].set_aspect("equal")
+    axs[-1, 0].set_xlabel("Enable Current ($\mu$A)")
+    axs[-1, 0].set_ylabel("Critical Current ($\mu$A)")
+    return axs
+
+
+def plot_row(axs, dict_list):
+    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    for dict in dict_list:
+        cell = dict.get("cell")[0]
+
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        x = dict["x"][0]
+        y = dict["y"][0]
+        ztotal = dict["ztotal"]
+        xfit, yfit = get_fitting_points(x, y, ztotal)
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+        axs[row].plot(
+            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
+
+        axs[row].legend(loc="lower left")
+        axs[row].set_xlim(0, 500)
+        axs[row].set_ylim(0, 1000)
+    axs[0].set_xlabel("Enable Current ($\mu$A)")
+    axs[0].set_ylabel("Critical Current ($\mu$A)")
+    return axs
+
+
+def plot_column(axs, dict_list):
+    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    for dict in dict_list:
+        cell = dict.get("cell")[0]
+
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        x = dict["x"][0]
+        y = dict["y"][0]
+        ztotal = dict["ztotal"]
+        xfit, yfit = get_fitting_points(x, y, ztotal)
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+        axs[column].plot(
+            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
+
+        axs[column].legend(loc="lower left")
+        axs[column].set_xlim(0, 500)
+        axs[column].set_ylim(0, 1000)
+    axs[0].set_xlabel("Enable Current ($\mu$A)")
+    axs[0].set_ylabel("Critical Current ($\mu$A)")
+    return axs
+
+
+def plot_full_grid():
+
+    dict_list = import_directory("data")
+    fig, axs = plt.subplots(5, 5, figsize=(20, 20), sharex=True, sharey=True)
+
+    plot_grid(axs[1:5, 0:4], dict_list)
+    fig.subplots_adjust(hspace=0.1, wspace=0.1)
+
+    plot_row(axs[0, 0:4], dict_list)
+
+    plot_column(axs[1:5, 4], dict_list)
+    axs[0, 4].axis("off")
+    axs[4, 0].set_xlabel("Enable Current ($\mu$A)")
+    axs[4, 0].set_ylabel("Critical Current ($\mu$A)")
 
     plt.show()
 
-    # fig, ax = plt.subplots()
-    # for i in range(len(state_current_array)):
-    #     ax.plot(write_current_list, state_current_array[:,i], label=f"Data {i}")
+
+def plot_all_cells(ax: Axes) -> Axes:
+    dict_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\measure_enable_response\data"
+    )
+    colors = plt.cm.RdBu(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    avg_slope, avg_intercept = get_average_response(CELLS)
+
+    for dict in dict_list:
+        cell = dict.get("cell")[0]
+
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        x = dict["x"][0]
+        y = dict["y"][0]
+        ztotal = dict["ztotal"]
+        xfit, yfit = get_fitting_points(x, y, ztotal)
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+        ax.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
+
+        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+        # plot_fitting(ax, xfit, yfit, color="k")
+
+        x = np.linspace(0, -avg_intercept / avg_slope, 100)
+        y = avg_slope * x + avg_intercept
+        ax.plot(x, y, color="k", linestyle="--")
+        ax.plot()
+        ax.set_xlabel("Enable Current ($\mu$A)")
+        ax.set_ylabel("Critical Current ($\mu$A)")
+        ax.legend(loc="lower left", ncol=4)
+        ax.text(
+            0.25, 0.85, "$I_{{ch}}(I_{{enable}})$", transform=ax.transAxes, fontsize=12
+        )
+    return ax
+
+
+def plot_enable_write_temperature():
+    fig, ax = plt.subplots()
+    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    for cell in CELLS.keys():
+        xint = CELLS[cell].get("x_intercept")
+        x = CELLS[cell].get("enable_write_current") * 1e6
+        temp = calculate_channel_temperature(1.3, 12.3, x, xint)
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        ax.plot(
+            x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+    ax.set_xlabel("Enable Write Current ($\mu$A)")
+    ax.set_ylabel("Channel Temperature (K)")
+    ax.set_ylim(0, 13)
+    ax.hlines(12.3, 0, 500, linestyle="--")
+
+
+def plot_enable_read_temperature():
+    fig, ax = plt.subplots()
+    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    for cell in CELLS.keys():
+        xint = CELLS[cell].get("x_intercept")
+        x = CELLS[cell].get("enable_read_current") * 1e6
+        temp = calculate_channel_temperature(1.3, 12.3, x, xint)
+        column = ord(cell[0]) - ord("A")
+        row = int(cell[1]) - 1
+        ax.plot(
+            x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+        )
+    ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+    ax.set_xlabel("Enable Read Current ($\mu$A)")
+    ax.set_ylabel("Channel Temperature (K)")
+    ax.set_ylim(0, 13)
+    ax.hlines(12.3, 0, 500, linestyle="--")
+
+
+def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
+    data_list = import_directory(data_directory)
+    colors = plt.cm.viridis(np.linspace(0, 1, len(data_list)))
+
+    ax2 = ax.twinx()
+
+    for data_dict in data_list:
+        x, y, ztotal = build_array(data_dict, "bit_error_rate")
+        _, _, zswitch = build_array(data_dict, "total_switches_norm")
+        write_temp = get_write_temperature(data_dict)
+        ax.plot(
+            y,
+            ztotal,
+            label=f"$T_{{W}}$ = {write_temp:.2f} K",
+            color=colors[data_list.index(data_dict)],
+        )
+        ax2.plot(
+            y,
+            zswitch,
+            label="_",
+            color="grey",
+            linewidth=0.5,
+            linestyle=":",
+        )
+
+        critical_current = calculate_critical_current(data_dict)
+
+    ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+    ax.set_ylim([0, 1])
+    ax.set_xlabel("Write Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax2.set_ylim([0, 1])
+    ax2.set_ylabel("Switching Probability")
+    ax2.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
+
+    return ax
+
+
+def plot_read_temp_sweep_C3():
+    fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+
+    plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
+    plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
+    plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
+    plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
+    axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+    fig.subplots_adjust(hspace=0.5, wspace=0.3)

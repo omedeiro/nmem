@@ -432,25 +432,7 @@ def calculate_channel_current_density(
     return jsw
 
 
-def filter_plateau(
-    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
-) -> Tuple[np.ndarray, np.ndarray]:
-    xfit = np.where(yfit < plateau_height, xfit, np.nan)
-    yfit = np.where(yfit < plateau_height, yfit, np.nan)
 
-    # REmove nans
-    xfit = xfit[~np.isnan(xfit)]
-    yfit = yfit[~np.isnan(yfit)]
-
-    return xfit, yfit
-
-
-def filter_first(value):
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
 
 
 def initialize_data_dict(measurement_settings: dict) -> dict:
