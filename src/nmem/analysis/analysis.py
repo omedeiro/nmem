@@ -216,6 +216,23 @@ def get_text_from_bit_v2(bit: str) -> str:
         return None
 
 
+def get_text_from_bit_v3(bit: str) -> str:
+    if bit == "0":
+        return "0"
+    elif bit == "1":
+        return "1"
+    elif bit == "N":
+        return ""
+    elif bit == "R":
+        return ""
+    elif bit == "E":
+        return ""
+    elif bit == "W":
+        return ""
+    else:
+        return None
+    
+
 def get_state_index(data: np.ndarray) -> list:
     pos_data = np.argwhere(data > 0.55)
     neg_data = np.argwhere(data < 0.45)
@@ -423,14 +440,14 @@ def plot_threshold(ax: Axes, start: int, end: int, threshold: float) -> Axes:
 def plot_message(ax: Axes, message: str) -> Axes:
     axheight = ax.get_ylim()[1]
     for i, bit in enumerate(message):
-        text = get_text_from_bit(bit)
-        ax.text(i + 0.5, axheight * 1.45, text, ha="center", va="center", fontsize=14)
+        text = get_text_from_bit_v3(bit)
+        ax.text(i + 0.5, axheight * 0.85, text, ha="center", va="center")
 
     return ax
 
 def get_trace_data(data_dict: dict, trace_name:Literal["trace_chan_in", "trace_chan_out", "trace_enab"], trace_index: int) -> Tuple[np.ndarray, np.ndarray]:
     x = data_dict[trace_name][0][:, trace_index] * 1e6
-    y = data_dict[trace_index][1][:, trace_index] * 1e3
+    y = data_dict[trace_name][1][:, trace_index] * 1e3
     return x, y
 
 
@@ -542,6 +559,17 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
     )
 
     return ax
+
+def plot_stack(
+    axs: list[Axes],
+    data_dict: list[dict],
+    persistent_current: list[float],
+) -> list[Axes]:
+    for i in range(len(axs)):
+        data_dict[i]["persistent_current"] = persistent_current[i]
+        axs[i] = plot_analytical(axs[i], data_dict[i])
+        axs[i].set_aspect("equal")
+    return axs
 
 
 def plot_read_sweep(
