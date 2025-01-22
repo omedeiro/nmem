@@ -8,7 +8,7 @@ from nmem.analysis.analysis import (
 )
 from nmem.measurement.cells import CELLS
 
-# plt.rcParams["figure.figsize"] = [10, 12]
+plt.rcParams["figure.figsize"] = [6, 6]
 plt.rcParams["font.size"] = 10
 
 
