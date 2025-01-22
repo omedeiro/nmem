@@ -59,6 +59,32 @@ def filter_first(value) -> any:
     return value
 
 
+
+def find_operating_width(data_dict: dict) -> Tuple[float, float]:
+    bit_error_rate = get_bit_error_rate(data_dict)
+    enable_write_currents = get_enable_write_currents(data_dict)
+    cell = get_current_cell(data_dict)
+
+    nominal_peak = enable_write_currents[bit_error_rate < 0.4]
+    nominal_width = nominal_peak[-1] - nominal_peak[0]
+    inverting_peak = enable_write_currents[bit_error_rate > 0.6]
+    inverting_width = inverting_peak[-1] - inverting_peak[0]
+
+    return nominal_width, inverting_width
+
+
+def find_operating_peaks(data_dict: dict) -> Tuple[float, float]:
+    bit_error_rate = get_bit_error_rate(data_dict)
+    enable_write_currents = get_enable_write_currents(data_dict)
+    cell = get_current_cell(data_dict)
+
+    nominal_peak = np.mean(enable_write_currents[bit_error_rate < 0.3])
+    inverting_peak = np.mean(enable_write_currents[bit_error_rate > 0.7])
+
+    return nominal_peak, inverting_peak
+
+
+
 def convert_location_to_coordinates(location: str) -> tuple:
     """Converts a location like 'A1' to coordinates (x, y)."""
     column_letter = location[0]
@@ -149,12 +175,16 @@ def get_critical_current_zero_temp(data_dict: dict) -> np.ndarray:
     )
     return max_critical_current
 
+
 def get_enable_read_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_read_current")) * 1e6
+
 
 def get_enable_write_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_write_current")) * 1e6
 
+def get_enable_write_currents(data_dict: dict) -> np.ndarray:
+    return data_dict.get("x")[0][:, 0] * 1e6
 
 def get_average_response(cell_dict):
     slope_list = []
@@ -231,7 +261,7 @@ def get_text_from_bit_v3(bit: str) -> str:
         return ""
     else:
         return None
-    
+
 
 def get_state_index(data: np.ndarray) -> list:
     pos_data = np.argwhere(data > 0.55)
@@ -330,6 +360,40 @@ def get_write_temperature(data_dict: dict) -> float:
     ).flatten()[0]
     return enable_write_temp
 
+def get_write_current(data_dict: dict) -> float:
+    return filter_first(data_dict.get("write_current")) * 1e6
+
+
+def get_operating_peaks(data_dict: dict) -> Tuple[list, list]:
+    peaks = []
+    write_currents = []
+    for key in data_dict.keys():
+        write_currents.append(get_write_current(data_dict[key]))
+        nominal_peak, inverting_peak = find_operating_peaks(data_dict[key])
+        peaks.append((nominal_peak, inverting_peak))
+    return write_currents, peaks
+
+
+def get_operating_widths(data_dict: dict) -> Tuple[list, list]:
+    widths = []
+    write_currents = []
+    for key in data_dict.keys():
+        write_currents.append(get_write_current(data_dict[key]))
+        nominal_width, inverting_width = find_operating_width(data_dict[key])
+        widths.append((nominal_width, inverting_width))
+    return write_currents, widths
+
+
+
+def get_trace_data(
+    data_dict: dict,
+    trace_name: Literal["trace_chan_in", "trace_chan_out", "trace_enab"],
+    trace_index: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    x = data_dict[trace_name][0][:, trace_index] * 1e6
+    y = data_dict[trace_name][1][:, trace_index] * 1e3
+    return x, y
+
 
 def import_directory(file_path: str) -> list:
     data_list = []
@@ -359,6 +423,25 @@ def initialize_dict(array_size: tuple) -> dict:
         "enable_write_power": np.zeros(array_size),
         "enable_read_power": np.zeros(array_size),
     }
+
+def polygon_under_graph(x, y):
+    """
+    Construct the vertex list which defines the polygon filling the space under
+    the (x, y) line graph. This assumes x is in ascending order.
+    """
+    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
+
+
+def polygon_nominal(x: np.ndarray, y: np.ndarray) -> list:
+    y = np.copy(y)
+    y[y > 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+
+
+def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
+    y = np.copy(y)
+    y[y < 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
 def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
@@ -402,24 +485,163 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
     return param_dict
 
 
-def polygon_under_graph(x, y):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
+# def calculate_right_critical_currents(
+#     enable_write_currents: np.ndarray, cell: str, width_ratio: float, iretrap: float
+# ) -> np.ndarray:
+#     channel_critical_current = (enable_write_currents * cell["slope"]) + cell[
+#         "y_intercept"
+#     ]
+#     right_critical_current = channel_critical_current * (
+#         1 + ((1 / width_ratio) * iretrap)
+#     )
+#     return right_critical_current
 
 
-def polygon_nominal(x: np.ndarray, y: np.ndarray) -> list:
-    y = np.copy(y)
-    y[y > 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+def plot_peak_locations(ax: Axes, data_dict: dict) -> Axes:
+    write_currents, peaks = get_operating_peaks(data_dict)
+    ax.plot(write_currents, [x[0] for x in peaks], label="Nominal Peak")
+    ax.plot(write_currents, [x[1] for x in peaks], label="Inverting Peak")
+    ax.legend()
+    ax.set_ylabel("Peak Location ($\mu$A)")
+    ax.set_xlabel("Write Current ($\mu$A)")
+
+    return ax
+
+def plot_peak_width(ax: Axes, data_dict: dict) -> Axes:
+    write_currents, widths = get_operating_widths(data_dict)
+    ax.plot(write_currents, [x[0] for x in widths], label="Nominal Width")
+    ax.plot(write_currents, [x[1] for x in widths], label="Inverting Width")
+    ax.set_xlabel("Write Current ($\mu$A)")
+    ax.set_ylabel("Width ($\mu$A)")
+    ax.legend()
+    return ax
 
 
-def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
-    y = np.copy(y)
-    y[y < 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+def plot_peak_distance(ax: Axes, data_dict: dict) -> Axes:
+    write_currents, peaks = get_operating_peaks(data_dict)
+    peak_distances = np.array([x[0] - x[1] for x in peaks])
+    ax.plot(
+        write_currents,
+        [x[0] - x[1] for x in peaks],
+        label="Peak Distance",
+        marker="o",
+        color="C4",
+    )
+    # plot a linear fit
+    plot_linear_fit(ax, write_currents[5:-1], peak_distances[5:-1])
+    ax.set_xlabel("Write Current ($\mu$A)")
+    ax.set_ylabel("Peak Distance ($\mu$A)")
+    ax.grid(True)
+
+    return ax
+
+
+def plot_enable_write_sweep_multiple(ax: Axes, data_dict: dict) -> Axes:
+    for key in data_dict.keys():
+        plot_enable_write_sweep_single(ax, data_dict[key])
+
+    return ax
+
+
+
+
+def plot_enable_write_sweep_single(
+    ax: Axes,
+    data_dict: dict,
+) -> Axes:
+    enable_write_currents = get_enable_write_currents(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
+    write_current = get_write_current(data_dict)
+
+    
+    ax.plot(
+        enable_write_currents,
+        bit_error_rate,
+        label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
+        marker=".",
+        markeredgecolor="k",
+    )
+    ax.xaxis.set_major_locator(MultipleLocator(50))
+    ax.xaxis.set_minor_locator(MultipleLocator(10))
+    ax.tick_params(axis="x", colors="m")
+    ax.set_xlabel("Left Critical Current ($\mu$A)", color="m")
+    ax.set_ylabel("Bit Error Rate")
+    ax.set_ylim(0, 1)
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
+
+    return ax
+
+
+def plot_waterfall(ax: Axes3D, data_dict: dict) -> Axes3D:
+    cmap = plt.get_cmap("viridis")
+    colors = cmap(np.linspace(0, 1, len(data_dict)))
+    verts_list = []
+    zlist = []
+
+    for key, data in data_dict.items():
+        enable_write_currents = get_enable_write_currents(data)
+        current_cell = get_current_cell(data)
+        
+        bit_error_rate = get_bit_error_rate(data)
+        write_current = get_write_current(data)
+
+        zlist.append(write_current)
+        verts = polygon_under_graph(enable_write_currents, bit_error_rate)
+        verts_list.append(verts)
+
+    poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
+    ax.add_collection3d(poly, zs=zlist, zdir="y")
+
+    ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
+    ax.set_ylabel("$I_W$ ($\mu$A)", labelpad=70)
+    ax.set_zlabel("BER", labelpad=10)
+    ax.tick_params(axis="both", which="major", labelsize=12, pad=5)
+
+    ax.xaxis.set_rotate_label(True)
+    ax.yaxis.set_rotate_label(False)
+    ax.zaxis.set_rotate_label(True)
+
+    ax.set_zlim(0, 1)
+    ax.set_zticks([0, 0.5, 1])
+    ax.set_ylim(10, zlist[-1])
+    ax.set_yticks(zlist)
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.xaxis.set_major_locator(MultipleLocator(50))
+    ax.yaxis.set_major_locator(MultipleLocator(10))
+    ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
+    ax.view_init(20, -35)
+    ax.grid(False)
+    return ax
+
+
+def plot_linear_fit(ax: Axes, x: np.ndarray, y: np.ndarray) -> Axes:
+    m, b = np.polyfit(x, y, 1)
+    ax.plot(
+        x,
+        y,
+        label="Peak Distance",
+        marker="o",
+        linestyle="None",
+        markeredgecolor="k",
+        markerfacecolor="None",
+        markeredgewidth=2,
+    )
+    ax.text(
+        np.mean([x[0], x[-1]]),
+        np.mean([y[0], y[-1]]) * 1.1,
+        f"y = {m:.2f}x + {b:.2f}",
+        ha="right",
+        va="bottom",
+        fontsize=12,
+    )
+    # PLot the fit line
+    x = np.array([x[0], x[-1]])
+    ax.plot(x, m * x + b, "k--")
+    return ax
+
+
+
 
 
 def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
@@ -444,11 +666,6 @@ def plot_message(ax: Axes, message: str) -> Axes:
         ax.text(i + 0.5, axheight * 0.85, text, ha="center", va="center")
 
     return ax
-
-def get_trace_data(data_dict: dict, trace_name:Literal["trace_chan_in", "trace_chan_out", "trace_enab"], trace_index: int) -> Tuple[np.ndarray, np.ndarray]:
-    x = data_dict[trace_name][0][:, trace_index] * 1e6
-    y = data_dict[trace_name][1][:, trace_index] * 1e3
-    return x, y
 
 
 def plot_trace_zoom(
@@ -559,6 +776,7 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
     )
 
     return ax
+
 
 def plot_stack(
     axs: list[Axes],
@@ -1367,7 +1585,6 @@ def plot_combined_figure(ax: Axes, data_list: list, save: bool = False) -> Axes:
     return ax
 
 
-
 def plot_trace_averaged(ax: Axes, data_dict: dict, trace_name: str, **kwargs) -> Axes:
     ax.plot(
         (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
@@ -1826,5 +2043,3 @@ def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
     return ax
-
-
