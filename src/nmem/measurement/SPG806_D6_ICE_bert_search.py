@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # file_path, save_dict = read_sweep(b, measurement_settings, measurement_name)
 
     t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    print(f"run time {(t2 - t1) / 60:.2f} minutes")
     b.inst.scope.save_screenshot(
         f"{file_path}_scope_screenshot.png", white_background=False
     )

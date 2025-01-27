@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     convert_location_to_coordinates,
     initialize_dict,

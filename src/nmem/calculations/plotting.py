@@ -113,7 +113,7 @@ def plot_persistent_current(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ichl * width_ratio:.0f}" for ichl in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     return ax
@@ -149,7 +149,7 @@ def plot_zero_state_currents(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ichl * width_ratio:.0f}" for ichl in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     if plot_regions:
@@ -190,7 +190,7 @@ def plot_one_state_currents(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ichl*width_ratio:.0f}" for ichl in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ichl * width_ratio:.0f}" for ichl in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     if plot_regions:
@@ -333,7 +333,7 @@ def plot_read_margin(
     ax2 = ax.twiny()
     ax2.set_xticks(ax.get_xticks())
     ax2.set_xlim(ax.get_xlim())
-    ax2.set_xticklabels([f"{ic*width_ratio:.0f}" for ic in ax.get_xticks()])
+    ax2.set_xticklabels([f"{ic * width_ratio:.0f}" for ic in ax.get_xticks()])
     ax2.set_xlabel("Right Branch Critical Current ($I_{C, H_R}(I_{RE})$) [uA]")
 
     inv_region = ax.contour(

@@ -492,6 +492,7 @@ def filter_first(value):
         return np.asarray(value).flatten()[0]
     return value
 
+
 def initialize_data_dict(measurement_settings: dict) -> dict:
     scope_num_samples: int = measurement_settings.get("scope_num_samples")
     num_meas: int = measurement_settings.get("num_meas")
@@ -693,6 +694,7 @@ def get_threshold(b: nTron, logger: Logger = None) -> float:
     if logger:
         logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return threshold
+
 
 def get_extent(x: np.ndarray, y: np.ndarray) -> List[float]:
     dx = x[1] - x[0]

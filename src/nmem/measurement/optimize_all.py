@@ -163,4 +163,4 @@ if __name__ == "__main__":
     nm.write_dict_to_file(file_path, dict(opt_res))
 
     t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    print(f"run time {(t2 - t1) / 60:.2f} minutes")

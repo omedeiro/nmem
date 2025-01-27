@@ -10,6 +10,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     calculate_read_currents,

@@ -19,7 +19,7 @@ def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axe
         ax.plot(
             enable_write_currents,
             ber,
-            label=f"$I_{{W}}$ = {data['write_current'][0,0,0]*1e6:.1f} $\mu$A",
+            label=f"$I_{{W}}$ = {data['write_current'][0, 0, 0] * 1e6:.1f} $\mu$A",
             color=colors[write_current],
             marker=".",
             markeredgecolor="k",
