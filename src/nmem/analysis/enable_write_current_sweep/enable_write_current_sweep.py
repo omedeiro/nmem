@@ -1,14 +1,7 @@
-from typing import Tuple
 
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy.io as sio
-from matplotlib.axes import Axes
-from matplotlib.collections import PolyCollection
-from matplotlib.ticker import MultipleLocator
-from mpl_toolkits.mplot3d import Axes3D
 
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
     plot_enable_write_sweep_multiple,
     plot_peak_distance,

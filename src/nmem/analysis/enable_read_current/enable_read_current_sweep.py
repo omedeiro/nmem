@@ -1,21 +1,10 @@
-from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from matplotlib.pyplot import Axes
-from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
-    get_state_index,
-    get_trace_data,
-    plot_stack,
     plot_read_sweep_array,
-    plot_read_sweep_array_3d,
-    plot_threshold,
-    plot_voltage_trace,
-    get_bit_error_rate,
-    get_read_currents,
 )
 from nmem.calculations.analytical_model import create_data_dict
 from nmem.measurement.cells import CELLS
@@ -40,97 +29,96 @@ plt.rcParams["ytick.major.size"] = 1
 CURRENT_CELL = "C1"
 
 
-def plot_data_delay_manu_dev(
-    axs: List[Axes],
-    data_dict_keyd: dict,
-) -> List[Axes]:
+# def plot_data_delay_manu_dev(
+#     axs: List[Axes],
+#     data_dict_keyd: dict,
+# ) -> List[Axes]:
 
-    cmap = plt.get_cmap("RdBu").reversed()
-    colors = cmap(np.linspace(0, 1, 8))
+#     cmap = plt.get_cmap("RdBu").reversed()
+#     colors = cmap(np.linspace(0, 1, 8))
 
-    INDEX = 14
+#     INDEX = 14
 
-    ax = axs[0]
-    data_dict = data_dict_keyd[0]
-    x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
-    y = np.mean(y, axis=1)
+#     ax = axs[0]
+#     data_dict = data_dict_keyd[0]
+#     x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
+#     # y = np.mean(y)
     
-    plot_voltage_trace(ax, x, y, color=colors[0])
+#     plot_voltage_trace(ax, x, y, color=colors[0])
 
-    ax = axs[1]
-    data_dict = data_dict_keyd[1]
-    x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
-    plot_voltage_trace(ax, x, y, color=colors[-1])
+#     ax = axs[1]
+#     data_dict = data_dict_keyd[1]
+#     x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
+#     plot_voltage_trace(ax, x, y, color=colors[-1])
 
-    for idx, ax in enumerate(axs[2:]):
-        data_dict = data_dict_keyd[idx % len(data_dict_keyd)]
-        x = data_dict.get("trace_chan_out")[0][:, INDEX] * 1e6
-        y = data_dict.get("trace_chan_out")[1][:, INDEX] * 1e3
-        plot_voltage_trace(ax, x, y, color=colors[1])
-        plot_threshold(ax, 4, 5, 400)
-        plot_threshold(ax, 9, 10, 400)
-        ax.set_ylim([-150, 1100])
-    ax.set_xlim([0, 10])
-    ax.xaxis.set_major_locator(MultipleLocator(1))
-    ax.xaxis.set_major_formatter(lambda x, _: f"{x:.1f}")
-    fig = plt.gcf()
-    fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
-    fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
-    fig.supylabel("Voltage (mV)", x=0.05, y=0.5)
-    return axs
-
-
-def manuscript_figure(save: bool = False) -> None:
-    fig = plt.figure(figsize=(9.5, 3.5))
-
-    subfigs = fig.subfigures(1, 3, wspace=-0.3, width_ratios=[0.5, 1, 1])
-
-    axs = subfigs[0].subplots(6, 1, sharex=True, sharey=False)
-    plot_data_delay_manu_dev(axs, INVERSE_COMPARE_DICT)
-    subfigs[0].supxlabel("Time ($\mu$s)", x=0.5, y=-0.01)
-    subfigs[0].supylabel("Voltage (mV)", x=1.01, y=0.5, rotation=270)
-    subfigs[0].subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
-
-    axsslice = subfigs[1].subplots(3, 1, subplot_kw={"projection": "3d"})
-    plot_read_sweep_array_3d(axsslice[0], enable_read_290_dict)
-    plot_read_sweep_array_3d(axsslice[1], enable_read_300_dict)
-    plot_read_sweep_array_3d(axsslice[2], enable_read_310_dict)
-    subfigs[1].subplots_adjust(hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1)
-
-    axsstack = subfigs[2].subplots(3, 1, sharex=True)
-    plot_stack(
-        axsstack,
-        [analytical_data_dict, analytical_data_dict, analytical_data_dict],
-        [-30, 0, 30],
-    )
-    subfigs[2].subplots_adjust(hspace=0.0, bottom=0.06, top=0.90, left=-0.2, right=0.9)
-    subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.36, y=-0.02)
-    subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)", x=0.48, y=0.5)
-
-    caxis = subfigs[2].add_axes([0.3, 0.92, 0.1, 0.02], frame_on=True)
-    subfigs[2].colorbar(
-        axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
-    )
-    caxis.tick_params(
-        labeltop=True, labelbottom=False, bottom=False, top=True, direction="out"
-    )
-    subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)")
-    subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)")
-    fig.patch.set_visible(False)
-    if save:
-        plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")
-    plt.show()
-    return
+#     for idx, ax in enumerate(axs[2:]):
+#         data_dict = data_dict_keyd[idx % len(data_dict_keyd)]
+#         x, y = get_trace_data(data_dict, "trace_chan_in", INDEX)
+#         plot_voltage_trace(ax, x, y, color=colors[1])
+#         plot_threshold(ax, 4, 5, 400)
+#         plot_threshold(ax, 9, 10, 400)
+#         ax.set_ylim([-150, 1100])
+#     ax.set_xlim([0, 10])
+#     ax.xaxis.set_major_locator(MultipleLocator(1))
+#     ax.xaxis.set_major_formatter(lambda x, _: f"{x:.1f}")
+#     fig = plt.gcf()
+#     fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+#     fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
+#     fig.supylabel("Voltage (mV)", x=0.05, y=0.5)
+#     return axs
 
 
-def plot_trace_only() -> None:
-    fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
-    axs = plot_data_delay_manu_dev(axs, INVERSE_COMPARE_DICT)
-    fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
-    fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
-    fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
-    plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
-    plt.show()
+# def manuscript_figure(save: bool = False) -> None:
+#     fig = plt.figure(figsize=(9.5, 3.5))
+
+#     subfigs = fig.subfigures(1, 3, wspace=-0.3, width_ratios=[0.5, 1, 1])
+
+#     axs = subfigs[0].subplots(6, 1, sharex=True, sharey=False)
+#     plot_data_delay_manu_dev(axs, inverse_compare_dict)
+#     subfigs[0].supxlabel("Time ($\mu$s)", x=0.5, y=-0.01)
+#     subfigs[0].supylabel("Voltage (mV)", x=1.01, y=0.5, rotation=270)
+#     subfigs[0].subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+
+#     axsslice = subfigs[1].subplots(3, 1, subplot_kw={"projection": "3d"})
+#     plot_read_sweep_array_3d(axsslice[0], enable_read_290_dict)
+#     plot_read_sweep_array_3d(axsslice[1], enable_read_300_dict)
+#     plot_read_sweep_array_3d(axsslice[2], enable_read_310_dict)
+#     subfigs[1].subplots_adjust(hspace=-0.6, bottom=-0.2, top=1.20, left=0.1, right=1.1)
+
+#     axsstack = subfigs[2].subplots(3, 1, sharex=True)
+#     plot_stack(
+#         axsstack,
+#         [analytical_data_dict, analytical_data_dict, analytical_data_dict],
+#         [-30, 0, 30],
+#     )
+#     subfigs[2].subplots_adjust(hspace=0.0, bottom=0.06, top=0.90, left=-0.2, right=0.9)
+#     subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)", x=0.36, y=-0.02)
+#     subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)", x=0.48, y=0.5)
+
+#     caxis = subfigs[2].add_axes([0.3, 0.92, 0.1, 0.02], frame_on=True)
+#     subfigs[2].colorbar(
+#         axsstack[0].collections[-1], cax=caxis, orientation="horizontal", pad=0.1
+#     )
+#     caxis.tick_params(
+#         labeltop=True, labelbottom=False, bottom=False, top=True, direction="out"
+#     )
+#     subfigs[2].supxlabel("$I_{{CH}}$ ($\mu$A)")
+#     subfigs[2].supylabel("$I_{{R}}$ ($\mu$A)")
+#     fig.patch.set_visible(False)
+#     if save:
+#         plt.savefig("trace_waterfall_fit_combined.pdf", bbox_inches="tight")
+#     plt.show()
+#     return
+
+
+# def plot_trace_only() -> None:
+#     fig, axs = plt.subplots(6, 1, figsize=(6.6, 3.54))
+#     axs = plot_data_delay_manu_dev(axs, INVERSE_COMPARE_DICT)
+#     fig.subplots_adjust(hspace=0.0, bottom=0.05, top=0.95)
+#     fig.supxlabel("Time ($\mu$s)", x=0.5, y=-0.03)
+#     fig.supylabel("Voltage (mV)", x=0.95, y=0.5, rotation=270)
+#     plt.savefig("trace_only.png", bbox_inches="tight", dpi=300)
+#     plt.show()
 
 
 if __name__ == "__main__":
@@ -440,28 +428,10 @@ if __name__ == "__main__":
         PERSISTENT_CURRENT,
     )
 
-    manuscript_figure()
+    # manuscript_figure()
     fig, ax = plt.subplots()
     plot_read_sweep_array(
         ax, inverse_compare_dict, "bit_error_rate", "enable_read_current"
     )
-    # data_dict = inverse_compare_dict
-    # for key in data_dict.keys():
-    #     edges = get_state_index(data_dict[key].get("bit_error_rate").flatten())
-    #     bit_error_rate = get_bit_error_rate(data_dict[key])
-    #     read_current = get_read_currents(data_dict[key])
+    plt.show()
 
-
-    #     colors = plt.cm.viridis(np.linspace(0, 1, len(edges)))
-    #     markers = ["o", "s", "d", "x"]
-    #     for i, edge in enumerate(edges):
-    #         if not np.isnan(edge):
-    #             ax.plot(
-    #                 [read_current[edge] * 1e6],
-    #                 [bit_error_rate[edge]],
-    #                 color=colors[i, :],
-    #                 linestyle="--",
-    #                 linewidth=1,
-    #                 marker=markers[i],
-    #                 markersize=5,
-    #             )
