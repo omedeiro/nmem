@@ -85,10 +85,10 @@ def find_operating_peaks(data_dict: dict) -> Tuple[float, float]:
 
 
 
-def convert_location_to_coordinates(location: str) -> tuple:
-    """Converts a location like 'A1' to coordinates (x, y)."""
-    column_letter = location[0]
-    row_number = int(location[1:]) - 1
+def convert_cell_to_coordinates(cell: str) -> tuple:
+    """Converts a cell name like 'A1' to coordinates (x, y)."""
+    column_letter = cell[0]
+    row_number = int(cell[1:]) - 1
     column_number = ord(column_letter) - ord("A")
     return column_number, row_number
 
@@ -1865,16 +1865,15 @@ def plot_grid(axs, dict_list):
 def plot_row(axs, dict_list):
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
-    for dict in dict_list:
-        cell = dict.get("cell")[0]
+    for data_dict in dict_list:
+        cell = get_current_cell(data_dict)
 
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
-        x = dict["x"][0]
-        y = dict["y"][0]
-        ztotal = dict["ztotal"]
+        column, row = convert_cell_to_coordinates(cell)
+        x = data_dict["x"][0]
+        y = data_dict["y"][0]
+        ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
-        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+
         axs[row].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
@@ -1890,14 +1889,13 @@ def plot_row(axs, dict_list):
 def plot_column(axs, dict_list):
     colors = plt.cm.viridis(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
-    for dict in dict_list:
-        cell = dict.get("cell")[0]
+    for data_dict in dict_list:
+        cell = get_current_cell(data_dict)
 
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
-        x = dict["x"][0]
-        y = dict["y"][0]
-        ztotal = dict["ztotal"]
+        column, row = convert_cell_to_coordinates(cell)
+        x = data_dict["x"][0]
+        y = data_dict["y"][0]
+        ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
         # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
         axs[column].plot(
@@ -1938,14 +1936,13 @@ def plot_all_cells(ax: Axes) -> Axes:
     markers = ["o", "s", "D", "^"]
     avg_slope, avg_intercept = get_average_response(CELLS)
 
-    for dict in dict_list:
-        cell = dict.get("cell")[0]
+    for data_dict in dict_list:
+        cell = get_current_cell(data_dict)
 
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
-        x = dict["x"][0]
-        y = dict["y"][0]
-        ztotal = dict["ztotal"]
+        column, row = convert_cell_to_coordinates(cell)
+        x = data_dict["x"][0]
+        y = data_dict["y"][0]
+        ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
         # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
         ax.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
@@ -1973,9 +1970,8 @@ def plot_enable_write_temperature():
     for cell in CELLS.keys():
         xint = CELLS[cell].get("x_intercept")
         x = CELLS[cell].get("enable_write_current") * 1e6
-        temp = calculate_channel_temperature(1.3, 12.3, x, xint)
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
+        temp = calculate_channel_temperature(SUBSTRATE_TEMP, CRITICAL_TEMP, x, xint)
+        column, row = convert_cell_to_coordinates(cell)
         ax.plot(
             x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
@@ -1983,7 +1979,7 @@ def plot_enable_write_temperature():
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Channel Temperature (K)")
     ax.set_ylim(0, 13)
-    ax.hlines(12.3, 0, 500, linestyle="--")
+    ax.hlines(CRITICAL_TEMP, 0, 500, linestyle="--")
 
 
 def plot_enable_read_temperature():
@@ -1994,8 +1990,7 @@ def plot_enable_read_temperature():
         xint = CELLS[cell].get("x_intercept")
         x = CELLS[cell].get("enable_read_current") * 1e6
         temp = calculate_channel_temperature(1.3, 12.3, x, xint)
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
+        column, row = convert_cell_to_coordinates(cell)
         ax.plot(
             x, temp, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
@@ -2003,7 +1998,7 @@ def plot_enable_read_temperature():
     ax.set_xlabel("Enable Read Current ($\mu$A)")
     ax.set_ylabel("Channel Temperature (K)")
     ax.set_ylim(0, 13)
-    ax.hlines(12.3, 0, 500, linestyle="--")
+    ax.hlines(CRITICAL_TEMP, 0, 500, linestyle="--")
 
 
 def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
