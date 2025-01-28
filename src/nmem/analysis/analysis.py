@@ -373,14 +373,18 @@ def get_write_temperatures(data_dict: dict) -> np.ndarray:
     )
     return enable_write_temps
 
+def get_write_temperature(data_dict: dict) -> float:
+    enable_write_current = get_enable_write_current(data_dict)
+    max_enable_current = get_max_enable_current(data_dict)
+    write_temp = _calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
+    )
+    return write_temp
 
 def get_write_current(data_dict: dict) -> float:
-    print(f"write_current: {data_dict.get('write_current')}")
-    print(f"y shape: {data_dict.get('y')}")
     if data_dict.get("write_current").shape[1] == 1:
         return filter_first(data_dict.get("write_current")) * 1e6
     if data_dict.get("write_current").shape[1] > 1:
-        print(data_dict.get("write_current"))
         return data_dict.get("write_current")[0, 0] * 1e6
 
 
@@ -657,6 +661,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, data_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
+    ax2.xaxis.set_major_locator(MultipleLocator(0.05))
 
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
@@ -942,6 +947,7 @@ def plot_read_sweep(
         variable = get_write_current(data_dict)
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
+        write_temp = get_write_temperature(data_dict)
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
     if variable_name == "write_width":
@@ -952,7 +958,7 @@ def plot_read_sweep(
     ax.plot(
         read_currents,
         value,
-        label=f"{variable:.2f}$\mu$A",
+        label=f"{variable:.2f}$\mu$A, {write_temp:.2f}K",
         marker=".",
         markeredgecolor="k",
         **kwargs,
@@ -972,7 +978,8 @@ def plot_read_sweep_array(
     colors = CMAP(np.linspace(0, 1, len(data_list)))
     for i, data_dict in enumerate(data_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
-        plot_bit_error_rate_args(ax, data_dict, color=colors[i])
+        # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
+        plot_fill_between(ax, data_dict, colors[i])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
