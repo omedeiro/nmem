@@ -431,7 +431,7 @@ if __name__ == "__main__":
     # manuscript_figure()
     fig, ax = plt.subplots()
     plot_read_sweep_array(
-        ax, inverse_compare_dict, "bit_error_rate", "enable_read_current"
+        ax, enable_read_310_C4_dict, "bit_error_rate", "enable_read_current"
     )
     plt.show()
 
