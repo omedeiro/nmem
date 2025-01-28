@@ -134,6 +134,51 @@ def _calculate_critical_current(
     return ic
 
 
+
+def create_trace_hist_plot(
+    ax_dict: dict[str, Axes], dict_list: list[dict], save: bool = False
+) -> Axes:
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+
+    plot_trace_averaged(
+        ax_dict["A"], dict_list[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, dict_list[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax_dict["B"], dict_list[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax_dict["B"],
+        dict_list[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+
+
+    plot_hist(ax_dict["C"], dict_list[3])
+
+
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [ns]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    return ax_dict
+
+
 def get_current_cell(data_dict: dict) -> str:
     cell = filter_first(data_dict.get("cell"))
     if cell is None:
@@ -401,7 +446,7 @@ def get_state_currents(
 def get_trace_data(
     data_dict: dict,
     trace_name: Literal["trace_chan_in", "trace_chan_out", "trace_enab"],
-    trace_index: int,
+    trace_index: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray]:
     if data_dict.get(trace_name).ndim == 2:
         x = data_dict[trace_name][0] * 1e6
@@ -1747,20 +1792,20 @@ def plot_hist(ax: Axes, data_dict: dict) -> Axes:
 
 
 def plot_bitstream(ax: Axes, data_dict: dict, trace_name: str) -> Axes:
+    x, y = get_trace_data(data_dict, trace_name, )
     ax.plot(
         data_dict[trace_name][0, :] * 1e6,
         data_dict[trace_name][1, :],
         label=trace_name,
-        color="#345F90",
     )
     plot_message(ax, data_dict["bitmsg_channel"][0])
     return ax
 
 
-def plot_delay(ax: Axes, data_dict: dict) -> Axes:
+def plot_delay(ax: Axes, dict_list: list[dict]) -> Axes:
     bers = []
     for i in range(4):
-        bers.append(data_dict[i]["bit_error_rate"][0])
+        bers.append(get_bit_error_rate(dict_list[i]))
 
     ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o", color="#345F90")
     ax.set_xlabel("Delay [$\mu$s]")
