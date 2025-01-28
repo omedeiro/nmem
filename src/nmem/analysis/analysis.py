@@ -933,7 +933,7 @@ def plot_read_sweep(
     ],
     **kwargs,
 ) -> Axes:
-
+    write_temp = None
     read_currents = get_read_currents(data_dict)
 
     if value_name == "bit_error_rate":
@@ -955,10 +955,14 @@ def plot_read_sweep(
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
 
+    if write_temp is None:
+        label=f"{variable:.2f}$\mu$A"
+    else:
+        label=f"{variable:.2f}$\mu$A, {write_temp:.2f}K"
     ax.plot(
         read_currents,
         value,
-        label=f"{variable:.2f}$\mu$A, {write_temp:.2f}K",
+        label=label,
         marker=".",
         markeredgecolor="k",
         **kwargs,
@@ -1145,6 +1149,7 @@ def plot_voltage_trace(
 def plot_voltage_trace_stack(
     axs: List[Axes], data_dict: dict, trace_index: int = 0
 ) -> List[Axes]:
+    colors = CMAP(np.linspace(0.2, 1, 3))
     if len(axs) != 3:
         raise ValueError("The number of axes must be 3.")
 
@@ -1155,7 +1160,7 @@ def plot_voltage_trace_stack(
     bitmsg_channel = data_dict.get("bitmsg_channel")[0]
     bitmsg_enable = data_dict.get("bitmsg_enable")[0]
 
-    plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color="C0", label="Input")
+    plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color=colors[0], label="Input")
 
     if bitmsg_enable[1] == "W" and bitmsg_channel[1] != "N":
         plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 0.9, 2.1)
@@ -1165,9 +1170,9 @@ def plot_voltage_trace_stack(
         plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 2.9, 4.1)
         plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 6.9, 8.1)
 
-    plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color="C1", label="Enable")
+    plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color=colors[1], label="Enable")
 
-    plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color="C2", label="Output")
+    plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color=colors[2], label="Output")
 
     axs[2].xaxis.set_major_locator(MultipleLocator(5))
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
