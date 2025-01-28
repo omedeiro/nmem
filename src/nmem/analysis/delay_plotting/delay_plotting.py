@@ -1,16 +1,12 @@
 import matplotlib.pyplot as plt
-import scipy.io as sio
-from matplotlib.axes import Axes
 
 from nmem.analysis.analysis import (
-    plot_trace_averaged,
-    plot_hist,
+    create_trace_hist_plot,
+    import_directory,
     plot_bitstream,
     plot_delay,
-    import_directory,
-    create_trace_hist_plot,
+    plot_hist,
 )
-
 
 plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5

@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
 from matplotlib.axes import Axes
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
-from nmem.analysis.analysis import import_directory, plot_enable_write_sweep_multiple
+from nmem.analysis.analysis import (
+    import_directory,
+    plot_enable_write_sweep_multiple,
+)
+
 
 def plot_enable_write_sweep_single(ax: Axes, data_dict: dict, index: int) -> Axes:
     cmap = plt.get_cmap("Spectral")
@@ -49,43 +52,7 @@ def plot_write_sweep_fine(ax: Axes, data_dict: dict) -> Axes:
 
 
 if __name__ == "__main__":
-    # data_dict = {
-    #     0: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 14-54-42.mat"
-    #     ),
-    #     1: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-02-05.mat"
-    #     ),
-    #     2: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-12-02.mat"
-    #     ),
-    #     3: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-19-02.mat"
-    #     ),
-    #     4: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-29-42.mat"
-    #     ),
-    #     5: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-37-52.mat"
-    #     ),
-    #     6: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-44-49.mat"
-    #     ),
-    #     7: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-51-58.mat"
-    #     ),
-    #     8: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 15-59-19.mat"
-    #     ),
-    #     9: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-10-26.mat"
-    #     ),
-    #     10: sio.loadmat(
-    #         "SPG806_20240919_nMem_parameter_sweep_D6_A4_C1_2024-09-19 16-33-07.mat"
-    #     ),
-    # }
-
+    data_list2 = import_directory("data2")
     fig, ax = plt.subplots()
-    # plot_write_sweep_fine(ax, data_dict)
-    data_list = import_directory("data2")
-    plot_enable_write_sweep_multiple(ax, data_list)
+    plot_enable_write_sweep_multiple(ax, data_list2)
+    plt.show()

@@ -209,8 +209,6 @@ def get_enable_write_current(data_dict: dict) -> float:
 
 
 def get_enable_write_currents(data_dict: dict) -> np.ndarray:
-    print(data_dict.get("x").shape)
-    print(data_dict.get("y").shape)
     enable_write_currents = data_dict.get("x")[:, :, 0].flatten() * 1e6
     if len(enable_write_currents) == 1:
         enable_write_currents = data_dict.get("x")[:, 0].flatten() * 1e6
@@ -377,7 +375,13 @@ def get_write_temperatures(data_dict: dict) -> np.ndarray:
 
 
 def get_write_current(data_dict: dict) -> float:
-    return filter_first(data_dict.get("write_current")) * 1e6
+    print(f"write_current: {data_dict.get('write_current')}")
+    print(f"y shape: {data_dict.get('y')}")
+    if data_dict.get("write_current").shape[1] == 1:
+        return filter_first(data_dict.get("write_current")) * 1e6
+    if data_dict.get("write_current").shape[1] > 1:
+        print(data_dict.get("write_current"))
+        return data_dict.get("write_current")[0, 0] * 1e6
 
 
 ####################################################################################################
@@ -671,8 +675,6 @@ def plot_enable_write_sweep_single(
     enable_write_currents = get_enable_write_currents(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     write_current = get_write_current(data_dict)
-    print(f"enable_write_currents: {enable_write_currents}")
-    print(f"bit_error_rate: {bit_error_rate}")
     ax.plot(
         enable_write_currents,
         bit_error_rate,
@@ -1067,8 +1069,27 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
     return ax
 
 
+def plot_enable_write_sweep_grid(ax:Axes, data_list: list[dict], save: bool = False) -> None:
+
+    cmap = plt.get_cmap("Spectral")
+    colors = cmap(np.linspace(0, 1, len(data_list)))
+    for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
+        ax[i] = plot_read_sweep(
+            ax[i],
+            data_list[j],
+            "bit_error_rate",
+            "enable_write_current",
+            color=colors[j],
+        )
+        ax[i].set_xlabel("Read Current ($\mu$A)")
+        if i == "A":
+            ax[i].set_ylabel("Bit Error Rate")
+
+    ax["E"] = plot_state_currents(ax["E"], data_list)
+    return
+
+
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
-    print(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     measurement_param = data_dict.get("y")[0][:, 1] * 1e6
 
