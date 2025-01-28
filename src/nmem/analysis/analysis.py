@@ -25,8 +25,10 @@ CMAP = plt.get_cmap("plasma").reversed()
 
 
 def build_array(
-    data_dict: dict, parameter_z: str
+    data_dict: dict, parameter_z: Literal["total_switches_norm"]
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if data_dict.get("total_switches_norm") is None:
+        data_dict["total_switches_norm"] = get_total_switches_norm(data_dict)
     x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
     y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
     z: np.ndarray = data_dict.get(parameter_z)
@@ -207,7 +209,15 @@ def get_enable_write_current(data_dict: dict) -> float:
 
 
 def get_enable_write_currents(data_dict: dict) -> np.ndarray:
-    return data_dict.get("x")[0][:, 0] * 1e6
+    print(data_dict.get("x").shape)
+    print(data_dict.get("y").shape)
+    enable_write_currents = data_dict.get("x")[:, :, 0].flatten() * 1e6
+    if len(enable_write_currents) == 1:
+        enable_write_currents = data_dict.get("x")[:, 0].flatten() * 1e6
+
+    if enable_write_currents[0] == enable_write_currents[1]:
+        enable_write_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
+    return enable_write_currents
 
 
 def get_read_width(data_dict: dict) -> float:
@@ -294,6 +304,13 @@ def get_text_from_bit_v3(bit: str) -> str:
     else:
         return None
 
+
+def get_total_switches_norm(data_dict: dict) -> np.ndarray:
+    num_meas = data_dict.get("num_meas")[0][0]
+    w0r1 = data_dict.get("write_0_read_1").flatten()
+    w1r0 = num_meas - data_dict.get("write_1_read_0").flatten()
+    total_switches_norm = (w0r1 + w1r0)
+    return total_switches_norm
 
 def get_read_currents(data_dict: dict) -> np.ndarray:
     read_currents = data_dict.get("y")[:, :, 0] * 1e6
@@ -640,6 +657,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, data_list: list[dict]) -> Axes:
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Bit Error Rate")
+    ax.set_yscale("log")
     ax.set_ylim(0, 1)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax
@@ -653,7 +671,8 @@ def plot_enable_write_sweep_single(
     enable_write_currents = get_enable_write_currents(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     write_current = get_write_current(data_dict)
-
+    print(f"enable_write_currents: {enable_write_currents}")
+    print(f"bit_error_rate: {bit_error_rate}")
     ax.plot(
         enable_write_currents,
         bit_error_rate,
