@@ -164,11 +164,14 @@ def get_enable_write_current(data_dict: dict) -> float:
 def get_enable_write_currents(data_dict: dict) -> np.ndarray:
     return data_dict.get("x")[0][:, 0] * 1e6
 
+
 def get_read_width(data_dict: dict) -> float:
     return filter_first(data_dict.get("read_width"))
 
+
 def get_write_width(data_dict: dict) -> float:
     return filter_first(data_dict.get("write_width"))
+
 
 def get_average_response(cell_dict):
     slope_list = []
@@ -296,10 +299,11 @@ def get_fitting_points(
     yfit = y[mid_idx[0]][xfit_idx]
     return xfit, yfit
 
+
 def get_max_enable_current(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["x_intercept"]
-    
+
 
 def get_write_temperatures(data_dict: dict) -> np.ndarray:
     enable_write_currents = get_enable_write_currents(data_dict)
@@ -399,8 +403,12 @@ def get_trace_data(
     trace_name: Literal["trace_chan_in", "trace_chan_out", "trace_enab"],
     trace_index: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    x = data_dict[trace_name][0][:, trace_index] * 1e6
-    y = data_dict[trace_name][1][:, trace_index] * 1e3
+    if data_dict.get(trace_name).ndim == 2:
+        x = data_dict[trace_name][0] * 1e6
+        y = data_dict[trace_name][1] * 1e3
+    else:
+        x = data_dict[trace_name][0][:, trace_index] * 1e6
+        y = data_dict[trace_name][1][:, trace_index] * 1e3
     return x, y
 
 
@@ -561,6 +569,7 @@ def plot_operating_margins(ax: Axes, data_list: list[dict]) -> Axes:
 
 #     return ax
 
+
 def plot_fill_between(ax, data_dict, color):
     # fill the area between 0.5 and the curve
     enable_write_currents = get_enable_write_currents(data_dict)
@@ -582,7 +591,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, data_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
-    
+
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Bit Error Rate")
@@ -692,8 +701,11 @@ def plot_linear_fit(ax: Axes, x: np.ndarray, y: np.ndarray) -> Axes:
 
 
 def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
-    channel_temp = calculate_channel_temperature(data_dict)
     heater_current = data_dict.get("x")[0][:, 0] * 1e6
+    max_enable_current = get_max_enable_current(data_dict)
+    channel_temp = _calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, heater_current, max_enable_current
+    )
     ax.plot(heater_current, channel_temp, **kwargs)
     ax.set_xlabel("Heater Current ($\mu$A)")
     ax.set_ylabel("Channel Temperature (K)")
@@ -842,11 +854,15 @@ def plot_read_sweep(
     data_dict: dict,
     value_name: Literal["bit_error_rate", "write_0_read_1", "write_1_read_0"],
     variable_name: Literal[
-        "enable_write_current", "read_width", "write_width", "write_current", "enable_read_current"
+        "enable_write_current",
+        "read_width",
+        "write_width",
+        "write_current",
+        "enable_read_current",
     ],
     **kwargs,
 ) -> Axes:
-    
+
     read_currents = get_read_currents(data_dict)
 
     if value_name == "bit_error_rate":
@@ -889,26 +905,23 @@ def plot_read_sweep_array(
 ) -> Axes:
     colors = CMAP(np.linspace(0, 1, len(data_list)))
     for i, data_dict in enumerate(data_list):
-        plot_read_sweep(
-            ax, data_dict, value_name, variable_name, color=colors[i]
-        )
+        plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         plot_bit_error_rate_args(ax, data_dict, color=colors[i])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
 
 
-def plot_read_delay(ax: Axes, data_dict: dict) -> Axes:
-    cmap = plt.get_cmap("Reds")
-    colors = cmap(np.linspace(0.2, 1, len(data_dict)))
-    for key, data in data_dict.items():
-        read_currents = data["y"][:, :, 0].flatten() * 1e6
-        ber = data["bit_error_rate"].flatten()
+def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
+    colors = CMAP(np.linspace(0.2, 1, len(dict_list)))
+    for i, data_dict in enumerate(dict_list):
+        read_currents = get_read_currents(data_dict)
+        bit_error_rate = get_bit_error_rate(data_dict)
         ax.plot(
             read_currents,
-            ber,
-            label=f"+{key}$\mu$s",
-            color=colors[key],
+            bit_error_rate,
+            label=f"+{i}$\mu$s",
+            color=colors[i],
             marker=".",
             markeredgecolor="k",
         )
@@ -917,7 +930,7 @@ def plot_read_delay(ax: Axes, data_dict: dict) -> Axes:
     ax.set_ylabel("Bit Error Rate")
     ax.grid(True)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1))
-
+    ax.set_yscale("log")
     return ax
 
 
@@ -991,7 +1004,8 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 
 
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
-    bit_error_rate = calculate_bit_error_rate(data_dict)
+    print(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
     measurement_param = data_dict.get("y")[0][:, 1] * 1e6
 
     # ax.plot(
@@ -1036,57 +1050,43 @@ def plot_voltage_trace(
     return ax
 
 
-def plot_trace_stack_1D(
-    axes: List[Axes], data_dict: dict, trace_index: int = 0
+def plot_voltage_trace_stack(
+    axs: List[Axes], data_dict: dict, trace_index: int = 0
 ) -> List[Axes]:
-    if len(axes) != 3:
+    if len(axs) != 3:
         raise ValueError("The number of axes must be 3.")
 
     chan_in_x, chan_in_y = get_trace_data(data_dict, "trace_chan_in", trace_index)
     chan_out_x, chan_out_y = get_trace_data(data_dict, "trace_chan_out", trace_index)
     enab_in_x, enab_in_y = get_trace_data(data_dict, "trace_enab", trace_index)
 
-    # if chan_in_x.ndim == 2:
-    #     chan_in_x = chan_in_x[:, trace_index]
-    #     chan_in_y = chan_in_y[:, trace_index]
-    #     chan_out_x = chan_out_x[:, trace_index]
-    #     chan_out_y = chan_out_y[:, trace_index]
-    #     enab_in_x = enab_in_x[:, trace_index]
-    #     enab_in_y = enab_in_y[:, trace_index]
-
     bitmsg_channel = data_dict.get("bitmsg_channel")[0]
     bitmsg_enable = data_dict.get("bitmsg_enable")[0]
 
-    ax = axes[0]
-    plot_voltage_trace(ax, chan_in_x, chan_in_y, color="C0", label="Input")
-    ax.legend(loc="upper left")
+    plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color="C0", label="Input")
 
     if bitmsg_enable[1] == "W" and bitmsg_channel[1] != "N":
-        plot_trace_zoom(ax, chan_in_x, chan_in_y, 0.9, 2.1)
-        plot_trace_zoom(ax, chan_in_x, chan_in_y, 4.9, 6.1)
+        plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 0.9, 2.1)
+        plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 4.9, 6.1)
 
     if bitmsg_enable[3] == "W" and bitmsg_channel[3] != "N":
-        plot_trace_zoom(ax, chan_in_x, chan_in_y, 2.9, 4.1)
-        plot_trace_zoom(ax, chan_in_x, chan_in_y, 6.9, 8.1)
+        plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 2.9, 4.1)
+        plot_trace_zoom(axs[0], chan_in_x, chan_in_y, 6.9, 8.1)
 
-    ax = axes[1]
-    plot_voltage_trace(ax, enab_in_x, enab_in_y, color="C1", label="Enable")
-    ax.legend(loc="upper left")
+    plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color="C1", label="Enable")
 
-    ax = axes[2]
-    plot_voltage_trace(ax, chan_out_x, chan_out_y, color="C2", label="Output")
-    ax.legend(loc="upper left")
+    plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color="C2", label="Output")
 
-    ax.xaxis.set_major_locator(MultipleLocator(5))
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
-    ax.set_xlim([0, 10])
+    axs[2].xaxis.set_major_locator(MultipleLocator(5))
+    axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
+    axs[2].set_xlim([0, 10])
 
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
     fig.supxlabel("Time [$\mu$s]")
     fig.subplots_adjust(hspace=0.0)
 
-    return axes
+    return axs
 
 
 def plot_hist_2axis(data_dict: dict, trace_index: int):
@@ -1337,36 +1337,36 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
 #     return x, y, ztotal
 
 
-def plot_enable_current_relation(
-    ax: Axes, data_dict: dict, parameter_z: str = "total_switches_norm"
-) -> Axes:
-    x, y, ztotal = build_array(data_dict, parameter_z)
-    dx, dy = np.diff(x)[0], np.diff(y)[0]
-    xfit, yfit = get_fitting_points(x, y, ztotal)
+# def plot_enable_current_relation(
+#     ax: Axes, data_dict: dict, parameter_z: str = "total_switches_norm"
+# ) -> Axes:
+#     x, y, ztotal = build_array(data_dict, parameter_z)
+#     dx, dy = np.diff(x)[0], np.diff(y)[0]
+#     xfit, yfit = get_fitting_points(x, y, ztotal)
 
-    ax.scatter(xfit, yfit)
+#     ax.scatter(xfit, yfit)
 
-    # Plot a fit line to the scatter points
-    plot_fit(ax, xfit, yfit)
+#     # Plot a fit line to the scatter points
+#     plot_fit(ax, xfit, yfit)
 
-    ax.matshow(
-        ztotal,
-        extent=[
-            (-0.5 * dx + x[0]),
-            (0.5 * dx + x[-1]),
-            (-0.5 * dy + y[0]),
-            (0.5 * dy + y[-1]),
-        ],
-        aspect="auto",
-        origin="lower",
-        cmap="viridis",
-    )
-    ax.xaxis.tick_bottom()
-    ax.xaxis.set_major_locator(MaxNLocator(len(x)))
-    ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
-    ax.yaxis.set_major_locator(MultipleLocator(50))
+#     ax.matshow(
+#         ztotal,
+#         extent=[
+#             (-0.5 * dx + x[0]),
+#             (0.5 * dx + x[-1]),
+#             (-0.5 * dy + y[0]),
+#             (0.5 * dy + y[-1]),
+#         ],
+#         aspect="auto",
+#         origin="lower",
+#         cmap="viridis",
+#     )
+#     ax.xaxis.tick_bottom()
+#     ax.xaxis.set_major_locator(MaxNLocator(len(x)))
+#     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
+#     ax.yaxis.set_major_locator(MultipleLocator(50))
 
-    return ztotal
+#     return ztotal
 
 
 def find_max_critical_current(data):
@@ -1847,7 +1847,7 @@ def create_combined_plot_v2(data_dict: dict, save=False):
     ax2.set_ylabel("[V]")
 
     axfit = subfigs[1, 2].add_subplot()
-    plot_all_cells(axfit)
+    # plot_all_cells(axfit)
     fig.patch.set_visible(False)
     if save:
         plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
@@ -1961,9 +1961,9 @@ def plot_grid(axs, dict_list):
             axs[row, column],
             xfit,
             yfit,
-            color=colors[column],
-            marker=markers[row],
-            markeredgecolor="k",
+            # color=colors[column],
+            # marker=markers[row],
+            # markeredgecolor="k",
         )
         enable_read_current = CELLS[cell].get("enable_read_current") * 1e6
         enable_write_current = CELLS[cell].get("enable_write_current") * 1e6
@@ -2039,13 +2039,8 @@ def plot_column(axs, dict_list):
     return axs
 
 
-def plot_full_grid():
-
-    dict_list = import_directory("data")
-    fig, axs = plt.subplots(5, 5, figsize=(20, 20), sharex=True, sharey=True)
-
+def plot_full_grid(axs, dict_list):
     plot_grid(axs[1:5, 0:4], dict_list)
-    fig.subplots_adjust(hspace=0.1, wspace=0.1)
 
     plot_row(axs[0, 0:4], dict_list)
 
@@ -2054,19 +2049,18 @@ def plot_full_grid():
     axs[4, 0].set_xlabel("Enable Current ($\mu$A)")
     axs[4, 0].set_ylabel("Critical Current ($\mu$A)")
 
-    plt.show()
+    return axs
 
 
-def plot_enable_current_relation(ax: Axes, dict_list:list[dict]) -> Axes:
+def plot_enable_current_relation(ax: Axes, dict_list: list[dict]) -> Axes:
     colors = plt.cm.RdBu(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
         column, row = convert_cell_to_coordinates(cell)
-        x, y, ztotal = build_array(data_dict, "bit_error_rate")
+        x, y, ztotal = build_array(data_dict, "total_switches_norm")
         xfit, yfit = get_fitting_points(x, y, ztotal)
         ax.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
-
 
         ax.set_xlabel("Enable Current ($\mu$A)")
         ax.set_ylabel("Critical Current ($\mu$A)")
@@ -2121,7 +2115,7 @@ def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
     for data_dict in data_list:
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
-        write_temp = get_write_temperature(data_dict)
+        write_temp = get_write_temperatures(data_dict)
         ax.plot(
             y,
             ztotal,

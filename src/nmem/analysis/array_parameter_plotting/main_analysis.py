@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib import font_manager
 
 from nmem.analysis.analysis import (
-    convert_location_to_coordinates,
+    convert_cell_to_coordinates,
     initialize_dict,
     plot_array,
     process_cell,
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     xloc_list = []
     yloc_list = []
     for c in CELLS:
-        xloc, yloc = convert_location_to_coordinates(c)
+        xloc, yloc = convert_cell_to_coordinates(c)
         param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
         xloc_list.append(xloc)
         yloc_list.append(yloc)
@@ -105,4 +105,6 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.patch.set_visible(False)
-    plt.savefig("main_analysis.pdf", bbox_inches="tight")
+    save=False
+    if save:
+        plt.savefig("main_analysis.pdf", bbox_inches="tight")

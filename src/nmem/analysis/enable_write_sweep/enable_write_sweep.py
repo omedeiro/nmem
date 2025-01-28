@@ -1,17 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
-from matplotlib.axes import Axes
-from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
-    get_state_currents,
+    import_directory,
     plot_read_sweep,
-    get_read_currents,
-    get_bit_error_rate,
     plot_state_currents,
     plot_state_separation,
-    import_directory,
 )
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]

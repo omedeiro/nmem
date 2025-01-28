@@ -31,15 +31,16 @@ plt.rcParams["ytick.major.size"] = 1
 
 
 if __name__ == "__main__":
-    data_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\dc_sweep"
-    )
+    data_list = import_directory("data")
 
     fig, ax = plt.subplots()
     plot_critical_currents_abs(ax, data_list)
+    plt.show()
 
     fig, ax = plt.subplots()
     plot_iv(ax, data_list)
+    plt.show()
 
     fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
     plot_combined_figure(ax, data_list)
+    plt.show()

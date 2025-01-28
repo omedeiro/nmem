@@ -1,16 +1,8 @@
-import os
 
 import matplotlib.pyplot as plt
-import numpy as np
-import scipy.io as sio
 
 from nmem.analysis.analysis import (
-    build_array,
-    get_fitting_points,
-    plot_fit,
-    convert_cell_to_coordinates,
     import_directory,
-    get_current_cell,
     plot_enable_current_relation,
 )
 

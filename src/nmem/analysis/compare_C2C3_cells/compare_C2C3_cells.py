@@ -1,20 +1,17 @@
 import matplotlib.pyplot as plt
-import scipy.io as sio
 
 from nmem.analysis.analysis import (
     build_array,
     get_fitting_points,
+    import_directory,
     plot_channel_temperature,
 )
 from nmem.measurement.functions import plot_fitting
 
 if __name__ == "__main__":
-    data_dict = sio.loadmat(
-        r"SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-28-02.mat"
-    )
-    data_dict2 = sio.loadmat(
-        r"SPG806_20241220_nMem_measure_enable_response_D6_A4_C3_2024-12-20 17-28-57.mat"
-    )
+    data_list = import_directory("data")
+    data_dict = data_list[0]
+    data_dict2 = data_list[1]
 
     split_idx = 10
 
