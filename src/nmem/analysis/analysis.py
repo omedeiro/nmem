@@ -21,6 +21,7 @@ from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
+CMAP = plt.get_cmap("plasma").reversed()
 
 
 def build_array(
@@ -134,7 +135,9 @@ def _calculate_critical_current(
 
 
 def get_current_cell(data_dict: dict) -> str:
-    cell = data_dict.get("cell")[0]
+    cell = filter_first(data_dict.get("cell"))
+    if cell is None:
+        cell = filter_first(data_dict.get("sample_name"))[-2:]
     return cell
 
 
@@ -161,6 +164,11 @@ def get_enable_write_current(data_dict: dict) -> float:
 def get_enable_write_currents(data_dict: dict) -> np.ndarray:
     return data_dict.get("x")[0][:, 0] * 1e6
 
+def get_read_width(data_dict: dict) -> float:
+    return filter_first(data_dict.get("read_width"))
+
+def get_write_width(data_dict: dict) -> float:
+    return filter_first(data_dict.get("write_width"))
 
 def get_average_response(cell_dict):
     slope_list = []
@@ -288,17 +296,18 @@ def get_fitting_points(
     yfit = y[mid_idx[0]][xfit_idx]
     return xfit, yfit
 
+def get_max_enable_current(data_dict: dict) -> float:
+    cell = get_current_cell(data_dict)
+    return CELLS[cell]["x_intercept"]
+    
 
-def get_write_temperature(data_dict: dict) -> float:
-    enable_write_current = get_enable_write_current(data_dict)
-    cell = data_dict.get("cell")[0]
-    max_enable_current = filter_first(
-        data_dict["CELLS"][cell][0][0]["x_intercept"]
-    ).flatten()[0]
-    enable_write_temp = _calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
-    ).flatten()[0]
-    return enable_write_temp
+def get_write_temperatures(data_dict: dict) -> np.ndarray:
+    enable_write_currents = get_enable_write_currents(data_dict)
+    max_enable_current = get_max_enable_current(data_dict)
+    enable_write_temps = _calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_currents, max_enable_current
+    )
+    return enable_write_temps
 
 
 def get_write_current(data_dict: dict) -> float:
@@ -552,13 +561,33 @@ def plot_operating_margins(ax: Axes, data_list: list[dict]) -> Axes:
 
 #     return ax
 
+def plot_fill_between(ax, data_dict, color):
+    # fill the area between 0.5 and the curve
+    enable_write_currents = get_enable_write_currents(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
+    verts = polygon_nominal(enable_write_currents, bit_error_rate)
+    poly = PolyCollection([verts], facecolors=color, alpha=0.6, edgecolors="k")
+    ax.add_collection(poly)
+    verts = polygon_inverting(enable_write_currents, bit_error_rate)
+    poly = PolyCollection([verts], facecolors=color, alpha=0.6, edgecolors="k")
+    ax.add_collection(poly)
+
 
 def plot_enable_write_sweep_multiple(ax: Axes, data_list: list[dict]) -> Axes:
-    cmap = plt.get_cmap("viridis")
-    colors = cmap(np.linspace(0, 1, len(data_list)))
+    colors = CMAP(np.linspace(0, 1, len(data_list)))
     for i, data_dict in enumerate(data_list):
         plot_enable_write_sweep_single(ax, data_dict, color=colors[i])
+        plot_fill_between(ax, data_dict, colors[i])
 
+    ax2 = ax.twiny()
+    write_temps = get_write_temperatures(data_dict)
+    ax2.set_xlim([write_temps[0], write_temps[-1]])
+    
+    ax2.set_xlabel("Write Temperature (K)")
+    ax.set_xlabel("Enable Write Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
+    ax.set_ylim(0, 1)
+    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax
 
 
@@ -575,23 +604,17 @@ def plot_enable_write_sweep_single(
         enable_write_currents,
         bit_error_rate,
         label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
-        marker=".",
-        markeredgecolor="k",
+        linewidth=2,
         **kwargs,
     )
-    ax.xaxis.set_major_locator(MultipleLocator(50))
-    ax.xaxis.set_minor_locator(MultipleLocator(10))
-    ax.set_xlabel("enable_write current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    ax.set_ylim(0, 1)
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
+
+    ax.set_xlim(enable_write_currents[0], enable_write_currents[-1])
 
     return ax
 
 
 def plot_waterfall(ax: Axes3D, data_list: list[dict]) -> Axes3D:
-    cmap = plt.get_cmap("RdBu")
-    colors = cmap(np.linspace(0, 1, len(data_list)))
+    colors = CMAP(np.linspace(0, 1, len(data_list)))
     verts_list = []
     zlist = []
 
@@ -819,29 +842,39 @@ def plot_read_sweep(
     data_dict: dict,
     value_name: Literal["bit_error_rate", "write_0_read_1", "write_1_read_0"],
     variable_name: Literal[
-        "enable_write_current", "read_width", "write_width", "write_current"
+        "enable_write_current", "read_width", "write_width", "write_current", "enable_read_current"
     ],
-    state_markers: bool = False,
     **kwargs,
 ) -> Axes:
+    
     read_currents = get_read_currents(data_dict)
-    value = data_dict.get(value_name).flatten()
-    variable = data_dict.get(variable_name).flatten()[0]
 
-    if read_currents.shape != value.shape:
-        read_currents = read_currents.flatten()
+    if value_name == "bit_error_rate":
+        value = get_bit_error_rate(data_dict)
+    if value_name == "write_0_read_1":
+        value = data_dict.get("write_0_read_1").flatten()
+    if value_name == "write_1_read_0":
+        value = data_dict.get("write_1_read_0").flatten()
+
+    if variable_name == "write_current":
+        variable = get_write_current(data_dict)
+    if variable_name == "enable_write_current":
+        variable = get_enable_write_current(data_dict)
+    if variable_name == "read_width":
+        variable = get_read_width(data_dict)
+    if variable_name == "write_width":
+        variable = get_write_width(data_dict)
+    if variable_name == "enable_read_current":
+        variable = get_enable_read_current(data_dict)
 
     ax.plot(
         read_currents,
         value,
-        label=f"{variable*1e6:.2f}$\mu$A",
+        label=f"{variable:.2f}$\mu$A",
         marker=".",
         markeredgecolor="k",
         **kwargs,
     )
-
-    if state_markers:
-        plot_state_current_markers(ax, data_dict, markersize=15, **kwargs)
 
     ax.set_ylim(0, 1)
     ax.set_title(f"{variable_name}")
@@ -852,14 +885,14 @@ def plot_read_sweep(
 
 
 def plot_read_sweep_array(
-    ax: Axes, data_dict: dict, value_name: str, variable_name: str, **kwargs
+    ax: Axes, data_list: list[dict], value_name: str, variable_name: str
 ) -> Axes:
-    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_dict.keys())))
-    for key in data_dict.keys():
+    colors = CMAP(np.linspace(0, 1, len(data_list)))
+    for i, data_dict in enumerate(data_list):
         plot_read_sweep(
-            ax, data_dict[key], value_name, variable_name, color=colors[key]
+            ax, data_dict, value_name, variable_name, color=colors[i]
         )
-        plot_bit_error_rate_args(ax, data_dict, key)
+        plot_bit_error_rate_args(ax, data_dict, color=colors[i])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
@@ -888,21 +921,20 @@ def plot_read_delay(ax: Axes, data_dict: dict) -> Axes:
     return ax
 
 
-def plot_bit_error_rate_args(ax: Axes, data_dict: dict, key: str) -> Axes:
-    colors = plt.cm.RdBu(np.linspace(0, 1, len(data_dict.keys())))
-    bit_error_rate = get_bit_error_rate(data_dict[key])
+def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
+    bit_error_rate = get_bit_error_rate(data_dict)
     berargs = get_bit_error_rate_args(bit_error_rate)
 
-    read_current = get_read_currents(data_dict[key])
+    read_current = get_read_currents(data_dict)
     for arg in berargs:
         if arg is not np.nan:
             ax.plot(
                 read_current[arg],
                 bit_error_rate[arg],
                 marker="o",
-                color=colors[key],
+                color=color,
             )
-            ax.axvline(read_current[arg], color=colors[key], linestyle="--")
+            ax.axvline(read_current[arg], color=color, linestyle="--")
     return ax
 
 
@@ -1858,7 +1890,7 @@ def create_combined_plot_v3(data_dict: dict, save=False):
     ax_dict["B"].legend(loc="upper left")
 
     fig.subplots_adjust(wspace=0.45)
-    plot_all_cells(ax_dict["C"])
+    plot_enable_current_relation(ax_dict["C"], [data_dict])
     if save:
         plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
     plt.show()
@@ -2025,38 +2057,20 @@ def plot_full_grid():
     plt.show()
 
 
-def plot_all_cells(ax: Axes) -> Axes:
-    dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\measure_enable_response\data"
-    )
+def plot_enable_current_relation(ax: Axes, dict_list:list[dict]) -> Axes:
     colors = plt.cm.RdBu(np.linspace(0, 1, 4))
     markers = ["o", "s", "D", "^"]
-    avg_slope, avg_intercept = get_average_response(CELLS)
-
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
-
         column, row = convert_cell_to_coordinates(cell)
-        x = data_dict["x"][0]
-        y = data_dict["y"][0]
-        ztotal = data_dict["ztotal"]
+        x, y, ztotal = build_array(data_dict, "bit_error_rate")
         xfit, yfit = get_fitting_points(x, y, ztotal)
-        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
         ax.plot(xfit, yfit, label=f"{cell}", color=colors[column], marker=markers[row])
 
-        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-        # plot_fitting(ax, xfit, yfit, color="k")
 
-        x = np.linspace(0, -avg_intercept / avg_slope, 100)
-        y = avg_slope * x + avg_intercept
-        ax.plot(x, y, color="k", linestyle="--")
-        ax.plot()
         ax.set_xlabel("Enable Current ($\mu$A)")
         ax.set_ylabel("Critical Current ($\mu$A)")
-        ax.legend(loc="lower left", ncol=4)
-        ax.text(
-            0.25, 0.85, "$I_{{ch}}(I_{{enable}})$", transform=ax.transAxes, fontsize=12
-        )
+        ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
     return ax
 
 
@@ -2139,9 +2153,9 @@ def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
 
 if __name__ == "__main__":
     data_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_sweep\data"
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
     )
 
     fig, ax = plt.subplots()
-    plot_state_separation(ax, data_list)
+    plot_enable_write_sweep_multiple(ax, data_list[::2])
     plt.show()
