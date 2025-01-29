@@ -136,7 +136,6 @@ def _calculate_critical_current(
     return ic
 
 
-
 def create_trace_hist_plot(
     ax_dict: dict[str, Axes], dict_list: list[dict], save: bool = False
 ) -> Axes:
@@ -164,9 +163,7 @@ def create_trace_hist_plot(
         ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
     )
 
-
     plot_hist(ax_dict["C"], dict_list[3])
-
 
     ax_dict["A"].legend(loc="upper left")
     ax_dict["A"].set_ylabel("[mV]")
@@ -307,8 +304,9 @@ def get_total_switches_norm(data_dict: dict) -> np.ndarray:
     num_meas = data_dict.get("num_meas")[0][0]
     w0r1 = data_dict.get("write_0_read_1").flatten()
     w1r0 = num_meas - data_dict.get("write_1_read_0").flatten()
-    total_switches_norm = (w0r1 + w1r0)
+    total_switches_norm = w0r1 + w1r0
     return total_switches_norm
+
 
 def get_read_currents(data_dict: dict) -> np.ndarray:
     read_currents = data_dict.get("y")[:, :, 0] * 1e6
@@ -373,6 +371,7 @@ def get_write_temperatures(data_dict: dict) -> np.ndarray:
     )
     return enable_write_temps
 
+
 def get_write_temperature(data_dict: dict) -> float:
     enable_write_current = get_enable_write_current(data_dict)
     max_enable_current = get_max_enable_current(data_dict)
@@ -380,6 +379,7 @@ def get_write_temperature(data_dict: dict) -> float:
         CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
     )
     return write_temp
+
 
 def get_write_current(data_dict: dict) -> float:
     if data_dict.get("write_current").shape[1] == 1:
@@ -934,6 +934,7 @@ def plot_read_sweep(
     **kwargs,
 ) -> Axes:
     write_temp = None
+    label = None
     read_currents = get_read_currents(data_dict)
 
     if value_name == "bit_error_rate":
@@ -948,18 +949,19 @@ def plot_read_sweep(
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
         write_temp = get_write_temperature(data_dict)
+        if write_temp is None:
+            label = f"{variable:.2f}$\mu$A"
+        else:
+            label = f"{variable:.2f}$\mu$A, {write_temp:.2f}K"
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
         label = f"{variable:.2f} pts "
     if variable_name == "write_width":
         variable = get_write_width(data_dict)
+        label = f"{variable:.2f} pts "
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
 
-    if write_temp is None:
-        label=f"{variable:.2f}$\mu$A"
-    else:
-        label=f"{variable:.2f}$\mu$A, {write_temp:.2f}K"
     ax.plot(
         read_currents,
         value,
@@ -1081,7 +1083,9 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
     return ax
 
 
-def plot_enable_write_sweep_grid(ax:Axes, dict_list: list[dict], save: bool = False) -> None:
+def plot_enable_write_sweep_grid(
+    ax: Axes, dict_list: list[dict], save: bool = False
+) -> None:
 
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(dict_list)))
@@ -1151,6 +1155,7 @@ def plot_voltage_trace_stack(
     axs: List[Axes], data_dict: dict, trace_index: int = 0
 ) -> List[Axes]:
     colors = CMAP(np.linspace(0.2, 1, 3))
+    colors = np.flipud(colors)
     if len(axs) != 3:
         raise ValueError("The number of axes must be 3.")
 
@@ -1845,7 +1850,10 @@ def plot_hist(ax: Axes, data_dict: dict) -> Axes:
 
 
 def plot_bitstream(ax: Axes, data_dict: dict, trace_name: str) -> Axes:
-    x, y = get_trace_data(data_dict, trace_name, )
+    x, y = get_trace_data(
+        data_dict,
+        trace_name,
+    )
     ax.plot(
         data_dict[trace_name][0, :] * 1e6,
         data_dict[trace_name][1, :],
