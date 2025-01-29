@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
-import numpy as np
-import scipy.io as sio
-from nmem.analysis.analysis import get_fitting_points
-from nmem.measurement.functions import build_array, plot_fitting
+from nmem.analysis.analysis import (
+    build_array,
+    get_fitting_points,
+    import_directory,
+    plot_channel_temperature,
+)
+from nmem.measurement.functions import plot_fitting
 
 if __name__ == "__main__":
-    data_dict = sio.loadmat(
-        r"SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-28-02.mat"
-    )
-    data_dict2 = sio.loadmat(
-        r"SPG806_20241220_nMem_measure_enable_response_D6_A4_C3_2024-12-20 17-28-57.mat"
-    )
+    data_list = import_directory("data")
+    data_dict = data_list[0]
+    data_dict2 = data_list[1]
 
     split_idx = 10
 
@@ -43,3 +43,12 @@ if __name__ == "__main__":
     axs[1].plot(xfit, yfit, label="C2", linestyle="-")
     axs[1].set_ylim([0, 1000])
     axs[1].set_xlim([0, 500])
+
+    # fig, axs = plt.subplots(1, 2, figsize=(10, 10))
+    x, y, ztotal = build_array(data_dict, "total_switches_norm")
+    xfit, yfit = get_fitting_points(x, y, ztotal)
+    # axs[0].plot(xfit, yfit, label="C2", linestyle="-")
+
+    fig, ax = plt.subplots()
+    plot_channel_temperature(ax, data_dict)
+    plot_channel_temperature(ax, data_dict2)

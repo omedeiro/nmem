@@ -41,7 +41,6 @@ if __name__ == "__main__":
         "enable_read_phase": -7,
         "bitmsg_channel": "N0NNRN1NNR",
         "bitmsg_enable": "NWNNENWNNE",
-        "voltage_threshold": 0.4,
     }
 
     current_settings = CELLS[current_cell]
@@ -59,7 +58,6 @@ if __name__ == "__main__":
             "spice_device_current": SPICE_DEVICE_CURRENT,
             "sweep_parameter_x": "enable_read_current",
             "sweep_parameter_y": "read_current",
-            "voltage_threshold": 0.42,
         }
     )
     nm.setup_scope_bert(
@@ -77,6 +75,8 @@ if __name__ == "__main__":
     file_path, time_str = qf.save(
         b.properties, data_dict.get("measurement_name"), data_dict
     )
+    print(f"Bit Error Rate: {data_dict['bit_error_rate']}")
+
     nm.write_dict_to_file(file_path, measurement_settings)
 
     nm.set_awg_off(b)

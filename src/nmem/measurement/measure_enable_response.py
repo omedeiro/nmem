@@ -17,7 +17,13 @@ from nmem.measurement.cells import (
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
 )
-from nmem.measurement.functions import construct_currents
+from nmem.measurement.functions import (
+    build_array,
+    construct_currents,
+    filter_plateau,
+    get_fitting_points,
+    plot_fitting,
+)
 
 plt.rcParams["figure.figsize"] = [10, 12]
 
@@ -74,7 +80,7 @@ if __name__ == "__main__":
     # measurement_settings["x"] = np.linspace(200e-6, 300e-6, 15)
     # measurement_settings["y"] = np.linspace(00e-6, 1000e-6, 81)
 
-    measurement_settings["x"] = np.linspace(0e-6, 400e-6, 21)
+    measurement_settings["x"] = np.linspace(0e-6, 500e-6, 21)
     measurement_settings["y"] = np.linspace(0e-6, 1000e-6, 81)
 
     measurement_settings["x_subset"] = measurement_settings.get("x")
@@ -123,5 +129,13 @@ if __name__ == "__main__":
     nm.write_dict_to_file(file_path, data_dict)
     print(f"run time {(time.time()-t1)/60:.2f} minutes")
 
-    # find_peak(data_dict)
-    # plt.savefig(f"{file_path}_fit.png")
+    fig, axs = plt.subplots()
+    x, y, ztotal = build_array(data_dict, "total_switches_norm")
+    xfit, yfit = get_fitting_points(x, y, ztotal)
+    xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+    plot_fitting(axs, xfit, yfit)
+    axs.set_xlabel("Enable Current ($\mu$A)")
+    axs.set_ylabel("Channel Current ($\mu$A)")
+    axs.set_aspect("equal")
+    nm.plot_header(fig, data_dict)
+    plt.savefig(f"{file_path}_fitting.png")

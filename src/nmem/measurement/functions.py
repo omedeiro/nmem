@@ -5,18 +5,15 @@ Created on Fri Nov  3 14:01:31 2023
 @author: omedeiro
 """
 
-import collections.abc
 import logging
 import os
 import time
-from datetime import datetime
 from logging import Logger
 from time import sleep
 from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import Axes
 from qnnpy.functions.ntron import nTron
@@ -24,7 +21,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.analysis import construct_array, get_fitting_points, plot_fit
+from nmem.analysis.analysis import build_array, filter_first, plot_fit
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
@@ -54,21 +51,6 @@ def bimodal_fit(
     return params, cov
 
 
-def build_array(
-    data_dict: dict, parameter_z: str
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
-    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
-    z: np.ndarray = data_dict.get(parameter_z)
-
-    xlength: int = filter_first(data_dict.get("sweep_x_len"))
-    ylength: int = filter_first(data_dict.get("sweep_y_len"))
-
-    # X, Y reversed in reshape
-    zarray = z.reshape((ylength, xlength), order="F")
-    return x, y, zarray
-
-
 def construct_currents(
     heater_currents: np.ndarray,
     slope: float,
@@ -90,33 +72,6 @@ def construct_currents(
         bias_current_array[heater_currents == heater_current] = bias_currents
 
     return bias_current_array
-
-
-def filter_first(value):
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
-
-
-def get_param_mean(param: np.ndarray) -> np.ndarray:
-    if round(param[2], 5) > round(param[5], 5):
-        prm = param[0:2]
-    else:
-        prm = param[3:5]
-    return prm
-
-
-def reject_outliers(data: np.ndarray, m: float = 2.0) -> Tuple[np.ndarray, np.ndarray]:
-    ind = abs(data - np.mean(data)) < m * np.std(data)
-    if len(ind[ind is False]) < 50:
-        data = data[ind]
-        print(f"Samples rejected {len(ind[ind is False])}")
-        rejectInd = np.invert(ind)
-    else:
-        rejectInd = None
-    return data, rejectInd
 
 
 def update_dict(dict1: dict, dict2: dict) -> dict:
@@ -472,26 +427,6 @@ def calculate_channel_current_density(
     return jsw
 
 
-def filter_plateau(
-    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
-) -> Tuple[np.ndarray, np.ndarray]:
-    xfit = np.where(yfit < plateau_height, xfit, np.nan)
-    yfit = np.where(yfit < plateau_height, yfit, np.nan)
-
-    # REmove nans
-    xfit = xfit[~np.isnan(xfit)]
-    yfit = yfit[~np.isnan(yfit)]
-    print(f"length x = {len(xfit)}")
-    return xfit, yfit
-
-
-def filter_first(value):
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
-
 def initialize_data_dict(measurement_settings: dict) -> dict:
     scope_num_samples: int = measurement_settings.get("scope_num_samples")
     num_meas: int = measurement_settings.get("num_meas")
@@ -656,15 +591,15 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
     total_switches = write_0_read_1 + (num_meas - write_1_read_0)
     total_switches_norm = total_switches / (num_meas * 2)
     result_dict = {
-        "write_0_read_1": write_0_read_1,
-        "write_1_read_0": write_1_read_0,
-        "write_0_read_1_norm": write_0_read_1_norm,
-        "write_1_read_0_norm": write_1_read_0_norm,
+        "write_0_read_1": np.array([write_0_read_1]),
+        "write_1_read_0": np.array([write_1_read_0]),
+        "write_0_read_1_norm": np.array([write_0_read_1_norm]),
+        "write_1_read_0_norm": np.array([write_1_read_0_norm]),
         "read_zero_top": read_zero_top,
         "read_one_top": read_one_top,
-        "bit_error_rate": bit_error_rate,
-        "total_switches": total_switches,
-        "total_switches_norm": total_switches_norm,
+        "bit_error_rate": np.array([bit_error_rate]),
+        "total_switches": np.array([total_switches]),
+        "total_switches_norm": np.array([total_switches_norm]),
     }
     return result_dict
 
@@ -693,6 +628,7 @@ def get_threshold(b: nTron, logger: Logger = None) -> float:
     if logger:
         logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return threshold
+
 
 def get_extent(x: np.ndarray, y: np.ndarray) -> List[float]:
     dx = x[1] - x[0]
@@ -746,33 +682,6 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
     file_name = get_filename(measurement_settings)
     measurement_settings.update({"file_path": file_path, "file_name": file_name})
     return measurement_settings, b
-
-
-def initialize_data_dict(measurement_settings: dict) -> dict:
-    scope_num_samples = measurement_settings.get("scope_num_samples")
-    num_meas = measurement_settings.get("num_meas")
-    sweep_x_len = len(measurement_settings.get("x"))
-    sweep_y_len = len(measurement_settings.get("y"))
-
-    data_dict = {
-        "trace_chan_in": np.empty((2, scope_num_samples)),
-        "trace_chan_out": np.empty((2, scope_num_samples)),
-        "trace_enab": np.empty((2, scope_num_samples)),
-        "read_zero_top": np.empty((1, num_meas)),
-        "read_one_top": np.empty((1, num_meas)),
-        "write_0_read_1": np.nan,
-        "write_1_read_0": np.nan,
-        "write_0_read_1_norm": np.nan,
-        "write_1_read_0_norm": np.nan,
-        "total_switches": np.nan,
-        "total_switches_norm": np.nan,
-        "channel_voltage": np.nan,
-        "enable_voltage": np.nan,
-        "bit_error_rate": np.nan,
-        "sweep_x_len": sweep_x_len,
-        "sweep_y_len": sweep_y_len,
-    }
-    return data_dict
 
 
 def load_waveforms(
@@ -848,10 +757,6 @@ def load_waveforms(
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {enabr}")
     b.inst.awg.write(f"MMEM:LOAD:DATA{chan} {wnull}")
 
-    if threshold < 0.1:
-        threshold = 0.25
-    if logger:
-        logger.info(f"Using Measured Voltage Threshold: {threshold:.3f} V")
     return
 
 
@@ -943,7 +848,6 @@ def plot_waveforms_bert(
     threshold = data_dict.get("voltage_threshold")
     bitmsg_channel = data_dict.get("bitmsg_channel")
     bitmsg_enable = data_dict.get("bitmsg_enable")
-
     numpoints = int((len(trace_chan_in[1]) - 1) / 2)
     cmap = plt.cm.viridis(np.linspace(0, 1, 200))
     C1 = 45
@@ -1113,7 +1017,7 @@ def run_realtime_bert(
     b.inst.scope.set_trigger_mode("Stop")
     threshold = get_threshold(b, logger=logger)
     result_dict = get_results(b, num_meas, threshold)
-
+    result_dict.update({"voltage_threshold": threshold})
     return result_dict
 
 
@@ -1127,6 +1031,17 @@ def run_measurement(
     scope_samples: int = int(measurement_settings.get("scope_num_samples"))
 
     ######################################################
+    if logger is None:
+        file_path: str = measurement_settings.get("file_path")
+        os.makedirs(file_path, exist_ok=True)
+        file_name: str = measurement_settings.get("file_name")
+        logging.basicConfig(
+            level=logging.INFO,  # Adjust the logging level as needed
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            filename=f"{file_path}/{file_name}.log",
+            filemode="a",
+        )
+        logger = logging.getLogger("measurement_log")
 
     setup_waveform(b, measurement_settings)
 
@@ -1165,27 +1080,34 @@ def run_sweep(
     )
 
     for x in measurement_settings["x"]:
+        switch_flag = 0
         for y in measurement_settings["y"]:
             measurement_settings.update({sweep_parameter_x: x})
             measurement_settings.update({sweep_parameter_y: y})
 
             data_dict = initialize_data_dict(measurement_settings)
-            data_dict.update(
-                run_measurement(
-                    b,
-                    measurement_settings,
-                    plot=plot_measurement,
+
+            if switch_flag < 4:
+                data_dict.update(
+                    run_measurement(
+                        b,
+                        measurement_settings,
+                        plot=plot_measurement,
+                    )
                 )
-            )
 
             data_dict.update(measurement_settings)
-
-            param_dataframe = create_dataframe(data_dict)
 
             if len(save_dict.items()) == 0:
                 save_dict = data_dict
             else:
                 save_dict = update_dict(save_dict, data_dict)
+
+            total_switches_norm = data_dict.get("total_switches_norm", 0.0)
+            if isinstance(total_switches_norm, np.ndarray):
+                total_switches_norm = total_switches_norm[0]
+            if total_switches_norm == 1 and switch_flag < 4:
+                switch_flag += 1
 
     return save_dict
 
@@ -1363,7 +1285,6 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     channel_voltage = measurement_settings.get("channel_voltage")
     enable_voltage = measurement_settings.get("enable_voltage")
     sample_rate = measurement_settings.get("sample_rate")
-    ramp_read = measurement_settings.get("ramp_read", False)
 
     if enable_voltage > 300e-3:
         raise ValueError("enable voltage too high")
@@ -1376,30 +1297,16 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     if enable_voltage == 0:
         bitmsg_enable = "N" * len(bitmsg_enable)
 
-    write_sequence(b, bitmsg_channel, 1, measurement_settings, ramp_read=ramp_read)
+    write_sequence(b, bitmsg_channel, 1, measurement_settings)
     b.inst.awg.set_vpp(channel_voltage, 1)
     b.inst.awg.set_arb_sample_rate(sample_rate, 1)
 
-    write_sequence(b, bitmsg_enable, 2, measurement_settings, ramp_read=ramp_read)
+    write_sequence(b, bitmsg_enable, 2, measurement_settings)
     b.inst.awg.set_vpp(enable_voltage, 2)
     b.inst.awg.set_arb_sample_rate(sample_rate, 2)
 
     b.inst.awg.set_arb_sync()
     sleep(0.1)
-
-
-def update_dict(dict1: dict, dict2: dict) -> dict:
-    result_dict = {}
-
-    for key in dict1.keys():
-        if isinstance(dict1[key], float) or isinstance(dict1[key], np.ndarray):
-            try:
-                result_dict[key] = np.dstack([dict1[key], dict2[key]])
-            except Exception:
-                print(f"could not stack {key}")
-        else:
-            result_dict[key] = dict1[key]
-    return result_dict
 
 
 def write_dict_to_file(file_path: str, save_dict: dict) -> None:
@@ -1426,7 +1333,6 @@ def write_sequence(
     message: str,
     channel: int,
     measurement_settings: dict,
-    ramp_read: bool = True,
 ):
     write1 = '"INT:\WRITE1.ARB"'
     write0 = '"INT:\WRITE0.ARB"'
@@ -1461,46 +1367,5 @@ def write_sequence(
     write_string = ",".join(write_string)
     # print(write_string)
 
-    load_waveforms(b, measurement_settings, chan=channel, ramp_read=ramp_read)
+    load_waveforms(b, measurement_settings, chan=channel)
     write_waveforms(b, write_string, channel)
-
-
-if __name__ == "__main__":
-    import scipy.io as sio
-
-    data_dict = sio.loadmat(
-        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C2\SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-44-29.mat"
-    )
-    data_dict2 = sio.loadmat(
-        r"S:\SC\Measurements\SPG806\D6\A4\20241220_nMem_measure_enable_response\C3\SPG806_20241220_nMem_measure_enable_response_D6_A4_C3_2024-12-20 17-28-57.mat"
-    )
-
-    fig, axs = plt.subplots()
-    x, y, ztotal = build_array(data_dict, "total_switches_norm")
-    xfit, yfit = get_fitting_points(x, y, ztotal)
-    axs.plot(xfit, yfit, label="C2", linestyle="-")
-    split_idx = 7
-    plot_fitting(axs, xfit[split_idx + 1 :], yfit[split_idx + 1 :])
-
-    split_idx = 10
-    x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
-
-    xfit, yfit = get_fitting_points(x2, y2, ztotal2)
-    axs.plot(xfit, yfit, label="C3", linestyle="-")
-    axs.legend()
-    axs.set_ylim([0, 1000])
-    axs.set_xlim([0, 500])
-
-    fig, axs = plt.subplots(1, 2, figsize=(10, 10))
-
-    plot_fitting(
-        axs[0], xfit[split_idx + 1 :], yfit[split_idx + 1 :], label="C3", linestyle="-"
-    )
-    axs[0].set_ylim([0, 1000])
-    axs[0].set_xlim([0, 500])
-    axs[0].plot(xfit, yfit, label="C2", linestyle="-")
-
-    plot_fitting(axs[1], xfit[:split_idx], yfit[:split_idx], label="C3", linestyle="-")
-    axs[1].plot(xfit, yfit, label="C2", linestyle="-")
-    axs[1].set_ylim([0, 1000])
-    axs[1].set_xlim([0, 500])

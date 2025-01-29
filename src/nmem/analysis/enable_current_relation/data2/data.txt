@@ -1,0 +1,4 @@
+SPG806_nMem_measure_enable_response_D6_A4_A2_2024-08-23 16-27-33.mat
+SPG806_nMem_measure_enable_response_D6_A4_B1_2024-08-23 11-33-39.mat
+SPG806_nMem_measure_enable_response_D6_A4_C2_2024-08-23 18-51-16.mat
+SPG806_nMem_measure_enable_response_D6_A4_D2_2024-08-25 17-57-06.mat

@@ -5,110 +5,23 @@ Save File:
   sample name: SPG806
   device type: D6
   device name: A4 # XY Cords A1 in NW corner. D1 in NE corner. 
-  cell: D3  # XY Cords A1 in NW corner. D1 in NE corner. 
+  cell: C3  # XY Cords A1 in NW corner. D1 in NE corner. 
 
 iv_sweep:
-  start: 0
-  stop: !!float 100e-6
-  steps: 10
-  sweep: 1
-  full_sweep: True
-  series_resistance: !!float 10e3
-  series_resistance_g: !!float 1e3
-
-
-double_sweep:
-  start: !!float 0
-  stop: !!float 500e-6
-  steps: 20
-  sweep: 1
-  Ig_start: !!float 000e-6
-  Ig_stop: !!float 1000e-6
-  Ig_steps: 2
-  full_sweep: True
-  series_resistance_g: !!float 1e3
-
-  
-# pulse_trace:
-#   bias_voltage: 0.70
-#   trigger_level: .1
-#   channel: [C1, C2, C3, C4]
-#   attenuation: 40
-
-  
-# trigger_sweep:
-#   start: 0.
-#   stop: .8
-#   step: .05
-#   bias_voltage: .4
-#   attenuation_db: 0
-#   counting_time: .1
-
-
-
-# linearity_check:
-#   bias: !!float 38e-6
-#   start: 0
-#   stop: 10
-#   step: 1
-#   counting_time: .1
-#   trigger_v: .5
-#   iterations: 1
-
-
-  
-# photon_counts:
-#   start: !!float 30e-6
-#   stop: !!float 41e-6
-#   step: !!float 0.2e-6
-#   trigger_v: .3
-#   counting_time: .1
-#   iterations: 1
-#   attenuation_db: 0
-  
-  
-  
-# Laser:
-#   name: S1FC780
-#   wavelength_nm: 780
-  
-# Source1:
-#   name: SIM928
-#   port: 'GPIB0::2'
-#   port_alt: 2
-  
-# Source2:
-#   name: SIM928
-#   port: 'GPIB0::2'
-#   port_alt: 4
-  
-# Meter:
-#   name: Keithley2001
-#   port: 'GPIB0::3'
-
-# Counter:
-#   name: Agilent53131a
-#   port: 'GPIB0::30'
+  series_resistance: 1
+  series_resistance_g: 1
 
 AWG:
   name: Agilent33250a
   port: 'GPIB0::10::INSTR'
   
-# AWG2:
-#   name: Agilent33250a
-#   port: 'GPIB0::11'
 
 Scope: 
   name: LeCroy620Zi
   port: '18.25.30.169'
   channel: [C2]
-# TCPIPO.: DHCP. POOL- 18-25-29-100:INSTR
-# Attenuator:
-#   name: JDSHA9
-#   port: 'GPIB0::7'
+
 
 # Temperature:
 #   name: ICE
-  
-# VNA:
-#   name: N5224A
+

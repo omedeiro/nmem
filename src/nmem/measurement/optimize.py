@@ -21,7 +21,8 @@ def update_space(meas_dict: dict, space: list, x0: list):
 
 def objective_primary(w1r0: np.ndarray, w0r1: np.ndarray, num_meas: float) -> float:
     errors = w1r0[0] + w0r1[0]
-    res = errors / (num_meas * 2)
+
+    res = errors[0] / (num_meas * 2)
     if res == 0.5:
         res = 1
     return res
@@ -49,13 +50,13 @@ def optimize_bias(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(10, 300, name="write_current"),
-        Real(500, 850, name="read_current"),
-        Real(50, 600, name="enable_write_current"),
-        Real(50, 600, name="enable_read_current"),
+        Real(10, 250, name="write_current"),
+        Real(500, 870, name="read_current"),
+        Real(200, 500, name="enable_write_current"),
+        Real(100, 300, name="enable_read_current"),
     ]
 
-    x0 = [131, 640, 514, 262]
+    x0 = [66, 675, 500, 144]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -65,11 +66,11 @@ def optimize_enable(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(550, 570, name="enable_write_current"),
-        Real(280, 310, name="enable_read_current"),
+        Real(200, 570, name="enable_write_current"),
+        Real(200, 310, name="enable_read_current"),
     ]
 
-    x0 = [560.0, 290.0]
+    x0 = [275.0, 290.0]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -125,11 +126,11 @@ def optimize_read(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(50, 400, name="enable_read_current"),
+        Real(100, 400, name="enable_read_current"),
         Real(500, 850, name="read_current"),
     ]
 
-    x0 = [262, 640]
+    x0 = [200, 600]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -153,10 +154,10 @@ def optimize_write(meas_dict: dict):
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     meas_dict.update(measurement_settings)
     space = [
-        Real(50, 500, name="enable_write_current"),
-        Real(10, 300, name="write_current"),
+        Real(150, 550, name="enable_write_current"),
+        Real(50, 300, name="write_current"),
     ]
-    x0 = [460, 131]
+    x0 = [499, 167]
     meas_dict = update_space(meas_dict, space, x0)
     return meas_dict, space, x0, b
 
@@ -216,11 +217,12 @@ def optimize_all(meas_dict: dict):
     return meas_dict, space, x0, b
 
 
-def objective(x, meas_dict: dict, space: list, b: nTron):
-    print(x)
+def objective(x, meas_dict: dict, space: list, b: nTron, logger=None):
+    if logger is not None:
+        logger.info(f"Current x: {x}")
     meas_dict = update_space(meas_dict, space, x)
 
-    data_dict = nm.run_measurement(b, meas_dict, plot=False)
+    data_dict = nm.run_measurement(b, meas_dict, plot=False, logger=logger)
 
     qf.save(b.properties, meas_dict["measurement_name"], data_dict)
 
