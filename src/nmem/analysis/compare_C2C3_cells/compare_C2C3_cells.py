@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-
 from nmem.analysis.analysis import (
     build_array,
     get_fitting_points,
@@ -44,7 +43,6 @@ if __name__ == "__main__":
     axs[1].plot(xfit, yfit, label="C2", linestyle="-")
     axs[1].set_ylim([0, 1000])
     axs[1].set_xlim([0, 500])
-
 
     # fig, axs = plt.subplots(1, 2, figsize=(10, 10))
     x, y, ztotal = build_array(data_dict, "total_switches_norm")

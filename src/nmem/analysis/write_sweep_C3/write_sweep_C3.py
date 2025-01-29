@@ -1,7 +1,6 @@
 import os
 
 import matplotlib.pyplot as plt
-
 from nmem.analysis.analysis import (
     import_directory,
     plot_channel_temperature,
@@ -22,4 +21,3 @@ if __name__ == "__main__":
     for data_dict in dict_list:
         plot_channel_temperature(ax, data_dict, marker="o", color="b")
     plt.show()
-

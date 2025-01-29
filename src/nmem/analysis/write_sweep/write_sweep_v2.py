@@ -1,14 +1,12 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
-from nmem.analysis.analysis import plot_read_sweep_array, import_directory
+from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14
 
 
 if __name__ == "__main__":
-
     dict_list = import_directory("data2")
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, dict_list[0:4], "bit_error_rate", "write_current")

@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import scipy.io as sio
-
 from nmem.analysis.analysis import (
+    import_directory,
     plot_bit_error_rate,
     plot_voltage_trace_stack,
-    import_directory,
 )
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
@@ -18,7 +17,6 @@ if __name__ == "__main__":
     data_off = dict_list[0]
 
     data_on = dict_list[1]
-
 
     # Plots with the enable on
     fig, ax = plt.subplots()

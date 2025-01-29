@@ -1,6 +1,4 @@
-
 import matplotlib.pyplot as plt
-
 from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
@@ -25,7 +23,6 @@ plt.rcParams["ytick.major.size"] = 1
 
 
 if __name__ == "__main__":
-
     data = import_directory("data")
 
     enable_read_290_list = import_directory("data_290uA")
@@ -59,15 +56,10 @@ if __name__ == "__main__":
     )
     plt.show()
 
-
     fig, ax = plt.subplots()
-    plot_read_sweep_array(
-        ax, data_inverse, "bit_error_rate", "enable_write_current"
-    )
+    plot_read_sweep_array(ax, data_inverse, "bit_error_rate", "enable_write_current")
     plt.show()
 
     fig, ax = plt.subplots()
-    plot_read_sweep_array(
-        ax, data, "bit_error_rate", "enable_read_current"
-    )
+    plot_read_sweep_array(ax, data, "bit_error_rate", "enable_read_current")
     plt.show()

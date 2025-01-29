@@ -4,7 +4,6 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-
 from nmem.measurement.cells import CELLS
 
 # font_path = "/home/omedeiro/Inter-Regular.otf"
@@ -145,8 +144,7 @@ def plot_branch_currents(
     Tc: float,
     retrap_ratio: float,
     width_ratio: float,
-)-> Axes:
-
+) -> Axes:
     ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
 
     ax.plot(T, ichl, label="$I_{c, H_L}$", color="b", linestyle="-")
@@ -155,7 +153,6 @@ def plot_branch_currents(
     ax.plot(T, irhr, label="$I_{r, H_R}$", color="r", linestyle="--")
 
     return ax
-
 
 
 # def get_read_channel_temperature(
@@ -208,8 +205,6 @@ if __name__ == "__main__":
     ax.plot([6.4, 6.4], [i0[1], i1[1]], marker="o", color=colors2[0, :], ls="-")
     ax.plot([6.4, 6.4], [i1[1], i2[1]], marker="o", color=colors3[0, :], ls="-")
 
-
-
     i0, i1, i2, i3 = calculate_state_currents(
         temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, PERSISTENT / IMAX
     )
@@ -217,15 +212,12 @@ if __name__ == "__main__":
     upper_bound = i0
     plot_nominal_region(ax, temp, lower_bound, upper_bound)
 
-
-
     i0, i1, i2, i3 = calculate_state_currents(
         temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, PERSISTENT / IMAX
     )
     lower_bound = np.minimum(i0, np.minimum(i1, i2))
     upper_bound = np.minimum(i1, np.maximum(i0, i2))
     plot_inverting_region(ax, temp, lower_bound, upper_bound)
-
 
     ax.set_xlabel("Temperature (K)")
     ax.set_ylabel("Current (au)")

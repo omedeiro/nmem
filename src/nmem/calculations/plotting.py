@@ -22,8 +22,6 @@ def plot_htron_sweep(
     return ax
 
 
-
-
 def plot_persistent_current(
     ax: Axes,
     left_critical_currents_mesh: np.ndarray,
@@ -129,7 +127,9 @@ def plot_region_dict(ax: Axes, regions: dict, x: np.ndarray, y: np.ndarray) -> A
     return ax
 
 
-def plot_edge_fits(ax: Axes, critical_currents: np.ndarray, lines: list, **kwargs) -> Axes:
+def plot_edge_fits(
+    ax: Axes, critical_currents: np.ndarray, lines: list, **kwargs
+) -> Axes:
     x_min, x_max = ax.get_xlim()
     y_min, y_max = ax.get_ylim()
 

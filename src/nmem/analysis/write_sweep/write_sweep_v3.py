@@ -1,7 +1,8 @@
+import os
+
 import matplotlib.pyplot as plt
 import scipy.io as sio
-import os
-from nmem.analysis.analysis import plot_read_sweep_array, import_directory
+from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14

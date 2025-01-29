@@ -11,7 +11,6 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
 from nmem.calculations.calculations import (
     calculate_heater_power,
     calculate_read_currents,
@@ -79,7 +78,6 @@ def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
 
 
 def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
-
     critical_temperature: float = data_dict.get("critical_temperature", CRITICAL_TEMP)
     substrate_temperature: float = data_dict.get(
         "substrate_temperature", SUBSTRATE_TEMP
@@ -426,7 +424,6 @@ def get_operating_margins(
 
 
 def get_bit_error_rate_args(bit_error_rate: np.ndarray) -> list:
-
     nominal_data = np.argwhere(bit_error_rate < 0.45)
     inverting_data = np.argwhere(bit_error_rate > 0.55)
 
@@ -449,7 +446,6 @@ def get_bit_error_rate_args(bit_error_rate: np.ndarray) -> list:
 def get_state_currents(
     read_currents: np.ndarray, bit_error_rate: np.ndarray
 ) -> Tuple[float, float]:
-
     state_idx = get_bit_error_rate_args(bit_error_rate)
     state0_current = np.nan
     state1_current = np.nan
@@ -1086,7 +1082,6 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 def plot_enable_write_sweep_grid(
     ax: Axes, dict_list: list[dict], save: bool = False
 ) -> None:
-
     cmap = plt.get_cmap("Spectral")
     colors = cmap(np.linspace(0, 1, len(dict_list)))
     for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):

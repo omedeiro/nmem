@@ -132,7 +132,7 @@ if __name__ == "__main__":
     fig, axs = plt.subplots()
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
     xfit, yfit = get_fitting_points(x, y, ztotal)
-    xfit, yfit = filter_plateau(xfit, yfit, yfit[0]*0.9)
+    xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
     plot_fitting(axs, xfit, yfit)
     axs.set_xlabel("Enable Current ($\mu$A)")
     axs.set_ylabel("Channel Current ($\mu$A)")

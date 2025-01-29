@@ -21,7 +21,7 @@ def update_space(meas_dict: dict, space: list, x0: list):
 
 def objective_primary(w1r0: np.ndarray, w0r1: np.ndarray, num_meas: float) -> float:
     errors = w1r0[0] + w0r1[0]
-    
+
     res = errors[0] / (num_meas * 2)
     if res == 0.5:
         res = 1

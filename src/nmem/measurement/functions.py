@@ -51,9 +51,6 @@ def bimodal_fit(
     return params, cov
 
 
-
-
-
 def construct_currents(
     heater_currents: np.ndarray,
     slope: float,
@@ -75,7 +72,6 @@ def construct_currents(
         bias_current_array[heater_currents == heater_current] = bias_currents
 
     return bias_current_array
-
 
 
 def update_dict(dict1: dict, dict2: dict) -> dict:
@@ -431,9 +427,6 @@ def calculate_channel_current_density(
     return jsw
 
 
-
-
-
 def initialize_data_dict(measurement_settings: dict) -> dict:
     scope_num_samples: int = measurement_settings.get("scope_num_samples")
     num_meas: int = measurement_settings.get("num_meas")
@@ -689,8 +682,6 @@ def initilize_measurement(config: str, measurement_name: str) -> dict:
     file_name = get_filename(measurement_settings)
     measurement_settings.update({"file_path": file_path, "file_name": file_name})
     return measurement_settings, b
-
-
 
 
 def load_waveforms(
@@ -1051,7 +1042,7 @@ def run_measurement(
             filemode="a",
         )
         logger = logging.getLogger("measurement_log")
-        
+
     setup_waveform(b, measurement_settings)
 
     b.inst.awg.set_output(True, 1)
@@ -1111,7 +1102,6 @@ def run_sweep(
                 save_dict = data_dict
             else:
                 save_dict = update_dict(save_dict, data_dict)
-
 
             total_switches_norm = data_dict.get("total_switches_norm", 0.0)
             if isinstance(total_switches_norm, np.ndarray):
@@ -1319,7 +1309,6 @@ def setup_waveform(b: nTron, measurement_settings: dict):
     sleep(0.1)
 
 
-
 def write_dict_to_file(file_path: str, save_dict: dict) -> None:
     with open(f"{file_path}_measurement_settings.txt", "w") as file:
         for key, value in save_dict.items():
@@ -1380,4 +1369,3 @@ def write_sequence(
 
     load_waveforms(b, measurement_settings, chan=channel)
     write_waveforms(b, write_string, channel)
-

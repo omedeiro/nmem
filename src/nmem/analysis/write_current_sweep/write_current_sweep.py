@@ -1,8 +1,5 @@
-
 import matplotlib.pyplot as plt
-
-from nmem.analysis.analysis import plot_read_sweep_array, import_directory
-
+from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
 # def plot_read_temp_sweep_C3():
 #     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
@@ -21,11 +18,19 @@ if __name__ == "__main__":
     # plot_write_sweep("write_current_sweep_B2_2")
 
     fig, ax = plt.subplots()
-    plot_read_sweep_array(ax, import_directory("write_current_sweep_A2"), "bit_error_rate", "write_current")
+    plot_read_sweep_array(
+        ax,
+        import_directory("write_current_sweep_A2"),
+        "bit_error_rate",
+        "write_current",
+    )
     plt.show()
 
     fig, ax = plt.subplots()
-    plot_read_sweep_array(ax, import_directory("write_current_sweep_C2"), "bit_error_rate", "write_current")
+    plot_read_sweep_array(
+        ax,
+        import_directory("write_current_sweep_C2"),
+        "bit_error_rate",
+        "write_current",
+    )
     plt.show()
-
-
