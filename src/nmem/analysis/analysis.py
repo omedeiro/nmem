@@ -2213,11 +2213,11 @@ def plot_write_sweep(ax: Axes, data_directory: str) -> Axes:
     for data_dict in data_list:
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
-        write_temp = get_write_temperatures(data_dict)
+        # write_temp = get_write_temperature(data_dict)
         ax.plot(
             y,
             ztotal,
-            label=f"$T_{{W}}$ = {write_temp:.2f} K",
+            # label=f"$T_{{W}}$ = {write_temp:.2f} K",
             color=colors[data_list.index(data_dict)],
         )
         ax2.plot(
