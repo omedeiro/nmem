@@ -13,14 +13,13 @@ CRITICAL_TEMP = 12.3
 
 
 if __name__ == "__main__":
-
+    dict_list = import_directory("data")
     fig, ax = plt.subplots()
-    plot_write_sweep(ax, os.getcwd())
+    plot_write_sweep(ax, dict_list)
     plt.show()
 
-    data_list = import_directory(os.getcwd())
     fig, ax = plt.subplots()
-    for data_dict in data_list:
+    for data_dict in dict_list:
         plot_channel_temperature(ax, data_dict, marker="o", color="b")
     plt.show()
 
