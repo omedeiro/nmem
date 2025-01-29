@@ -2205,7 +2205,7 @@ def plot_enable_read_temperature():
 
 
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
-    colors = plt.cm.viridis(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
     ax2 = ax.twinx()
     for data_dict in dict_list:
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
