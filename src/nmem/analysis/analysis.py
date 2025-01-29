@@ -950,6 +950,7 @@ def plot_read_sweep(
         write_temp = get_write_temperature(data_dict)
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
+        label = f"{variable:.2f} pts "
     if variable_name == "write_width":
         variable = get_write_width(data_dict)
     if variable_name == "enable_read_current":
@@ -982,8 +983,8 @@ def plot_read_sweep_array(
     colors = CMAP(np.linspace(0, 1, len(data_list)))
     for i, data_dict in enumerate(data_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
-        # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
-        plot_fill_between(ax, data_dict, colors[i])
+        plot_bit_error_rate_args(ax, data_dict, color=colors[i])
+        # plot_fill_between(ax, data_dict, colors[i])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
