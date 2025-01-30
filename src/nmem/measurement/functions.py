@@ -451,6 +451,7 @@ def initialize_data_dict(measurement_settings: dict) -> dict:
         "trace_trigger": np.empty((2, scope_num_samples)),
         "read_zero_top": np.empty((1, num_meas)),
         "read_one_top": np.empty((1, num_meas)),
+        "trigger_times": np.empty((1, num_meas)),
         "bits": np.empty((1, num_meas)),
         "write_0_read_1": np.array([np.nan]),
         "write_1_read_0": np.array([np.nan]),
@@ -620,9 +621,7 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
     return result_dict
 
 
-def get_results_delay(
-    b: nTron, num_meas: int, threshold: float
-) -> dict:
+def get_results_delay(b: nTron, num_meas: int, threshold: float) -> dict:
     read_level, write_level = get_trend_delay(b, num_meas)
 
     write0 = np.where(write_level < 150e-9, 1, 0)
@@ -983,6 +982,7 @@ def plot_waveforms_delay(
     trace_chan_out = data_dict.get("trace_chan_out")
     trace_enab = data_dict.get("trace_enab")
     trace_trigger = data_dict.get("trace_trigger")
+    trigger_times = data_dict.get("trigger_times")
     read_zero_top = data_dict.get("read_zero_top")
     read_one_top = data_dict.get("read_one_top")
     bits = data_dict.get("bits")
@@ -1205,6 +1205,8 @@ def run_delay_bert(
 ) -> dict:
     num_meas = measurement_settings.get("num_meas")
     bits = []
+    trigger_time_list = []
+    b.inst.scope.clear_sweeps()
     b.inst.scope.set_trigger_mode("Normal")
 
     with tqdm(total=num_meas + TRIM, leave=False) as pbar:
@@ -1213,19 +1215,21 @@ def run_delay_bert(
             b.inst.awg.write("*TRG")
             b.inst.awg.write("*WAI")
 
-            # trigger = b.inst.scope.get_parameter_value("P5")
-            # b.inst.scope.wait_until_idle(1)
-            # if trigger > 150e-9:
-            #     bit = 1
-            # else:
-            #     bit = 0
-            # bits.append(bit)
             n = b.inst.scope.get_num_sweeps(channel)
             pbar.update(n - pbar.n)
+            trigger_time_list.append(format_time())
+
+    trigger_time_array = np.array(trigger_time_list)
     b.inst.scope.set_trigger_mode("Stop")
     threshold = get_threshold(b, logger=logger)
     result_dict = get_results_delay(b, num_meas, threshold)
-    result_dict.update({"voltage_threshold": threshold})
+    result_dict.update(
+        {
+            "voltage_threshold": threshold,
+            "delay": delay,
+            "trigger_times": trigger_time_array,
+        }
+    )
 
     return result_dict
 
@@ -1300,12 +1304,9 @@ def run_measurement_delay(
 
     set_awg_on(b)
 
-    b.inst.scope.clear_sweeps()
-
     data_dict = run_delay_bert(b, measurement_settings, delay=delay, logger=logger)
     data_dict.update(get_traces(b, scope_samples))
     data_dict.update(measurement_settings)
-    data_dict.update({"delay": delay})
     set_awg_off(b)
 
     if plot:
