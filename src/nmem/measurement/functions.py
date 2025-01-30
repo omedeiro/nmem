@@ -8,6 +8,7 @@ Created on Fri Nov  3 14:01:31 2023
 import logging
 import os
 import time
+import datetime
 from logging import Logger
 from time import sleep
 from typing import List, Tuple
@@ -27,7 +28,17 @@ from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
-from nmem.measurement.cells import CELLS, MITEQ_AMP_GAIN
+from nmem.measurement.cells import (
+    CELLS,
+    MITEQ_AMP_GAIN,
+    SPICE_DEVICE_CURRENT,
+    HEATERS,
+    DEFAULT_SCOPE,
+    NUM_POINTS,
+    SAMPLE_RATE,
+    FREQ_IDX,
+    CONFIG,
+)
 
 
 def gauss(x: float, mu: float, sigma: float, A: float) -> float:
@@ -437,8 +448,10 @@ def initialize_data_dict(measurement_settings: dict) -> dict:
         "trace_chan_in": np.empty((2, scope_num_samples)),
         "trace_chan_out": np.empty((2, scope_num_samples)),
         "trace_enab": np.empty((2, scope_num_samples)),
+        "trace_trigger": np.empty((2, scope_num_samples)),
         "read_zero_top": np.empty((1, num_meas)),
         "read_one_top": np.empty((1, num_meas)),
+        "bits": np.empty((1, num_meas)),
         "write_0_read_1": np.array([np.nan]),
         "write_1_read_0": np.array([np.nan]),
         "write_0_read_1_norm": np.array([np.nan]),
@@ -498,6 +511,8 @@ def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
     sleep(0.1)
     trace_chan_out: np.ndarray = b.inst.scope.get_wf_data("C2")
     sleep(0.1)
+    trace_trigger: np.ndarray = b.inst.scope.get_wf_data("C3")
+    sleep(0.1)
     trace_enab: np.ndarray = b.inst.scope.get_wf_data("C4")
     sleep(0.1)
     trace_write_avg: np.ndarray = b.inst.scope.get_wf_data("F1")
@@ -531,6 +546,7 @@ def get_traces(b: nTron, scope_samples: int = 5000) -> dict:
         "trace_read1_avg": trace_read1_avg,
         "trace_read0": trace_read0,
         "trace_read1": trace_read1,
+        "trace_trigger": trace_trigger,
     }
 
     return trace_dict
@@ -604,12 +620,68 @@ def get_results(b: nTron, num_meas: int, threshold: float) -> dict:
     return result_dict
 
 
+def get_results_delay(
+    b: nTron, num_meas: int, threshold: float
+) -> dict:
+    read_level, write_level = get_trend_delay(b, num_meas)
+
+    write0 = np.where(write_level < 150e-9, 1, 0)
+    write1 = np.where(write_level > 150e-9, 1, 0)
+
+    # READ 1: above threshold (voltage)
+    # READ 0: below threshold (no voltage)
+
+    read1 = np.where(read_level > threshold, 1, 0)
+    read0 = np.where(read_level < threshold, 1, 0)
+
+    write_0_read_1 = np.sum(write0 * read1)
+    write_1_read_0 = np.sum(write1 * read0)
+
+    write_0_read_1_norm = write_0_read_1 / (num_meas)
+    write_1_read_0_norm = write_1_read_0 / (num_meas)
+    # bit_error_rate = calculate_bit_error_rate(write_1_read_0, write_0_read_1, num_meas)
+    bit_error_rate = (write_1_read_0 + write_0_read_1) / (num_meas)
+    total_switches = write_0_read_1 + (num_meas - write_1_read_0)
+    total_switches_norm = total_switches / (num_meas)
+    result_dict = {
+        "bits": write1,
+        "write_0_read_1": np.array([write_0_read_1]),
+        "write_1_read_0": np.array([write_1_read_0]),
+        "write_0_read_1_norm": np.array([write_0_read_1_norm]),
+        "write_1_read_0_norm": np.array([write_1_read_0_norm]),
+        "read_zero_top": read_level,
+        "read_one_top": np.empty_like(read_level),
+        "bit_error_rate": np.array([bit_error_rate]),
+        "total_switches": np.array([total_switches]),
+        "total_switches_norm": np.array([total_switches_norm]),
+    }
+    return result_dict
+
+
 def get_trend(b: nTron, num_meas: int) -> Tuple[np.ndarray, np.ndarray]:
     read_zero_top = b.inst.scope.get_wf_data("F5")
     read_one_top = b.inst.scope.get_wf_data("F6")
 
     read_zero_top = read_zero_top[1][0:num_meas]
     read_one_top = read_one_top[1][0:num_meas]
+
+    read_zero_top = read_zero_top.flatten()
+    read_one_top = read_one_top.flatten()
+
+    if len(read_zero_top) < num_meas:
+        read_zero_top.resize(num_meas, refcheck=False)
+    if len(read_one_top) < num_meas:
+        read_one_top.resize(num_meas, refcheck=False)
+
+    return read_zero_top, read_one_top
+
+
+def get_trend_delay(b: nTron, num_meas: int) -> Tuple[np.ndarray, np.ndarray]:
+    read_zero_top = b.inst.scope.get_wf_data("F5")
+    read_one_top = b.inst.scope.get_wf_data("F6")
+
+    read_zero_top = read_zero_top[1][-num_meas:]
+    read_one_top = read_one_top[1][-num_meas:]
 
     read_zero_top = read_zero_top.flatten()
     read_one_top = read_one_top.flatten()
@@ -700,7 +772,6 @@ def load_waveforms(
     enable_write_current = measurement_settings.get("enable_write_current")
     enable_read_current = measurement_settings.get("enable_read_current")
     num_points = measurement_settings.get("num_points", 256)
-
     RISING_EDGE = 10
 
     wr_ratio = write_current / read_current if read_current != 0 else 0
@@ -771,7 +842,7 @@ def plot_message(ax: plt.Axes, message: str):
     }
     for i, bit in enumerate(message):
         ax.text(
-            i + 0.5,
+            i + 0.5 + ax.get_xlim()[0],
             ax.get_ylim()[1] * 0.85,
             message_dict[bit],
             ha="center",
@@ -826,7 +897,16 @@ def plot_waveform(ax: Axes, waveform: np.ndarray, **kwargs) -> Axes:
 
 
 def plot_trend(ax: Axes, trend: np.ndarray, **kwargs) -> Axes:
-    ax.plot(trend, ls="none", marker="o", **kwargs)
+    ax.plot(trend, ls="none", **kwargs)
+    ax.set_ylabel("read voltage (V)")
+    ax.set_xlabel("sample")
+    ax.legend(loc=4)
+    ax.set_ylim([0, 0.65])
+    return ax
+
+
+def plot_trend_delay(ax: Axes, time: np.ndarray, trend: np.ndarray, **kwargs) -> Axes:
+    ax.plot(time, trend, ls="none", **kwargs)
     ax.set_ylabel("read voltage (V)")
     ax.set_xlabel("sample")
     ax.legend(loc=4)
@@ -884,6 +964,92 @@ def plot_waveforms_bert(
 
     plot_trend(axs[3], read_zero_top, label="READ 0", color=cmap[C1, :])
     plot_trend(axs[3], read_one_top, label="READ 1", color=cmap[C2, :])
+    axs[3].hlines(threshold, 0, len(read_zero_top), color="r", label="threshold")
+
+    fig = plt.gcf()
+
+    plot_header(fig, data_dict)
+
+    fig.tight_layout()
+
+    return axs
+
+
+def plot_waveforms_delay(
+    axs: List[Axes],
+    data_dict: dict,
+) -> List[Axes]:
+    trace_chan_in = data_dict.get("trace_chan_in")
+    trace_chan_out = data_dict.get("trace_chan_out")
+    trace_enab = data_dict.get("trace_enab")
+    trace_trigger = data_dict.get("trace_trigger")
+    read_zero_top = data_dict.get("read_zero_top")
+    read_one_top = data_dict.get("read_one_top")
+    bits = data_dict.get("bits")
+    write1 = np.argwhere(bits == 1)
+    write0 = np.argwhere(bits == 0)
+    scope_timespan = data_dict.get("scope_timespan")
+    threshold = data_dict.get("voltage_threshold")
+    bitmsg_channel = data_dict.get("bitmsg_channel")
+    bitmsg_enable = data_dict.get("bitmsg_enable")
+    numpoints = int((len(trace_chan_in[1]) - 1) / 2)
+    cmap = plt.cm.viridis(np.linspace(0, 1, 200))
+    C1 = 45
+    C2 = 135
+
+    waveform_dict = {
+        0: {
+            "waveform": trace_trigger,
+            "label": "trigger",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_channel,
+        },
+        1: {
+            "waveform": trace_chan_out,
+            "label": "channel",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_channel,
+        },
+        2: {
+            "waveform": trace_enab,
+            "label": "enable",
+            "color": cmap[C1, :],
+            "bit_message": bitmsg_enable,
+        },
+    }
+    for key in waveform_dict.keys():
+        plot_waveform(
+            axs[key],
+            waveform_dict[key].get("waveform"),
+            label=waveform_dict[key].get("label"),
+            color=waveform_dict[key].get("color"),
+        )
+
+    plot_trend_delay(
+        axs[3],
+        write0,
+        read_zero_top[write0],
+        label="READ 0",
+        color=cmap[C1, :],
+        marker="o",
+        markerfacecolor="none",
+    )
+    plot_trend_delay(
+        axs[3],
+        write1,
+        read_zero_top[write1],
+        label="READ 1",
+        color=cmap[C2, :],
+        marker="o",
+        markerfacecolor="none",
+    )
+    axs[1].hlines(
+        threshold * 1e3,
+        axs[1].get_xlim()[0],
+        axs[1].get_xlim()[1],
+        color="r",
+        label="threshold",
+    )
     axs[3].hlines(threshold, 0, len(read_zero_top), color="r", label="threshold")
 
     fig = plt.gcf()
@@ -1021,6 +1187,49 @@ def run_realtime_bert(
     return result_dict
 
 
+def format_time() -> str:
+    t = datetime.datetime.now()
+    s = t.strftime("%Y-%m-%d %H:%M:%S.%f")
+    return s
+
+
+TRIM = 10
+
+
+def run_delay_bert(
+    b: nTron,
+    measurement_settings: dict,
+    channel: str = "F5",
+    logger: Logger = None,
+    delay=2,
+) -> dict:
+    num_meas = measurement_settings.get("num_meas")
+    bits = []
+    b.inst.scope.set_trigger_mode("Normal")
+
+    with tqdm(total=num_meas + TRIM, leave=False) as pbar:
+        while b.inst.scope.get_num_sweeps(channel) < (num_meas + TRIM):
+            sleep(delay)
+            b.inst.awg.write("*TRG")
+            b.inst.awg.write("*WAI")
+
+            # trigger = b.inst.scope.get_parameter_value("P5")
+            # b.inst.scope.wait_until_idle(1)
+            # if trigger > 150e-9:
+            #     bit = 1
+            # else:
+            #     bit = 0
+            # bits.append(bit)
+            n = b.inst.scope.get_num_sweeps(channel)
+            pbar.update(n - pbar.n)
+    b.inst.scope.set_trigger_mode("Stop")
+    threshold = get_threshold(b, logger=logger)
+    result_dict = get_results_delay(b, num_meas, threshold)
+    result_dict.update({"voltage_threshold": threshold})
+
+    return result_dict
+
+
 def run_measurement(
     b: nTron,
     measurement_settings: dict,
@@ -1059,6 +1268,49 @@ def run_measurement(
     if plot:
         fig, axs = plt.subplots(4, 1, figsize=(10, 10))
         plot_waveforms_bert(axs, data_dict)
+        plt.show()
+
+    return data_dict
+
+
+def run_measurement_delay(
+    b: nTron,
+    measurement_settings: dict,
+    plot: bool = False,
+    logger: Logger = None,
+    delay: float = 2,
+) -> dict:
+    measurement_settings = calculate_voltages(measurement_settings)
+    scope_samples: int = int(measurement_settings.get("scope_num_samples"))
+
+    ######################################################
+    if logger is None:
+        file_path: str = measurement_settings.get("file_path")
+        os.makedirs(file_path, exist_ok=True)
+        file_name: str = measurement_settings.get("file_name")
+        logging.basicConfig(
+            level=logging.INFO,  # Adjust the logging level as needed
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            filename=f"{file_path}/{file_name}.log",
+            filemode="a",
+        )
+        logger = logging.getLogger("measurement_log")
+
+    setup_waveform_delay(b, measurement_settings)
+
+    set_awg_on(b)
+
+    b.inst.scope.clear_sweeps()
+
+    data_dict = run_delay_bert(b, measurement_settings, delay=delay, logger=logger)
+    data_dict.update(get_traces(b, scope_samples))
+    data_dict.update(measurement_settings)
+    data_dict.update({"delay": delay})
+    set_awg_off(b)
+
+    if plot:
+        fig, axs = plt.subplots(4, 1, figsize=(10, 10))
+        plot_waveforms_delay(axs, data_dict)
         plt.show()
 
     return data_dict
@@ -1234,6 +1486,7 @@ def set_awg_on(b: nTron) -> None:
 
 
 def set_awg_off(b: nTron) -> None:
+    b.inst.awg.write("*WAI")
     b.inst.awg.set_output(False, 1)
     b.inst.awg.set_output(False, 2)
 
@@ -1248,9 +1501,7 @@ def setup_scope_bert(
     scope_sample_rate = measurement_settings.get("scope_sample_rate")
     num_meas = measurement_settings.get("num_meas")
 
-    b.inst.scope.set_horizontal_scale(
-        scope_horizontal_scale, -scope_horizontal_scale * 5
-    )
+    b.inst.scope.set_horizontal_scale(scope_horizontal_scale, -scope_horizontal_scale)
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
     b.inst.scope.set_measurement_gate("P3", division_zero[0], division_zero[1])
@@ -1258,8 +1509,8 @@ def setup_scope_bert(
 
     b.inst.scope.set_math_trend_values("F5", num_meas * 2)
     b.inst.scope.set_math_trend_values("F6", num_meas * 2)
-    b.inst.scope.set_math_vertical_scale("F5", 100e-3, 300e-3)
-    b.inst.scope.set_math_vertical_scale("F6", 100e-3, 300e-3)
+    # b.inst.scope.set_math_vertical_scale("F5", 100e-3, 300e-3)
+    # b.inst.scope.set_math_vertical_scale("F6", 100e-3, 300e-3)
 
 
 def setup_scope_8bit_bert(
@@ -1307,6 +1558,36 @@ def setup_waveform(b: nTron, measurement_settings: dict):
 
     b.inst.awg.set_arb_sync()
     sleep(0.1)
+
+
+def setup_waveform_delay(b: nTron, measurement_settings: dict):
+    bitmsg_channel = measurement_settings.get("bitmsg_channel")
+    bitmsg_enable = measurement_settings.get("bitmsg_enable")
+    channel_voltage = measurement_settings.get("channel_voltage")
+    enable_voltage = measurement_settings.get("enable_voltage")
+    sample_rate = measurement_settings.get("sample_rate")
+
+    b.inst.awg.write("INIT:CONT:ALL ON")
+    if enable_voltage > 300e-3:
+        raise ValueError("enable voltage too high")
+
+    if channel_voltage > 3.0:
+        raise ValueError("channel voltage too high")
+
+    if channel_voltage == 0:
+        bitmsg_channel = "N" * len(bitmsg_channel)
+    if enable_voltage == 0:
+        bitmsg_enable = "N" * len(bitmsg_enable)
+
+    write_delay_sequence(b, measurement_settings, 1)
+    b.inst.awg.set_vpp(channel_voltage, 1)
+    b.inst.awg.set_arb_sample_rate(sample_rate, 1)
+
+    write_delay_sequence(b, measurement_settings, 2)
+    b.inst.awg.set_vpp(enable_voltage, 2)
+    b.inst.awg.set_arb_sample_rate(sample_rate, 2)
+
+    b.inst.awg.set_arb_sync()
 
 
 def write_dict_to_file(file_path: str, save_dict: dict) -> None:
@@ -1365,7 +1646,90 @@ def write_sequence(
         start_flag = False
 
     write_string = ",".join(write_string)
-    # print(write_string)
 
     load_waveforms(b, measurement_settings, chan=channel)
     write_waveforms(b, write_string, channel)
+
+
+def write_delay_sequence(
+    b: nTron,
+    measurement_settings: dict,
+    channel: int,
+):
+    write1 = '"INT:\WRITE1.ARB",0,once,maintain,10'
+    write0 = '"INT:\WRITE0.ARB",0,once,maintain,10'
+    read0 = '"INT:\READ.ARB",0,once,highAtStartGoLow,10'
+    read1 = '"INT:\READ.ARB",0,once,highAtStartGoLow,40'
+    enabw = '"INT:\ENABW.ARB",0,once,maintain,10'
+    enabr = '"INT:\ENABR.ARB",0,once,maintain,10'
+    wnull = '"INT:\WNULL.ARB",0,onceWaitTrig,lowAtStart,10'
+
+    if channel == 1:
+        write_string_list = []
+        write_string_list.append(write0)
+        write_string_list.append(wnull)
+        write_string_list.append(read0)
+        write_string_list.append(write1)
+        write_string_list.append(wnull)
+        write_string_list.append(read1)
+        write_string = ",".join(write_string_list)
+
+    if channel == 2:
+        write_string_list = []
+        write_string_list.append(enabw)
+        write_string_list.append(wnull)
+        write_string_list.append(enabr)
+        write_string_list.append(enabw)
+        write_string_list.append(wnull)
+        write_string_list.append(enabr)
+        write_string = ",".join(write_string_list)
+
+    b.inst.awg.write(f"TRIG{channel}:SOUR BUS")
+    load_waveforms(b, measurement_settings, channel)
+    write_waveforms(b, write_string, channel)
+
+
+if __name__ == "__main__":
+    t1 = time.time()
+    measurement_name = "nMem_parameter_sweep"
+    measurement_settings, b = initilize_measurement(CONFIG, measurement_name)
+    current_cell = measurement_settings["cell"]
+
+    waveform_settings = {
+        "num_points": NUM_POINTS,
+        "sample_rate": SAMPLE_RATE[FREQ_IDX],
+        "write_width": 0,
+        "read_width": 10,
+        "enable_write_width": 4,
+        "enable_read_width": 4,
+        "enable_write_phase": -7,
+        "enable_read_phase": -7,
+        "bitmsg_channel": "N0NNRN1NNR",
+        "bitmsg_enable": "NWNNENWNNE",
+    }
+
+    current_settings = CELLS[current_cell]
+
+    NUM_MEAS = 500
+
+    measurement_settings.update(
+        {
+            **waveform_settings,
+            **current_settings,
+            **DEFAULT_SCOPE,
+            "CELLS": CELLS,
+            "HEATERS": HEATERS,
+            "num_meas": NUM_MEAS,
+            "spice_device_current": SPICE_DEVICE_CURRENT,
+            "sweep_parameter_x": "enable_read_current",
+            "sweep_parameter_y": "read_current",
+        }
+    )
+    measurement_settings = calculate_voltages(measurement_settings)
+
+    setup_waveform_delay(b, measurement_settings)
+
+    for i in range(100):
+        print(i)
+        sleep(10)
+        b.inst.awg.write("*TRG;*WAI;")
