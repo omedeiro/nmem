@@ -657,12 +657,12 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
-    ax2.xaxis.set_major_locator(MultipleLocator(0.05))
+    ax2.xaxis.set_major_locator(MultipleLocator(0.1))
 
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Bit Error Rate")
-    ax.set_yscale("log")
+    # ax.set_yscale("log")
     ax.set_ylim(0, 1)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax
@@ -942,6 +942,7 @@ def plot_read_sweep(
 
     if variable_name == "write_current":
         variable = get_write_current(data_dict)
+        label = f"{variable:.2f}$\mu$A"
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
         write_temp = get_write_temperature(data_dict)
@@ -957,6 +958,7 @@ def plot_read_sweep(
         label = f"{variable:.2f} pts "
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
+        label = f"{variable:.2f}$\mu$A"
 
     ax.plot(
         read_currents,
@@ -981,8 +983,8 @@ def plot_read_sweep_array(
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
-        plot_bit_error_rate_args(ax, data_dict, color=colors[i])
-        # plot_fill_between(ax, data_dict, colors[i])
+        # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
+        plot_fill_between(ax, data_dict, colors[i])
 
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
