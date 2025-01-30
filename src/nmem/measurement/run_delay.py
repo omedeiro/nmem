@@ -35,7 +35,6 @@ if __name__ == "__main__":
     measurement_settings, b = nm.initilize_measurement(CONFIG, measurement_name)
     current_cell = measurement_settings["cell"]
 
-    NUM_MEAS = 500
     current_settings = CELLS[current_cell]
 
     waveform_settings = {
@@ -58,7 +57,7 @@ if __name__ == "__main__":
         "scope_sample_rate": NUM_SAMPLES / (HORIZONTAL_SCALE[FREQ_IDX] * NUM_DIVISIONS),
     }
 
-    NUM_MEAS = 50
+    NUM_MEAS = 1000
 
     measurement_settings.update(
         {
@@ -85,7 +84,7 @@ if __name__ == "__main__":
         b,
         measurement_settings,
         plot=True,
-        delay=10,
+        delay=1,
     )
 
 
