@@ -6,6 +6,8 @@ from nmem.analysis.analysis import (
 
 if __name__ == "__main__":
     data_list2 = import_directory("data2")
-    fig, ax = plt.subplots()
+
+    fig, ax = plt.subplots(figsize=(6, 4))
     plot_enable_write_sweep_multiple(ax, data_list2)
+    plt.savefig("enable_write_sweep_fine.pdf", bbox_inches="tight")
     plt.show()

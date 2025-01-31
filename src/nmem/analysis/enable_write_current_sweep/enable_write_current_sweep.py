@@ -17,16 +17,17 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     plot_enable_write_sweep_multiple(ax, data_list)
+    plt.savefig("enable_write_sweep.pdf", bbox_inches="tight")
     plt.show()
 
-    fig, ax = plt.subplots()
-    plot_operating_points(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_operating_points(ax, data_list)
+    # plt.show()
 
-    fig, ax = plt.subplots()
-    plot_operating_margins(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_operating_margins(ax, data_list)
+    # plt.show()
 
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(16, 9))
-    plot_waterfall(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(16, 9))
+    # plot_waterfall(ax, data_list)
+    # plt.show()
