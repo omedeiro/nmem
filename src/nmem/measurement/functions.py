@@ -1502,7 +1502,9 @@ def setup_scope_bert(
     scope_sample_rate = measurement_settings.get("scope_sample_rate")
     num_meas = measurement_settings.get("num_meas")
 
-    b.inst.scope.set_horizontal_scale(scope_horizontal_scale, -scope_horizontal_scale)
+    b.inst.scope.set_horizontal_scale(
+        scope_horizontal_scale, -scope_horizontal_scale * 5
+    )
     b.inst.scope.set_sample_rate(max(scope_sample_rate, 1e6))
 
     b.inst.scope.set_measurement_gate("P3", division_zero[0], division_zero[1])
