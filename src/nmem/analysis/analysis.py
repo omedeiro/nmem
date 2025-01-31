@@ -212,6 +212,8 @@ def get_enable_write_currents(data_dict: dict) -> np.ndarray:
         enable_write_currents = data_dict.get("y")[:, :, 0].flatten() * 1e6
     return enable_write_currents
 
+def get_enable_write_width(data_dict: dict) -> float:
+    return filter_first(data_dict.get("enable_write_width"))
 
 def get_read_width(data_dict: dict) -> float:
     return filter_first(data_dict.get("read_width"))
@@ -926,6 +928,7 @@ def plot_read_sweep(
         "write_width",
         "write_current",
         "enable_read_current",
+        "enable_write_width"
     ],
     **kwargs,
 ) -> Axes:
@@ -959,6 +962,9 @@ def plot_read_sweep(
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
         label = f"{variable:.2f}$\mu$A"
+    if variable_name == "enable_write_width":
+        variable = get_enable_write_width(data_dict)
+        label = f"{variable:.2f} pts"
 
     ax.plot(
         read_currents,
@@ -968,7 +974,6 @@ def plot_read_sweep(
         markeredgecolor="k",
         **kwargs,
     )
-
     ax.set_ylim(0, 1)
     return ax
 
@@ -981,6 +986,7 @@ def plot_read_sweep_array(
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
         plot_fill_between(ax, data_dict, colors[i])
+
     return ax
 
 
