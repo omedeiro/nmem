@@ -641,10 +641,10 @@ def plot_fill_between(ax, data_dict, color):
     enable_write_currents = get_enable_write_currents(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     verts = polygon_nominal(enable_write_currents, bit_error_rate)
-    poly = PolyCollection([verts], facecolors=color, alpha=0.6, edgecolors="k")
+    poly = PolyCollection([verts], facecolors=color, alpha=0.3, edgecolors="k")
     ax.add_collection(poly)
     verts = polygon_inverting(enable_write_currents, bit_error_rate)
-    poly = PolyCollection([verts], facecolors=color, alpha=0.6, edgecolors="k")
+    poly = PolyCollection([verts], facecolors=color, alpha=0.3, edgecolors="k")
     ax.add_collection(poly)
 
 
@@ -657,7 +657,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
-    ax2.xaxis.set_major_locator(MultipleLocator(0.1))
+    ax2.xaxis.set_major_locator(MultipleLocator(0.05))
 
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
@@ -970,10 +970,6 @@ def plot_read_sweep(
     )
 
     ax.set_ylim(0, 1)
-    ax.set_title(f"{variable_name}")
-    ax.legend(frameon=True, loc=2)
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Normalized Bit Error Rate")
     return ax
 
 
@@ -985,8 +981,6 @@ def plot_read_sweep_array(
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
         plot_fill_between(ax, data_dict, colors[i])
-
-    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     return ax
 
 
@@ -1004,8 +998,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
             markeredgecolor="k",
         )
     ax.set_xlim(read_currents[0], read_currents[-1])
-    ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
+
     ax.grid(True)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1))
     ax.set_yscale("log")
@@ -1084,9 +1077,8 @@ def plot_read_sweep_3d(ax: Axes3D, data_dict: dict) -> Axes3D:
 def plot_enable_write_sweep_grid(
     ax: Axes, dict_list: list[dict], save: bool = False
 ) -> None:
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(dict_list)))
-    for i, j in zip(["A", "B", "C", "D"], [2, 6, 7, 10]):
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    for i, j in zip(["A", "B", "C", "D"], [2, 5, 7, 10]):
         ax[i] = plot_read_sweep(
             ax[i],
             dict_list[j],
@@ -1560,6 +1552,7 @@ def plot_state_separation(ax: Axes, dict_list: list[dict]) -> Axes:
         enable_write_current = get_enable_write_current(data_dict)
         read_currents = get_read_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
+        write_temperatures = get_write_temperatures(data_dict)
         state0_current, state1_current = get_state_currents(
             read_currents, bit_error_rate
         )
@@ -1577,6 +1570,9 @@ def plot_state_separation(ax: Axes, dict_list: list[dict]) -> Axes:
     ax.grid(True, axis="both", which="both")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
     ax.set_ylabel("Diff. Between State Currents ($\mu$A)")
+    ax2 = ax.twiny()
+    ax2.set_xlim(write_temperatures[0], write_temperatures[-1])
+    ax2.xaxis.set_major_locator(MaxNLocator(5))
     return ax
 
 
@@ -1590,6 +1586,7 @@ def plot_state_currents(ax: Axes, dict_list: list[dict]) -> Axes:
         read_currents = get_read_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
         enable_write_currents = get_enable_write_current(data_dict)
+        write_temperatures = get_write_temperatures(data_dict)
         state0_current, state1_current = get_state_currents(
             read_currents, bit_error_rate
         )
@@ -1622,6 +1619,9 @@ def plot_state_currents(ax: Axes, dict_list: list[dict]) -> Axes:
     ax.set_ylabel("State Current ($\mu$A)")
     ax.grid(True, which="both", axis="both")
     ax.legend(frameon=False)
+    ax2 = ax.twiny()
+    ax2.set_xlim(write_temperatures[0], write_temperatures[-1])
+    ax2.xaxis.set_major_locator(MaxNLocator(5))
 
     return ax
 
