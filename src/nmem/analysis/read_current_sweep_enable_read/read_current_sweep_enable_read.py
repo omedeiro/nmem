@@ -2,7 +2,12 @@ import matplotlib.pyplot as plt
 from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
+    get_bit_error_rate,
+    get_read_currents,
+    get_read_temperatures,
+    get_enable_read_currents,
 )
+import numpy as np
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 10
@@ -32,48 +37,14 @@ if __name__ == "__main__":
 
     data_inverse = import_directory("data_inverse")
 
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(
-    #     ax, enable_read_290_list, "bit_error_rate", "enable_read_current"
-    # )
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(
-    #     ax, enable_read_300_list, "bit_error_rate", "enable_read_current"
-    # )
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(
-    #     ax, enable_read_310_list, "bit_error_rate", "enable_read_current"
-    # )
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(
-    #     ax, enable_read_310_C4_list, "bit_error_rate", "enable_read_current"
-    # )
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(ax, data_inverse, "bit_error_rate", "enable_write_current")
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_read_sweep_array(ax, data, "bit_error_rate", "enable_read_current")
-    # plt.show()
+    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
 
     fig, axs = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
     for i in range(3):
-        plot_read_sweep_array(axs[i], dict_list[i], "bit_error_rate", "enable_read_current")
+        plot_read_sweep_array(
+            axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
+        )
         axs[i].set_xlim(400, 1000)
-    axs[2].legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1), title="Enable Read Current [$\mu$A]")
 
-    axs[0].set_xlabel("Read Current [$\mu$A]")
-    axs[0].set_ylabel("Normalized Bit Error Rate")
-    plt.savefig("enable_read_current_sweep.pdf", bbox_inches="tight")
-    # plt.savefig("enable_read_current_sweep.png", dpi=300, bbox_inches="tight")
-    plt.show()
+
