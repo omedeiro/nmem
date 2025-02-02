@@ -314,6 +314,10 @@ def get_total_switches_norm(data_dict: dict) -> np.ndarray:
     return total_switches_norm
 
 
+def get_write_currents(data_dict: dict) -> np.ndarray:
+    write_currents = data_dict.get("write_current").flatten() * 1e6
+    return write_currents
+
 def get_read_currents(data_dict: dict) -> np.ndarray:
     read_currents = data_dict.get("y")[:, :, 0] * 1e6
     return read_currents.flatten()
@@ -530,12 +534,12 @@ def initialize_dict(array_size: tuple) -> dict:
     }
 
 
-def polygon_under_graph(x, y):
+def polygon_under_graph(x, y, y2=0.0):
     """
     Construct the vertex list which defines the polygon filling the space under
     the (x, y) line graph. This assumes x is in ascending order.
     """
-    return [(x[0], 0.00), *zip(x, y), (x[-1], 0.00)]
+    return [(x[0], y2), *zip(x, y), (x[-1], y2)]
 
 
 def polygon_nominal(x: np.ndarray, y: np.ndarray) -> list:
@@ -603,9 +607,16 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
 #     return right_critical_current
 
 
-def plot_operating_points(ax: Axes, dict_list: list[dict]) -> Axes:
-    currents, operating_points = get_operating_points(dict_list, "write_current")
-    operating_points_array = np.array(operating_points)
+def plot_operating_points(ax: Axes, dict_list: list[dict], variable:Literal["write_current"]) -> Axes:
+    operating_points_list = []
+    write_current_list = []
+    for data_dict in dict_list:
+        operating_points_list.append(get_operating_points(data_dict))
+        if variable == "write_current":
+            write_current_list.append(get_write_current(data_dict))
+
+    operating_points_array = np.array(operating_points_list)
+    currents = np.array(write_current_list)
     ax.plot(currents, operating_points_array[:, 0], label="Nominal Peak")
     ax.plot(currents, operating_points_array[:, 1], label="Inverting Peak")
     # ax.plot(currents, [x[0] for x in operating_points], label="Nominal Peak")
@@ -617,10 +628,18 @@ def plot_operating_points(ax: Axes, dict_list: list[dict]) -> Axes:
     return ax
 
 
-def plot_operating_margins(ax: Axes, dict_list: list[dict]) -> Axes:
-    currents, margins = get_operating_margins(dict_list, "write_current")
-    ax.plot(currents, [x[0] for x in margins], label="Nominal Width")
-    ax.plot(currents, [x[1] for x in margins], label="Inverting Width")
+def plot_operating_margins(ax: Axes, dict_list: list[dict], variable:Literal["write_current"]) -> Axes:
+    operating_points_list = []
+    write_current_list = []
+    for data_dict in dict_list:
+        operating_points_list.append(get_operating_points(data_dict))
+        if variable == "write_current":
+            write_current_list.append(get_write_current(data_dict))
+
+    operating_points_array = np.array(operating_points_list)
+    currents = np.array(write_current_list)
+    ax.plot(currents, operating_points_array[:, 0]-operating_points_array[:, 1], label="Nominal Peak")
+    # ax.plot(currents, operating_points_array[:, 1], label="Inverting Peak")
     ax.set_xlabel("Write Current ($\mu$A)")
     ax.set_ylabel("Width ($\mu$A)")
     ax.legend()
@@ -667,7 +686,6 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
-    ax2.xaxis.set_major_locator(MultipleLocator(0.05))
 
     ax2.set_xlabel("Write Temperature (K)")
     ax.set_xlabel("Enable Write Current ($\mu$A)")
@@ -675,7 +693,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     # ax.set_yscale("log")
     ax.set_ylim(0, 1)
     ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
-    return ax
+    return ax, ax2
 
 
 def plot_enable_write_sweep_single(
@@ -700,15 +718,16 @@ def plot_enable_write_sweep_single(
 
 
 def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
-    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     verts_list = []
+    verts_list1 = []
     zlist = []
 
     for i, data_dict in enumerate(dict_list):
+        
         enable_write_currents = get_enable_write_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
         write_current = get_write_current(data_dict)
-
         ax.plot(
             enable_write_currents,
             bit_error_rate,
@@ -721,11 +740,12 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
             linewidth=2,
         )
         zlist.append(write_current)
-        verts = polygon_under_graph(enable_write_currents, bit_error_rate)
+        verts = polygon_under_graph(enable_write_currents, bit_error_rate, 0.5)
         verts_list.append(verts)
 
     poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
     ax.add_collection3d(poly, zs=zlist, zdir="y")
+
 
     ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
     ax.set_ylabel("$I_W$ ($\mu$A)", labelpad=70)
@@ -1002,12 +1022,13 @@ def plot_read_sweep_array(
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
         plot_fill_between(ax, data_dict, colors[i])
-
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(MultipleLocator(0.1))
     return ax
 
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
-    colors = CMAP(np.linspace(0.2, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         read_currents = get_read_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
@@ -1165,7 +1186,7 @@ def plot_voltage_trace(
 def plot_voltage_trace_stack(
     axs: List[Axes], data_dict: dict, trace_index: int = 0
 ) -> List[Axes]:
-    colors = CMAP(np.linspace(0.2, 1, 3))
+    colors = CMAP(np.linspace(0.1, 1, 3))
     colors = np.flipud(colors)
     if len(axs) != 3:
         raise ValueError("The number of axes must be 3.")
@@ -1601,8 +1622,7 @@ def plot_state_separation(ax: Axes, dict_list: list[dict]) -> Axes:
 
 
 def plot_state_currents(ax: Axes, dict_list: list[dict]) -> Axes:
-    cmap = plt.get_cmap("Spectral")
-    colors = cmap(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
     enable_write_currents_list = []
     state0_currents = []
     state1_currents = []
@@ -1648,7 +1668,7 @@ def plot_state_currents(ax: Axes, dict_list: list[dict]) -> Axes:
     ax2 = ax.twiny()
     ax2.set_xlim(write_temperatures[0], write_temperatures[-1])
     ax2.xaxis.set_major_locator(MaxNLocator(5))
-
+    ax2.set_xlabel("Write Temperature (K)")
     return ax
 
 
@@ -2069,7 +2089,7 @@ def create_combined_plot_v4(data_dict: dict, save=False):
 
 
 def plot_grid(axs, dict_list):
-    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for dict in dict_list:
         cell = dict.get("cell")[0]
@@ -2121,7 +2141,7 @@ def plot_grid(axs, dict_list):
 
 
 def plot_row(axs, dict_list):
-    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
@@ -2145,7 +2165,7 @@ def plot_row(axs, dict_list):
 
 
 def plot_column(axs, dict_list):
-    colors = plt.cm.viridis(np.linspace(0, 1, 4))
+    colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
@@ -2270,7 +2290,8 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
 
     return ax
 
-def plot_filled_region(ax, data_dict:dict,  persistent_current:float)->Axes:
+
+def plot_filled_region(ax, data_dict: dict, persistent_current: float) -> Axes:
     ALPHA = 0.563
     RETRAP = 0.573
     WIDTH = 1 / 2.13
@@ -2283,7 +2304,12 @@ def plot_filled_region(ax, data_dict:dict,  persistent_current:float)->Axes:
 
     temp = np.linspace(0, CRITICAL_TEMP, 1000)
     i0, i1, i2, i3 = calculate_state_currents(
-        temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, persistent_current / max_critical_current
+        temp,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current / max_critical_current,
     )
     ax.plot(temp, i0, label="$I_{{0}}$", color=colors1[0, :], ls="-")
     ax.plot(temp, i1, label="$I_{{1}}$", color=colors2[0, :], ls="--")
@@ -2296,10 +2322,12 @@ def plot_filled_region(ax, data_dict:dict,  persistent_current:float)->Axes:
     upper_bound = np.minimum(i1, np.maximum(i0, i2))
     plot_inverting_region(ax, temp, lower_bound, upper_bound)
 
-def create_analytical_plot(ax: Axes, data_dict: dict, persistent_current:float) -> Axes:
+
+def create_analytical_plot(
+    ax: Axes, data_dict: dict, persistent_current: float
+) -> Axes:
 
     plot_filled_region(ax, data_dict, persistent_current)
-
 
     ax.set_xlabel("Temperature (K)")
     ax.set_ylabel("Current (au)")
@@ -2307,15 +2335,6 @@ def create_analytical_plot(ax: Axes, data_dict: dict, persistent_current:float) 
     # ax.set_ylim([0, 1])
 
     return ax
-
-
-def calculate_min_max_currents(
-    T: np.ndarray, Tc: float, retrap_ratio: float, width_ratio: float
-) -> tuple:
-    ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
-    imax = ichr + irhl
-    imin = ichl + irhr
-    return imin, imax
 
 
 def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> float:
@@ -2364,9 +2383,8 @@ def calculate_state_currents(
     persistent_current: float,
 ) -> tuple:
     ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
-    imin, imax = calculate_min_max_currents(T, Tc, retrap_ratio, width_ratio)
-    fa = imax
-    fb = imin - persistent_current
+    fa = ichr + irhl
+    fb = ichl + ichr
     fc = (ichl - persistent_current) / alpha
     fB = fb + persistent_current
     return fa, fb, fc, fB
@@ -2437,9 +2455,14 @@ def plot_branch_currents(
 
     return ax
 
-def plot_state_currents_measured(ax:Axes, data_dict:dict)->Axes:
+
+def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
     bit_error_rate = get_bit_error_rate(data_dict)
     read_currents = get_read_currents(data_dict)
+    nominal_state_currents_list = []
+    nominal_read_temperature_list = []
+    inverting_state_currents_list = []
+    inverting_read_temperature_list = []
     nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
         get_bit_error_rate_args(bit_error_rate)
     )
@@ -2461,40 +2484,41 @@ def plot_state_currents_measured(ax:Axes, data_dict:dict)->Axes:
         inverting_read_temperature_list.append(read_temperature)
 
     for t, temp in enumerate(nominal_read_temperature_list):
-            axs2[i].plot(
-                [temp, temp],
-                np.array(nominal_state_currents_list[t]) / max_critical_current,
-                "o",
-                linestyle="-",
-                color="blue",
-            )
-            operating_point = np.mean(nominal_state_currents_list[t])
-            operating_margin = np.abs(
-                nominal_state_currents_list[t][0] - nominal_state_currents_list[t][1]
-            )
+        axs2[i].plot(
+            [temp, temp],
+            np.array(nominal_state_currents_list[t]) / max_critical_current,
+            "o",
+            linestyle="-",
+            color="blue",
+        )
+        operating_point = np.mean(nominal_state_currents_list[t])
+        operating_margin = np.abs(
+            nominal_state_currents_list[t][0] - nominal_state_currents_list[t][1]
+        )
 
     for t, temp in enumerate(inverting_read_temperature_list):
-            axs2[i].plot(
-                [temp, temp],
-                np.array(inverting_state_currents_list[t]) / max_critical_current,
-                "o",
-                linestyle="-",
-                color="red",
-            )
+        axs2[i].plot(
+            [temp, temp],
+            np.array(inverting_state_currents_list[t]) / max_critical_current,
+            "o",
+            linestyle="-",
+            color="red",
+        )
     return ax
-# if __name__ == "__main__":
 
+
+# if __name__ == "__main__":
 
 
 if __name__ == "__main__":
 
-    dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
-    )
+    # dict_list = import_directory(
+    #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
+    # )
 
-    fig, ax = plt.subplots()
-    plot_enable_write_sweep_multiple(ax, dict_list[::2])
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_enable_write_sweep_multiple(ax, dict_list[::2])
+    # plt.show()
 
     # data = import_directory(
     #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
@@ -2511,38 +2535,23 @@ if __name__ == "__main__":
     )
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
-
-    fig, axs = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    for i in range(3):
-        plot_read_sweep_array(
-            axs[i], dict_list[i][::3], "bit_error_rate", "enable_read_current"
-        )
-        axs[i].set_xlim(400, 1000)
-
-
-
-
     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
     for i in range(3):
         sweep_length = len(dict_list[i])
-        nominal_state_currents_list = []
-        nominal_read_temperature_list = []
-        inverting_state_currents_list = []
-        inverting_read_temperature_list = []
+        enable_current_list = []
+        enable_temperature_list = []
         for j in range(0, sweep_length, 2):
-            plot_state_currents_measured(axs2[i], dict_list[i][j])            
-
-        create_analytical_plot(axs2[i], dict_list[i][0], 0.0)
+            plot_state_currents_measured(axs2[i], dict_list[i][j])
+            enable_current_list.append(get_enable_read_current(dict_list[i][j]))
+            enable_temperature_list.append(get_read_temperature(dict_list[i][j]))
+        create_analytical_plot(axs2[i], dict_list[i][0], 10.0)
         max_critical_current = get_max_critical_current_yint(dict_list[i][0])
 
-        axs2[i].set_ylim([400/max_critical_current, 1000/max_critical_current])
-        axs2[i].set_xlim([5, 10])
+        # axs2[i].set_ylim([400 / max_critical_current, 1000 / max_critical_current])
+        # axs2[i].set_xlim([5, 10])
         axs2[i].axhline(400 / max_critical_current, color="black", linestyle="--")
         axs2[i].axhline(1000 / max_critical_current, color="black", linestyle="--")
 
-    axs[2].legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Enable Read Current [$\mu$A]",
-    )
+
+    fig, ax= plt.subplots()
+    ax.plot(enable_current_list, enable_temperature_list, "o")
