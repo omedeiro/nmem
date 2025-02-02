@@ -178,15 +178,15 @@ if __name__ == "__main__":
             "HEATERS": HEATERS,
             "num_meas": NUM_MEAS,
             "spice_device_current": SPICE_DEVICE_CURRENT,
-            "sweep_parameter_x": "enable_write_current",
-            "sweep_parameter_y": "write_current",
+            "sweep_parameter_x": "enable_read_current",
+            "sweep_parameter_y": "read_current",
         }
     )
     current_cell = measurement_settings.get("cell")
 
-    measurement_settings["x"] = np.array([510e-6])
+    measurement_settings["x"] = np.array([144e-6])
 
-    measurement_settings["y"] = np.linspace(00e-6, 300e-6, sweep_length)
+    measurement_settings["y"] = np.linspace(700e-6, 750e-6, sweep_length)
 
     data_dict = nm.run_sweep(
         b,

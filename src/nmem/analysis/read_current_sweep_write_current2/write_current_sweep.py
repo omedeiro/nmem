@@ -24,6 +24,14 @@ if __name__ == "__main__":
         "bit_error_rate",
         "write_current",
     )
+    ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_ylabel("Bit Error Rate")
+    ax.legend(
+        frameon=False,  
+        loc="upper left",
+        bbox_to_anchor=(1, 1),
+        title="Write Current [$\mu$A]",
+    )
     plt.show()
 
     fig, ax = plt.subplots()
@@ -32,5 +40,13 @@ if __name__ == "__main__":
         import_directory("write_current_sweep_C2"),
         "bit_error_rate",
         "write_current",
+    )
+    ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_ylabel("Bit Error Rate")
+    ax.legend(
+        frameon=False,
+        loc="upper left",
+        bbox_to_anchor=(1, 1),
+        title="Write Current [$\mu$A]",
     )
     plt.show()
