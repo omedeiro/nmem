@@ -318,6 +318,7 @@ def get_write_currents(data_dict: dict) -> np.ndarray:
     write_currents = data_dict.get("write_current").flatten() * 1e6
     return write_currents
 
+
 def get_read_currents(data_dict: dict) -> np.ndarray:
     read_currents = data_dict.get("y")[:, :, 0] * 1e6
     return read_currents.flatten()
@@ -607,7 +608,9 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
 #     return right_critical_current
 
 
-def plot_operating_points(ax: Axes, dict_list: list[dict], variable:Literal["write_current"]) -> Axes:
+def plot_operating_points(
+    ax: Axes, dict_list: list[dict], variable: Literal["write_current"]
+) -> Axes:
     operating_points_list = []
     write_current_list = []
     for data_dict in dict_list:
@@ -628,7 +631,9 @@ def plot_operating_points(ax: Axes, dict_list: list[dict], variable:Literal["wri
     return ax
 
 
-def plot_operating_margins(ax: Axes, dict_list: list[dict], variable:Literal["write_current"]) -> Axes:
+def plot_operating_margins(
+    ax: Axes, dict_list: list[dict], variable: Literal["write_current"]
+) -> Axes:
     operating_points_list = []
     write_current_list = []
     for data_dict in dict_list:
@@ -638,7 +643,11 @@ def plot_operating_margins(ax: Axes, dict_list: list[dict], variable:Literal["wr
 
     operating_points_array = np.array(operating_points_list)
     currents = np.array(write_current_list)
-    ax.plot(currents, operating_points_array[:, 0]-operating_points_array[:, 1], label="Nominal Peak")
+    ax.plot(
+        currents,
+        operating_points_array[:, 0] - operating_points_array[:, 1],
+        label="Nominal Peak",
+    )
     # ax.plot(currents, operating_points_array[:, 1], label="Inverting Peak")
     ax.set_xlabel("Write Current ($\mu$A)")
     ax.set_ylabel("Width ($\mu$A)")
@@ -665,16 +674,18 @@ def plot_operating_margins(ax: Axes, dict_list: list[dict], variable:Literal["wr
 #     return ax
 
 
-def plot_fill_between(ax, data_dict, color):
+def plot_fill_between(ax, data_dict, fill_color):
     # fill the area between 0.5 and the curve
     enable_write_currents = get_enable_write_currents(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     verts = polygon_nominal(enable_write_currents, bit_error_rate)
-    poly = PolyCollection([verts], facecolors=color, alpha=0.3, edgecolors="k")
+    poly = PolyCollection([verts], facecolors=fill_color, alpha=0.3, edgecolors="k")
     ax.add_collection(poly)
     verts = polygon_inverting(enable_write_currents, bit_error_rate)
-    poly = PolyCollection([verts], facecolors=color, alpha=0.3, edgecolors="k")
+    poly = PolyCollection([verts], facecolors=fill_color, alpha=0.3, edgecolors="k")
     ax.add_collection(poly)
+
+    return ax
 
 
 def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
@@ -724,7 +735,7 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     zlist = []
 
     for i, data_dict in enumerate(dict_list):
-        
+
         enable_write_currents = get_enable_write_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
         write_current = get_write_current(data_dict)
@@ -745,7 +756,6 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
 
     poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
     ax.add_collection3d(poly, zs=zlist, zdir="y")
-
 
     ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
     ax.set_ylabel("$I_W$ ($\mu$A)", labelpad=70)
@@ -2258,16 +2268,17 @@ def plot_enable_read_temperature():
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     ax2 = ax.twinx()
-    for data_dict in dict_list:
+    for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
-        # write_temp = get_write_temperature(data_dict)
+        write_temp = get_write_temperature(data_dict)
         ax.plot(
             y,
             ztotal,
-            # label=f"$T_{{W}}$ = {write_temp:.2f} K",
+            label=f"$T_{{W}}$ = {write_temp:.2f} K",
             color=colors[dict_list.index(data_dict)],
         )
+        plot_fill_between(ax, data_dict, colors[i])
         ax2.plot(
             y,
             zswitch,
@@ -2277,9 +2288,9 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
             linestyle=":",
         )
 
-        critical_current = calculate_critical_current(data_dict)
+        # critical_current = calculate_critical_current(data_dict)
 
-    ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+    # ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
     ax.set_ylim([0, 1])
     ax.set_xlabel("Write Current ($\mu$A)")
     ax.set_ylabel("Bit Error Rate")
@@ -2288,7 +2299,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
-    return ax
+    return ax, ax2
 
 
 def plot_filled_region(ax, data_dict: dict, persistent_current: float) -> Axes:
@@ -2552,6 +2563,5 @@ if __name__ == "__main__":
         axs2[i].axhline(400 / max_critical_current, color="black", linestyle="--")
         axs2[i].axhline(1000 / max_critical_current, color="black", linestyle="--")
 
-
-    fig, ax= plt.subplots()
+    fig, ax = plt.subplots()
     ax.plot(enable_current_list, enable_temperature_list, "o")

@@ -39,6 +39,8 @@ if __name__ == "__main__":
     for data_dict in dict_list2:
         fig, ax = plt.subplots()
         plot_bitstream(ax, data_dict, "trace_chan_out")
+        ax.set_xlabel("Time [$\mu$s]")
+        ax.set_ylabel("Voltage [V]")
         plt.show()
 
     fig = plt.figure(figsize=(6.264, 2))

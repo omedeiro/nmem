@@ -13,8 +13,14 @@ CRITICAL_TEMP = 12.3
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
-    fig, ax = plt.subplots()
-    plot_write_sweep(ax, dict_list)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax, ax2 = plot_write_sweep(ax, dict_list[::-4])
+    ax.legend(
+        frameon=False,
+        loc="upper left",
+        bbox_to_anchor=(1, 1),
+        title="Enable Write Current",
+    )
     plt.show()
 
     fig, ax = plt.subplots()
