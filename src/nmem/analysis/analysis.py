@@ -21,6 +21,7 @@ from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
+CRITICAL_CURRENT_ZERO = 1000
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
@@ -107,7 +108,6 @@ def create_trace_hist_plot(
     ax_dict["B"].legend(loc="upper left")
 
     return ax_dict
-
 
 
 def create_combined_plot(data_dict: dict, save=False):
@@ -352,7 +352,6 @@ def _calculate_critical_current_zero(
     return ic_zero
 
 
-
 def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> float:
     Ic0 = Ic / (1 - (Tsub / Tc) ** 3) ** (2.1)
     return Ic0
@@ -369,9 +368,12 @@ def calculate_critical_current_temp(
 
 
 def calculate_retrapping_current_temp(
-    T: np.ndarray, Tc: float, retrap_ratio: float
+    T: np.ndarray, Tc: float, critical_current_zero: float, retrap_ratio: float
 ) -> np.ndarray:
-    Ir = retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
+    Ir = retrap_ratio * critical_current_zero * (1 - (T / Tc)) ** (1 / 2)
+
+    Ic = calculate_critical_current_temp(T, Tc, critical_current_zero)
+    Ir = np.minimum(Ir, Ic)
     return Ir
 
 
@@ -380,18 +382,19 @@ def calculate_branch_currents(
     Tc: float,
     retrap_ratio: float,
     width_ratio: float,
-    critical_current_zero: float=1.0,
+    critical_current_zero: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    ichl_zero = critical_current_zero * width_ratio
-    irhl_zero = critical_current_zero * width_ratio * retrap_ratio
-    ichr_zero = critical_current_zero
-    irhr_zero = critical_current_zero * retrap_ratio
+    ichr: np.ndarray = calculate_critical_current_temp(T, Tc, critical_current_zero)
+    ichl: np.ndarray = calculate_critical_current_temp(
+        T, Tc, critical_current_zero * width_ratio
+    )
 
-    ichr: np.ndarray = calculate_critical_current_temp(T, Tc, ichr_zero)
-    ichl: np.ndarray = calculate_critical_current_temp(T, Tc, ichl_zero)
-
-    irhr: np.ndarray = calculate_retrapping_current_temp(T, Tc, irhr_zero)
-    irhl: np.ndarray = calculate_retrapping_current_temp(T, Tc, irhl_zero)
+    irhr: np.ndarray = calculate_retrapping_current_temp(
+        T, Tc, critical_current_zero, retrap_ratio
+    )
+    irhl: np.ndarray = calculate_retrapping_current_temp(
+        T, Tc, critical_current_zero * width_ratio, retrap_ratio
+    )
 
     return ichl, irhl, ichr, irhr
 
@@ -403,19 +406,17 @@ def calculate_state_currents(
     width_ratio: float,
     alpha: float,
     persistent_current: float,
+    critical_current_zero: float,
 ) -> tuple:
-    critical_current_zero = 910
     ichl, irhl, ichr, irhr = calculate_branch_currents(
         T, Tc, retrap_ratio, width_ratio, critical_current_zero
     )
 
     fa = ichr + irhl
-    fb = ichl + ichr
+    fb = ichl + irhr
     fc = (ichl - persistent_current) / alpha
-    fB = fb + persistent_current
-    return fa, fb, fc, fB
-
-
+    fd = (ichr - persistent_current) / (1 - alpha)
+    return fa, fb, fc, fd
 
 
 def get_nominal_state_currents(data_dict: dict):
@@ -488,7 +489,6 @@ def get_state_currents_measured(data_dict: dict):
         inverting_state_currents_list,
         inverting_read_temperature_list,
     )
-
 
 
 def get_current_cell(data_dict: dict) -> str:
@@ -765,26 +765,6 @@ def get_bit_error_rate_args(bit_error_rate: np.ndarray) -> list:
         nominal_arg2 = np.nan
 
     return nominal_arg1, nominal_arg2, inverting_arg1, inverting_arg2
-
-
-# def get_state_currents(data_dict: dict) -> Tuple[float, float]:
-#     read_currents = get_read_currents(data_dict)
-#     bit_error_rate = get_bit_error_rate(data_dict)
-#     state_idx = get_bit_error_rate_args(bit_error_rate)
-#     state0_current = np.nan
-#     state1_current = np.nan
-#     if state_idx[0] is not np.nan:
-#         state0_current = read_currents[state_idx[0]]
-#         state1_current = read_currents[state_idx[1]]
-#         print(f"State 0: {state0_current}, State 1: {state1_current}")
-#     else:
-
-#     return state0_current, state1_current
-
-
-####################################################################################################
-
-####################################################################################################
 
 
 def get_trace_data(
@@ -1676,53 +1656,6 @@ def plot_normalization(
     return ax
 
 
-# def plot_analytical(ax: Axes, data_dict: dict) -> Axes:
-#     color_map = plt.get_cmap("RdBu")
-
-#     read_current_dict = calculate_read_currents(data_dict)
-#     inv_region = np.where(
-#         np.maximum(
-#             data_dict["read_currents_mesh"]
-#             - read_current_dict["one_state_currents_inv"],
-#             read_current_dict["zero_state_currents_inv"]
-#             - data_dict["read_currents_mesh"],
-#         )
-#         <= 0,
-#         data_dict["read_currents_mesh"],
-#         np.nan,
-#     )
-#     nominal_region = np.where(
-#         np.maximum(
-#             data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
-#             read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
-#         )
-#         <= 0,
-#         data_dict["read_currents_mesh"],
-#         np.nan,
-#     )
-#     ax.pcolormesh(
-#         data_dict["right_critical_currents_mesh"],
-#         data_dict["read_currents_mesh"],
-#         nominal_region,
-#         cmap=color_map,
-#         vmin=-1000,
-#         vmax=1000,
-#         zorder=0,
-#     )
-#     ax.pcolormesh(
-#         data_dict["right_critical_currents_mesh"],
-#         data_dict["read_currents_mesh"],
-#         -1 * inv_region,
-#         cmap=color_map,
-#         vmin=-1000,
-#         vmax=1000,
-#         zorder=0,
-#     )
-#     read_current_dict["nominal"] = nominal_region
-#     read_current_dict["inverting"] = inv_region
-#     return ax
-
-
 def plot_cell_param(ax: Axes, param: str) -> Axes:
     param_array = np.array([CELLS[cell][param] for cell in CELLS]).reshape(4, 4)
 
@@ -1768,7 +1701,10 @@ def find_max_critical_current(data):
 
     return np.mean(y[mid_idx])
 
-def plot_state_currents_measured_nominal(ax: Axes, nominal_read_temperature_list:list, nominal_state_currents_list:list) -> Axes:
+
+def plot_state_currents_measured_nominal(
+    ax: Axes, nominal_read_temperature_list: list, nominal_state_currents_list: list
+) -> Axes:
     for t, temp in enumerate(nominal_read_temperature_list):
         ax.plot(
             [temp, temp],
@@ -1779,7 +1715,10 @@ def plot_state_currents_measured_nominal(ax: Axes, nominal_read_temperature_list
         )
     return ax
 
-def plot_state_currents_measured_inverting(ax: Axes, inverting_read_temperature_list:list, inverting_state_currents_list:list) -> Axes:
+
+def plot_state_currents_measured_inverting(
+    ax: Axes, inverting_read_temperature_list: list, inverting_state_currents_list: list
+) -> Axes:
     for t, temp in enumerate(inverting_read_temperature_list):
         ax.plot(
             [temp, temp],
@@ -1790,6 +1729,7 @@ def plot_state_currents_measured_inverting(ax: Axes, inverting_read_temperature_
         )
     return ax
 
+
 def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
     (
         nominal_state_currents_list,
@@ -1797,8 +1737,12 @@ def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
         inverting_state_currents_list,
         inverting_read_temperature_list,
     ) = get_state_currents_measured(data_dict)
-    plot_state_currents_measured_nominal(ax, nominal_read_temperature_list, nominal_state_currents_list)
-    plot_state_currents_measured_inverting(ax, inverting_read_temperature_list, inverting_state_currents_list)
+    plot_state_currents_measured_nominal(
+        ax, nominal_read_temperature_list, nominal_state_currents_list
+    )
+    plot_state_currents_measured_inverting(
+        ax, inverting_read_temperature_list, inverting_state_currents_list
+    )
 
     return ax
 
@@ -2132,6 +2076,7 @@ def plot_delay(ax: Axes, dict_list: list[dict]) -> Axes:
 
     return ax
 
+
 def plot_grid(axs, dict_list):
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
@@ -2345,6 +2290,7 @@ def plot_state0_currents(ax: Axes, data_dict: dict, persistent_current: float) -
         WIDTH,
         ALPHA,
         persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
     ax.plot(temp, i0, label="$I_{{0}}$", color="blue", ls="-")
     return ax
@@ -2359,6 +2305,7 @@ def plot_state1_currents(ax: Axes, data_dict: dict, persistent_current: float) -
         WIDTH,
         ALPHA,
         persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
     ax.plot(temp, i1, label="$I_{{1}}$", color="green", ls="-")
     return ax
@@ -2373,16 +2320,19 @@ def plot_state2_currents(ax: Axes, data_dict: dict, persistent_current: float) -
         WIDTH,
         ALPHA,
         persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
     ax.plot(temp, i2, label="$I_{{2}}$", color="red", ls=":")
 
     return ax
 
 
-def plot_filled_region(ax, data_dict: dict, persistent_current: float) -> Axes:
+def plot_calculated_filled_region(
+    ax, data_dict: dict, persistent_current: float
+) -> Axes:
 
-    plot_nominal_region(ax, data_dict, persistent_current)
-    plot_inverting_region(ax, data_dict, persistent_current)
+    plot_calculated_nominal_region(ax, data_dict, persistent_current)
+    plot_calculated_inverting_region(ax, data_dict, persistent_current)
 
     return ax
 
@@ -2394,14 +2344,22 @@ def create_analytical_plot(
     plot_state1_currents(ax, data_dict, persistent_current)
     plot_state2_currents(ax, data_dict, persistent_current)
 
-    plot_filled_region(ax, data_dict, persistent_current)
+    plot_calculated_filled_region(ax, data_dict, persistent_current)
     return ax
 
 
-def plot_nominal_region(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+def plot_calculated_nominal_region(
+    ax: Axes, data_dict: dict, persistent_current: float
+) -> Axes:
     temp = np.linspace(0, CRITICAL_TEMP, 1000)
     i0, i1, i2, _ = calculate_state_currents(
-        temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, persistent_current
+        temp,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
 
     lower_bound = np.minimum(i0, i1)
@@ -2418,14 +2376,22 @@ def plot_nominal_region(ax: Axes, data_dict: dict, persistent_current: float) ->
     return ax
 
 
-def plot_inverting_region(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+def plot_calculated_inverting_region(
+    ax: Axes, data_dict: dict, persistent_current: float
+) -> Axes:
     temp = np.linspace(0, CRITICAL_TEMP, 1000)
     i0, i1, i2, _ = calculate_state_currents(
-        temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, persistent_current
+        temp,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
 
-    lower_bound = np.minimum(i0, i2)
-    upper_bound = np.maximum(i0, i2)
+    lower_bound = np.minimum(i1, i2)
+    upper_bound = np.maximum(i1, i2)
 
     ax.fill_between(
         temp,
@@ -2449,7 +2415,13 @@ def plot_calculated_state_currents(
     **kwargs,
 ):
     i0, i1, i2, _ = calculate_state_currents(
-        T, Tc, retrap_ratio, width_ratio, alpha, persistent_current
+        T,
+        Tc,
+        retrap_ratio,
+        width_ratio,
+        alpha,
+        persistent_current,
+        CRITICAL_CURRENT_ZERO,
     )
     ax.plot(T, i0, label="$I_{{0}}$", **kwargs)
     ax.plot(T, i1, label="$I_{{1}}$", **kwargs)
@@ -2463,13 +2435,24 @@ def plot_branch_currents(
     Tc: float,
     retrap_ratio: float,
     width_ratio: float,
+    critical_current_zero: float,
 ) -> Axes:
-    ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
+    ichl, irhl, ichr, irhr = calculate_branch_currents(
+        T, Tc, retrap_ratio, width_ratio, critical_current_zero
+    )
 
     ax.plot(T, ichl, label="$I_{c, H_L}$", color="b", linestyle="-")
     ax.plot(T, irhl, label="$I_{r, H_L}$", color="b", linestyle="--")
     ax.plot(T, ichr, label="$I_{c, H_R}$", color="r", linestyle="-")
     ax.plot(T, irhr, label="$I_{r, H_R}$", color="r", linestyle="--")
+
+    return ax
+
+
+def plot_measured_state_current_list(ax: Axes, dict_list: list[dict]) -> Axes:
+    sweep_length = len(dict_list)
+    for j in range(0, sweep_length, 2):
+        plot_state_currents_measured(ax, dict_list[j])
 
     return ax
 
@@ -2502,16 +2485,12 @@ if __name__ == "__main__":
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    for i in range(3):
-        sweep_length = len(dict_list[i])
-        enable_current_list = []
-        enable_temperature_list = []
-        for j in range(0, sweep_length, 2):
-            plot_state_currents_measured(axs2[i], dict_list[i][j])
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
 
+    for i in range(3):
+        plot_measured_state_current_list(axs2[i], dict_list[i])
+        plot_branch_currents(axs2[i], temp, CRITICAL_TEMP, RETRAP, WIDTH, CRITICAL_CURRENT_ZERO)
         create_analytical_plot(axs2[i], dict_list[i][0], 10.0)
 
+        axs2[i].set_xlim(5.5, 9)
         axs2[i].set_ylim(500, 900)
-        axs2[i].set_xlim(6, 8.7)
-    # fig, ax = plt.subplots()
-    # ax.plot(enable_current_list, enable_temperature_list, "o")
