@@ -21,6 +21,11 @@ from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
+ALPHA = 0.563
+RETRAP = 0.573
+WIDTH = 1 / 2.13
+
+
 CMAP = plt.get_cmap("plasma").reversed()
 
 
@@ -60,79 +65,6 @@ def filter_first(value) -> any:
     ):
         return np.asarray(value).flatten()[0]
     return value
-
-
-def convert_cell_to_coordinates(cell: str) -> tuple:
-    """Converts a cell name like 'A1' to coordinates (x, y)."""
-    column_letter = cell[0]
-    row_number = int(cell[1:]) - 1
-    column_number = ord(column_letter) - ord("A")
-    return column_number, row_number
-
-
-def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
-    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
-    ber = (w1r0 + w0r1) / 2
-    return ber
-
-
-def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
-    critical_temperature: float = data_dict.get("critical_temperature", CRITICAL_TEMP)
-    substrate_temperature: float = data_dict.get(
-        "substrate_temperature", SUBSTRATE_TEMP
-    )
-
-    ih = data_dict.get("x").flatten()[0] * 1e6
-    cell = data_dict.get("cell")[0]
-    ih_max = CELLS[cell]["x_intercept"]
-
-    return _calculate_channel_temperature(
-        critical_temperature, substrate_temperature, ih, ih_max
-    )
-
-
-def _calculate_channel_temperature(
-    critical_temperature: float,
-    substrate_temperature: float,
-    ih: float,
-    ih_max: float,
-) -> np.ndarray:
-    N = 2.0
-
-    if ih_max == 0:
-        raise ValueError("ih_max cannot be zero to avoid division by zero.")
-
-    channel_temperature = (critical_temperature**4 - substrate_temperature**4) * (
-        (ih / ih_max) ** N
-    ) + substrate_temperature**4
-
-    channel_temperature = np.maximum(channel_temperature, 0)
-
-    temp_channel = np.power(channel_temperature, 0.25)
-    return temp_channel
-
-
-def calculate_critical_current(data_dict: dict) -> np.ndarray:
-    critical_temperature = data_dict.get("critical_temperature", 12.3)
-    channel_temperature = calculate_channel_temperature(data_dict)
-    ic_zero = get_critical_current_zero_temp(data_dict)
-
-    return _calculate_critical_current(
-        critical_temperature, channel_temperature, ic_zero
-    )
-
-
-def _calculate_critical_current(
-    critical_temperature: float,
-    substrate_temperature: float,
-    ic_max: float,
-) -> np.ndarray:
-    ic = ic_max * np.power(
-        (1 - np.power(substrate_temperature / critical_temperature, 3)), 2.1
-    )
-    return ic
 
 
 def create_trace_hist_plot(
@@ -177,6 +109,388 @@ def create_trace_hist_plot(
     return ax_dict
 
 
+
+def create_combined_plot(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(7, 3.5))
+    subfigs = fig.subfigures(
+        2,
+        3,
+        width_ratios=[0.3, 0.7, 0.3],
+        height_ratios=[0.4, 0.6],
+        wspace=-0.1,
+        hspace=0.0,
+    )
+    ax = subfigs[1, 0].subplots(4, 1)
+    subfigs[1, 0].subplots_adjust(hspace=0.0)
+    subfigs[1, 0].supylabel("Voltage [V]", x=-0.05)
+    subfigs[1, 0].supxlabel("Time [ns]")
+    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
+    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
+    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
+    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
+    ax[2].legend(["Read 0", "Read 1"], frameon=False)
+    axhist = subfigs[0, 2].add_subplot()
+    subfigs[0, 2].subplots_adjust(hspace=0.0)
+    plot_hist(axhist, data_dict[3])
+
+    axbits = subfigs[1, 1].subplots(4, 1)
+    plot_bitstream(axbits[0], data_dict[5], trace_name="trace_chan_out")
+    plot_bitstream(axbits[1], data_dict[6], trace_name="trace_chan_out")
+    plot_bitstream(axbits[2], data_dict[7], trace_name="trace_chan_out")
+    plot_bitstream(axbits[3], data_dict[8], trace_name="trace_chan_out")
+    subfigs[1, 1].supylabel("Voltage [V]", x=0.05)
+    subfigs[1, 1].supxlabel("Time [$\mu$s]")
+
+    axdelay = subfigs[1, 2].add_subplot()
+    plot_delay(axdelay, data_dict)
+
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("delay_plotting.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v2(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(7.087, 3.543))
+    subfigs = fig.subfigures(
+        2,
+        3,
+    )
+    ax = subfigs[1, 1].subplots(2, 1)
+    # subfigs[1, 1].subplots_adjust(hspace=0.0)
+    subfigs[1, 1].supylabel("Voltage [V]", x=-0.05)
+    # subfigs[1, 1].supxlabel("Time [ns]")
+    ax2 = ax[0].twinx()
+    ax3 = ax[1].twinx()
+    plot_trace_averaged(
+        ax[0], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax[1], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax[1],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax[1].legend(["Read 0", "Read 1"], frameon=False)
+    ax[1].set_xlabel("Time [$\mu$s]")
+    ax2.set_ylabel("[V]")
+
+    axfit = subfigs[1, 2].add_subplot()
+    # plot_all_cells(axfit)
+    fig.patch.set_visible(False)
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v3(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(
+        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax_dict["B"],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_enable_current_relation(ax_dict["C"], [data_dict])
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def create_combined_plot_v4(data_dict: dict, save=False):
+    fig = plt.figure(figsize=(6.264, 2))
+    ax_dict = fig.subplot_mosaic("AC;BC")
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+    plot_trace_averaged(
+        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_trace_averaged(
+        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+    )
+    plot_trace_averaged(
+        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_trace_averaged(
+        ax_dict["B"],
+        data_dict[4],
+        "trace_read1_avg",
+        color="#ff14f0",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_trace_averaged(
+        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+    )
+    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].set_ylabel("[mV]")
+    ax2.legend()
+    ax2.set_ylabel("[mV]")
+    ax3.legend()
+    ax3.set_ylabel("[mV]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_ylabel("[mV]")
+    ax_dict["B"].legend(loc="upper left")
+
+    fig.subplots_adjust(wspace=0.45)
+    plot_hist(ax_dict["C"], data_dict[3])
+
+    if save:
+        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
+    plt.show()
+
+
+def convert_cell_to_coordinates(cell: str) -> tuple:
+    """Converts a cell name like 'A1' to coordinates (x, y)."""
+    column_letter = cell[0]
+    row_number = int(cell[1:]) - 1
+    column_number = ord(column_letter) - ord("A")
+    return column_number, row_number
+
+
+def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
+    num_meas = data_dict.get("num_meas")[0][0]
+    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
+    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
+    ber = (w1r0 + w0r1) / 2
+    return ber
+
+
+def calculate_channel_temperature(data_dict: dict) -> np.ndarray:
+    critical_temperature: float = data_dict.get("critical_temperature", CRITICAL_TEMP)
+    substrate_temperature: float = data_dict.get(
+        "substrate_temperature", SUBSTRATE_TEMP
+    )
+
+    ih = data_dict.get("x").flatten()[0] * 1e6
+    max_enable_current = get_max_enable_current(data_dict)
+
+    return _calculate_channel_temperature(
+        critical_temperature, substrate_temperature, ih, max_enable_current
+    )
+
+
+def _calculate_channel_temperature(
+    critical_temperature: float,
+    substrate_temperature: float,
+    ih: float,
+    ih_max: float,
+) -> np.ndarray:
+    N = 2.0
+    if ih_max == 0:
+        raise ValueError("ih_max cannot be zero to avoid division by zero.")
+
+    channel_temperature = (critical_temperature**4 - substrate_temperature**4) * (
+        (ih / ih_max) ** N
+    ) + substrate_temperature**4
+
+    channel_temperature = np.maximum(channel_temperature, 0)
+
+    temp_channel = np.power(channel_temperature, 0.25)
+    return temp_channel
+
+
+def calculate_critical_current(data_dict: dict) -> np.ndarray:
+    critical_temperature = data_dict.get("critical_temperature", CRITICAL_TEMP)
+    channel_temperature = calculate_channel_temperature(data_dict)
+    critical_current_heater_off = get_critical_current_heater_off(data_dict)
+
+    return _calculate_critical_current_zero(
+        critical_temperature, channel_temperature, critical_current_heater_off
+    )
+
+
+def _calculate_critical_current_zero(
+    critical_temperature: float,
+    substrate_temperature: float,
+    critical_current_heater_off: float,
+) -> np.ndarray:
+    ic_zero = (
+        critical_current_heater_off
+        / (1 - (substrate_temperature / critical_temperature) ** 3) ** 2.1
+    )
+    return ic_zero
+
+
+
+def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> float:
+    Ic0 = Ic / (1 - (Tsub / Tc) ** 3) ** (2.1)
+    return Ic0
+
+
+# def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
+#     return Ic0 * (1 - (T / Tc) ** (3 / 2))
+
+
+def calculate_critical_current_temp(
+    temp_array: np.ndarray, Tc: float, critical_current_zero: float
+) -> np.ndarray:
+    return critical_current_zero * (1 - (temp_array / Tc) ** (3)) ** (2.1)
+
+
+def calculate_retrapping_current_temp(
+    T: np.ndarray, Tc: float, retrap_ratio: float
+) -> np.ndarray:
+    Ir = retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
+    return Ir
+
+
+def calculate_branch_currents(
+    T: np.ndarray,
+    Tc: float,
+    retrap_ratio: float,
+    width_ratio: float,
+    critical_current_zero: float=1.0,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ichl_zero = critical_current_zero * width_ratio
+    irhl_zero = critical_current_zero * width_ratio * retrap_ratio
+    ichr_zero = critical_current_zero
+    irhr_zero = critical_current_zero * retrap_ratio
+
+    ichr: np.ndarray = calculate_critical_current_temp(T, Tc, ichr_zero)
+    ichl: np.ndarray = calculate_critical_current_temp(T, Tc, ichl_zero)
+
+    irhr: np.ndarray = calculate_retrapping_current_temp(T, Tc, irhr_zero)
+    irhl: np.ndarray = calculate_retrapping_current_temp(T, Tc, irhl_zero)
+
+    return ichl, irhl, ichr, irhr
+
+
+def calculate_state_currents(
+    T: np.ndarray,
+    Tc: float,
+    retrap_ratio: float,
+    width_ratio: float,
+    alpha: float,
+    persistent_current: float,
+) -> tuple:
+    critical_current_zero = 910
+    ichl, irhl, ichr, irhr = calculate_branch_currents(
+        T, Tc, retrap_ratio, width_ratio, critical_current_zero
+    )
+
+    fa = ichr + irhl
+    fb = ichl + ichr
+    fc = (ichl - persistent_current) / alpha
+    fB = fb + persistent_current
+    return fa, fb, fc, fB
+
+
+
+
+def get_nominal_state_currents(data_dict: dict):
+    bit_error_rate = get_bit_error_rate(data_dict)
+    nominal_state_currents_list = []
+    nominal_read_temperature_list = []
+    nominal_edge1, nominal_edge2, _, _ = get_bit_error_rate_args(bit_error_rate)
+    read_temperature = get_read_temperature(data_dict)
+    max_critical_current = get_critical_current_intercept(data_dict)
+    if nominal_edge1 is not np.nan:
+        nominal_state1_current = calculate_critical_current(read_temperature, 12.3, 1)
+        nominal_state0_current = calculate_critical_current(read_temperature, 12.3, 0)
+        nominal_state_currents_list.append(
+            [nominal_state1_current, nominal_state0_current]
+        )
+        nominal_read_temperature_list.append(read_temperature)
+
+    return nominal_state_currents_list, nominal_read_temperature_list
+
+
+def get_inverting_state_currents(data_dict: dict):
+    bit_error_rate = get_bit_error_rate(data_dict)
+    inverting_state_currents_list = []
+    inverting_read_temperature_list = []
+    _, _, inverting_edge1, inverting_edge2 = get_bit_error_rate_args(bit_error_rate)
+    read_temperature = get_read_temperature(data_dict)
+    max_critical_current = get_critical_current_intercept(data_dict)
+    if inverting_edge1 is not np.nan:
+        inverting_state1_current = calculate_critical_current(read_temperature, 12.3, 1)
+        inverting_state0_current = calculate_critical_current(read_temperature, 12.3, 0)
+        inverting_state_currents_list.append(
+            [inverting_state1_current, inverting_state0_current]
+        )
+        inverting_read_temperature_list.append(read_temperature)
+
+    return inverting_state_currents_list, inverting_read_temperature_list
+
+
+def get_state_currents_measured(data_dict: dict):
+    bit_error_rate = get_bit_error_rate(data_dict)
+    read_currents = get_read_currents(data_dict)
+    nominal_state_currents_list = []
+    nominal_read_temperature_list = []
+    inverting_state_currents_list = []
+    inverting_read_temperature_list = []
+    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
+        get_bit_error_rate_args(bit_error_rate)
+    )
+    read_temperature = get_read_temperature(data_dict)
+    critical_current_intercept = get_critical_current_intercept(data_dict)
+    if nominal_edge1 is not np.nan:
+        nominal_state1_current = read_currents[nominal_edge1]
+        nominal_state0_current = read_currents[nominal_edge2]
+        nominal_state_currents_list.append(
+            [nominal_state1_current, nominal_state0_current]
+        )
+        nominal_read_temperature_list.append(read_temperature)
+
+    if inverting_edge1 is not np.nan:
+        inverting_state1_current = read_currents[inverting_edge1]
+        inverting_state0_current = read_currents[inverting_edge2]
+        inverting_state_currents_list.append(
+            [inverting_state1_current, inverting_state0_current]
+        )
+        inverting_read_temperature_list.append(read_temperature)
+
+    return (
+        nominal_state_currents_list,
+        nominal_read_temperature_list,
+        inverting_state_currents_list,
+        inverting_read_temperature_list,
+    )
+
+
+
 def get_current_cell(data_dict: dict) -> str:
     cell = filter_first(data_dict.get("cell"))
     if cell is None:
@@ -184,16 +498,10 @@ def get_current_cell(data_dict: dict) -> str:
     return cell
 
 
-def get_critical_current_zero_temp(data_dict: dict) -> np.ndarray:
+def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
     cell = get_current_cell(data_dict)
-    switching_current = CELLS[cell]["max_critical_current"] * 1e6
-    substrate_temp = SUBSTRATE_TEMP
-    critical_temp = CRITICAL_TEMP
-
-    max_critical_current = switching_current / np.power(
-        1 - np.power(substrate_temp / critical_temp, 3), 2.1
-    )
-    return max_critical_current
+    switching_current_heater_off = CELLS[cell]["max_critical_current"] * 1e6
+    return switching_current_heater_off
 
 
 def get_enable_read_current(data_dict: dict) -> float:
@@ -384,12 +692,12 @@ def get_read_temperature(data_dict: dict) -> float:
     return read_temp
 
 
-def get_max_critical_current(data_dict: dict) -> float:
+def get_switching_current_heater_off(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["max_critical_current"] * 1e6
 
 
-def get_max_critical_current_yint(data_dict: dict) -> float:
+def get_critical_current_intercept(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["y_intercept"]
 
@@ -432,32 +740,31 @@ def get_write_current(data_dict: dict) -> float:
 
 
 def get_operating_points(data_dict: dict) -> np.ndarray:
-    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
-        get_bit_error_rate_args(get_bit_error_rate(data_dict))
-    )
-    nominal_operating_point = np.mean([nominal_edge1, nominal_edge2])
-    inverting_operating_point = np.mean([inverting_edge1, inverting_edge2])
+    berargs = get_bit_error_rate_args(get_bit_error_rate(data_dict))
+    nominal_operating_point = np.mean([berargs[0], berargs[1]])
+    inverting_operating_point = np.mean([berargs[2], berargs[3]])
     return nominal_operating_point, inverting_operating_point
 
 
 def get_bit_error_rate_args(bit_error_rate: np.ndarray) -> list:
-    nominal_data = np.argwhere(bit_error_rate < 0.45)
-    inverting_data = np.argwhere(bit_error_rate > 0.55)
+    nominal_args = np.argwhere(bit_error_rate < 0.45)
+    inverting_args = np.argwhere(bit_error_rate > 0.55)
 
-    if len(inverting_data) > 0:
-        inverting_edge1 = inverting_data[0][0]
-        inverting_edge2 = inverting_data[-1][0]
+    if len(inverting_args) > 0:
+        inverting_arg1 = inverting_args[0][0]
+        inverting_arg2 = inverting_args[-1][0]
     else:
-        inverting_edge1 = np.nan
-        inverting_edge2 = np.nan
+        inverting_arg1 = np.nan
+        inverting_arg2 = np.nan
 
-    if len(nominal_data) > 0:
-        nominal_edge1 = nominal_data[0][0]
-        nominal_edge2 = nominal_data[-1][0]
+    if len(nominal_args) > 0:
+        nominal_arg1 = nominal_args[0][0]
+        nominal_arg2 = nominal_args[-1][0]
     else:
-        nominal_edge1 = np.nan
-        nominal_edge2 = np.nan
-    return [nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2]
+        nominal_arg1 = np.nan
+        nominal_arg2 = np.nan
+
+    return nominal_arg1, nominal_arg2, inverting_arg1, inverting_arg2
 
 
 # def get_state_currents(data_dict: dict) -> Tuple[float, float]:
@@ -595,18 +902,6 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
             cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
         )
     return param_dict
-
-
-# def calculate_right_critical_currents(
-#     enable_write_currents: np.ndarray, cell: str, width_ratio: float, iretrap: float
-# ) -> np.ndarray:
-#     channel_critical_current = (enable_write_currents * cell["slope"]) + cell[
-#         "y_intercept"
-#     ]
-#     right_critical_current = channel_critical_current * (
-#         1 + ((1 / width_ratio) * iretrap)
-#     )
-#     return right_critical_current
 
 
 def plot_operating_points(
@@ -911,25 +1206,21 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
     read_currents = get_read_currents(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
 
-    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
-        get_bit_error_rate_args(bit_error_rate)
-    )
-    if nominal_edge1 is not np.nan:
-        # state1_current = read_currents[nominal_edge1]
-        # state0_current = read_currents[nominal_edge2]
+    berargs = get_bit_error_rate_args(bit_error_rate)
+    if berargs[0] is not np.nan:
         ax.plot(
-            read_currents[nominal_edge1],
-            bit_error_rate[nominal_edge2],
+            read_currents[berargs[0]],
+            bit_error_rate[berargs[0]],
             marker="D",
             markeredgecolor="k",
             linewidth=1.5,
             label="_state0",
             **kwargs,
         )
-    if inverting_edge1 is not np.nan:
+    if berargs[2] is not np.nan:
         ax.plot(
-            read_currents[inverting_edge1],
-            bit_error_rate[inverting_edge1],
+            read_currents[berargs[2]],
+            bit_error_rate[berargs[2]],
             marker="P",
             markeredgecolor="k",
             linewidth=1.5,
@@ -952,16 +1243,16 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
     return ax
 
 
-def plot_stack(
-    axs: list[Axes],
-    data_dict: list[dict],
-    persistent_current: list[float],
-) -> list[Axes]:
-    for i in range(len(axs)):
-        data_dict[i]["persistent_current"] = persistent_current[i]
-        axs[i] = plot_analytical(axs[i], data_dict[i])
-        axs[i].set_aspect("equal")
-    return axs
+# def plot_stack(
+#     axs: list[Axes],
+#     data_dict: list[dict],
+#     persistent_current: list[float],
+# ) -> list[Axes]:
+#     for i in range(len(axs)):
+#         data_dict[i]["persistent_current"] = persistent_current[i]
+#         axs[i] = plot_analytical(axs[i], data_dict[i])
+#         axs[i].set_aspect("equal")
+#     return axs
 
 
 def plot_read_sweep(
@@ -1150,28 +1441,23 @@ def plot_enable_write_sweep_grid(
 
 def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
     bit_error_rate = get_bit_error_rate(data_dict)
+    total_switches_norm = get_total_switches_norm(data_dict)
     measurement_param = data_dict.get("y")[0][:, 1] * 1e6
 
-    # ax.plot(
-    #     measurement_param,
-    #     w0r1,
-    #     color="#DBB40C",
-    #     label="Write 0 Read 1",
-    #     marker=".",
-    # )
-    # ax.plot(
-    #     measurement_param,
-    #     w1r0,
-    #     color="#740F15",
-    #     label="Write 1 Read 0",
-    #     marker=".",
-    # )
     ax.plot(
         measurement_param,
         bit_error_rate,
         color="#08519C",
-        label="Total Bit Error Rate",
+        label="Bit Error Rate",
         marker=".",
+    )
+    ax.plot(
+        measurement_param,
+        total_switches_norm,
+        color="grey",
+        label="_Total Switches",
+        linestyle="--",
+        linewidth=1,
     )
     ax.legend()
     ax.set_yticks([0, 0.5, 1])
@@ -1390,51 +1676,51 @@ def plot_normalization(
     return ax
 
 
-def plot_analytical(ax: Axes, data_dict: dict) -> Axes:
-    color_map = plt.get_cmap("RdBu")
+# def plot_analytical(ax: Axes, data_dict: dict) -> Axes:
+#     color_map = plt.get_cmap("RdBu")
 
-    read_current_dict = calculate_read_currents(data_dict)
-    inv_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"]
-            - read_current_dict["one_state_currents_inv"],
-            read_current_dict["zero_state_currents_inv"]
-            - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
-    )
-    nominal_region = np.where(
-        np.maximum(
-            data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
-            read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
-        )
-        <= 0,
-        data_dict["read_currents_mesh"],
-        np.nan,
-    )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        nominal_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
-    )
-    ax.pcolormesh(
-        data_dict["right_critical_currents_mesh"],
-        data_dict["read_currents_mesh"],
-        -1 * inv_region,
-        cmap=color_map,
-        vmin=-1000,
-        vmax=1000,
-        zorder=0,
-    )
-    read_current_dict["nominal"] = nominal_region
-    read_current_dict["inverting"] = inv_region
-    return ax
+#     read_current_dict = calculate_read_currents(data_dict)
+#     inv_region = np.where(
+#         np.maximum(
+#             data_dict["read_currents_mesh"]
+#             - read_current_dict["one_state_currents_inv"],
+#             read_current_dict["zero_state_currents_inv"]
+#             - data_dict["read_currents_mesh"],
+#         )
+#         <= 0,
+#         data_dict["read_currents_mesh"],
+#         np.nan,
+#     )
+#     nominal_region = np.where(
+#         np.maximum(
+#             data_dict["read_currents_mesh"] - read_current_dict["zero_state_currents"],
+#             read_current_dict["one_state_currents"] - data_dict["read_currents_mesh"],
+#         )
+#         <= 0,
+#         data_dict["read_currents_mesh"],
+#         np.nan,
+#     )
+#     ax.pcolormesh(
+#         data_dict["right_critical_currents_mesh"],
+#         data_dict["read_currents_mesh"],
+#         nominal_region,
+#         cmap=color_map,
+#         vmin=-1000,
+#         vmax=1000,
+#         zorder=0,
+#     )
+#     ax.pcolormesh(
+#         data_dict["right_critical_currents_mesh"],
+#         data_dict["read_currents_mesh"],
+#         -1 * inv_region,
+#         cmap=color_map,
+#         vmin=-1000,
+#         vmax=1000,
+#         zorder=0,
+#     )
+#     read_current_dict["nominal"] = nominal_region
+#     read_current_dict["inverting"] = inv_region
+#     return ax
 
 
 def plot_cell_param(ax: Axes, param: str) -> Axes:
@@ -1473,48 +1759,6 @@ def plot_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
     return ax
 
 
-# def construct_array(data_dict: dict) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-#     x = data_dict.get("x")[0][:, 1] * 1e6
-#     y = data_dict.get("y")[0][:, 0] * 1e6
-#     w0r1 = 100 - data_dict.get("write_0_read_1")[0].flatten()
-#     w1r0 = data_dict.get("write_1_read_0")[0].flatten()
-#     z = w1r0 + w0r1
-#     ztotal = z.reshape((len(y), len(x)), order="F")
-#     return x, y, ztotal
-
-
-# def plot_enable_current_relation(
-#     ax: Axes, data_dict: dict, parameter_z: str = "total_switches_norm"
-# ) -> Axes:
-#     x, y, ztotal = build_array(data_dict, parameter_z)
-#     dx, dy = np.diff(x)[0], np.diff(y)[0]
-#     xfit, yfit = get_fitting_points(x, y, ztotal)
-
-#     ax.scatter(xfit, yfit)
-
-#     # Plot a fit line to the scatter points
-#     plot_fit(ax, xfit, yfit)
-
-#     ax.matshow(
-#         ztotal,
-#         extent=[
-#             (-0.5 * dx + x[0]),
-#             (0.5 * dx + x[-1]),
-#             (-0.5 * dy + y[0]),
-#             (0.5 * dy + y[-1]),
-#         ],
-#         aspect="auto",
-#         origin="lower",
-#         cmap="viridis",
-#     )
-#     ax.xaxis.tick_bottom()
-#     ax.xaxis.set_major_locator(MaxNLocator(len(x)))
-#     ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
-#     ax.yaxis.set_major_locator(MultipleLocator(50))
-
-#     return ztotal
-
-
 def find_max_critical_current(data):
     _, y, ztotal = build_array(data, "bit_error_rate")
 
@@ -1524,79 +1768,39 @@ def find_max_critical_current(data):
 
     return np.mean(y[mid_idx])
 
+def plot_state_currents_measured_nominal(ax: Axes, nominal_read_temperature_list:list, nominal_state_currents_list:list) -> Axes:
+    for t, temp in enumerate(nominal_read_temperature_list):
+        ax.plot(
+            [temp, temp],
+            nominal_state_currents_list[t],
+            "o",
+            linestyle="-",
+            color="blue",
+        )
+    return ax
 
-# def plot_read_temp_sweep_C3():
-#     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+def plot_state_currents_measured_inverting(ax: Axes, inverting_read_temperature_list:list, inverting_state_currents_list:list) -> Axes:
+    for t, temp in enumerate(inverting_read_temperature_list):
+        ax.plot(
+            [temp, temp],
+            inverting_state_currents_list[t],
+            "o",
+            linestyle="-",
+            color="red",
+        )
+    return ax
 
-#     plot_write_sweep(axs[0, 0], "write_current_sweep_C3_2")
-#     plot_write_sweep(axs[0, 1], "write_current_sweep_C3_3")
-#     plot_write_sweep(axs[1, 0], "write_current_sweep_C3_4")
-#     plot_write_sweep(axs[1, 1], "write_current_sweep_C3")
-#     axs[1, 1].legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
-#     fig.subplots_adjust(hspace=0.5, wspace=0.3)
+def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
+    (
+        nominal_state_currents_list,
+        nominal_read_temperature_list,
+        inverting_state_currents_list,
+        inverting_read_temperature_list,
+    ) = get_state_currents_measured(data_dict)
+    plot_state_currents_measured_nominal(ax, nominal_read_temperature_list, nominal_state_currents_list)
+    plot_state_currents_measured_inverting(ax, inverting_read_temperature_list, inverting_state_currents_list)
 
-
-# def plot_write_sweep(ax, data_directory: str):
-#     dict_list = import_directory(data_directory)
-#     colors = plt.cm.viridis(np.linspace(0, 1, len(dict_list)))
-#     ax2 = ax.twinx()
-
-#     for data in [dict_list[-7]]:
-
-#         cell = data.get("cell")[0]
-#         max_enable_current = filter_first(
-#             data["CELLS"][cell][0][0]["x_intercept"]
-#         ).flatten()[0]
-#         enable_read_current = filter_first(data.get("enable_read_current")) * 1e6
-#         enable_write_current = filter_first(data.get("enable_write_current")) * 1e6
-
-#         x, y, ztotal = build_array(data, "bit_error_rate")
-#         _, _, zswitch = build_array(data, "total_switches_norm")
-
-#         enable_write_temp = calculate_channel_temperature(
-#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_write_current, max_enable_current
-#         ).flatten()[0]
-#         ax.plot(
-#             y,
-#             ztotal,
-#             label=f"enable_write_current = {enable_write_current:.0f} $\mu$A, Write Temperature: {enable_write_temp:.2f} K",
-#             color=colors[dict_list.index(data)],
-#         )
-#         ax2.plot(
-#             y,
-#             zswitch,
-#             label="_",
-#             color="grey",
-#             linewidth=0.5,
-#             linestyle=":",
-#         )
-
-#         write_Ic = calculate_critical_current(enable_read_current, CELLS[cell])
-#         print(f"Write Ic: {write_Ic}, enable_write_current: {enable_write_current}")
-#         ax.hlines(
-#             write_Ic, ax.get_xlim()[0], ax.get_xlim()[1], linestyle="--", color="k"
-#         )
-
-#         enable_read_temp = calculate_channel_temperature(
-#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_read_current, max_enable_current
-#         ).flatten()[0]
-#         enable_write_temp = calculate_channel_temperature(
-#             SUBSTRATE_TEMP, CRITICAL_TEMP, enable_write_current, max_enable_current
-#         ).flatten()[0]
-
-#     ax.set_title(
-#         f"Cell {cell} - Read Temperature: {enable_read_temp:.2f}, Write Temperature: {enable_write_temp:.2f} K"
-#     )
-#     ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
-#     ax.set_ylim([0, 1])
-#     # ax.set_xlim([500, 900])
-#     ax.set_xlabel("Write Current ($\mu$A)")
-#     ax.set_ylabel("Bit Error Rate")
-#     ax2.set_ylim([0, 1])
-#     ax2.set_ylabel("Switching Probability")
-#     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
-#     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-#     # calculate_critical_current(enable_read_current, data["CELLS"][cell][0][0])
+    return ax
 
 
 def plot_state_separation(ax: Axes, dict_list: list[dict]) -> Axes:
@@ -1928,177 +2132,6 @@ def plot_delay(ax: Axes, dict_list: list[dict]) -> Axes:
 
     return ax
 
-
-def create_combined_plot(data_dict: dict, save=False):
-    fig = plt.figure(figsize=(7, 3.5))
-    subfigs = fig.subfigures(
-        2,
-        3,
-        width_ratios=[0.3, 0.7, 0.3],
-        height_ratios=[0.4, 0.6],
-        wspace=-0.1,
-        hspace=0.0,
-    )
-    ax = subfigs[1, 0].subplots(4, 1)
-    subfigs[1, 0].subplots_adjust(hspace=0.0)
-    subfigs[1, 0].supylabel("Voltage [V]", x=-0.05)
-    subfigs[1, 0].supxlabel("Time [ns]")
-    plot_trace_averaged(ax[0], data_dict[4], "trace_write_avg", "#345F90")
-    plot_trace_averaged(ax[1], data_dict[4], "trace_ewrite_avg", "#345F90")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read0_avg", "#345F90")
-    plot_trace_averaged(ax[2], data_dict[4], "trace_read1_avg", "#B3252C")
-    plot_trace_averaged(ax[3], data_dict[4], "trace_eread_avg", "#345F90")
-    ax[2].legend(["Read 0", "Read 1"], frameon=False)
-    axhist = subfigs[0, 2].add_subplot()
-    subfigs[0, 2].subplots_adjust(hspace=0.0)
-    plot_hist(axhist, data_dict[3])
-
-    axbits = subfigs[1, 1].subplots(4, 1)
-    plot_bitstream(axbits[0], data_dict[5], trace_name="trace_chan_out")
-    plot_bitstream(axbits[1], data_dict[6], trace_name="trace_chan_out")
-    plot_bitstream(axbits[2], data_dict[7], trace_name="trace_chan_out")
-    plot_bitstream(axbits[3], data_dict[8], trace_name="trace_chan_out")
-    subfigs[1, 1].supylabel("Voltage [V]", x=0.05)
-    subfigs[1, 1].supxlabel("Time [$\mu$s]")
-
-    axdelay = subfigs[1, 2].add_subplot()
-    plot_delay(axdelay, data_dict)
-
-    fig.patch.set_visible(False)
-    if save:
-        plt.savefig("delay_plotting.pdf", bbox_inches="tight")
-    plt.show()
-
-
-def create_combined_plot_v2(data_dict: dict, save=False):
-    fig = plt.figure(figsize=(7.087, 3.543))
-    subfigs = fig.subfigures(
-        2,
-        3,
-    )
-    ax = subfigs[1, 1].subplots(2, 1)
-    # subfigs[1, 1].subplots_adjust(hspace=0.0)
-    subfigs[1, 1].supylabel("Voltage [V]", x=-0.05)
-    # subfigs[1, 1].supxlabel("Time [ns]")
-    ax2 = ax[0].twinx()
-    ax3 = ax[1].twinx()
-    plot_trace_averaged(
-        ax[0], data_dict[4], "trace_write_avg", color="#293689", label="Write"
-    )
-    plot_trace_averaged(
-        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
-    )
-    plot_trace_averaged(
-        ax[1], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
-    )
-    plot_trace_averaged(
-        ax[1],
-        data_dict[4],
-        "trace_read1_avg",
-        color="#ff14f0",
-        linestyle="--",
-        label="Read 1",
-    )
-    plot_trace_averaged(
-        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
-    )
-    ax[1].legend(["Read 0", "Read 1"], frameon=False)
-    ax[1].set_xlabel("Time [$\mu$s]")
-    ax2.set_ylabel("[V]")
-
-    axfit = subfigs[1, 2].add_subplot()
-    # plot_all_cells(axfit)
-    fig.patch.set_visible(False)
-    if save:
-        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
-    plt.show()
-
-
-def create_combined_plot_v3(data_dict: dict, save=False):
-    fig = plt.figure(figsize=(6.264, 2))
-    ax_dict = fig.subplot_mosaic("AC;BC")
-    ax2 = ax_dict["A"].twinx()
-    ax3 = ax_dict["B"].twinx()
-    plot_trace_averaged(
-        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
-    )
-    plot_trace_averaged(
-        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
-    )
-    plot_trace_averaged(
-        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
-    )
-    plot_trace_averaged(
-        ax_dict["B"],
-        data_dict[4],
-        "trace_read1_avg",
-        color="#ff14f0",
-        linestyle="--",
-        label="Read 1",
-    )
-    plot_trace_averaged(
-        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
-    )
-    ax_dict["A"].legend(loc="upper left")
-    ax_dict["A"].set_ylabel("[mV]")
-    ax2.legend()
-    ax2.set_ylabel("[mV]")
-    ax3.legend()
-    ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\mu$s]")
-    ax_dict["B"].set_ylabel("[mV]")
-    ax_dict["B"].legend(loc="upper left")
-
-    fig.subplots_adjust(wspace=0.45)
-    plot_enable_current_relation(ax_dict["C"], [data_dict])
-    if save:
-        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
-    plt.show()
-
-
-def create_combined_plot_v4(data_dict: dict, save=False):
-    fig = plt.figure(figsize=(6.264, 2))
-    ax_dict = fig.subplot_mosaic("AC;BC")
-    ax2 = ax_dict["A"].twinx()
-    ax3 = ax_dict["B"].twinx()
-    plot_trace_averaged(
-        ax_dict["A"], data_dict[4], "trace_write_avg", color="#293689", label="Write"
-    )
-    plot_trace_averaged(
-        ax2, data_dict[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
-    )
-    plot_trace_averaged(
-        ax_dict["B"], data_dict[4], "trace_read0_avg", color="#1966ff", label="Read 0"
-    )
-    plot_trace_averaged(
-        ax_dict["B"],
-        data_dict[4],
-        "trace_read1_avg",
-        color="#ff14f0",
-        linestyle="--",
-        label="Read 1",
-    )
-    plot_trace_averaged(
-        ax3, data_dict[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
-    )
-    ax_dict["A"].legend(loc="upper left")
-    ax_dict["A"].set_ylabel("[mV]")
-    ax2.legend()
-    ax2.set_ylabel("[mV]")
-    ax3.legend()
-    ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\mu$s]")
-    ax_dict["B"].set_ylabel("[mV]")
-    ax_dict["B"].legend(loc="upper left")
-
-    fig.subplots_adjust(wspace=0.45)
-    plot_hist(ax_dict["C"], data_dict[3])
-
-    if save:
-        plt.savefig("delay_plotting_v2.pdf", bbox_inches="tight")
-    plt.show()
-
-
 def plot_grid(axs, dict_list):
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
@@ -2303,131 +2336,104 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     return ax, ax2
 
 
-def plot_filled_region(ax, data_dict: dict, persistent_current: float) -> Axes:
-    ALPHA = 0.563
-    RETRAP = 0.573
-    WIDTH = 1 / 2.13
-    CRITICAL_TEMP = 12.3
-    SUBSTRATE_TEMP = 1.3
-    max_critical_current = get_max_critical_current_yint(data_dict)
-    colors1 = np.flipud(plt.cm.Greens(np.linspace(0, 1, 4)))
-    colors2 = np.flipud(plt.cm.Blues(np.linspace(0, 1, 4)))
-    colors3 = np.flipud(plt.cm.Reds(np.linspace(0, 1, 4)))
-
+def plot_state0_currents(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
     temp = np.linspace(0, CRITICAL_TEMP, 1000)
-    i0, i1, i2, i3 = calculate_state_currents(
+    i0, _, _, _ = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
         RETRAP,
         WIDTH,
         ALPHA,
-        persistent_current / max_critical_current,
+        persistent_current,
     )
-    ax.plot(temp, i0, label="$I_{{0}}$", color=colors1[0, :], ls="-")
-    ax.plot(temp, i1, label="$I_{{1}}$", color=colors2[0, :], ls="--")
-    ax.plot(temp, i2, label="$I_{{0,inv}}$", color=colors3[0, :], ls=":")
+    ax.plot(temp, i0, label="$I_{{0}}$", color="blue", ls="-")
+    return ax
 
-    lower_bound = np.maximum(i1, i2)
-    upper_bound = i0
-    plot_nominal_region(ax, temp, lower_bound, upper_bound)
-    lower_bound = np.minimum(i0, np.minimum(i1, i2))
-    upper_bound = np.minimum(i1, np.maximum(i0, i2))
-    plot_inverting_region(ax, temp, lower_bound, upper_bound)
+
+def plot_state1_currents(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
+    _, i1, _, _ = calculate_state_currents(
+        temp,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+    )
+    ax.plot(temp, i1, label="$I_{{1}}$", color="green", ls="-")
+    return ax
+
+
+def plot_state2_currents(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
+    _, _, i2, _ = calculate_state_currents(
+        temp,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+    )
+    ax.plot(temp, i2, label="$I_{{2}}$", color="red", ls=":")
+
+    return ax
+
+
+def plot_filled_region(ax, data_dict: dict, persistent_current: float) -> Axes:
+
+    plot_nominal_region(ax, data_dict, persistent_current)
+    plot_inverting_region(ax, data_dict, persistent_current)
+
+    return ax
 
 
 def create_analytical_plot(
     ax: Axes, data_dict: dict, persistent_current: float
 ) -> Axes:
+    plot_state0_currents(ax, data_dict, persistent_current)
+    plot_state1_currents(ax, data_dict, persistent_current)
+    plot_state2_currents(ax, data_dict, persistent_current)
 
     plot_filled_region(ax, data_dict, persistent_current)
-
-    ax.set_xlabel("Temperature (K)")
-    ax.set_ylabel("Current (au)")
-    # ax.set_xlim([0, CRITICAL_TEMP])
-    # ax.set_ylim([0, 1])
-
     return ax
 
 
-def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> float:
-    Ic0 = Ic / (1 - (Tsub / Tc) ** 3) ** (2.1)
-    return Ic0
+def plot_nominal_region(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
+    i0, i1, i2, _ = calculate_state_currents(
+        temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, persistent_current
+    )
 
+    lower_bound = np.minimum(i0, i1)
+    upper_bound = np.maximum(i0, i1)
 
-# def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
-#     return Ic0 * (1 - (T / Tc) ** (3 / 2))
-
-
-def calculate_retrapping_current(
-    T: np.ndarray, Tc: float, retrap_ratio: float
-) -> np.ndarray:
-    Ir = retrap_ratio * (1 - (T / Tc)) ** (1 / 2)
-    return Ir
-
-
-def calculate_branch_currents(
-    T: np.ndarray,
-    Tc: float,
-    retrap_ratio: float,
-    width_ratio: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Assumes that everything is normailized to ICHR"""
-    ichl: np.ndarray = calculate_critical_current(T, Tc, width_ratio)
-    irhl: np.ndarray = calculate_retrapping_current(T, Tc, retrap_ratio * width_ratio)
-    ichr: np.ndarray = calculate_critical_current(T, Tc, 1)
-    irhr: np.ndarray = calculate_retrapping_current(T, Tc, retrap_ratio)
-
-    i0 = ichr[0] + irhl[0]
-
-    ichl = ichl / i0
-    irhl = irhl / i0
-    ichr = ichr / i0
-    irhr = irhr / i0
-    return ichl, irhl, ichr, irhr
-
-
-def calculate_state_currents(
-    T: np.ndarray,
-    Tc: float,
-    retrap_ratio: float,
-    width_ratio: float,
-    alpha: float,
-    persistent_current: float,
-) -> tuple:
-    ichl, irhl, ichr, irhr = calculate_branch_currents(T, Tc, retrap_ratio, width_ratio)
-    fa = ichr + irhl
-    fb = ichl + ichr
-    fc = (ichl - persistent_current) / alpha
-    fB = fb + persistent_current
-    return fa, fb, fc, fB
-
-
-def plot_nominal_region(
-    ax: Axes, T: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray, **kwargs
-) -> Axes:
     ax.fill_between(
-        T,
+        temp,
         lower_bound,
         upper_bound,
         color="blue",
         alpha=0.1,
         hatch="////",
-        **kwargs,
     )
     return ax
 
 
-def plot_inverting_region(
-    ax: Axes, T: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray, **kwargs
-) -> Axes:
+def plot_inverting_region(ax: Axes, data_dict: dict, persistent_current: float) -> Axes:
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
+    i0, i1, i2, _ = calculate_state_currents(
+        temp, CRITICAL_TEMP, RETRAP, WIDTH, ALPHA, persistent_current
+    )
+
+    lower_bound = np.minimum(i0, i2)
+    upper_bound = np.maximum(i0, i2)
+
     ax.fill_between(
-        T,
+        temp,
         lower_bound,
         upper_bound,
         color="red",
         alpha=0.1,
         hatch="\\\\\\\\",
-        **kwargs,
     )
     return ax
 
@@ -2468,59 +2474,7 @@ def plot_branch_currents(
     return ax
 
 
-def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
-    bit_error_rate = get_bit_error_rate(data_dict)
-    read_currents = get_read_currents(data_dict)
-    nominal_state_currents_list = []
-    nominal_read_temperature_list = []
-    inverting_state_currents_list = []
-    inverting_read_temperature_list = []
-    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
-        get_bit_error_rate_args(bit_error_rate)
-    )
-    read_temperature = get_read_temperature(data_dict)
-    if nominal_edge1 is not np.nan:
-        nominal_state1_current = read_currents[nominal_edge1]
-        nominal_state0_current = read_currents[nominal_edge2]
-        nominal_state_currents_list.append(
-            [nominal_state1_current, nominal_state0_current]
-        )
-        nominal_read_temperature_list.append(read_temperature)
-
-    if inverting_edge1 is not np.nan:
-        inverting_state1_current = read_currents[inverting_edge1]
-        inverting_state0_current = read_currents[inverting_edge2]
-        inverting_state_currents_list.append(
-            [inverting_state1_current, inverting_state0_current]
-        )
-        inverting_read_temperature_list.append(read_temperature)
-
-    for t, temp in enumerate(nominal_read_temperature_list):
-        axs2[i].plot(
-            [temp, temp],
-            np.array(nominal_state_currents_list[t]) / max_critical_current,
-            "o",
-            linestyle="-",
-            color="blue",
-        )
-        operating_point = np.mean(nominal_state_currents_list[t])
-        operating_margin = np.abs(
-            nominal_state_currents_list[t][0] - nominal_state_currents_list[t][1]
-        )
-
-    for t, temp in enumerate(inverting_read_temperature_list):
-        axs2[i].plot(
-            [temp, temp],
-            np.array(inverting_state_currents_list[t]) / max_critical_current,
-            "o",
-            linestyle="-",
-            color="red",
-        )
-    return ax
-
-
 # if __name__ == "__main__":
-
 
 if __name__ == "__main__":
 
@@ -2554,15 +2508,10 @@ if __name__ == "__main__":
         enable_temperature_list = []
         for j in range(0, sweep_length, 2):
             plot_state_currents_measured(axs2[i], dict_list[i][j])
-            enable_current_list.append(get_enable_read_current(dict_list[i][j]))
-            enable_temperature_list.append(get_read_temperature(dict_list[i][j]))
+
         create_analytical_plot(axs2[i], dict_list[i][0], 10.0)
-        max_critical_current = get_max_critical_current_yint(dict_list[i][0])
 
-        # axs2[i].set_ylim([400 / max_critical_current, 1000 / max_critical_current])
-        # axs2[i].set_xlim([5, 10])
-        axs2[i].axhline(400 / max_critical_current, color="black", linestyle="--")
-        axs2[i].axhline(1000 / max_critical_current, color="black", linestyle="--")
-
-    fig, ax = plt.subplots()
-    ax.plot(enable_current_list, enable_temperature_list, "o")
+        axs2[i].set_ylim(500, 900)
+        axs2[i].set_xlim(6, 8.7)
+    # fig, ax = plt.subplots()
+    # ax.plot(enable_current_list, enable_temperature_list, "o")
