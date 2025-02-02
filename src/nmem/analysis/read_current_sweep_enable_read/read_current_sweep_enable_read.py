@@ -1,13 +1,9 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
-    get_bit_error_rate,
-    get_read_currents,
-    get_read_temperatures,
-    get_enable_read_currents,
 )
-import numpy as np
 
 plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 10

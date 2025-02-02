@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     import_directory,
-    plot_enable_write_sweep_grid,
     plot_read_sweep_array,
     plot_state_currents,
-    plot_state_separation,
 )
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]

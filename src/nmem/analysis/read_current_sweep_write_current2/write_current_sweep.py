@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
 # def plot_read_temp_sweep_C3():

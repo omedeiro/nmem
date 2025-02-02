@@ -7,7 +7,6 @@ Created on Sat Dec  9 16:17:34 2023
 
 import time
 
-import numpy as np
 import qnnpy.functions.functions as qf
 from matplotlib import pyplot as plt
 
@@ -23,7 +22,6 @@ from nmem.measurement.cells import (
     NUM_SAMPLES,
     SAMPLE_RATE,
     SPICE_DEVICE_CURRENT,
-    DEFAULT_SCOPE,
 )
 
 plt.rcParams["figure.figsize"] = [10, 12]

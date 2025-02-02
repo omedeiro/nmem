@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     build_array,
     get_fitting_points,

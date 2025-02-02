@@ -11,6 +11,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     calculate_read_currents,
@@ -2353,8 +2354,8 @@ def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> f
     return Ic0
 
 
-def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
-    return Ic0 * (1 - (T / Tc) ** (3 / 2))
+# def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
+#     return Ic0 * (1 - (T / Tc) ** (3 / 2))
 
 
 def calculate_retrapping_current(

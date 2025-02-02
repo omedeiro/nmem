@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import (
     import_directory,
     plot_enable_write_sweep_multiple,

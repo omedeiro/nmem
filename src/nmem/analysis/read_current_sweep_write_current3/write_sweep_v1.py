@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import scipy.io as sio
+
 from nmem.analysis.analysis import (
     import_directory,
     plot_bit_error_rate,

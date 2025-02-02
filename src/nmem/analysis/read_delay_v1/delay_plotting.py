@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     create_trace_hist_plot,
     import_directory,

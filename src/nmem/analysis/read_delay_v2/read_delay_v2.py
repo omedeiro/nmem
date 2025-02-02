@@ -1,6 +1,7 @@
-from nmem.analysis.analysis import import_directory, get_bit_error_rate, plot_read_delay
 import matplotlib.pyplot as plt
 import numpy as np
+
+from nmem.analysis.analysis import get_bit_error_rate, import_directory
 
 if __name__ == "__main__":
     dict_list = import_directory("data3")

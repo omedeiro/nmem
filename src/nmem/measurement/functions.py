@@ -5,10 +5,10 @@ Created on Fri Nov  3 14:01:31 2023
 @author: omedeiro
 """
 
+import datetime
 import logging
 import os
 import time
-import datetime
 from logging import Logger
 from time import sleep
 from typing import List, Tuple
@@ -30,14 +30,14 @@ from nmem.calculations.calculations import (
 )
 from nmem.measurement.cells import (
     CELLS,
-    MITEQ_AMP_GAIN,
-    SPICE_DEVICE_CURRENT,
-    HEATERS,
+    CONFIG,
     DEFAULT_SCOPE,
+    FREQ_IDX,
+    HEATERS,
+    MITEQ_AMP_GAIN,
     NUM_POINTS,
     SAMPLE_RATE,
-    FREQ_IDX,
-    CONFIG,
+    SPICE_DEVICE_CURRENT,
 )
 
 
