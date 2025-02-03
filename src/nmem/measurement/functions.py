@@ -22,7 +22,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.analysis import build_array, filter_first, plot_fit
+from nmem.analysis.analysis import build_array, filter_first
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,
@@ -1131,14 +1131,6 @@ def plot_slice(
     ax.legend()
     ax.set_xlabel(sweep_parameter_y)
     ax.set_ylabel(parameter_z)
-    return ax
-
-
-def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes:
-    # xfit, yfit = filter_plateau(xfit, yfit, 0.98 * Ic0)
-    ax.plot(xfit, yfit, **kwargs)
-    plot_fit(ax, xfit, yfit)
-
     return ax
 
 

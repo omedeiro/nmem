@@ -14,4 +14,4 @@ if __name__ == "__main__":
     ax.set_yscale("log")
     ax.set_ylabel("Bit Error Rate")
     ax.set_xlabel("Read Current ($\mu$A)")
-    ax.set_ylim([1e-3, 1])
+    ax.set_ylim([1e-4, 1])

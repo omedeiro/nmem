@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     initialize_dict,
-    plot_array,
+    plot_parameter_array,
     process_cell,
 )
 from nmem.measurement.cells import CELLS
@@ -24,6 +24,6 @@ if __name__ == "__main__":
         yloc_list.append(yloc)
 
     fig, ax = plt.subplots()
-    plot_array(
+    plot_parameter_array(
         ax, xloc_list, yloc_list, param_dict["write_current"], "Write Current [$\mu$A]"
     )

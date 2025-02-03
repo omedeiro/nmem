@@ -5,8 +5,8 @@ from nmem.analysis.analysis import (
     get_fitting_points,
     import_directory,
     plot_channel_temperature,
+    plot_fitting,
 )
-from nmem.measurement.functions import plot_fitting
 
 if __name__ == "__main__":
     data_list = import_directory("data")

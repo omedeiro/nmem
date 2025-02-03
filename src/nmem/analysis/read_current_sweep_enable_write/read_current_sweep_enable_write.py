@@ -13,9 +13,9 @@ plt.rcParams["font.size"] = 14
 if __name__ == "__main__":
     data_list = import_directory("data")
 
-    fig, ax = plt.subplots()
-    plot_state_currents(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_state_currents(ax, data_list)
+    # plt.show()
 
     # fig, ax = plt.subplots(figsize=(6, 4))
     # plot_state_separation(ax, data_list)

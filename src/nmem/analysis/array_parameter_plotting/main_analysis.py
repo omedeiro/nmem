@@ -4,7 +4,7 @@ from matplotlib import font_manager
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     initialize_dict,
-    plot_array,
+    plot_parameter_array,
     process_cell,
 )
 from nmem.measurement.cells import CELLS
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         ],
         # per_subplot_kw={"bit_error": {"projection": "3d"}},
     )
-    plot_array(
+    plot_parameter_array(
         axs["bit_error"],
         xloc_list,
         yloc_list,
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         cmap=plt.get_cmap("Blues").reversed(),
     )
     axs["bit_error"].set_title("Bit Error Rate")
-    plot_array(
+    plot_parameter_array(
         axs["write"],
         xloc_list,
         yloc_list,
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         cmap=plt.get_cmap("Reds"),
     )
     axs["write"].set_title("Write Current (uA)")
-    plot_array(
+    plot_parameter_array(
         axs["read"],
         xloc_list,
         yloc_list,
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         cmap=plt.get_cmap("Blues"),
     )
     axs["read"].set_title("Read Current (uA)")
-    plot_array(
+    plot_parameter_array(
         axs["enable_write"],
         xloc_list,
         yloc_list,
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         cmap=plt.get_cmap("Reds"),
     )
     axs["enable_write"].set_title("Enable Write Current (uA)")
-    plot_array(
+    plot_parameter_array(
         axs["enable_read"],
         xloc_list,
         yloc_list,
