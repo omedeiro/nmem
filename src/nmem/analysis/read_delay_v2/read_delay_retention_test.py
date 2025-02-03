@@ -25,8 +25,6 @@ if __name__ == "__main__":
     delay_list = np.array(delay_list)[sort_index]
     bit_error_rate_list = np.array(bit_error_rate_list)[sort_index]
     ax.plot(delay_list, bit_error_rate_list, marker="o", color="black")
-    # ax.plot(delay_list[10], fidelity[10], marker="d", color="red")
-    # ax.plot(delay_list[9], fidelity[9], marker="s", color="red")
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_ylabel("Bit Error Rate")
@@ -36,5 +34,5 @@ if __name__ == "__main__":
     ax.set_ylim(1e-4, 1)
     ax.set_xbound(lower=1e-6)
     
-    plt.savefig("read_delay_v2.pdf", bbox_inches="tight")
+    plt.savefig("read_delay_retention_test.png", dpi=300, bbox_inches="tight")
     plt.show()

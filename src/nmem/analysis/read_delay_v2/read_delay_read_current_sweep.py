@@ -12,4 +12,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     plot_read_delay(ax, dict_list)
     ax.set_ylim(1e-4, 1)
+    ax.set_yscale("log")
+    ax.set_xlabel("Read Current ($\mu$A)")
+    ax.set_ylabel("Bit Error Rate")
     plt.show()

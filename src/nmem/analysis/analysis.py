@@ -1323,9 +1323,6 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
             markeredgecolor="k",
         )
     ax.set_xlim(read_currents[0], read_currents[-1])
-
-    ax.grid(True)
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1))
     ax.set_yscale("log")
     return ax
 
@@ -2257,7 +2254,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
             label=f"$T_{{W}}$ = {write_temp:.2f} K",
             color=colors[dict_list.index(data_dict)],
         )
-        plot_fill_between(ax, data_dict, colors[i])
+        # plot_fill_between(ax, data_dict, colors[i])
         ax2.plot(
             y,
             zswitch,
