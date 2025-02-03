@@ -35,12 +35,21 @@ if __name__ == "__main__":
 
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
-
     fig, axs = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
     for i in range(3):
         plot_read_sweep_array(
             axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
         )
         axs[i].set_xlim(400, 1000)
+        axs[i].set_ylim(0, 1)
+        axs[i].set_xlabel("Read Current ($\mu$A)")
 
+    axs[0].set_ylabel("Bit Error Rate")
+    axs[2].legend(
+        frameon=False,
+        loc="upper left",
+        bbox_to_anchor=(1, 1),
+        title="Enable Read Current,\n Read Temperature",
+    )
 
+    plt.savefig("read_current_sweep_enable_read.png", dpi=300, bbox_inches="tight")
