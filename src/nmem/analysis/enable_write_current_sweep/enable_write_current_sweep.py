@@ -5,7 +5,6 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_operating_margins,
-    # plot_peak_distance,
     plot_operating_points,
     plot_waterfall,
 )

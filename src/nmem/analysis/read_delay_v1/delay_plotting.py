@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 from nmem.analysis.analysis import (
     create_trace_hist_plot,
     import_directory,
-    plot_bitstream,
-    plot_delay,
-    plot_hist,
+    plot_voltage_trace_bitstream,
+    plot_read_delay2,
+    plot_voltage_hist,
 )
 
 plt.rcParams["figure.figsize"] = [7, 3.5]
@@ -29,17 +29,17 @@ plt.rcParams["ytick.major.size"] = 1
 if __name__ == "__main__":
     dict_list = import_directory("data")
     fig, ax = plt.subplots()
-    plot_delay(ax, dict_list)
+    plot_read_delay2(ax, dict_list)
     plt.show()
 
     fig, ax = plt.subplots()
-    plot_hist(ax, dict_list[3])
+    plot_voltage_hist(ax, dict_list[3])
     plt.show()
 
     dict_list2 = import_directory("data2")
     for data_dict in dict_list2:
         fig, ax = plt.subplots()
-        plot_bitstream(ax, data_dict, "trace_chan_out")
+        plot_voltage_trace_bitstream(ax, data_dict, "trace_chan_out")
         ax.set_xlabel("Time [$\mu$s]")
         ax.set_ylabel("Voltage [V]")
         plt.show()
