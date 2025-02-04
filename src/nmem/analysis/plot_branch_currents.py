@@ -2,11 +2,18 @@ from nmem.analysis.analysis import plot_branch_currents
 import matplotlib.pyplot as plt
 import numpy as np
 
+CRITICAL_TEMP = 12.3
+CRITICAL_CURRENT_ZERO = 910
+ALPHA = 0.563
+RETRAP = 0.573
+WIDTH = 1 / 2.13
+
 if __name__ == "__main__":
     fig, ax = plt.subplots()
-
-    plot_branch_currents(ax, np.linspace(0,12.3, 100), 12.3, 0.5, 0.3, 1)
-
+    temps = np.linspace(0, CRITICAL_TEMP, 100)
+    plot_branch_currents(
+        ax, temps, CRITICAL_TEMP, RETRAP, WIDTH, CRITICAL_CURRENT_ZERO
+    )
     ax.set_xlabel("Temperature [K]")
     ax.set_ylabel("Current [au]")
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))

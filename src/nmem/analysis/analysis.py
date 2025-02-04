@@ -22,7 +22,7 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 910
+CRITICAL_CURRENT_ZERO = 1000
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
@@ -242,16 +242,11 @@ def calculate_state_currents(
     ichl, irhl, ichr, irhr = calculate_branch_currents(
         T, Tc, retrap_ratio, width_ratio, critical_current_zero
     )
-
-    q = ichr[0] + irhl[0] - irhr[0] - ichl[0]
-    Q = irhr[0] - (ichr[0] - ichl[0])
-
     fa = ichr + irhl
-    fb = ichl + irhr
+    fb = ichl + irhr + persistent_current
     fc = (ichl - persistent_current) / alpha
-    fd = (ichr - persistent_current) / (1 - alpha)
-    fB = ichl + irhr + persistent_current
-    return fa, fb, fc, fB
+    fd = ichl + irhr + persistent_current
+    return fa, fb, fc, fd
 
 
 def get_current_cell(data_dict: dict) -> str:
@@ -541,55 +536,86 @@ def save_directory_list(file_path: str, file_list: list[str]) -> None:
     return
 
 
-def get_nominal_state_currents_measured(data_dict: dict):
+def get_state_currents_measured(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     bit_error_rate = get_bit_error_rate(data_dict)
     nominal_state_currents_list = []
     nominal_read_temperature_list = []
-    nominal_edge1, nominal_edge2, _, _ = get_bit_error_rate_args(bit_error_rate)
+    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
+        get_bit_error_rate_args(bit_error_rate)
+    )
     read_temperature = get_read_temperature(data_dict)
     read_currents = get_read_currents(data_dict)
     if nominal_edge1 is not np.nan:
         nominal_state0_current = read_currents[nominal_edge2]
         nominal_state1_current = read_currents[nominal_edge1]
-        nominal_state_currents_list.append(
-            [nominal_state1_current, nominal_state0_current]
-        )
-        nominal_read_temperature_list.append(read_temperature)
-
-    return nominal_state_currents_list, nominal_read_temperature_list
-
-
-def get_inverting_state_currents_measured(data_dict: dict):
-    bit_error_rate = get_bit_error_rate(data_dict)
-    inverting_state_currents_list = []
-    inverting_read_temperature_list = []
-    _, _, inverting_edge1, inverting_edge2 = get_bit_error_rate_args(bit_error_rate)
-    read_temperature = get_read_temperature(data_dict)
-    read_currents = get_read_currents(data_dict)
+    else:
+        nominal_state0_current = np.nan
+        nominal_state1_current = np.nan
     if inverting_edge1 is not np.nan:
         inverting_state0_current = read_currents[inverting_edge2]
         inverting_state1_current = read_currents[inverting_edge1]
-        inverting_state_currents_list.append(
-            [inverting_state1_current, inverting_state0_current]
-        )
-        inverting_read_temperature_list.append(read_temperature)
+    else:
+        inverting_state0_current = np.nan
+        inverting_state1_current = np.nan
+    temp = np.array(read_temperature)
+    state_currents = np.array([nominal_state0_current, nominal_state1_current, inverting_state0_current, inverting_state1_current])
+    return temp, state_currents
 
-    return inverting_state_currents_list, inverting_read_temperature_list
+def get_state_currents_measured_array(dict_list: list[dict]) -> np.ndarray:
+    temps = []
+    state_currents = []
+    for data_dict in dict_list:
+        temp, state_current = get_state_currents_measured(data_dict)
+        temps.append(temp)
+        state_currents.append(state_current)
+    return np.array(temps), np.array(state_currents)
 
 
-def get_state_currents_measured(data_dict: dict):
-    nominal_state_currents_list, nominal_read_temperature_list = (
-        get_nominal_state_currents_measured(data_dict)
-    )
-    inverting_state_currents_list, inverting_read_temperature_list = (
-        get_inverting_state_currents_measured(data_dict)
-    )
-    return (
-        nominal_state_currents_list,
-        nominal_read_temperature_list,
-        inverting_state_currents_list,
-        inverting_read_temperature_list,
-    )
+# def get_inverting_state_currents_measured(
+#     data_dict: dict,
+# ) -> Tuple[np.ndarray, np.ndarray]:
+#     bit_error_rate = get_bit_error_rate(data_dict)
+#     inverting_state_currents_list = []
+#     inverting_read_temperature_list = []
+#     _, _, inverting_edge1, inverting_edge2 = get_bit_error_rate_args(bit_error_rate)
+#     read_temperature = get_read_temperature(data_dict)
+#     read_currents = get_read_currents(data_dict)
+#     if inverting_edge1 is not np.nan:
+#         inverting_state0_current = read_currents[inverting_edge2]
+#         inverting_state1_current = read_currents[inverting_edge1]
+#         inverting_state_currents_list.append(
+#             [inverting_state1_current, inverting_state0_current]
+#         )
+#         inverting_read_temperature_list.append(read_temperature)
+#     else:
+#         inverting_state_currents_list.append([np.nan, np.nan])
+#         inverting_read_temperature_list.append(read_temperature)
+
+#     temp = np.array(inverting_state_currents_list)
+#     state_currents = np.array(inverting_state_currents_list)
+#     return temp, state_currents
+
+
+# def get_state_currents_measured(data_dict: dict) -> np.ndarray:
+#     nom_temp_array, nominal_state_current_array = get_nominal_state_currents_measured(
+#         data_dict
+#     )
+#     inv_temp_array, inverting_state_currents_array = (
+#         get_inverting_state_currents_measured(data_dict)
+#     )
+#     print(nom_temp_array)
+#     state_currents = np.array(
+#         [nominal_state_current_array, inverting_state_currents_array]
+#     )
+#     return state_currents
+
+
+def get_state_currents_array(dict_list: list[dict]) -> np.ndarray:
+    state_currents = []
+    for data_dict in dict_list:
+        get_state_currents_measured(data_dict)
+        state_currents.append(get_state_currents_measured(data_dict))
+    return np.array(state_currents)
 
 
 def get_enable_write_currents(data_dict: dict) -> np.ndarray:
@@ -773,19 +799,18 @@ def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
 
 
 def plot_calculated_filled_region(
-    ax, data_dict: dict, persistent_current: float
+    ax, temp:np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
 
-    plot_calculated_nominal_region(ax, data_dict, persistent_current)
-    plot_calculated_inverting_region(ax, data_dict, persistent_current)
+    plot_calculated_nominal_region(ax, temp, data_dict, persistent_current)
+    plot_calculated_inverting_region(ax, temp, data_dict, persistent_current)
 
     return ax
 
 
 def plot_calculated_nominal_region(
-    ax: Axes, data_dict: dict, persistent_current: float
+    ax: Axes, temp:np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    temp = np.linspace(0, CRITICAL_TEMP, 1000)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -810,9 +835,8 @@ def plot_calculated_nominal_region(
 
 
 def plot_calculated_inverting_region(
-    ax: Axes, data_dict: dict, persistent_current: float
+    ax: Axes, temp:np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    temp = np.linspace(0, CRITICAL_TEMP, 1000)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -1394,18 +1418,26 @@ def plot_state_currents_measured_inverting(
 
 
 def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
-    (
-        nominal_state_currents_list,
-        nominal_read_temperature_list,
-        inverting_state_currents_list,
-        inverting_read_temperature_list,
-    ) = get_state_currents_measured(data_dict)
-    plot_state_currents_measured_nominal(
-        ax, nominal_read_temperature_list, nominal_state_currents_list
-    )
-    plot_state_currents_measured_inverting(
-        ax, inverting_read_temperature_list, inverting_state_currents_list
-    )
+    temp, state_currents = get_state_currents_measured(data_dict)
+
+    if state_currents[0] is not np.nan:
+        ax.plot(
+            [temp, temp],
+            state_currents[0:2],
+            "o",
+            linestyle="-",
+            color="blue",
+            label="_state0",
+        )
+    if state_currents[2] is not np.nan:
+        ax.plot(
+            [temp, temp],
+            state_currents[2:4],
+            "o",
+            linestyle="-",
+            color="red",
+            label="_state1",
+        )
 
     return ax
 
@@ -1844,49 +1876,27 @@ if __name__ == "__main__":
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    temp = np.linspace(0, CRITICAL_TEMP, 1000)
-    persistent_currents = [0, 60, 140]
+    persistent_currents = [60, 0, -60]
     for i in range(3):
+        measured_temps, measured_state_currents = get_state_currents_measured_array(dict_list[i])
+        temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
         plot_measured_state_current_list(axs2[i], dict_list[i])
-        plot_calculated_state_currents(
-            axs2[i],
-            temp,
-            CRITICAL_TEMP,
-            RETRAP,
-            WIDTH,
-            ALPHA,
-            persistent_currents[i],
-            CRITICAL_CURRENT_ZERO,
-        )
-        # plot_calculated_filled_region(axs2[i], dict_list[i][2], persistent_currents[i])
+        # plot_calculated_state_currents(
+        #     axs2[i],
+        #     temp,
+        #     CRITICAL_TEMP,
+        #     RETRAP,
+        #     WIDTH,
+        #     ALPHA,
+        #     persistent_currents[i],
+        #     CRITICAL_CURRENT_ZERO,
+        # )
+        plot_calculated_filled_region(axs2[i], temp_array, dict_list[i][2], persistent_currents[i])
 
         axs2[i].set_xlim(6, 9)
         axs2[i].set_ylim(000, 1000)
         axs2[i].set_ybound(lower=0)
         axs2[i].legend()
 
-    for i in range(3):
-        for data_dict in [dict_list[i][2]]:
-            (
-                nominal_state_currents_list,
-                nominal_read_temperature_list,
-                inverting_state_currents_list,
-                inverting_read_temperature_list,
-            ) = get_state_currents_measured(data_dict)
-            if len(nominal_state_currents_list) > 0:
-                print(
-                    f"Nominal State Currents: {nominal_state_currents_list}, Nominal Read Temperature: {nominal_read_temperature_list}"
-                )
-                # calculate_cell_parameter(temperature, state0_current, state1_current)
-            if len(inverting_state_currents_list) > 0:
-                print(
-                    f"Inverting State Currents: {inverting_state_currents_list}, Inverting Read Temperature: {inverting_read_temperature_list}"
-                )
 
-
-branch_currents = calculate_branch_currents(
-    np.array([7.5]), CRITICAL_TEMP, RETRAP, WIDTH, CRITICAL_CURRENT_ZERO
-)
-
-ichl = branch_currents[0]
-print(branch_currents)
+        
