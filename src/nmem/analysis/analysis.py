@@ -768,10 +768,10 @@ def plot_branch_currents(
         T, Tc, retrap_ratio, width_ratio, critical_current_zero
     )
 
-    ax.plot(T, ichl, label="$I_{c, H_L}$", color="b", linestyle="-")
-    ax.plot(T, irhl, label="$I_{r, H_L}$", color="b", linestyle="--")
-    ax.plot(T, ichr, label="$I_{c, H_R}$", color="r", linestyle="-")
-    ax.plot(T, irhr, label="$I_{r, H_R}$", color="r", linestyle="--")
+    ax.plot(T, ichl, label="$I_{c, H_L}(T)$", color="b", linestyle="-")
+    ax.plot(T, irhl, label="$I_{r, H_L}(T)$", color="b", linestyle="--")
+    ax.plot(T, ichr, label="$I_{c, H_R}(T)$", color="r", linestyle="-")
+    ax.plot(T, irhr, label="$I_{r, H_R}(T)$", color="r", linestyle="--")
 
     return ax
 
@@ -1111,25 +1111,6 @@ def plot_enable_read_temperature():
     ax.hlines(CRITICAL_TEMP, 0, 500, linestyle="--")
 
 
-def plot_enable_write_sweep_grid(
-    ax: Axes, dict_list: list[dict], save: bool = False
-) -> None:
-    colors = CMAP(np.linspace(0, 1, len(dict_list)))
-    for i, j in zip(["A", "B", "C", "D"], [2, 5, 7, 10]):
-        ax[i] = plot_read_sweep(
-            ax[i],
-            dict_list[j],
-            "bit_error_rate",
-            "enable_write_current",
-            color=colors[j],
-        )
-        ax[i].set_xlabel("Read Current ($\mu$A)")
-        if i == "A":
-            ax[i].set_ylabel("Bit Error Rate")
-
-    ax["E"] = plot_state_currents(ax["E"], dict_list)
-    return
-
 
 def plot_fill_between(ax, data_dict, fill_color):
     # fill the area between 0.5 and the curve
@@ -1190,51 +1171,6 @@ def plot_message(ax: Axes, message: str) -> Axes:
     return ax
 
 
-# def plot_chan_in(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
-#     message = data_dict["bitmsg_channel"][0]
-#     x, y = get_voltage_trace_data(data_dict, "trace_chan_in", trace_index)
-#     ax.plot(x, y, color="#08519C")
-#     ax = plot_message(ax, message)
-
-#     plot_trace_zoom(x, y, 0.9, 2.1)
-#     plot_trace_zoom(x, y, 4.9, 6.1)
-
-#     ax.set_xticks(np.linspace(x[0], x[-1], 11))
-#     ax.set_xticklabels([f"{i:.1f}" for i in np.linspace(x[0], x[-1], 11)])
-
-#     ax.yaxis.set_label_position("right")
-#     ax.yaxis.tick_right()
-
-#     ax.set_xlabel("Time [$\mu$s]")
-#     ax.set_ylabel("Voltage [mV]")
-
-#     ax.grid(axis="x")
-#     return ax
-
-
-# def plot_chan_out(ax: Axes, data_dict: dict, trace_index: int) -> Axes:
-#     message = data_dict["bitmsg_channel"][0]
-#     x, y = get_voltage_trace_data(data_dict, "trace_chan_out", trace_index)
-
-#     ax.plot(x, y, color="#740F15")
-#     ax = plot_message(ax, message)
-
-#     plot_trace_zoom(x, y, 0.9, 2.1)
-#     plot_trace_zoom(x, y, 4.9, 6.1)
-
-#     ax.set_xticks(np.linspace(x[0], x[-1], 11))
-#     ax.set_xticklabels([f"{i:.1f}" for i in np.linspace(x[0], x[-1], 11)])
-
-#     ax.yaxis.set_label_position("right")
-#     ax.yaxis.tick_right()
-
-#     ax.set_xlabel("Time [$\mu$s]")
-#     ax.set_ylabel("Voltage [mV]")
-
-#     ax.grid(axis="x")
-#     return ax
-
-
 def plot_operating_points(
     ax: Axes, dict_list: list[dict], variable: Literal["write_current"]
 ) -> Axes:
@@ -1247,12 +1183,9 @@ def plot_operating_points(
 
     operating_points_array = np.array(operating_points_list)
     currents = np.array(write_current_list)
-    ax.plot(currents, operating_points_array[:, 0], label="Nominal Peak")
-    ax.plot(currents, operating_points_array[:, 1], label="Inverting Peak")
-    # ax.plot(currents, [x[0] for x in operating_points], label="Nominal Peak")
-    # ax.plot(currents, [x[1] for x in operating_points], label="Inverting Peak")
+    ax.plot(currents, operating_points_array[:, 0], label="Nominal Operating Point")
+    ax.plot(currents, operating_points_array[:, 1], label="Inverting Operating Point")
     ax.legend()
-    ax.set_ylabel("Peak Location ($\mu$A)")
     ax.set_xlabel("Write Current ($\mu$A)")
 
     return ax
@@ -1862,6 +1795,7 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         bins=100,
         label="Read 0",
         color="#1966ff",
+        alpha=0.5,
     )
     ax.hist(
         data_dict["read_one_top"][0, :],
@@ -1870,6 +1804,7 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         bins=100,
         label="Read 1",
         color="#ff1423",
+        alpha=0.5,
     )
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Counts")
