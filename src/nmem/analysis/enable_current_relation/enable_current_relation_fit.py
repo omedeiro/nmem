@@ -13,4 +13,8 @@ if __name__ == "__main__":
     dict_list = import_directory("data")
     fig, ax = plt.subplots()
     plot_enable_current_relation(ax, dict_list)
+    
+    ax.set_xlabel("Enable Current ($\mu$A)")
+    ax.set_ylabel("Critical Current ($\mu$A)")
+    ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
     plt.show()

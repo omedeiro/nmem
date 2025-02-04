@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
-
+from matplotlib.axes import Axes
 from nmem.analysis.analysis import (
     create_trace_hist_plot,
     import_directory,
     plot_voltage_trace_bitstream,
-    plot_read_delay2,
     plot_voltage_hist,
+    get_bit_error_rate,
 )
 
 plt.rcParams["figure.figsize"] = [7, 3.5]
@@ -25,11 +25,21 @@ plt.rcParams["legend.frameon"] = False
 plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
+def plot_read_delay(ax: Axes, dict_list: list[dict]) -> Axes:
+    bers = []
+    for i in range(4):
+        bers.append(get_bit_error_rate(dict_list[i]))
+
+    ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o", color="#345F90")
+    ax.set_xlabel("Delay [$\mu$s]")
+    ax.set_ylabel("BER")
+
+    return ax
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
     fig, ax = plt.subplots()
-    plot_read_delay2(ax, dict_list)
+    plot_read_delay(ax, dict_list)
     plt.show()
 
     fig, ax = plt.subplots()
