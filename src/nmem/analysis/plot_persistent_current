@@ -1,0 +1,41 @@
+from nmem.analysis.analysis import plot_calculated_state_currents
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+SUBSTRATE_TEMP = 1.3
+CRITICAL_TEMP = 12.3
+
+
+CRITICAL_CURRENT_ZERO = 910
+ALPHA = 0.563
+RETRAP = 0.573
+WIDTH = 1 / 2.13
+
+if __name__ == "__main__":
+    fig, axs = plt.subplots(1, 3, figsize=(9, 6))
+    persistent_currents = [0, 50, 150]
+
+    for i, current in enumerate(persistent_currents):
+
+        temperatures = np.linspace(0, CRITICAL_TEMP, 1000)
+        plot_calculated_state_currents(
+            axs[i],
+            temperatures,
+            CRITICAL_TEMP,
+            RETRAP,
+            WIDTH,
+            ALPHA,
+            current, 
+            CRITICAL_CURRENT_ZERO,
+        )
+
+        axs[i].set_xlabel("Temperature [K]")
+        axs[i].set_ylabel("Current [au]")
+        axs[i].grid()
+        axs[i].set_xlim(0, 12.3)
+
+    axs[i].legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+
+    # ax.set_ylim(0, 1)
+    plt.show()

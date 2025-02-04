@@ -22,7 +22,7 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 1000
+CRITICAL_CURRENT_ZERO = 910
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
@@ -250,7 +250,7 @@ def calculate_state_currents(
     fb = ichl + irhr
     fc = (ichl - persistent_current) / alpha
     fd = (ichr - persistent_current) / (1 - alpha)
-    fB = fb + persistent_current
+    fB = ichl + irhr + persistent_current
     return fa, fb, fc, fB
 
 
@@ -856,10 +856,10 @@ def plot_calculated_state_currents(
         persistent_current,
         critical_current_zero,
     )
-    # ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
+    ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
     ax.plot(T, i1, label="$I_{{1}}(T)$", **kwargs)
-    # ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
-    # ax.plot(T, i3, label="$I_{{B}}(T)$", **kwargs)
+    ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
+    ax.plot(T, i3, label="$I_{{1,inv}}(T)$", **kwargs)
     return ax
 
 
@@ -1237,6 +1237,7 @@ def plot_read_sweep(
         **kwargs,
     )
     ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(MultipleLocator(0.1))
     return ax
 
 
@@ -1264,7 +1265,7 @@ def plot_read_sweep_array(
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
-        plot_fill_between(ax, data_dict, colors[i])
+        # plot_fill_between(ax, data_dict, colors[i])
         # plot_read_sweep_switch_probability(ax, data_dict)
 
     ax.yaxis.set_major_locator(MultipleLocator(0.1))
@@ -1415,25 +1416,31 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
 
     berargs = get_bit_error_rate_args(bit_error_rate)
     if berargs[0] is not np.nan:
-        ax.plot(
-            read_currents[berargs[0]],
-            bit_error_rate[berargs[0]],
-            marker="D",
-            markeredgecolor="k",
-            linewidth=1.5,
-            label="_state0",
-            **kwargs,
-        )
+        for i in range(2):
+            ax.plot(
+                read_currents[berargs[i]],
+                bit_error_rate[berargs[i]],
+                color="blue",
+                marker="o",
+                markeredgecolor="k",
+                linewidth=1.5,
+                label="_state0",
+                markersize=12,
+                **kwargs,
+            )
     if berargs[2] is not np.nan:
-        ax.plot(
-            read_currents[berargs[2]],
-            bit_error_rate[berargs[2]],
-            marker="P",
-            markeredgecolor="k",
-            linewidth=1.5,
-            label="_state1",
-            **kwargs,
-        )
+        for i in range(2, 4):
+            ax.plot(
+                read_currents[berargs[i]],
+                bit_error_rate[berargs[i]],
+                color="red",
+                marker="o",
+                markeredgecolor="k",
+                linewidth=1.5,
+                label="_state1",
+                markersize=12,
+                **kwargs,
+            )
     return ax
 
 
