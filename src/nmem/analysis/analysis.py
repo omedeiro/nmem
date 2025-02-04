@@ -20,6 +20,8 @@ from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
+
+
 CRITICAL_CURRENT_ZERO = 1000
 ALPHA = 0.563
 RETRAP = 0.573
@@ -245,10 +247,10 @@ def calculate_state_currents(
     Q = irhr[0] - (ichr[0] - ichl[0])
 
     fa = ichr + irhl
-    fb = ichl + irhr + persistent_current
-    fc = (ichl - persistent_current) / alpha + Q
+    fb = ichl + irhr
+    fc = (ichl - persistent_current) / alpha
     fd = (ichr - persistent_current) / (1 - alpha)
-    fB = fb - persistent_current - Q
+    fB = fb + persistent_current
     return fa, fb, fc, fB
 
 
@@ -854,10 +856,10 @@ def plot_calculated_state_currents(
         persistent_current,
         critical_current_zero,
     )
-    ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
+    # ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
     ax.plot(T, i1, label="$I_{{1}}(T)$", **kwargs)
     # ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
-    ax.plot(T, i3, label="$I_{{B}}(T)$", **kwargs)
+    # ax.plot(T, i3, label="$I_{{B}}(T)$", **kwargs)
     return ax
 
 
@@ -1044,7 +1046,7 @@ def plot_linear_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
 
 def plot_measured_state_current_list(ax: Axes, dict_list: list[dict]) -> Axes:
     sweep_length = len(dict_list)
-    for j in range(0, sweep_length, 2):
+    for j in range(0, sweep_length):
         plot_state_currents_measured(ax, dict_list[j])
 
     return ax
@@ -1817,7 +1819,6 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
 
 # def calculate_cell_parameter(temperature, state0_current, state1_current):
 
-
 if __name__ == "__main__":
 
     # data = import_directory(
@@ -1836,7 +1837,7 @@ if __name__ == "__main__":
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    temp = np.linspace(0, CRITICAL_TEMP, 910)
+    temp = np.linspace(0, CRITICAL_TEMP, 1000)
     persistent_currents = [0, 60, 140]
     for i in range(3):
         plot_measured_state_current_list(axs2[i], dict_list[i])
@@ -1874,3 +1875,11 @@ if __name__ == "__main__":
                 print(
                     f"Inverting State Currents: {inverting_state_currents_list}, Inverting Read Temperature: {inverting_read_temperature_list}"
                 )
+
+
+branch_currents = calculate_branch_currents(
+    np.array([7.5]), CRITICAL_TEMP, RETRAP, WIDTH, CRITICAL_CURRENT_ZERO
+)
+
+ichl = branch_currents[0]
+print(branch_currents)
