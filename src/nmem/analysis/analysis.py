@@ -1691,14 +1691,14 @@ def plot_row(axs, dict_list):
         ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
 
-        axs[row].plot(
+        axs[column].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
-        plot_optimal_enable_currents(axs[row], data_dict)
+        plot_optimal_enable_currents(axs[column], data_dict)
 
-        axs[row].legend(loc="lower left")
-        axs[row].set_xlim(0, 500)
-        axs[row].set_ylim(0, 1000)
+        axs[column].legend(loc="lower left")
+        axs[column].set_xlim(0, 500)
+        axs[column].set_ylim(0, 1000)
     return axs
 
 
@@ -1713,13 +1713,13 @@ def plot_column(axs, dict_list):
         ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
 
-        axs[column].plot(
+        axs[row].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
-        plot_optimal_enable_currents(axs[column], data_dict)
-        axs[column].legend(loc="lower left")
-        axs[column].set_xlim(0, 500)
-        axs[column].set_ylim(0, 1000)
+        plot_optimal_enable_currents(axs[row], data_dict)
+        axs[row].legend(loc="lower left")
+        axs[row].set_xlim(0, 500)
+        axs[row].set_ylim(0, 1000)
     return axs
 
 
