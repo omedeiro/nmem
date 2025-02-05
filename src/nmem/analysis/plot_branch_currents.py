@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 CRITICAL_TEMP = 12.3
-CRITICAL_CURRENT_ZERO = 910
+CRITICAL_CURRENT_ZERO = 1300
 ALPHA = 0.563
 RETRAP = 0.573
-WIDTH = 1 / 2.13
+WIDTH = 1 / 3
 
 if __name__ == "__main__":
     fig, ax = plt.subplots()

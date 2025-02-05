@@ -14,7 +14,7 @@ plt.rcParams["font.size"] = 14
 if __name__ == "__main__":
     data_list = import_directory("data")
     fig, ax = plt.subplots()
-    for data_dict in [data_list[-6]]:
+    for data_dict in data_list:
         plot_read_sweep(ax, data_dict, "bit_error_rate", "enable_write_current")
         plot_state_current_markers(ax, data_dict)
         state_currents = get_state_currents_measured(data_dict)

@@ -25,4 +25,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(4, 4, figsize=(20, 20), sharex=True, sharey=True)
     plot_grid(axs, dict_list)
+    save = False
+    if save:
+        plt.savefig("enable_current_relation_grid.png", dpi=300, bbox_inches="tight")
     plt.show()

@@ -22,7 +22,7 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 1000
+CRITICAL_CURRENT_ZERO = 1300
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
@@ -215,13 +215,15 @@ def calculate_branch_currents(
     width_ratio: float,
     critical_current_zero: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    ichr: np.ndarray = calculate_critical_current_temp(T, Tc, critical_current_zero)
+    ichr: np.ndarray = calculate_critical_current_temp(
+        T, Tc, critical_current_zero * (1 - width_ratio)
+    )
     ichl: np.ndarray = calculate_critical_current_temp(
         T, Tc, critical_current_zero * width_ratio
     )
 
     irhr: np.ndarray = calculate_retrapping_current_temp(
-        T, Tc, critical_current_zero, retrap_ratio
+        T, Tc, critical_current_zero * (1 - width_ratio), retrap_ratio
     )
     irhl: np.ndarray = calculate_retrapping_current_temp(
         T, Tc, critical_current_zero * width_ratio, retrap_ratio
@@ -242,6 +244,7 @@ def calculate_state_currents(
     ichl, irhl, ichr, irhr = calculate_branch_currents(
         T, Tc, retrap_ratio, width_ratio, critical_current_zero
     )
+
     fa = ichr + irhl
     fb = ichl + irhr + persistent_current
     fc = (ichl - persistent_current) / alpha
@@ -558,8 +561,16 @@ def get_state_currents_measured(data_dict: dict) -> Tuple[np.ndarray, np.ndarray
         inverting_state0_current = np.nan
         inverting_state1_current = np.nan
     temp = np.array(read_temperature)
-    state_currents = np.array([nominal_state0_current, nominal_state1_current, inverting_state0_current, inverting_state1_current])
+    state_currents = np.array(
+        [
+            nominal_state0_current,
+            nominal_state1_current,
+            inverting_state0_current,
+            inverting_state1_current,
+        ]
+    )
     return temp, state_currents
+
 
 def get_state_currents_measured_array(dict_list: list[dict]) -> np.ndarray:
     temps = []
@@ -799,7 +810,7 @@ def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
 
 
 def plot_calculated_filled_region(
-    ax, temp:np.ndarray, data_dict: dict, persistent_current: float
+    ax, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
 
     plot_calculated_nominal_region(ax, temp, data_dict, persistent_current)
@@ -809,7 +820,7 @@ def plot_calculated_filled_region(
 
 
 def plot_calculated_nominal_region(
-    ax: Axes, temp:np.ndarray, data_dict: dict, persistent_current: float
+    ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
@@ -835,7 +846,7 @@ def plot_calculated_nominal_region(
 
 
 def plot_calculated_inverting_region(
-    ax: Axes, temp:np.ndarray, data_dict: dict, persistent_current: float
+    ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
@@ -1289,7 +1300,7 @@ def plot_read_sweep_array(
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
         # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
-        # plot_fill_between(ax, data_dict, colors[i])
+        plot_fill_between(ax, data_dict, colors[i])
         # plot_read_sweep_switch_probability(ax, data_dict)
 
     ax.yaxis.set_major_locator(MultipleLocator(0.1))
@@ -1304,7 +1315,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
         ax.plot(
             read_currents,
             bit_error_rate,
-            label=f"+{i}$\mu$s",
+            label=f"+{i+1}$\mu$s",
             color=colors[i],
             marker=".",
             markeredgecolor="k",
@@ -1876,27 +1887,28 @@ if __name__ == "__main__":
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    persistent_currents = [60, 0, -60]
+    persistent_currents = [0, 30, 60]
     for i in range(3):
-        measured_temps, measured_state_currents = get_state_currents_measured_array(dict_list[i])
+        measured_temps, measured_state_currents = get_state_currents_measured_array(
+            dict_list[i]
+        )
         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
         plot_measured_state_current_list(axs2[i], dict_list[i])
-        # plot_calculated_state_currents(
-        #     axs2[i],
-        #     temp,
-        #     CRITICAL_TEMP,
-        #     RETRAP,
-        #     WIDTH,
-        #     ALPHA,
-        #     persistent_currents[i],
-        #     CRITICAL_CURRENT_ZERO,
-        # )
-        plot_calculated_filled_region(axs2[i], temp_array, dict_list[i][2], persistent_currents[i])
+        plot_calculated_state_currents(
+            axs2[i],
+            temp_array,
+            CRITICAL_TEMP,
+            RETRAP,
+            WIDTH,
+            ALPHA,
+            persistent_currents[i],
+            CRITICAL_CURRENT_ZERO,
+        )
+        plot_calculated_filled_region(
+            axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
+        )
 
         axs2[i].set_xlim(6, 9)
         axs2[i].set_ylim(000, 1000)
         axs2[i].set_ybound(lower=0)
         axs2[i].legend()
-
-
-        

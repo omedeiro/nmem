@@ -22,6 +22,11 @@ if __name__ == "__main__":
         bbox_to_anchor=(1, 1),
         title="Write Current [$\mu$A]",
     )
+    save = False
+    if save:
+        plt.savefig(
+            "read_current_sweep_write_current.png", dpi=300, bbox_inches="tight"
+        )
     plt.show()
 
     data_list2 = import_directory("data2")

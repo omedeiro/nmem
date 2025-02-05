@@ -17,4 +17,8 @@ if __name__ == "__main__":
     ax.set_xlabel("Enable Current ($\mu$A)")
     ax.set_ylabel("Critical Current ($\mu$A)")
     ax.legend(frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left")
+
+    save = False
+    if save:
+        plt.savefig("enable_current_relation.png", dpi=300, bbox_inches="tight")
     plt.show()

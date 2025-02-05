@@ -39,17 +39,29 @@ if __name__ == "__main__":
     axs[0].set_ylim([0, 1000])
     axs[0].set_xlim([0, 500])
     axs[0].plot(xfit, yfit, label="C2", linestyle="-")
-
+    axs[0].set_xlabel("Enable Current ($\mu$A)")
+    axs[0].set_ylabel("Critical Current ($\mu$A)")
     plot_fitting(axs[1], xfit[:split_idx], yfit[:split_idx], label="C3", linestyle="-")
     axs[1].plot(xfit, yfit, label="C2", linestyle="-")
     axs[1].set_ylim([0, 1000])
     axs[1].set_xlim([0, 500])
+    axs[1].set_xlabel("Enable Current ($\mu$A)")
 
     # fig, axs = plt.subplots(1, 2, figsize=(10, 10))
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
     xfit, yfit = get_fitting_points(x, y, ztotal)
     # axs[0].plot(xfit, yfit, label="C2", linestyle="-")
 
+
+    save = True
+    if save:
+        plt.savefig("enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight")
+    plt.show()
+
+
+
     fig, ax = plt.subplots()
     plot_channel_temperature(ax, data_dict)
     plot_channel_temperature(ax, data_dict2)
+
+    plt.show()
