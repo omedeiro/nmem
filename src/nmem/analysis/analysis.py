@@ -1780,55 +1780,48 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-# if __name__ == "__main__":
-
-#     # data = import_directory(
-#     #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-#     # )
-
-#     enable_read_290_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
-#     )
-#     enable_read_300_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
-#     )
-#     enable_read_310_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
-#     )
-#     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
-
-#     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-#     persistent_currents = [0, 30, 60]
-#     for i in range(3):
-#         measured_temps, measured_state_currents = get_state_currents_measured_array(
-#             dict_list[i]
-#         )
-#         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
-#         plot_measured_state_current_list(axs2[i], dict_list[i])
-#         plot_calculated_state_currents(
-#             axs2[i],
-#             temp_array,
-#             CRITICAL_TEMP,
-#             RETRAP,
-#             WIDTH,
-#             ALPHA,
-#             persistent_currents[i],
-#             CRITICAL_CURRENT_ZERO,
-#         )
-#         plot_calculated_filled_region(
-#             axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
-#         )
-
-#         axs2[i].set_xlim(6, 9)
-#         axs2[i].set_ylim(000, 1000)
-#         axs2[i].set_ybound(lower=0)
-#         axs2[i].legend()
-
-
 if __name__ == "__main__":
-    dict_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_current_relation_v2\data")
 
-    fig, axs = plt.subplots(5, 5, figsize=(20, 20), sharex=True, sharey=True)
-    plot_full_grid(axs, dict_list)
-    plt.savefig("enable_current_relation_full_grid.pdf", bbox_inches="tight")
-    plt.show()
+    # data = import_directory(
+    #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
+    # )
+
+    enable_read_290_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
+    )
+    enable_read_300_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
+    )
+    enable_read_310_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
+    )
+    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
+
+    fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
+    persistent_currents = [0, 30, 60]
+    for i in range(3):
+        measured_temps, measured_state_currents = get_state_currents_measured_array(
+            dict_list[i]
+        )
+        temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
+        plot_measured_state_current_list(axs2[i], dict_list[i])
+        plot_calculated_state_currents(
+            axs2[i],
+            temp_array,
+            CRITICAL_TEMP,
+            RETRAP,
+            WIDTH,
+            ALPHA,
+            persistent_currents[i],
+            CRITICAL_CURRENT_ZERO,
+        )
+        plot_calculated_filled_region(
+            axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
+        )
+
+        axs2[i].set_xlim(6, 9)
+        axs2[i].set_ylim(000, 1000)
+        axs2[i].set_ybound(lower=0)
+        axs2[i].legend()
+
+
