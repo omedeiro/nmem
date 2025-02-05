@@ -22,7 +22,7 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 1300
+CRITICAL_CURRENT_ZERO = 1600
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
@@ -253,9 +253,14 @@ def calculate_state_currents(
     )
 
     fa = ichr + irhl
-    fb = ichl + irhr + persistent_current
-    fc = (ichl - persistent_current) / alpha
-    fd = ichl + irhr + persistent_current
+    fb = ichl + irhr - 50 - persistent_current
+    fc = (ichl - persistent_current) / alpha - 30
+    fd = fb + persistent_current - 60
+
+    fa = np.maximum(fa, 0)
+    fb = np.maximum(fb, 0)
+    fc = np.maximum(fc, 0)
+    fd = np.maximum(fd, 0)
     return fa, fb, fc, fd
 
 
@@ -905,8 +910,8 @@ def plot_calculated_state_currents(
     )
     ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
     ax.plot(T, i1, label="$I_{{1}}(T)$", **kwargs)
-    ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
-    ax.plot(T, i3, label="$I_{{1,inv}}(T)$", **kwargs)
+    # ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
+    # ax.plot(T, i3, label="$I_{{1,inv}}(T)$", **kwargs)
     return ax
 
 
@@ -1811,6 +1816,7 @@ if __name__ == "__main__":
             dict_list[i]
         )
         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
+        temp_array = np.linspace(0, CRITICAL_TEMP, 100)
         plot_measured_state_current_list(axs2[i], dict_list[i])
         plot_calculated_state_currents(
             axs2[i],
@@ -1827,8 +1833,9 @@ if __name__ == "__main__":
         )
 
         axs2[i].set_xlim(6, 9)
-        axs2[i].set_ylim(000, 1000)
-        axs2[i].set_ybound(lower=0)
+        axs2[i].set_ylim(500, 1000)
+        # axs2[i].set_ybound(lower=0)
         axs2[i].legend()
+        axs2[i].grid()
 
 
