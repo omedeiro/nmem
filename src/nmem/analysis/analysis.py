@@ -1096,50 +1096,6 @@ def plot_message(ax: Axes, message: str) -> Axes:
     return ax
 
 
-def plot_operating_points(
-    ax: Axes, dict_list: list[dict], variable: Literal["write_current"]
-) -> Axes:
-    operating_points_list = []
-    write_current_list = []
-    for data_dict in dict_list:
-        operating_points_list.append(get_operating_points(data_dict))
-        if variable == "write_current":
-            write_current_list.append(get_write_current(data_dict))
-
-    operating_points_array = np.array(operating_points_list)
-    currents = np.array(write_current_list)
-    ax.plot(currents, operating_points_array[:, 0], label="Nominal Operating Point")
-    ax.plot(currents, operating_points_array[:, 1], label="Inverting Operating Point")
-    ax.legend()
-    ax.set_xlabel("Write Current ($\mu$A)")
-
-    return ax
-
-
-def plot_operating_margins(
-    ax: Axes, dict_list: list[dict], variable: Literal["write_current"]
-) -> Axes:
-    operating_points_list = []
-    write_current_list = []
-    for data_dict in dict_list:
-        operating_points_list.append(get_operating_points(data_dict))
-        if variable == "write_current":
-            write_current_list.append(get_write_current(data_dict))
-
-    operating_points_array = np.array(operating_points_list)
-    currents = np.array(write_current_list)
-    ax.plot(
-        currents,
-        operating_points_array[:, 0] - operating_points_array[:, 1],
-        label="Nominal Peak",
-    )
-    # ax.plot(currents, operating_points_array[:, 1], label="Inverting Peak")
-    ax.set_xlabel("Write Current ($\mu$A)")
-    ax.set_ylabel("Width ($\mu$A)")
-    ax.legend()
-    return ax
-
-
 def plot_parameter_array(
     ax: Axes,
     xloc: np.ndarray,
@@ -1210,7 +1166,8 @@ def plot_enable_write_sweep_single(
     )
 
     ax.set_xlim(enable_write_currents[0], enable_write_currents[-1])
-
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(MultipleLocator(0.1))
     return ax
 
 
@@ -1453,16 +1410,53 @@ def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
     return ax
 
 
-def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
-    read_currents = get_read_currents(data_dict)
-    bit_error_rate = get_bit_error_rate(data_dict)
+def get_state_current_markers_list(
+    dict_list: list[dict],
+    current_sweep: Literal["read_current", "enable_write_current"],
+) -> list[np.ndarray]:
+    state_current_markers_list = []
+    for data_dict in dict_list:
+        state_current_markers = get_state_current_markers(data_dict, current_sweep)
+        state_current_markers_list.append(state_current_markers)
+    return state_current_markers_list
 
+
+def get_state_current_markers(
+    data_dict: dict, current_sweep: Literal["read_current", "enable_write_current"]
+) -> np.ndarray:
+    if current_sweep == "read_current":
+        currents = get_read_currents(data_dict)
+    if current_sweep == "enable_write_current":
+        currents = get_enable_write_currents(data_dict)
+    bit_error_rate = get_bit_error_rate(data_dict)
     berargs = get_bit_error_rate_args(bit_error_rate)
+    state_current_markers = np.zeros((2, 4))
     if berargs[0] is not np.nan:
         for i in range(2):
+            state_current_markers[0, i] = currents[berargs[i]]
+            state_current_markers[1, i] = bit_error_rate[berargs[i]]
+    if berargs[2] is not np.nan:
+        for i in range(2, 4):
+            state_current_markers[0, i] = currents[berargs[i]]
+            state_current_markers[1, i] = bit_error_rate[berargs[i]]
+    return state_current_markers
+
+
+def plot_state_current_markers(
+    ax: Axes,
+    data_dict: dict,
+    current_sweep: Literal["read_current", "enable_write_current"],
+    **kwargs,
+) -> Axes:
+
+    state_current_markers = get_state_current_markers(data_dict, current_sweep)
+    currents = state_current_markers[0, :]
+    bit_error_rate = state_current_markers[1, :]
+    if currents[0] is not np.nan:
+        for i in range(2):
             ax.plot(
-                read_currents[berargs[i]],
-                bit_error_rate[berargs[i]],
+                currents[i],
+                bit_error_rate[i],
                 color="blue",
                 marker="o",
                 markeredgecolor="k",
@@ -1471,11 +1465,11 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
                 markersize=12,
                 **kwargs,
             )
-    if berargs[2] is not np.nan:
+    if currents[2] is not np.nan:
         for i in range(2, 4):
             ax.plot(
-                read_currents[berargs[i]],
-                bit_error_rate[berargs[i]],
+                currents[i],
+                bit_error_rate[i],
                 color="red",
                 marker="o",
                 markeredgecolor="k",
@@ -1484,50 +1478,6 @@ def plot_state_current_markers(ax: Axes, data_dict: dict, **kwargs) -> Axes:
                 markersize=12,
                 **kwargs,
             )
-    return ax
-
-
-def plot_state_separation(ax: Axes, dict_list: list[dict]) -> Axes:
-    state_separation = []
-    enable_write_currents_list = []
-    for i, data_dict in enumerate(dict_list):
-        enable_write_current = get_enable_write_current(data_dict)
-        read_currents = get_read_currents(data_dict)
-        bit_error_rate = get_bit_error_rate(data_dict)
-        write_temperatures = get_write_temperatures(data_dict)
-        nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
-            get_bit_error_rate_args(bit_error_rate)
-        )
-        state1_current = nominal_edge1
-        state0_current = nominal_edge2
-        state_separation.append(state1_current - state0_current)
-        enable_write_currents_list.append(enable_write_current)
-
-    ax.bar(
-        enable_write_currents_list,
-        state_separation,
-        width=2.5,
-    )
-    ax.xaxis.set_major_locator(MultipleLocator(20))
-    ax.xaxis.set_minor_locator(MultipleLocator(5))
-
-    ax.grid(True, axis="both", which="both")
-    ax.set_xlabel("Enable Write Current ($\mu$A)")
-    ax.set_ylabel("Diff. Between State Currents ($\mu$A)")
-    ax2 = ax.twiny()
-    ax2.set_xlim(write_temperatures[0], write_temperatures[-1])
-    ax2.xaxis.set_major_locator(MaxNLocator(5))
-    return ax
-
-
-def plot_slice(
-    ax: Axes, data_dict: dict, parameter_z: str = "bit_error_rate", **kwargs
-) -> Axes:
-    x, y, ztotal = build_array(data_dict, parameter_z)
-    if len(x) == 1:
-        x = y
-    ax.plot(x, ztotal, **kwargs)
-
     return ax
 
 
@@ -1607,9 +1557,10 @@ def plot_voltage_trace_stack(
 def plot_voltage_trace_averaged(
     ax: Axes, data_dict: dict, trace_name: str, **kwargs
 ) -> Axes:
+    x, y = get_voltage_trace_data(data_dict, trace_name)
     ax.plot(
-        (data_dict[trace_name][0, :] - data_dict[trace_name][0, 0]) * 1e9,
-        data_dict[trace_name][1, :] * 1e3,
+        (x - x[0]),
+        y,
         **kwargs,
     )
     return ax
@@ -1701,34 +1652,28 @@ def plot_current_voltage_from_dc_sweep(
     return ax
 
 
-def plot_grid(axs, dict_list):
+def plot_grid(axs:Axes, dict_list:list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
-    for dict in dict_list:
-        cell = dict.get("cell")[0]
+    for data_dict in dict_list:
+        cell = get_current_cell(data_dict)
 
-        column = ord(cell[0]) - ord("A")
-        row = int(cell[1]) - 1
-        x = dict["x"][0]
-        y = dict["y"][0]
-        ztotal = dict["ztotal"]
+        column, row = convert_cell_to_coordinates(cell)
+        x, y, ztotal = build_array(data_dict, "total_switches_norm")
         xfit, yfit = get_fitting_points(x, y, ztotal)
-        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
         axs[row, column].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
 
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+
         plot_linear_fit(
             axs[row, column],
             xfit,
             yfit,
-            # color=colors[column],
-            # marker=markers[row],
-            # markeredgecolor="k",
         )
-        enable_read_current = CELLS[cell].get("enable_read_current") * 1e6
-        enable_write_current = CELLS[cell].get("enable_write_current") * 1e6
+        enable_read_current = get_enable_read_current(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
         axs[row, column].vlines(
             [enable_write_current],
             *axs[row, column].get_ylim(),
@@ -1747,7 +1692,6 @@ def plot_grid(axs, dict_list):
         axs[row, column].legend(loc="upper right")
         axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1000)
-        # axs[row, column].set_aspect("equal")
     axs[-1, 0].set_xlabel("Enable Current ($\mu$A)")
     axs[-1, 0].set_ylabel("Critical Current ($\mu$A)")
     return axs
@@ -1817,11 +1761,8 @@ def plot_full_grid(axs, dict_list):
 def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     verts_list = []
-    verts_list1 = []
     zlist = []
-
     for i, data_dict in enumerate(dict_list):
-
         enable_write_currents = get_enable_write_currents(data_dict)
         bit_error_rate = get_bit_error_rate(data_dict)
         write_current = get_write_current(data_dict)
@@ -1861,13 +1802,8 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     ax.xaxis.set_major_locator(MultipleLocator(50))
     ax.yaxis.set_major_locator(MultipleLocator(10))
     ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
-    ax.view_init(20, 35)
-    # ax.view_init(25, 90)
-    # ax.grid(False)
     return ax
 
-
-# def calculate_cell_parameter(temperature, state0_current, state1_current):
 
 if __name__ == "__main__":
 

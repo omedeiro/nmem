@@ -13,7 +13,7 @@ CRITICAL_TEMP = 12.3
 if __name__ == "__main__":
     dict_list = import_directory("data")
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax, ax2 = plot_write_sweep(ax, dict_list[::-2])
+    ax, ax2 = plot_write_sweep(ax, dict_list[::-1])
     ax.legend(
         frameon=False,
         loc="upper left",
