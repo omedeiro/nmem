@@ -215,6 +215,9 @@ def calculate_branch_currents(
     width_ratio: float,
     critical_current_zero: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    
+    if any(T> Tc):
+        raise ValueError("Temperature must be less than critical temperature.")
     ichr: np.ndarray = calculate_critical_current_temp(
         T, Tc, critical_current_zero * (1 - width_ratio)
     )
@@ -229,6 +232,10 @@ def calculate_branch_currents(
         T, Tc, critical_current_zero * width_ratio, retrap_ratio
     )
 
+    ichl = np.maximum(ichl, 0)
+    irhl = np.maximum(irhl, 0)
+    ichr = np.maximum(ichr, 0)
+    irhr = np.maximum(irhr, 0)
     return ichl, irhl, ichr, irhr
 
 
