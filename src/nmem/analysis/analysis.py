@@ -268,6 +268,11 @@ def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
 def get_enable_read_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_read_current")) * 1e6
 
+def get_optimal_enable_read_current(current_cell: str) -> float:
+    return CELLS[current_cell]["enable_read_current"] * 1e6
+
+def get_optimal_enable_write_current(current_cell: str) -> float:
+    return CELLS[current_cell]["enable_write_current"] * 1e6
 
 def get_enable_read_currents(data_dict: dict) -> np.ndarray:
     return data_dict.get("enable_read_current")[:, :, 0].flatten() * 1e6
@@ -1008,23 +1013,6 @@ def plot_critical_currents_from_dc_sweep(
     return ax
 
 
-def plot_critical_currents_inset(ax: Axes, dict_list: list, save: bool = False) -> Axes:
-    ax = plot_current_voltage_from_dc_sweep(ax, dict_list)
-    fig = plt.gcf()
-    ax_inset = fig.add_axes([0.62, 0.25, 0.3125, 0.25])
-    ax_inset = plot_critical_currents_from_dc_sweep(ax_inset, dict_list)
-    ax_inset.xaxis.tick_top()
-    ax_inset.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
-
-    ax_inset.xaxis.set_label_position("top")
-    ax_inset.xaxis.set_major_locator(MultipleLocator(0.1))
-
-    if save:
-        plt.savefig("critical_currents_inset.pdf", bbox_inches="tight")
-
-    return ax
-
-
 def plot_enable_current_relation(ax: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
@@ -1346,17 +1334,6 @@ def plot_text_labels(
     return ax
 
 
-# def plot_voltage_hist(ax: Axes, voltage: np.ndarray, **kwargs) -> Axes:
-#     ax.hist(voltage, bins=77, **kwargs)
-
-#     ax.set_yscale("log")
-#     ax.xaxis.set_major_locator(MaxNLocator(5))
-#     ax.set_ylabel("Counts")
-#     ax.set_xlabel("Voltage [mV]")
-
-#     return ax
-
-
 def plot_state_currents_measured_nominal(
     ax: Axes, nominal_read_temperature_list: list, nominal_state_currents_list: list
 ) -> Axes:
@@ -1630,7 +1607,6 @@ def plot_current_voltage_from_dc_sweep(
     ax: Axes, dict_list: list, save: bool = False
 ) -> Axes:
     colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(dict_list) / 2) + 1))
-    colors = np.flipud(colors)
     for i, data in enumerate(dict_list):
         heater_current = np.abs(data["heater_current"].flatten()[0] * 1e6)
         ax = plot_current_voltage_curve(
@@ -1652,14 +1628,37 @@ def plot_current_voltage_from_dc_sweep(
     return ax
 
 
-def plot_grid(axs:Axes, dict_list:list[dict]) -> Axes:
+def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
+    cell = get_current_cell(data_dict)
+    enable_read_current = get_optimal_enable_read_current(cell)
+    enable_write_current = get_optimal_enable_write_current(cell)
+    ax.vlines(
+        [enable_write_current],
+        *ax.get_ylim(),
+        linestyle="--",
+        color="grey",
+        label="_Enable Write Current",
+    )
+    ax.vlines(
+        [enable_read_current],
+        *ax.get_ylim(),
+        linestyle="--",
+        color="r",
+        label="_Enable Read Current",
+    )
+    return ax
+
+
+def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
 
         column, row = convert_cell_to_coordinates(cell)
-        x, y, ztotal = build_array(data_dict, "total_switches_norm")
+        x = data_dict["x"][0]
+        y = data_dict["y"][0]
+        ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
         axs[row, column].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
@@ -1672,23 +1671,7 @@ def plot_grid(axs:Axes, dict_list:list[dict]) -> Axes:
             xfit,
             yfit,
         )
-        enable_read_current = get_enable_read_current(data_dict)
-        enable_write_current = get_enable_write_current(data_dict)
-        axs[row, column].vlines(
-            [enable_write_current],
-            *axs[row, column].get_ylim(),
-            linestyle="--",
-            color="grey",
-            label="Enable Write Current",
-        )
-        axs[row, column].vlines(
-            [enable_read_current],
-            *axs[row, column].get_ylim(),
-            linestyle="--",
-            color="r",
-            label="Enable Read Current",
-        )
-
+        plot_optimal_enable_currents(axs[row, column], data_dict)
         axs[row, column].legend(loc="upper right")
         axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1000)
@@ -1702,7 +1685,6 @@ def plot_row(axs, dict_list):
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
-
         column, row = convert_cell_to_coordinates(cell)
         x = data_dict["x"][0]
         y = data_dict["y"][0]
@@ -1712,12 +1694,11 @@ def plot_row(axs, dict_list):
         axs[row].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
+        plot_optimal_enable_currents(axs[row], data_dict)
 
         axs[row].legend(loc="lower left")
         axs[row].set_xlim(0, 500)
         axs[row].set_ylim(0, 1000)
-    axs[0].set_xlabel("Enable Current ($\mu$A)")
-    axs[0].set_ylabel("Critical Current ($\mu$A)")
     return axs
 
 
@@ -1726,35 +1707,29 @@ def plot_column(axs, dict_list):
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
-
         column, row = convert_cell_to_coordinates(cell)
         x = data_dict["x"][0]
         y = data_dict["y"][0]
         ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
-        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.9)
+
         axs[column].plot(
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
-
+        plot_optimal_enable_currents(axs[column], data_dict)
         axs[column].legend(loc="lower left")
         axs[column].set_xlim(0, 500)
         axs[column].set_ylim(0, 1000)
-    axs[0].set_xlabel("Enable Current ($\mu$A)")
-    axs[0].set_ylabel("Critical Current ($\mu$A)")
     return axs
 
 
 def plot_full_grid(axs, dict_list):
     plot_grid(axs[1:5, 0:4], dict_list)
-
     plot_row(axs[0, 0:4], dict_list)
-
     plot_column(axs[1:5, 4], dict_list)
     axs[0, 4].axis("off")
     axs[4, 0].set_xlabel("Enable Current ($\mu$A)")
     axs[4, 0].set_ylabel("Critical Current ($\mu$A)")
-
     return axs
 
 
@@ -1805,46 +1780,55 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
+# if __name__ == "__main__":
+
+#     # data = import_directory(
+#     #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
+#     # )
+
+#     enable_read_290_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
+#     )
+#     enable_read_300_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
+#     )
+#     enable_read_310_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
+#     )
+#     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
+
+#     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
+#     persistent_currents = [0, 30, 60]
+#     for i in range(3):
+#         measured_temps, measured_state_currents = get_state_currents_measured_array(
+#             dict_list[i]
+#         )
+#         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
+#         plot_measured_state_current_list(axs2[i], dict_list[i])
+#         plot_calculated_state_currents(
+#             axs2[i],
+#             temp_array,
+#             CRITICAL_TEMP,
+#             RETRAP,
+#             WIDTH,
+#             ALPHA,
+#             persistent_currents[i],
+#             CRITICAL_CURRENT_ZERO,
+#         )
+#         plot_calculated_filled_region(
+#             axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
+#         )
+
+#         axs2[i].set_xlim(6, 9)
+#         axs2[i].set_ylim(000, 1000)
+#         axs2[i].set_ybound(lower=0)
+#         axs2[i].legend()
+
+
 if __name__ == "__main__":
+    dict_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_current_relation_v2\data")
 
-    # data = import_directory(
-    #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-    # )
-
-    enable_read_290_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
-    )
-    enable_read_300_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
-    )
-    enable_read_310_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
-    )
-    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
-
-    fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    persistent_currents = [0, 30, 60]
-    for i in range(3):
-        measured_temps, measured_state_currents = get_state_currents_measured_array(
-            dict_list[i]
-        )
-        temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
-        plot_measured_state_current_list(axs2[i], dict_list[i])
-        plot_calculated_state_currents(
-            axs2[i],
-            temp_array,
-            CRITICAL_TEMP,
-            RETRAP,
-            WIDTH,
-            ALPHA,
-            persistent_currents[i],
-            CRITICAL_CURRENT_ZERO,
-        )
-        plot_calculated_filled_region(
-            axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
-        )
-
-        axs2[i].set_xlim(6, 9)
-        axs2[i].set_ylim(000, 1000)
-        axs2[i].set_ybound(lower=0)
-        axs2[i].legend()
+    fig, axs = plt.subplots(5, 5, figsize=(20, 20), sharex=True, sharey=True)
+    plot_full_grid(axs, dict_list)
+    plt.savefig("enable_current_relation_full_grid.pdf", bbox_inches="tight")
+    plt.show()
