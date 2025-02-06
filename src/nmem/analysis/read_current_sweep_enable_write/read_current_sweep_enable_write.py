@@ -20,7 +20,7 @@ if __name__ == "__main__":
     data_list2 = [data_list[0], data_list[3], data_list[-6]]
     colors = CMAP(np.linspace(0, 1, 4))
 
-    fig, axs = plt.subplots(1,2, figsize=(7.5, 2), constrained_layout=True, width_ratios=[1, .25])
+    fig, axs = plt.subplots(1,2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, .25])
 
 
     ax = axs[0]
@@ -71,12 +71,12 @@ if __name__ == "__main__":
             enable_write_currents[idx],
             write_temperatures[idx],
             marker="o",
-            markersize=8,
+            markersize=6,
             markeredgecolor="none",
             markerfacecolor=colors[i],
         )
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(.2))
-    plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
-    plt.show()
+    # plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
+    # plt.show()

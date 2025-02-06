@@ -1319,6 +1319,14 @@ def plot_read_sweep_switch_probability(
     )
     return ax
 
+def plot_fill_between_array(
+    ax: Axes, dict_list: list[dict]
+) -> Axes:
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    for i, data_dict in enumerate(dict_list):
+        plot_fill_between(ax, data_dict, colors[i])
+    return ax
+
 
 def plot_read_sweep_array(
     ax: Axes, dict_list: list[dict], value_name: str, variable_name: str
@@ -1326,13 +1334,14 @@ def plot_read_sweep_array(
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
-        # plot_bit_error_rate_args(ax, data_dict, color=colors[i])
-        plot_fill_between(ax, data_dict, colors[i])
-        # plot_read_sweep_switch_probability(ax, data_dict)
-
-    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
+def plot_read_switch_probability_array(
+    ax: Axes, dict_list: list[dict]
+) -> Axes:
+    for data_dict in dict_list:
+        plot_read_sweep_switch_probability(ax, data_dict)
+    return ax
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
