@@ -1,12 +1,17 @@
 import matplotlib.pyplot as plt
-
+import numpy as np
 from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
+    plot_read_sweep,
+    get_state_current_markers,
+    plot_state_current_markers,
+    get_write_current,
+    get_read_current
 )
 
 
-def plot_read_temp_sweep_C3(save=False):
+def plot_read_temp_sweep_C3(save=True):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
 
     plot_read_sweep_array(
@@ -50,73 +55,91 @@ def plot_read_temp_sweep_C3(save=False):
     fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
     if save:
-        plt.savefig(
-            "read_current_sweep_write_current_C3.png", dpi=300, bbox_inches="tight"
-        )
+        plt.savefig("read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
 
 
 if __name__ == "__main__":
-    fig, ax = plt.subplots()
-    plot_read_sweep_array(
-        ax,
-        import_directory("write_current_sweep_B2_0"),
-        "bit_error_rate",
-        "write_current",
-    )
-    plot_read_sweep_array(
-        ax,
-        import_directory("write_current_sweep_B2_1"),
-        "bit_error_rate",
-        "write_current",
-    )
-    plot_read_sweep_array(
-        ax,
-        import_directory("write_current_sweep_B2_2"),
-        "bit_error_rate",
-        "write_current",
-    )
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_read_sweep_array(
+    #     ax,
+    #     import_directory("write_current_sweep_B2_0"),
+    #     "bit_error_rate",
+    #     "write_current",
+    # )
+    # plot_read_sweep_array(
+    #     ax,
+    #     import_directory("write_current_sweep_B2_1"),
+    #     "bit_error_rate",
+    #     "write_current",
+    # )
+    # plot_read_sweep_array(
+    #     ax,
+    #     import_directory("write_current_sweep_B2_2"),
+    #     "bit_error_rate",
+    #     "write_current",
+    # )
+    # ax.legend(
+    #     frameon=False,
+    #     loc="upper left",
+    #     bbox_to_anchor=(1, 1),
+    #     title="Write Current [$\mu$A]",
+    # )
+    # ax.set_xlabel("Read Current [$\mu$A]")
+    # ax.set_ylabel("Bit Error Rate")
+    # plt.show()
+
+    # fig, ax = plt.subplots()
+    # plot_read_sweep_array(
+    #     ax,
+    #     import_directory("write_current_sweep_A2"),
+    #     "bit_error_rate",
+    #     "write_current",
+    # )
+    # ax.set_xlabel("Read Current [$\mu$A]")
+    # ax.set_ylabel("Bit Error Rate")
+    # ax.legend(
+    #     frameon=False,
+    #     loc="upper left",
+    #     bbox_to_anchor=(1, 1),
+    #     title="Write Current [$\mu$A]",
+    # )
+    # plt.show()
+
+    # fig, ax = plt.subplots()
+    # plot_read_sweep_array(
+    #     ax,
+    #     import_directory("write_current_sweep_C2"),
+    #     "bit_error_rate",
+    #     "write_current",
+    # )
+    # ax.set_xlabel("Read Current [$\mu$A]")
+    # ax.set_ylabel("Bit Error Rate")
+    # ax.legend(
+    #     frameon=False,
+    #     loc="upper left",
+    #     bbox_to_anchor=(1, 1),
+    #     title="Write Current [$\mu$A]",
+    # )
+    # plt.show()
+
+    # plot_read_temp_sweep_C3()
 
     fig, ax = plt.subplots()
-    plot_read_sweep_array(
-        ax,
-        import_directory("write_current_sweep_A2"),
-        "bit_error_rate",
-        "write_current",
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
-    )
-    plt.show()
-
-    fig, ax = plt.subplots()
-    plot_read_sweep_array(
-        ax,
-        import_directory("write_current_sweep_C2"),
-        "bit_error_rate",
-        "write_current",
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
-    )
-    plt.show()
-
-    plot_read_temp_sweep_C3()
+    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+    dict_list = import_directory("write_current_sweep_C3")
+    for data_dict in dict_list:
+        # plot_read_sweep(ax, data_dict, "bit_error_rate", "read_current")
+        state_current_markers = get_state_current_markers(data_dict, "read_current")
+        write_current = get_write_current(data_dict)
+        for i, state_current in enumerate(state_current_markers[0, :]):
+            if state_current > 0:
+                ax.plot(
+                    write_current,
+                    state_current,
+                    "o",
+                    label=f"{write_current} $\mu$A",
+                    markerfacecolor=colors[i],
+                    markeredgecolor="none",
+                )
+    ax.axhline(736, color="black", linestyle="--")
+        # plot_state_current_markers(ax, data_dict, "read_current")

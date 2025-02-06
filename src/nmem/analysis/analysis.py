@@ -11,7 +11,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
+import matplotlib.font_manager as fm
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
@@ -27,6 +27,25 @@ ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
 
+font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+fm.fontManager.addfont(font_path)
+prop = fm.FontProperties(fname=font_path)
+plt.rcParams["figure.figsize"] = [3.5, 3.5]
+plt.rcParams["font.size"] = 5
+plt.rcParams["axes.linewidth"] = 0.5
+plt.rcParams["xtick.major.width"] = 0.5
+plt.rcParams["ytick.major.width"] = 0.5
+plt.rcParams["xtick.direction"] = "in"
+plt.rcParams["ytick.direction"] = "in"
+plt.rcParams["font.family"] = "Inter"
+plt.rcParams["lines.markersize"] = 2
+plt.rcParams["lines.linewidth"] = 1.2
+plt.rcParams["legend.fontsize"] = 5
+plt.rcParams["legend.frameon"] = False
+
+
+plt.rcParams["xtick.major.size"] = 1
+plt.rcParams["ytick.major.size"] = 1
 
 CMAP = plt.get_cmap("plasma").reversed()
 
@@ -215,8 +234,8 @@ def calculate_branch_currents(
     width_ratio: float,
     critical_current_zero: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    
-    if any(T> Tc):
+
+    if any(T > Tc):
         raise ValueError("Temperature must be less than critical temperature.")
     ichr: np.ndarray = calculate_critical_current_temp(
         T, Tc, critical_current_zero * (1 - width_ratio)
@@ -254,8 +273,8 @@ def calculate_state_currents(
 
     fa = ichr + irhl
     fb = ichl + irhr - 50 - persistent_current
-    fc = (ichl - persistent_current) / alpha - 30
-    fd = fb + persistent_current - 60
+    fc = (ichl - persistent_current) / alpha - 130
+    fd = fb + persistent_current - 30
 
     fa = np.maximum(fa, 0)
     fb = np.maximum(fb, 0)
@@ -280,18 +299,34 @@ def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
 def get_enable_read_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_read_current")) * 1e6
 
+
 def get_optimal_enable_read_current(current_cell: str) -> float:
     return CELLS[current_cell]["enable_read_current"] * 1e6
+
 
 def get_optimal_enable_write_current(current_cell: str) -> float:
     return CELLS[current_cell]["enable_write_current"] * 1e6
 
+
 def get_enable_read_currents(data_dict: dict) -> np.ndarray:
     return data_dict.get("enable_read_current")[:, :, 0].flatten() * 1e6
 
+def get_enable_read_currents_array(dict_list: list[dict]) -> np.ndarray:
+    enable_read_currents = []
+    for data_dict in dict_list:
+        enable_read_current = get_enable_read_current(data_dict)
+        enable_read_currents.append(enable_read_current)
+    return np.array(enable_read_currents)
 
 def get_enable_write_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_write_current")) * 1e6
+
+def get_enable_write_current_array(dict_list: list[dict]) -> np.ndarray:
+    enable_write_currents = []
+    for data_dict in dict_list:
+        enable_write_current = get_enable_write_current(data_dict)
+        enable_write_currents.append(enable_write_current)
+    return np.array(enable_write_currents)
 
 
 def get_enable_write_width(data_dict: dict) -> float:
@@ -387,7 +422,7 @@ def get_total_switches_norm(data_dict: dict) -> np.ndarray:
     num_meas = data_dict.get("num_meas")[0][0]
     w0r1 = data_dict.get("write_0_read_1").flatten()
     w1r0 = num_meas - data_dict.get("write_1_read_0").flatten()
-    total_switches_norm = w0r1 + w1r0
+    total_switches_norm = (w0r1 + w1r0) / (num_meas * 2)
     return total_switches_norm
 
 
@@ -487,6 +522,27 @@ def get_write_temperatures(data_dict: dict) -> np.ndarray:
     )
     return enable_write_temps
 
+def get_write_temperatures_array(dict_list: list[dict]) -> np.ndarray:
+    write_temps = []
+    for data_dict in dict_list:
+        enable_write_current = get_enable_write_current(data_dict)
+        max_enable_current = get_max_enable_current(data_dict)
+        write_temp = _calculate_channel_temperature(
+            CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
+        )
+        write_temps.append(write_temp)
+    return np.array(write_temps)
+
+def get_read_temperatures_array(dict_list: list[dict]) -> np.ndarray:
+    read_temps = []
+    for data_dict in dict_list:
+        enable_read_current = get_enable_read_current(data_dict)
+        max_enable_current = get_max_enable_current(data_dict)
+        read_temp = _calculate_channel_temperature(
+            CRITICAL_TEMP, SUBSTRATE_TEMP, enable_read_current, max_enable_current
+        )
+        read_temps.append(read_temp)
+    return np.array(read_temps)
 
 def get_write_temperature(data_dict: dict) -> float:
     enable_write_current = get_enable_write_current(data_dict)
@@ -502,6 +558,11 @@ def get_write_current(data_dict: dict) -> float:
         return filter_first(data_dict.get("write_current")) * 1e6
     if data_dict.get("write_current").shape[1] > 1:
         return data_dict.get("write_current")[0, 0] * 1e6
+
+
+def get_read_current(data_dict: dict) -> float:
+    if data_dict.get("read_current").shape[1] == 1:
+        return filter_first(data_dict.get("read_current")) * 1e6
 
 
 def get_operating_points(data_dict: dict) -> np.ndarray:
@@ -556,14 +617,21 @@ def save_directory_list(file_path: str, file_list: list[str]) -> None:
     return
 
 
-def get_state_currents_measured(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
+def get_state_currents_measured(
+    data_dict: dict,
+    current_sweep: Literal["enable_write_current", "enable_read_current"],
+) -> Tuple[np.ndarray, np.ndarray]:
     bit_error_rate = get_bit_error_rate(data_dict)
     nominal_state_currents_list = []
     nominal_read_temperature_list = []
     nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
         get_bit_error_rate_args(bit_error_rate)
     )
-    read_temperature = get_read_temperature(data_dict)
+    if current_sweep == "enable_write_current":
+        temperature = get_write_temperature(data_dict)
+    else:
+        temperature = get_read_temperature(data_dict)
+
     read_currents = get_read_currents(data_dict)
     if nominal_edge1 is not np.nan:
         nominal_state0_current = read_currents[nominal_edge2]
@@ -577,7 +645,7 @@ def get_state_currents_measured(data_dict: dict) -> Tuple[np.ndarray, np.ndarray
     else:
         inverting_state0_current = np.nan
         inverting_state1_current = np.nan
-    temp = np.array(read_temperature)
+    temp = np.array(temperature)
     state_currents = np.array(
         [
             nominal_state0_current,
@@ -589,11 +657,13 @@ def get_state_currents_measured(data_dict: dict) -> Tuple[np.ndarray, np.ndarray
     return temp, state_currents
 
 
-def get_state_currents_measured_array(dict_list: list[dict]) -> np.ndarray:
+def get_state_currents_measured_array(
+    dict_list: list[dict], current_sweep: str
+) -> np.ndarray:
     temps = []
     state_currents = []
     for data_dict in dict_list:
-        temp, state_current = get_state_currents_measured(data_dict)
+        temp, state_current = get_state_currents_measured(data_dict, current_sweep)
         temps.append(temp)
         state_currents.append(state_current)
     return np.array(temps), np.array(state_currents)
@@ -910,8 +980,8 @@ def plot_calculated_state_currents(
     )
     ax.plot(T, i0, label="$I_{{0}}(T)$", **kwargs)
     ax.plot(T, i1, label="$I_{{1}}(T)$", **kwargs)
-    # ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
-    # ax.plot(T, i3, label="$I_{{1,inv}}(T)$", **kwargs)
+    ax.plot(T, i2, label="$I_{{0,inv}}(T)$", **kwargs)
+    ax.plot(T, i3, label="$I_{{1,inv}}(T)$", **kwargs)
     return ax
 
 
@@ -1082,7 +1152,7 @@ def plot_linear_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
 def plot_measured_state_current_list(ax: Axes, dict_list: list[dict]) -> Axes:
     sweep_length = len(dict_list)
     for j in range(0, sweep_length):
-        plot_state_currents_measured(ax, dict_list[j])
+        plot_state_currents_measured(ax, dict_list[j], "enable_read_current")
 
     return ax
 
@@ -1144,7 +1214,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     ax.set_ylabel("Bit Error Rate")
     # ax.set_yscale("log")
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax, ax2
 
@@ -1167,7 +1237,7 @@ def plot_enable_write_sweep_single(
 
     ax.set_xlim(enable_write_currents[0], enable_write_currents[-1])
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
 
@@ -1229,7 +1299,7 @@ def plot_read_sweep(
         **kwargs,
     )
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
 
@@ -1244,7 +1314,7 @@ def plot_read_sweep_switch_probability(
         total_switch_probability,
         color="grey",
         linestyle=":",
-        linewidth=1,
+        linewidth=0.5,
         zorder=-1,
     )
     return ax
@@ -1260,7 +1330,7 @@ def plot_read_sweep_array(
         plot_fill_between(ax, data_dict, colors[i])
         # plot_read_sweep_switch_probability(ax, data_dict)
 
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
 
@@ -1283,16 +1353,19 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
 
 
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
-    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    # cmap = plt.get_cmap("viridis")
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     ax2 = ax.twinx()
     for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
         write_temp = get_write_temperature(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
         ax.plot(
             y,
             ztotal,
-            label=f"$T_{{W}}$ = {write_temp:.2f} K",
+            label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} $\mu$A",
             color=colors[dict_list.index(data_dict)],
         )
         ax2.plot(
@@ -1305,12 +1378,13 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
         )
 
     ax.set_ylim([0, 1])
-    ax.set_xlabel("Write Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
+    # ax.set_xlabel("$I_{}
+    # ax.set_ylabel("Bit Error Rate")
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
+
     ax2.set_ylim([0, 1])
     ax2.set_ylabel("Switching Probability")
     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
     return ax, ax2
 
@@ -1374,8 +1448,8 @@ def plot_state_currents_measured_inverting(
     return ax
 
 
-def plot_state_currents_measured(ax: Axes, data_dict: dict) -> Axes:
-    temp, state_currents = get_state_currents_measured(data_dict)
+def plot_state_currents_measured(ax: Axes, data_dict: dict, current_sweep: str) -> Axes:
+    temp, state_currents = get_state_currents_measured(data_dict, current_sweep)
 
     if state_currents[0] is not np.nan:
         ax.plot(
@@ -1420,14 +1494,25 @@ def get_state_current_markers(
     bit_error_rate = get_bit_error_rate(data_dict)
     berargs = get_bit_error_rate_args(bit_error_rate)
     state_current_markers = np.zeros((2, 4))
-    if berargs[0] is not np.nan:
-        for i in range(2):
-            state_current_markers[0, i] = currents[berargs[i]]
-            state_current_markers[1, i] = bit_error_rate[berargs[i]]
-    if berargs[2] is not np.nan:
-        for i in range(2, 4):
-            state_current_markers[0, i] = currents[berargs[i]]
-            state_current_markers[1, i] = bit_error_rate[berargs[i]]
+    for arg in berargs:
+        if arg is not np.nan:
+            state_current_markers[0, berargs.index(arg)] = currents[arg]
+            state_current_markers[1, berargs.index(arg)] = bit_error_rate[arg]
+        else:
+            state_current_markers[0, berargs.index(arg)] = np.nan
+            state_current_markers[1, berargs.index(arg)] = np.nan
+
+    # if berargs[0] is not np.nan:
+    #     for i in range(2):
+    #         state_current_markers[0, i] = currents[berargs[i]]
+    #         state_current_markers[1, i] = bit_error_rate[berargs[i]]
+    # if berargs[2] is not np.nan:
+    #     for i in range(2, 4):
+    #         state_current_markers[0, i] = currents[berargs[i]]
+    #         state_current_markers[1, i] = bit_error_rate[berargs[i]]
+    # else:
+    #     print(bit_error_rate[berargs[i]])
+
     return state_current_markers
 
 
@@ -1441,7 +1526,7 @@ def plot_state_current_markers(
     state_current_markers = get_state_current_markers(data_dict, current_sweep)
     currents = state_current_markers[0, :]
     bit_error_rate = state_current_markers[1, :]
-    if currents[0] is not np.nan:
+    if currents[0] > 0:
         for i in range(2):
             ax.plot(
                 currents[i],
@@ -1454,7 +1539,7 @@ def plot_state_current_markers(
                 markersize=12,
                 **kwargs,
             )
-    if currents[2] is not np.nan:
+    if currents[2] > 0:
         for i in range(2, 4):
             ax.plot(
                 currents[i],
@@ -1813,21 +1898,21 @@ if __name__ == "__main__":
     persistent_currents = [0, 30, 60]
     for i in range(3):
         measured_temps, measured_state_currents = get_state_currents_measured_array(
-            dict_list[i]
+            dict_list[i], ""
         )
         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
         temp_array = np.linspace(0, CRITICAL_TEMP, 100)
         plot_measured_state_current_list(axs2[i], dict_list[i])
-        plot_calculated_state_currents(
-            axs2[i],
-            temp_array,
-            CRITICAL_TEMP,
-            RETRAP,
-            WIDTH,
-            ALPHA,
-            persistent_currents[i],
-            CRITICAL_CURRENT_ZERO,
-        )
+        # plot_calculated_state_currents(
+        #     axs2[i],
+        #     temp_array,
+        #     CRITICAL_TEMP,
+        #     RETRAP,
+        #     WIDTH,
+        #     ALPHA,
+        #     persistent_currents[i],
+        #     CRITICAL_CURRENT_ZERO,
+        # )
         plot_calculated_filled_region(
             axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
         )
@@ -1837,5 +1922,3 @@ if __name__ == "__main__":
         # axs2[i].set_ybound(lower=0)
         axs2[i].legend()
         axs2[i].grid()
-
-
