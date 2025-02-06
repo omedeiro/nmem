@@ -15,7 +15,7 @@ if __name__ == "__main__":
     fig, axs = plt.subplots(1, 2, figsize=(6, 4), width_ratios=[1, 0.25])
     # dict_list = dict_list[::3]
     ax = axs[0]
-    ax, ax2 = plot_write_sweep(ax, dict_list)
+    plot_write_sweep(ax, dict_list)
     # ax.legend(
     #     frameon=False,
     #     loc="upper left",
@@ -23,15 +23,19 @@ if __name__ == "__main__":
     #     title="Enable Write Temperature [K]",
     # )
 
-    ax.set_xlabel("$I_{\mathrm{write}}$ ($\mu$A)")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("BER")
+    ax.set_xlim(0, 300)
     # plt.savefig("write_current_sweep_enable_write.pdf", bbox_inches="tight")
     # plt.show()
 
     # fig, ax = plt.subplots()
     ax = axs[1]
     for data_dict in dict_list:
-        plot_channel_temperature(ax, data_dict, marker="o", color="b")
-    
+        plot_channel_temperature(
+            ax, data_dict, linestyle="-", marker="o", color="black"
+        )
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$T_{\mathrm{channel}}$ [K]")
     fig.subplots_adjust(wspace=0.3)
     plt.show()

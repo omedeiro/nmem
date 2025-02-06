@@ -890,8 +890,6 @@ def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
         CRITICAL_TEMP, SUBSTRATE_TEMP, heater_current, max_enable_current
     )
     ax.plot(heater_current, channel_temp, **kwargs)
-    ax.set_xlabel("Heater Current ($\mu$A)")
-    ax.set_ylabel("Channel Temperature (K)")
 
     return ax
 
@@ -1365,7 +1363,6 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     # cmap = plt.get_cmap("viridis")
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    ax2 = ax.twinx()
     for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
@@ -1377,25 +1374,10 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} $\mu$A",
             color=colors[dict_list.index(data_dict)],
         )
-        ax2.plot(
-            y,
-            zswitch,
-            label="_",
-            color="grey",
-            linewidth=0.5,
-            linestyle=":",
-        )
-
     ax.set_ylim([0, 1])
-    # ax.set_xlabel("$I_{}
-    # ax.set_ylabel("Bit Error Rate")
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
-    ax2.set_ylim([0, 1])
-    ax2.set_ylabel("Switching Probability")
-    ax2.yaxis.set_major_locator(MultipleLocator(0.5))
-
-    return ax, ax2
+    return ax
 
 
 def plot_threshold(ax: Axes, start: int, end: int, threshold: float) -> Axes:
