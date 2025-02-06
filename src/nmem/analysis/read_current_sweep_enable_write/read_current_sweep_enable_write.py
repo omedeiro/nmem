@@ -78,5 +78,5 @@ if __name__ == "__main__":
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(.2))
-    # plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
-    # plt.show()
+    plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
+    plt.show()
