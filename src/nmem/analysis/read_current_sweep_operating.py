@@ -12,12 +12,15 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.font_manager as fm
+import nmem.analysis.plot_config
 from nmem.analysis.analysis import (
     get_read_current,
     get_state_current_markers,
     get_write_current,
     import_directory,
     plot_read_sweep_array,
+    plot_read_switch_probability_array,
+    plot_fill_between_array
 )
 from nmem.measurement.cells import CELLS
 
@@ -30,30 +33,10 @@ ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
 
-font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-fm.fontManager.addfont(font_path)
-prop = fm.FontProperties(fname=font_path)
-plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 5
-plt.rcParams["axes.linewidth"] = 0.5
-plt.rcParams["xtick.major.width"] = 0.5
-plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["font.family"] = "Inter"
-plt.rcParams["lines.markersize"] = 2
-plt.rcParams["lines.linewidth"] = 1.2
-plt.rcParams["legend.fontsize"] = 5
-plt.rcParams["legend.frameon"] = False
-
-
-plt.rcParams["xtick.major.size"] = 1
-plt.rcParams["ytick.major.size"] = 1
-
 
 if __name__ == "__main__":
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
-    fig, axs = plt.subplot_mosaic("AA;CD", figsize=(7.5, 3))
+    fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
     )
@@ -79,11 +62,13 @@ if __name__ == "__main__":
         "bit_error_rate",
         "write_current",
     )
+    plot_read_switch_probability_array(ax, dict_list)
+    # plot_fill_between_array(ax, dict_list)
     ax.axvline(read_current, color="black", linestyle="-.")
     write_current_fixed = 100
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    # ax.set_xlim(650, 800)
+    ax.set_xlabel("$I_{\mathrm{read}}$ ($\mu$A)")
+    ax.set_ylabel("BER")
+    ax.set_xlim(650, 800)
     ax2 = ax.twinx()
     ax2.set_ylim([0, 1])
     ax2.set_ylabel("Switching Probability")
@@ -140,4 +125,4 @@ if __name__ == "__main__":
     ax.set_ylabel("Bit Error Rate")
     ax.set_xlabel("$I_{\mathrm{write}}$ ($\mu$A)")
 
-    plt.savefig("write_current_sweep_enable_write2.pdf", bbox_inches="tight")
+    plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
