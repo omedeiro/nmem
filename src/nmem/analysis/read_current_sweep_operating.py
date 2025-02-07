@@ -12,7 +12,6 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.font_manager as fm
-import nmem.analysis.plot_config
 from nmem.analysis.analysis import (
     get_read_current,
     get_state_current_markers,
@@ -64,11 +63,11 @@ if __name__ == "__main__":
     )
     plot_read_switch_probability_array(ax, dict_list)
     # plot_fill_between_array(ax, dict_list)
-    ax.axvline(read_current, color="black", linestyle="-.")
+    ax.axvline(read_current, color="black", linestyle="--", linewidth=0.5)
     write_current_fixed = 100
     ax.set_xlabel("$I_{\mathrm{read}}$ ($\mu$A)")
     ax.set_ylabel("BER")
-    ax.set_xlim(650, 800)
+    # ax.set_xlim(650, 800)
     ax2 = ax.twinx()
     ax2.set_ylim([0, 1])
     ax2.set_ylabel("Switching Probability")
@@ -96,12 +95,12 @@ if __name__ == "__main__":
                     markerfacecolor=colors[i],
                     markeredgecolor="none",
                 )
-        ax.axhline(read_current, color="black", linestyle="-.")
+        ax.axhline(read_current, color="black", linestyle="--", linewidth=0.5)
         # plot_state_current_markers(ax, data_dict, "read_current")
     # ax.axvline(write_current_fixed, color="black", linestyle="--")
     ax.set_xlim(0, 300)
-    ax.set_ylabel("State Current [$\mu$A]")
-    ax.set_xlabel("Write Current [$\mu$A]")
+    ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
 
     ax = axs["C"]
     for data_dict in dict_list:
@@ -121,8 +120,7 @@ if __name__ == "__main__":
     ax.set_xlim(0, 300)
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    # ax.axvline(write_current_fixed, color="black", linestyle="--")
-    ax.set_ylabel("Bit Error Rate")
-    ax.set_xlabel("$I_{\mathrm{write}}$ ($\mu$A)")
+    ax.set_ylabel("BER")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
 
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
