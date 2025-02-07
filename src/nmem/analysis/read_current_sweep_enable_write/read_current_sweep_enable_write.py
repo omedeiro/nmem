@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.font_manager as fm
-import nmem.analysis.plot_config
 from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep,
