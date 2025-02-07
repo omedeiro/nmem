@@ -1,6 +1,7 @@
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+
 from nmem.analysis.analysis import (
     import_directory,
     plot_critical_currents_from_dc_sweep,

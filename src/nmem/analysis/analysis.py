@@ -2,16 +2,16 @@ import collections
 import os
 from typing import List, Literal, Tuple
 
+import matplotlib.font_manager as fm
 import numpy as np
 import scipy.io as sio
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
-from matplotlib.patches import Rectangle
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.font_manager as fm
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,

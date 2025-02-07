@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
 
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
@@ -8,7 +7,6 @@ from nmem.analysis.analysis import (
     process_cell,
 )
 from nmem.measurement.cells import CELLS
-
 
 if __name__ == "__main__":
     ARRAY_SIZE = (4, 4)

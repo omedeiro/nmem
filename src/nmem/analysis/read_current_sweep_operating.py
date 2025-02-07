@@ -1,17 +1,7 @@
-import collections
-import os
-from typing import List, Literal, Tuple
 
-import numpy as np
-import scipy.io as sio
 from matplotlib import pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.collections import PolyCollection
-from matplotlib.colors import LogNorm
-from matplotlib.patches import Rectangle
-from matplotlib.ticker import MaxNLocator, MultipleLocator
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.font_manager as fm
+from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import (
     get_read_current,
     get_state_current_markers,
@@ -19,9 +9,7 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    plot_fill_between_array
 )
-from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3

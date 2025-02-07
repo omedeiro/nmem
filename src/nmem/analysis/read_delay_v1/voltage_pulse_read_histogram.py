@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+
 from nmem.analysis.analysis import (
-    plot_voltage_trace_averaged,
-    import_directory,
-    plot_voltage_trace_bitstream,
-    plot_voltage_hist,
     get_bit_error_rate,
+    import_directory,
+    plot_voltage_hist,
+    plot_voltage_trace_averaged,
 )
 
 plt.rcParams["figure.figsize"] = [7, 3.5]

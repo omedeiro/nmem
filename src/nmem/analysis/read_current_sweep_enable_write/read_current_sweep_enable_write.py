@@ -1,17 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.font_manager as fm
+
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_read_sweep,
-    plot_state_current_markers,
-    get_state_currents_measured,
-    get_write_current,
+    CMAP,
     get_enable_write_current,
     get_enable_write_current_array,
+    get_write_current,
     get_write_temperatures_array,
+    import_directory,
     plot_fill_between,
-    CMAP,
+    plot_read_sweep,
 )
 
 if __name__ == "__main__":

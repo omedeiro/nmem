@@ -1,21 +1,20 @@
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_read_sweep_array,
-    get_write_temperature,
-    get_write_temperatures,
-    get_read_temperatures_array,
+    CMAP,
     get_enable_read_currents_array,
     get_enable_write_current,
     get_enable_write_current_array,
+    get_read_temperatures_array,
     get_write_current,
     get_write_temperatures_array,
+    import_directory,
     plot_fill_between,
-    plot_read_sweep,
     plot_fill_between_array,
-    CMAP,
+    plot_read_sweep,
+    plot_read_sweep_array,
 )
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"

@@ -1,15 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_channel_temperature,
-    plot_write_sweep,
-    get_read_current,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_read_currents,
     get_enable_write_current,
+    get_read_currents,
     get_write_temperature,
+    import_directory,
+    plot_write_sweep,
 )
 
 SUBSTRATE_TEMP = 1.3

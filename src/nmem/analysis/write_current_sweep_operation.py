@@ -3,28 +3,20 @@
 
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 import numpy as np
+
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_enable_write_sweep_single,
-    plot_state_current_markers,
-    get_state_current_markers_list,
-    plot_waterfall,
-    get_state_current_markers,
-    get_write_current,
-    plot_write_sweep,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_read_currents,
     get_enable_write_current,
-    get_write_temperature,
-    get_read_current,
+    get_read_currents,
     get_state_current_markers,
     get_write_current,
+    get_write_temperature,
+    import_directory,
+    plot_enable_write_sweep_multiple,
+    plot_write_sweep,
 )
-
 
 if __name__ == "__main__":
     dict_list = import_directory(r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data")

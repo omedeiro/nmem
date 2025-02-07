@@ -1,6 +1,7 @@
-from nmem.analysis.analysis import plot_calculated_state_currents
 import matplotlib.pyplot as plt
 import numpy as np
+
+from nmem.analysis.analysis import plot_calculated_state_currents
 
 if __name__ == "__main__":
     fig, ax = plt.subplots()

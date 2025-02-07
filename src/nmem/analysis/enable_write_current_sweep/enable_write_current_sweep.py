@@ -2,16 +2,11 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_enable_write_sweep_single,
-    plot_state_current_markers,
-    get_state_current_markers_list,
-    plot_waterfall,
     get_state_current_markers,
     get_write_current,
+    import_directory,
+    plot_enable_write_sweep_multiple,
 )
-
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
