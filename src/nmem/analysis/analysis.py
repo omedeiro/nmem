@@ -30,22 +30,25 @@ WIDTH = 1 / 2.13
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
-plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 5
-plt.rcParams["axes.linewidth"] = 0.5
-plt.rcParams["xtick.major.width"] = 0.5
-plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["font.family"] = "Inter"
-plt.rcParams["lines.markersize"] = 2
-plt.rcParams["lines.linewidth"] = 1.2
-plt.rcParams["legend.fontsize"] = 5
-plt.rcParams["legend.frameon"] = False
 
-
-plt.rcParams["xtick.major.size"] = 1
-plt.rcParams["ytick.major.size"] = 1
+plt.rcParams.update(
+    {
+        "figure.figsize": [3.5, 3.5],
+        "font.size": 7,
+        "axes.linewidth": 0.5,
+        "xtick.major.width": 0.5,
+        "ytick.major.width": 0.5,
+        "xtick.direction": "out",
+        "ytick.direction": "out",
+        "font.family": "Inter",
+        "lines.markersize": 2,
+        "lines.linewidth": 1.2,
+        "legend.fontsize": 5,
+        "legend.frameon": False,
+        "xtick.major.size": 2,
+        "ytick.major.size": 2,
+    }
+)
 
 CMAP = plt.get_cmap("plasma").reversed()
 
@@ -311,6 +314,7 @@ def get_optimal_enable_write_current(current_cell: str) -> float:
 def get_enable_read_currents(data_dict: dict) -> np.ndarray:
     return data_dict.get("enable_read_current")[:, :, 0].flatten() * 1e6
 
+
 def get_enable_read_currents_array(dict_list: list[dict]) -> np.ndarray:
     enable_read_currents = []
     for data_dict in dict_list:
@@ -318,8 +322,10 @@ def get_enable_read_currents_array(dict_list: list[dict]) -> np.ndarray:
         enable_read_currents.append(enable_read_current)
     return np.array(enable_read_currents)
 
+
 def get_enable_write_current(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_write_current")) * 1e6
+
 
 def get_enable_write_current_array(dict_list: list[dict]) -> np.ndarray:
     enable_write_currents = []
@@ -522,6 +528,7 @@ def get_write_temperatures(data_dict: dict) -> np.ndarray:
     )
     return enable_write_temps
 
+
 def get_write_temperatures_array(dict_list: list[dict]) -> np.ndarray:
     write_temps = []
     for data_dict in dict_list:
@@ -533,6 +540,7 @@ def get_write_temperatures_array(dict_list: list[dict]) -> np.ndarray:
         write_temps.append(write_temp)
     return np.array(write_temps)
 
+
 def get_read_temperatures_array(dict_list: list[dict]) -> np.ndarray:
     read_temps = []
     for data_dict in dict_list:
@@ -543,6 +551,7 @@ def get_read_temperatures_array(dict_list: list[dict]) -> np.ndarray:
         )
         read_temps.append(read_temp)
     return np.array(read_temps)
+
 
 def get_write_temperature(data_dict: dict) -> float:
     enable_write_current = get_enable_write_current(data_dict)
@@ -883,13 +892,20 @@ def plot_branch_currents(
     return ax
 
 
-def plot_channel_temperature(ax: plt.Axes, data_dict: dict, **kwargs) -> Axes:
-    heater_current = data_dict.get("x")[0][:, 0] * 1e6
-    max_enable_current = get_max_enable_current(data_dict)
-    channel_temp = _calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, heater_current, max_enable_current
-    )
-    ax.plot(heater_current, channel_temp, **kwargs)
+def plot_channel_temperature(
+    ax: plt.Axes,
+    data_dict: dict,
+    channel_sweep: Literal["enable_write_current", "enable_read_current"],
+    **kwargs,
+) -> plt.Axes:
+    if channel_sweep == "enable_write_current":
+        temp = get_write_temperature(data_dict)
+        current = get_enable_write_current(data_dict)
+    else:
+        temp = get_read_temperatures(data_dict)
+        current = get_enable_read_current(data_dict)
+
+    ax.plot(current, temp, **kwargs)
 
     return ax
 
@@ -1180,40 +1196,31 @@ def plot_parameter_array(
         cmap = cmap.reversed()
 
     if log:
-        ax.matshow(parameter_array, cmap=cmap, norm=LogNorm(vmin=1e-6, vmax=1e-2))
+        ax.matshow(parameter_array, cmap=cmap, norm=LogNorm(vmin=np.min(parameter_array), vmax=np.max(parameter_array)))
     else:
         ax.matshow(parameter_array, cmap=cmap)
 
     if title:
         ax.set_title(title)
-
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
-    ax.xaxis.tick_top()
-    ax.xaxis.set_label_position("top")
     ax.tick_params(axis="both", length=0)
-    ax = plot_text_labels(ax, xloc, yloc, parameter_array, log)
+    # ax = plot_text_labels(ax, xloc, yloc, parameter_array, log)
 
     return ax
 
 
 def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
-    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_enable_write_sweep_single(ax, data_dict, color=colors[i])
-        plot_fill_between(ax, data_dict, colors[i])
 
     ax2 = ax.twiny()
     write_temps = get_write_temperatures(data_dict)
     ax2.set_xlim([write_temps[0], write_temps[-1]])
 
-    ax2.set_xlabel("Write Temperature (K)")
-    ax.set_xlabel("Enable Write Current ($\mu$A)")
-    ax.set_ylabel("Bit Error Rate")
-    # ax.set_yscale("log")
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.legend(frameon=False, bbox_to_anchor=(1, 1), loc="upper left")
     return ax, ax2
 
 
@@ -1311,15 +1318,14 @@ def plot_read_sweep_switch_probability(
         read_currents,
         total_switch_probability,
         color="grey",
-        linestyle=":",
+        linestyle="--",
         linewidth=0.5,
         zorder=-1,
     )
     return ax
 
-def plot_fill_between_array(
-    ax: Axes, dict_list: list[dict]
-) -> Axes:
+
+def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_fill_between(ax, data_dict, colors[i])
@@ -1334,12 +1340,12 @@ def plot_read_sweep_array(
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
     return ax
 
-def plot_read_switch_probability_array(
-    ax: Axes, dict_list: list[dict]
-) -> Axes:
+
+def plot_read_switch_probability_array(ax: Axes, dict_list: list[dict]) -> Axes:
     for data_dict in dict_list:
         plot_read_sweep_switch_probability(ax, data_dict)
     return ax
+
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
@@ -1492,17 +1498,6 @@ def get_state_current_markers(
         else:
             state_current_markers[0, berargs.index(arg)] = np.nan
             state_current_markers[1, berargs.index(arg)] = np.nan
-
-    # if berargs[0] is not np.nan:
-    #     for i in range(2):
-    #         state_current_markers[0, i] = currents[berargs[i]]
-    #         state_current_markers[1, i] = bit_error_rate[berargs[i]]
-    # if berargs[2] is not np.nan:
-    #     for i in range(2, 4):
-    #         state_current_markers[0, i] = currents[berargs[i]]
-    #         state_current_markers[1, i] = bit_error_rate[berargs[i]]
-    # else:
-    #     print(bit_error_rate[berargs[i]])
 
     return state_current_markers
 
@@ -1868,48 +1863,122 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
+# if __name__ == "__main__":
+
+#     # data = import_directory(
+#     #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
+#     # )
+
+#     enable_read_290_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
+#     )
+#     enable_read_300_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
+#     )
+#     enable_read_310_list = import_directory(
+#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
+#     )
+#     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
+
+#     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
+#     persistent_currents = [0, 30, 60]
+#     for i in range(3):
+#         measured_temps, measured_state_currents = get_state_currents_measured_array(
+#             dict_list[i], ""
+#         )
+#         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
+#         temp_array = np.linspace(0, CRITICAL_TEMP, 100)
+#         plot_measured_state_current_list(axs2[i], dict_list[i])
+#         # plot_calculated_state_currents(
+#         #     axs2[i],
+#         #     temp_array,
+#         #     CRITICAL_TEMP,
+#         #     RETRAP,
+#         #     WIDTH,
+#         #     ALPHA,
+#         #     persistent_currents[i],
+#         #     CRITICAL_CURRENT_ZERO,
+#         # )
+#         plot_calculated_filled_region(
+#             axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
+#         )
+
+#         axs2[i].set_xlim(6, 9)
+#         axs2[i].set_ylim(500, 1000)
+#         # axs2[i].set_ybound(lower=0)
+#         axs2[i].legend()
+#         axs2[i].grid()
+
 if __name__ == "__main__":
-
-    # data = import_directory(
-    #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-    # )
-
-    enable_read_290_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
+    dict_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
     )
-    enable_read_300_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
-    )
-    enable_read_310_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
-    )
-    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
+    dict_list = dict_list[1:]
+    fig, axs = plt.subplots(1, 2, figsize=(6, 4), width_ratios=[1, 0.25])
+    dict_list = dict_list[::-1]
+    ax = axs[0]
+    plot_write_sweep(ax, dict_list)
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("BER")
+    ax.set_xlim(0, 300)
+    ichl_current_list = []
+    ichr_current_list = []
+    ichl_temp = []
+    ichr_temp = []
+    for data_dict in dict_list:
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        write_currents = get_read_currents(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
+        for i, arg in enumerate(berargs):
+            if arg is not np.nan:
 
-    fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-    persistent_currents = [0, 30, 60]
-    for i in range(3):
-        measured_temps, measured_state_currents = get_state_currents_measured_array(
-            dict_list[i], ""
-        )
-        temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
-        temp_array = np.linspace(0, CRITICAL_TEMP, 100)
-        plot_measured_state_current_list(axs2[i], dict_list[i])
-        # plot_calculated_state_currents(
-        #     axs2[i],
-        #     temp_array,
-        #     CRITICAL_TEMP,
-        #     RETRAP,
-        #     WIDTH,
-        #     ALPHA,
-        #     persistent_currents[i],
-        #     CRITICAL_CURRENT_ZERO,
-        # )
-        plot_calculated_filled_region(
-            axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
-        )
+                if i==0:
+                    ichl_current_list.append(write_currents[arg])
+                    ichl_temp.append(get_write_temperature(data_dict))
+                    # ax.plot(
+                    #     write_currents[arg],
+                    #     bit_error_rate[arg],
+                    #     color="C0",
+                    #     marker="o",
+                    #     markersize=5,
+                    # )
+                if i==2:
+                    ichr_current_list.append(write_currents[arg])
+                    ichr_temp.append(get_write_temperature(data_dict))
+                    # ax.plot(
+                    #     write_currents[arg],
+                    #     bit_error_rate[arg],
+                    #     color="C1",
+                    #     marker="o",
+                    #     markersize=5,
+                    # )                    
+    ax.axvline(30, color="grey", linestyle="--")
+    ax.axvline(110, color="grey", linestyle="--")
+    ax.axvline(140, color="grey", linestyle="--")
 
-        axs2[i].set_xlim(6, 9)
-        axs2[i].set_ylim(500, 1000)
-        # axs2[i].set_ybound(lower=0)
-        axs2[i].legend()
-        axs2[i].grid()
+    ax = axs[1]
+    # for data_dict in dict_list:
+    #     plot_channel_temperature(
+    #         ax,
+    #         data_dict,
+    #         "enable_write_current",
+    #         linestyle="-",
+    #         marker="o",
+    #         color="black",
+    #     )
+
+    # ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    # ax.set_ylabel("$T_{\mathrm{channel}}$ [K]")
+    # plt.show()
+
+    # fig, ax = plt.subplots()
+    ax.plot(ichl_temp, ichl_current_list, marker="o")
+    ax.plot(ichr_temp, ichr_current_list, marker="o")
+    ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
+    ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylim(0,300)
+    ax.grid()
+
+
+    fig.subplots_adjust(wspace=0.3)
