@@ -9,25 +9,6 @@ from nmem.analysis.analysis import (
 )
 from nmem.measurement.cells import CELLS
 
-# font_path = "/home/omedeiro/Inter-Regular.otf"
-font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-
-font_manager.fontManager.addfont(font_path)
-prop = font_manager.FontProperties(fname=font_path)
-plt.rcParams["figure.figsize"] = [7, 3.5]
-plt.rcParams["font.size"] = 5
-plt.rcParams["axes.linewidth"] = 0.5
-plt.rcParams["xtick.major.width"] = 0.5
-plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["font.family"] = "Inter"
-plt.rcParams["lines.markersize"] = 2
-plt.rcParams["lines.linewidth"] = 0.5
-plt.rcParams["legend.fontsize"] = 5
-plt.rcParams["legend.frameon"] = False
-plt.rcParams["axes.labelpad"] = 0.5
-
 
 if __name__ == "__main__":
     ARRAY_SIZE = (4, 4)
