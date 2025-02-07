@@ -1,6 +1,7 @@
 
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import numpy as np
 
 from nmem.analysis.analysis import (
     get_read_current,
@@ -9,6 +10,10 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    get_bit_error_rate,
+    get_bit_error_rate_args,
+    get_write_currents,
+    get_read_currents
 )
 
 SUBSTRATE_TEMP = 1.3
@@ -68,7 +73,7 @@ if __name__ == "__main__":
 
     # fig, axs = plt.subplot_mosaic("CD", figsize=(7.5, 3))
 
-    ax = axs["D"]
+    ax = axs["C"]
     for data_dict in dict_list:
         # plot_read_sweep(ax, data_dict, "bit_error_rate", "read_current")
         state_current_markers = get_state_current_markers(data_dict, "read_current")
@@ -82,6 +87,7 @@ if __name__ == "__main__":
                     label=f"{write_current} $\mu$A",
                     markerfacecolor=colors[i],
                     markeredgecolor="none",
+                    markersize=4,
                 )
         ax.axhline(read_current, color="black", linestyle="--", linewidth=0.5)
         # plot_state_current_markers(ax, data_dict, "read_current")
@@ -90,25 +96,59 @@ if __name__ == "__main__":
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
 
-    ax = axs["C"]
-    for data_dict in dict_list:
-        state_current_markers = get_state_current_markers(data_dict, "read_current")
-        write_current = get_write_current(data_dict)
-        for i, state_current in enumerate(state_current_markers[1, :]):
-            if state_current > 0:
-                ax.plot(
-                    write_current,
-                    state_current,
-                    "o",
-                    label=f"{write_current} $\mu$A",
-                    markerfacecolor=colors[i],
-                    markeredgecolor="none",
-                )
 
+
+    ic_list = []
+    write_current_list = []
+    ic_list2 = []
+    write_current_list2 = []
+    for data_dict in dict_list:
+        write_current = get_write_current(data_dict)
+
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        read_currents = get_read_currents(data_dict)
+        if not np.isnan(berargs[0]):
+            ic_list.append(read_currents[berargs[0]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[2]):
+            ic_list.append(read_currents[berargs[2]])
+            write_current_list.append(write_current)
+
+        if not np.isnan(berargs[1]):
+            ic_list2.append(read_currents[berargs[1]])
+            write_current_list2.append(write_current)
+        if not np.isnan(berargs[3]):
+            ic_list2.append(read_currents[berargs[3]])
+            write_current_list2.append(write_current)
+
+    ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
+    ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
     ax.set_xlim(0, 300)
-    ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.set_ylabel("BER")
+    # ax.set_ylim(0, 1)
+    # ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+
+
+
+
+    # ax.plot(write_current_list2, np.mean([ic_list, ic_list2], axis=0), "-", color="red", linewidth=0.5)
+    
+    error = np.abs(np.subtract(ic_list, ic_list2))/2
+
+    # ax = axs["D"]
+
+    # ax.errorbar(write_current_list2, np.mean([ic_list, ic_list2], axis=0), yerr=error, fmt="o", color="black", markersize=3)
+    
+    ax =axs["D"]
+    ax.plot(write_current_list2, np.abs(np.subtract(ic_list, ic_list2)), "-", color="red", linewidth=0.5)
+    ax.set_ylim([0, 100])
+    # ax.set_xlim(0, 300)
+    # ax.set_ylim(0, 1)
+    # ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.set_ylabel("IC Margin [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+
 
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
