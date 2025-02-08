@@ -1,19 +1,18 @@
 
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import numpy as np
 
 from nmem.analysis.analysis import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
     get_read_current,
+    get_read_currents,
     get_state_current_markers,
     get_write_current,
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    get_bit_error_rate,
-    get_bit_error_rate_args,
-    get_write_currents,
-    get_read_currents
 )
 
 SUBSTRATE_TEMP = 1.3

@@ -2,18 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import (
+    calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_enable_write_current,
-    get_read_currents,
-    get_state_current_markers,
     get_write_current,
-    get_write_temperature,
-    import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_write_sweep,
     get_write_temperatures,
-    calculate_critical_current_temp,
+    import_directory,
 )
 
 if __name__ == "__main__":
