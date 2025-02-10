@@ -4,6 +4,7 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
+
 from nmem.measurement.cells import CELLS
 
 # font_path = "/home/omedeiro/Inter-Regular.otf"

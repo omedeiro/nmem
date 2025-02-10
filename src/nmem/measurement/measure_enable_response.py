@@ -127,7 +127,7 @@ if __name__ == "__main__":
     nm.set_awg_off(b)
 
     nm.write_dict_to_file(file_path, data_dict)
-    print(f"run time {(time.time()-t1)/60:.2f} minutes")
+    print(f"run time {(time.time() - t1) / 60:.2f} minutes")
 
     fig, axs = plt.subplots()
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
