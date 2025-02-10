@@ -93,4 +93,4 @@ if __name__ == "__main__":
     nm.write_dict_to_file(file_path, measurement_settings)
     print(f"Bit error rate: {bit_error_rate:.2e}")
     t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    print(f"run time {(t2 - t1) / 60:.2f} minutes")

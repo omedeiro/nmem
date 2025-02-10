@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     initialize_dict,
