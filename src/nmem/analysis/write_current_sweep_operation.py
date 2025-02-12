@@ -13,6 +13,7 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
+    get_read_current,
 )
 
 if __name__ == "__main__":
@@ -25,51 +26,56 @@ if __name__ == "__main__":
     )
 
     ax = axs["A"]
-    ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:7])
+    ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
     ax.set_ylabel("BER")
     ax2.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
 
     ax = axs["B"]
-    ax.yaxis.set_major_locator(plt.MultipleLocator(0.10))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
     ax.set_ylim([8.3, 9.7])
     ax2 = ax.twinx()
-
+    
     colors = {
         0: "blue",
         1: "blue",
         2: "red",
         3: "red",
     }
-    for data_dict in dict_list:
+    write_temp_array = np.empty((len(dict_list), 4))
+    write_current_array = np.empty((len(dict_list), 1))
+    for j, data_dict in enumerate(dict_list):
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         write_current = get_write_current(data_dict)
         write_temps = get_write_temperatures(data_dict)
+        write_current_array[j] = write_current
 
         for i, arg in enumerate(berargs):
-            write_temp = write_temps[arg]
-            ax.plot(
-                write_current,
-                write_temp,
-                "o",
-                label=f"{write_current} $\mu$A",
-                markerfacecolor=colors[i],
-                markeredgecolor="none",
-                markersize=3,
-            )
-            ic = calculate_critical_current_temp(write_temp, 12.3, 910)
-            limits = ax.get_ylim()
-            ic_limits = calculate_critical_current_temp(np.array(limits), 12.3, 910)
-            ax2.set_ylim([ic_limits[0], ic_limits[1]])
+            if arg is not np.nan:
+                write_temp_array[j, i] = write_temps[arg]
+            # write_temp = write_temps[arg]
+    for i in range(4):
+        ax.plot(
+            write_current_array,
+            write_temp_array[:, i],
+            linestyle="--",
+            marker="o",
+            color=colors[i],
+            # label="Write 0",
+        )
+    # ic = calculate_critical_current_temp(write_temp_array[1,:], 12.3, 910)
+    limits = ax.get_ylim()
+    ic_limits = calculate_critical_current_temp(np.array(limits), 12.3, 910)
+    ax2.set_ylim([ic_limits[0], ic_limits[1]])
 
     ax2.set_ylabel("$I_{\mathrm{CH}}$ [$\mu$A]")
     ax.set_xlim(0, 100)
     # ax.set_ylim(200, 400)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(10))
+    ax.xaxis.set_major_locator(plt.MultipleLocator(20))
     ax.grid()
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("$T_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
 
     ax = axs["C"]
     dict_list = import_directory(
@@ -88,8 +94,12 @@ if __name__ == "__main__":
     for data_dict in dict_list:
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
-        write_currents = get_read_currents(data_dict)
+        write_currents = get_read_currents(
+            data_dict
+        )  # This is correct. "y" is the write current in this .mat.    
         enable_write_current = get_enable_write_current(data_dict)
+        read_current = get_read_current(data_dict)
+        write_current = get_write_current(data_dict)
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
 
@@ -113,16 +123,15 @@ if __name__ == "__main__":
                     #     marker="o",
                     #     markersize=5,
                     # )
-    ax.axvline(30, color="grey", linestyle="--")
-    ax.axvline(110, color="grey", linestyle="--")
-    ax.axvline(140, color="grey", linestyle="--")
-
+    # ax.axvline(30, color="grey", linestyle="--")
+    # ax.axvline(110, color="grey", linestyle="--")
+    # ax.axvline(140, color="grey", linestyle="--")
     ax = axs["D"]
 
-    ax.plot(ichl_temp, ichl_current_list, marker="o", color="blue")
-    ax.plot(ichr_temp, ichr_current_list, marker="o", color="red")
+    ax.plot(ichl_temp, ichl_current_list, linestyle="--", marker="o", color="blue")
+    ax.plot(ichr_temp, ichr_current_list, linestyle="--", marker="o", color="red")
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
-    ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
     ax.set_ylim(0, 300)
     ax.grid()
 

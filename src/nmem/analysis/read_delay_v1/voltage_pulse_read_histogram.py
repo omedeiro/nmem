@@ -8,15 +8,15 @@ from nmem.analysis.analysis import (
     plot_voltage_trace_averaged,
 )
 
-plt.rcParams["figure.figsize"] = [7, 3.5]
+# plt.rcParams["figure.figsize"] = [7, 3.5]
 plt.rcParams["font.size"] = 5
 plt.rcParams["axes.linewidth"] = 0.5
 plt.rcParams["xtick.major.width"] = 0.5
 plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["font.family"] = "Inter"
-plt.rcParams["lines.markersize"] = 2
+# plt.rcParams["xtick.direction"] = "in"
+# plt.rcParams["ytick.direction"] = "in"
+# plt.rcParams["font.family"] = "Inter"
+# plt.rcParams["lines.markersize"] = 2
 plt.rcParams["lines.linewidth"] = 0.5
 plt.rcParams["legend.fontsize"] = 5
 plt.rcParams["legend.frameon"] = False
@@ -72,7 +72,7 @@ def create_trace_hist_plot(
     ax2.set_ylabel("[mV]")
     ax3.legend()
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [ns]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     # plt.show()
 
     # fig, ax = plt.subplots()
-    # plot_voltage_hist(ax, dict_list[3])
+    # plot_voltage_hist(ax, dict_list[1])
     # plt.show()
 
     # dict_list2 = import_directory("data2")
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(figsize=(60/25.4, 45/25.4))
     dict_list = import_directory("data")
-    plot_voltage_hist(ax, dict_list[3])
+    plot_voltage_hist(ax, dict_list[1])
     # plt.show()
     save = True
     if save:
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     ax2.set_ylabel("[mV]")
     ax3.legend()
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [ns]")
+    ax_dict["B"].set_xlabel("Time [$\mu$s]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
     plt.savefig("delay_plotting_v3_trace.pdf", bbox_inches="tight")
