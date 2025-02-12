@@ -1,4 +1,3 @@
-
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
@@ -55,18 +54,17 @@ if __name__ == "__main__":
     )
     plot_read_switch_probability_array(ax, dict_list)
     # plot_fill_between_array(ax, dict_list)
-    ax.axvline(read_current, color="black", linestyle="--", linewidth=0.5)
+    ax.axvline(read_current, color="black", linestyle="--", linewidth=1)
     write_current_fixed = 100
-    ax.set_xlabel("$I_{\mathrm{read}}$ ($\mu$A)")
+    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
     ax.set_ylabel("BER")
-    # ax.set_xlim(650, 800)
+    ax.set_xlim(500, 850)
     ax2 = ax.twinx()
     ax2.set_ylim([0, 1])
     ax2.set_ylabel("Switching Probability")
     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
 
     # axs["B"].axvline(write_current_fixed, color="black", linestyle="--")
-    fig.subplots_adjust(wspace=0.2, hspace=0.3)
 
     # plt.savefig("write_current_sweep_enable_write2.pdf", bbox_inches="tight")
 
@@ -88,14 +86,12 @@ if __name__ == "__main__":
                     markeredgecolor="none",
                     markersize=4,
                 )
-        ax.axhline(read_current, color="black", linestyle="--", linewidth=0.5)
+    ax.axhline(read_current, color="black", linestyle="--", linewidth=1)
         # plot_state_current_markers(ax, data_dict, "read_current")
     # ax.axvline(write_current_fixed, color="black", linestyle="--")
     ax.set_xlim(0, 300)
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-
-
 
     ic_list = []
     write_current_list = []
@@ -128,26 +124,33 @@ if __name__ == "__main__":
     # ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-
-
-
-
+    # set the axes background to transparent
+    ax.patch.set_alpha(0.0)
+    fig.patch.set_visible(False)
     # ax.plot(write_current_list2, np.mean([ic_list, ic_list2], axis=0), "-", color="red", linewidth=0.5)
-    
-    error = np.abs(np.subtract(ic_list, ic_list2))/2
+
+    error = np.abs(np.subtract(ic_list, ic_list2)) / 2
 
     # ax = axs["D"]
 
     # ax.errorbar(write_current_list2, np.mean([ic_list, ic_list2], axis=0), yerr=error, fmt="o", color="black", markersize=3)
-    
-    ax =axs["D"]
-    ax.plot(write_current_list2, np.abs(np.subtract(ic_list, ic_list2)), "-", color="red", linewidth=0.5)
-    ax.set_ylim([0, 100])
-    # ax.set_xlim(0, 300)
+    ax = axs["D"]
+    ax.plot(
+        write_current_list2,
+        np.mean([ic_list, ic_list2], axis=0),
+        "o",
+        color="black",
+        markersize=3,
+    )
+    ax.set_ylim(axs["C"].get_ylim())
+    ax.axhline(read_current, color="black", linestyle="--", linewidth=1)
+    ax.set_xlim(0, 300)
     # ax.set_ylim(0, 1)
     # ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.set_ylabel("IC Margin [$\mu$A]")
+    ax.set_ylabel("Optimal $I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-
+    
+    fig.subplots_adjust(wspace=0.2, hspace=0.4)
+    fig.patch.set_visible(False)
 
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
