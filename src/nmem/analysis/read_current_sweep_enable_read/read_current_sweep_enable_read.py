@@ -17,28 +17,28 @@ from nmem.analysis.analysis import (
     plot_read_sweep_array,
 )
 
-font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-fm.fontManager.addfont(font_path)
-prop = fm.FontProperties(fname=font_path)
+# font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+# fm.fontManager.addfont(font_path)
+# prop = fm.FontProperties(fname=font_path)
 
-plt.rcParams.update(
-    {
-        "figure.figsize": [3.5, 3.5],
-        "font.size": 7,
-        "axes.linewidth": 0.5,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-        "xtick.direction": "out",
-        "ytick.direction": "out",
-        "font.family": "Inter",
-        "lines.markersize": 2,
-        "lines.linewidth": 1.2,
-        "legend.fontsize": 5,
-        "legend.frameon": False,
-        "xtick.major.size": 2,
-        "ytick.major.size": 2,
-    }
-)
+# plt.rcParams.update(
+#     {
+#         "figure.figsize": [3.5, 3.5],
+#         "font.size": 7,
+#         "axes.linewidth": 0.5,
+#         "xtick.major.width": 0.5,
+#         "ytick.major.width": 0.5,
+#         "xtick.direction": "out",
+#         "ytick.direction": "out",
+#         "font.family": "Inter",
+#         "lines.markersize": 2,
+#         "lines.linewidth": 1.2,
+#         "legend.fontsize": 5,
+#         "legend.frameon": False,
+#         "xtick.major.size": 2,
+#         "ytick.major.size": 2,
+#     }
+# )
 if __name__ == "__main__":
     data = import_directory("data")
 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(2,2, figsize=(8.3, 4), constrained_layout=True, width_ratios=[1, .25])
     
-    ax = axs[0,0]
+    ax = axs[1,0]
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "enable_read_current")
     plot_fill_between_array(ax, dict_list)
     ax.axvline(910, color="black", linestyle="--")
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     ax.set_xlim(400, 1000)
 
 
-    ax = axs[0,1]
+    ax = axs[1,1]
     ax.plot(
         enable_read_currents,
         read_temperatures,
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     data_list2 = [data_list[0], data_list[3], data_list[-6], data_list[-1]]
     colors = CMAP(np.linspace(0, 1, len(data_list2)))
 
-    ax = axs[1,0]
+    ax = axs[0,0]
     for j, data_dict in enumerate(data_list2):
         plot_read_sweep(
             ax, data_dict, "bit_error_rate", "enable_write_current", color=colors[j]
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     ax.set_xlim(400, 1000)
     ax.xaxis.set_major_locator(plt.MultipleLocator(100))
 
-    ax = axs[1,1]
+    ax = axs[0,1]
     # for i, data_dict in enumerate(data_list):
     #     state_currents = get_state_currents_measured(data_dict, "enable_write_current")
     #     for j, state in enumerate(state_currents[1]):
