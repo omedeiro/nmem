@@ -8,12 +8,14 @@ from nmem.analysis.analysis import (
     get_enable_write_current,
     get_read_currents,
     get_write_current,
-    get_write_temperature,
-    get_write_temperatures,
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
     get_read_current,
+    get_channel_temperature_sweep,
+    get_channel_temperature,
+    get_switching_current_heater_off,
+    CRITICAL_TEMP
 )
 
 if __name__ == "__main__":
@@ -48,9 +50,9 @@ if __name__ == "__main__":
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         write_current = get_write_current(data_dict)
-        write_temps = get_write_temperatures(data_dict)
+        write_temps = get_channel_temperature_sweep(data_dict)
         write_current_array[j] = write_current
-
+        critical_current_zero = get_switching_current_heater_off(data_dict)
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
                 write_temp_array[j, i] = write_temps[arg]
@@ -64,9 +66,8 @@ if __name__ == "__main__":
             color=colors[i],
             # label="Write 0",
         )
-    # ic = calculate_critical_current_temp(write_temp_array[1,:], 12.3, 910)
     limits = ax.get_ylim()
-    ic_limits = calculate_critical_current_temp(np.array(limits), 12.3, 910)
+    ic_limits = calculate_critical_current_temp(np.array(limits), CRITICAL_TEMP, critical_current_zero)
     ax2.set_ylim([ic_limits[0], ic_limits[1]])
 
     ax2.set_ylabel("$I_{\mathrm{CH}}$ [$\mu$A]")
@@ -105,7 +106,7 @@ if __name__ == "__main__":
 
                 if i == 0:
                     ichl_current_list.append(write_currents[arg])
-                    ichl_temp.append(get_write_temperature(data_dict))
+                    ichl_temp.append(get_channel_temperature(data_dict, "write"))
                     # ax.plot(
                     #     write_currents[arg],
                     #     bit_error_rate[arg],
@@ -115,7 +116,7 @@ if __name__ == "__main__":
                     # )
                 if i == 2:
                     ichr_current_list.append(write_currents[arg])
-                    ichr_temp.append(get_write_temperature(data_dict))
+                    ichr_temp.append(get_channel_temperature(data_dict, "write"))
                     # ax.plot(
                     #     write_currents[arg],
                     #     bit_error_rate[arg],

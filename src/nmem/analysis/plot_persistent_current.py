@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     for i, current in enumerate(persistent_currents):
 
-        temperatures = np.linspace(0, CRITICAL_TEMP, 1000)
+        temperatures = np.linspace(0, CRITICAL_TEMP, 100)
         plot_calculated_state_currents(
             axs[i],
             temperatures,
