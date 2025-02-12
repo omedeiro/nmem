@@ -520,6 +520,15 @@ def get_read_temperatures(data_dict: dict) -> np.ndarray:
     return read_temps
 
 
+def get_write_temperature(data_dict: dict) -> float:
+    enable_write_current = get_enable_write_current(data_dict)
+    max_enable_current = get_max_enable_current(data_dict)
+    write_temp = _calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
+    )
+    return write_temp
+
+
 def get_write_temperatures(data_dict: dict) -> np.ndarray:
     enable_write_currents = get_enable_write_currents(data_dict)
     max_enable_current = get_max_enable_current(data_dict)
@@ -553,13 +562,6 @@ def get_read_temperatures_array(dict_list: list[dict]) -> np.ndarray:
     return np.array(read_temps)
 
 
-def get_write_temperature(data_dict: dict) -> float:
-    enable_write_current = get_enable_write_current(data_dict)
-    max_enable_current = get_max_enable_current(data_dict)
-    write_temp = _calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_write_current, max_enable_current
-    )
-    return write_temp
 
 
 def get_write_current(data_dict: dict) -> float:
@@ -1205,8 +1207,6 @@ def plot_parameter_array(
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.tick_params(axis="both", length=0)
-    # ax = plot_text_labels(ax, xloc, yloc, parameter_array, log)
-
     return ax
 
 
