@@ -129,6 +129,7 @@ def _calculate_channel_temperature(
     ih_max: float,
 ) -> float:
     N = 2.0
+    beta = 1.25
     if ih_max == 0:
         raise ValueError("ih_max cannot be zero to avoid division by zero.")
 
@@ -142,16 +143,6 @@ def _calculate_channel_temperature(
     return temp_channel
 
 
-def calculate_critical_current(data_dict: dict) -> np.ndarray:
-    critical_temperature = data_dict.get("critical_temperature", CRITICAL_TEMP)
-    channel_temperature = calculate_channel_temperature(data_dict)
-    critical_current_heater_off = get_critical_current_heater_off(data_dict)
-
-    return calculate_critical_current_zero(
-        critical_temperature, channel_temperature, critical_current_heater_off
-    )
-
-
 def calculate_critical_current_zero(
     critical_temperature: float,
     substrate_temperature: float,
@@ -163,10 +154,6 @@ def calculate_critical_current_zero(
     )
     return ic_zero
 
-
-def calculate_zero_temp_critical_current(Tsub: float, Tc: float, Ic: float) -> float:
-    Ic0 = Ic / (1 - (Tsub / Tc) ** 3) ** (2.1)
-    return Ic0
 
 
 # def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
@@ -804,6 +791,9 @@ def plot_branch_currents(
     ax.plot(T, ichr, label="$I_{c, H_R}(T)$", color="r", linestyle="-")
     ax.plot(T, irhr, label="$I_{r, H_R}(T)$", color="r", linestyle="--")
 
+    ax.plot(T, ichr+irhl, label="$I_{0}(T)$", color="g", linestyle="-")
+    print(f"ichr: {ichr[0]}, irhl: {irhl[0]}")
+    print(f"sum {ichr[0]+irhl[0]}")
     return ax
 
 
@@ -835,6 +825,7 @@ def plot_calculated_filled_region(
     retrap_ratio: float,
     width_ratio: float,
     alpha: float,
+    critical_current_zero: float,
 ) -> Axes:
 
     plot_calculated_nominal_region(
@@ -846,6 +837,7 @@ def plot_calculated_filled_region(
         retrap_ratio,
         width_ratio,
         alpha,
+        critical_current_zero,
     )
     plot_calculated_inverting_region(
         ax,
@@ -856,6 +848,7 @@ def plot_calculated_filled_region(
         retrap_ratio,
         width_ratio,
         alpha,
+        critical_current_zero,
     )
 
     return ax
@@ -870,9 +863,8 @@ def plot_calculated_nominal_region(
     retrap_ratio: float,
     width_ratio: float,
     alpha: float,
+    critical_current_zero: float,
 ) -> Axes:
-    # critical_current_zero = get_critical_current_heater_off(data_dict)
-    critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         critical_temp,
@@ -905,8 +897,8 @@ def plot_calculated_inverting_region(
     retrap_ratio: float,
     width_ratio: float,
     alpha: float,
+    critical_current_zero: float,
 ) -> Axes:
-    critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         critical_temp,
