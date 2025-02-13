@@ -235,7 +235,7 @@ def calculate_state_currents(
 
     fa = ichr + irhl
     fb = ichl + irhr
-    fc = (ichl - persistent_current) / alpha 
+    fc = (ichl - persistent_current) / alpha
     fd = fb - persistent_current
 
     fa = np.maximum(fa, 0)
@@ -454,7 +454,6 @@ def get_fitting_points(
 def get_max_enable_current(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["x_intercept"]
-
 
 
 def get_critical_current_intercept(data_dict: dict) -> float:
@@ -828,26 +827,58 @@ def plot_channel_temperature(
 
 
 def plot_calculated_filled_region(
-    ax, temp: np.ndarray, data_dict: dict, persistent_current: float
+    ax,
+    temp: np.ndarray,
+    data_dict: dict,
+    persistent_current: float,
+    critical_temp: float,
+    retrap_ratio: float,
+    width_ratio: float,
+    alpha: float,
 ) -> Axes:
 
-    plot_calculated_nominal_region(ax, temp, data_dict, persistent_current)
-    plot_calculated_inverting_region(ax, temp, data_dict, persistent_current)
+    plot_calculated_nominal_region(
+        ax,
+        temp,
+        data_dict,
+        persistent_current,
+        critical_temp,
+        retrap_ratio,
+        width_ratio,
+        alpha,
+    )
+    plot_calculated_inverting_region(
+        ax,
+        temp,
+        data_dict,
+        persistent_current,
+        critical_temp,
+        retrap_ratio,
+        width_ratio,
+        alpha,
+    )
 
     return ax
 
 
 def plot_calculated_nominal_region(
-    ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
+    ax: Axes,
+    temp: np.ndarray,
+    data_dict: dict,
+    persistent_current: float,
+    critical_temp: float,
+    retrap_ratio: float,
+    width_ratio: float,
+    alpha: float,
 ) -> Axes:
     # critical_current_zero = get_critical_current_heater_off(data_dict)
     critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
-        CRITICAL_TEMP,
-        RETRAP,
-        WIDTH,
-        ALPHA,
+        critical_temp,
+        retrap_ratio,
+        width_ratio,
+        alpha,
         persistent_current,
         critical_current_zero,
     )
@@ -866,19 +897,25 @@ def plot_calculated_nominal_region(
 
 
 def plot_calculated_inverting_region(
-    ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
+    ax: Axes,
+    temp: np.ndarray,
+    data_dict: dict,
+    persistent_current: float,
+    critical_temp: float,
+    retrap_ratio: float,
+    width_ratio: float,
+    alpha: float,
 ) -> Axes:
     critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
-        CRITICAL_TEMP,
-        RETRAP,
-        WIDTH,
-        ALPHA,
+        critical_temp,
+        retrap_ratio,
+        width_ratio,
+        alpha,
         persistent_current,
         critical_current_zero,
     )
-
     upper_bound = np.minimum(np.minimum(np.maximum(i0, i2), i1), critical_current_zero)
     lower_bound = np.minimum(np.minimum(np.minimum(i2, i3), i0), critical_current_zero)
     ax.fill_between(
@@ -1784,37 +1821,67 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
     return ax
 
+
 def filter_nan(x, y):
     mask = np.isnan(y)
     x = x[~mask]
     y = y[~mask]
     return x, y
 
+
 persistent_current = 30
 critical_current_zero = 910
+
+
 def fit_function0(x, alpha, retrap, width):
 
     i0, _, _, _ = calculate_state_currents(
-        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+        x,
+        CRITICAL_TEMP,
+        retrap,
+        width,
+        alpha,
+        persistent_current,
+        critical_current_zero,
     )
     return i0
 
 
 def fit_function1(x, alpha, retrap, width):
     _, i1, _, _ = calculate_state_currents(
-        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+        x,
+        CRITICAL_TEMP,
+        retrap,
+        width,
+        alpha,
+        persistent_current,
+        critical_current_zero,
     )
     return i1
 
+
 def fit_function2(x, alpha, retrap, width):
     _, _, i2, _ = calculate_state_currents(
-        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+        x,
+        CRITICAL_TEMP,
+        retrap,
+        width,
+        alpha,
+        persistent_current,
+        critical_current_zero,
     )
     return i2
 
+
 def fit_function3(x, alpha, retrap, width):
     _, _, _, i3 = calculate_state_currents(
-        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+        x,
+        CRITICAL_TEMP,
+        retrap,
+        width,
+        alpha,
+        persistent_current,
+        critical_current_zero,
     )
     return i3
 
@@ -1824,7 +1891,6 @@ if __name__ == "__main__":
     data = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
     )
-
 
     ALPHA = 0.5
     RETRAP = 0.4
