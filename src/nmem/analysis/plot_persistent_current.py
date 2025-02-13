@@ -24,7 +24,7 @@ if __name__ == "__main__":
     data_dict = dict_list[0]
     persistent_current = 30
     fig, ax = plt.subplots()
-    critical_current_zero = get_critical_current_intercept(data_dict)
+    critical_current_zero = get_critical_current_intercept(data_dict)*0.88
 
     temperatures = np.linspace(0, CRITICAL_TEMP, 100)
     plot_calculated_state_currents(
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         RETRAP,
         WIDTH,
         ALPHA,
+        critical_current_zero,
     )
     ax.set_xlabel("Temperature [K]")
     ax.set_ylabel("Current [au]")
