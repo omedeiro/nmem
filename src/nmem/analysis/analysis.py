@@ -11,8 +11,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.optimize import curve_fit
-
+from scipy.optimize import curve_fit, least_squares
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
@@ -155,7 +154,6 @@ def calculate_critical_current_zero(
     return ic_zero
 
 
-
 # def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
 #     return Ic0 * (1 - (T / Tc) ** (3 / 2))
 
@@ -221,7 +219,7 @@ def calculate_state_currents(
     )
 
     fa = ichr + irhl
-    fb = ichl + irhr
+    fb = ichl + irhr - persistent_current
     fc = (ichl - persistent_current) / alpha
     fd = fb - persistent_current
 
@@ -791,7 +789,7 @@ def plot_branch_currents(
     ax.plot(T, ichr, label="$I_{c, H_R}(T)$", color="r", linestyle="-")
     ax.plot(T, irhr, label="$I_{r, H_R}(T)$", color="r", linestyle="--")
 
-    ax.plot(T, ichr+irhl, label="$I_{0}(T)$", color="g", linestyle="-")
+    ax.plot(T, ichr + irhl, label="$I_{0}(T)$", color="g", linestyle="-")
     print(f"ichr: {ichr[0]}, irhl: {irhl[0]}")
     print(f"sum {ichr[0]+irhl[0]}")
     return ax
@@ -1820,63 +1818,26 @@ def filter_nan(x, y):
     y = y[~mask]
     return x, y
 
-
-persistent_current = 30
-critical_current_zero = 910
-
-
-def fit_function0(x, alpha, retrap, width):
-
-    i0, _, _, _ = calculate_state_currents(
-        x,
-        CRITICAL_TEMP,
-        retrap,
-        width,
-        alpha,
-        persistent_current,
-        critical_current_zero,
+def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3)-> float:
+    alpha, retrap, width, persistent, critical_current_zero = p
+    model = model_function(x0, x1, x2, x3, alpha, retrap, width, persistent, critical_current_zero)
+    residuals = np.concatenate(
+        [
+            y0 - model[0],
+            y1 - model[1],
+            y2 - model[2],
+            y3 - model[3],
+        ]
     )
-    return i0
+    return residuals
 
-
-def fit_function1(x, alpha, retrap, width):
-    _, i1, _, _ = calculate_state_currents(
-        x,
-        CRITICAL_TEMP,
-        retrap,
-        width,
-        alpha,
-        persistent_current,
-        critical_current_zero,
-    )
-    return i1
-
-
-def fit_function2(x, alpha, retrap, width):
-    _, _, i2, _ = calculate_state_currents(
-        x,
-        CRITICAL_TEMP,
-        retrap,
-        width,
-        alpha,
-        persistent_current,
-        critical_current_zero,
-    )
-    return i2
-
-
-def fit_function3(x, alpha, retrap, width):
-    _, _, _, i3 = calculate_state_currents(
-        x,
-        CRITICAL_TEMP,
-        retrap,
-        width,
-        alpha,
-        persistent_current,
-        critical_current_zero,
-    )
-    return i3
-
+def model_function(x0, x1, x2, x3, alpha, retrap, width, persistent, critical_current_zero):
+    i0, _, _, _ = calculate_state_currents(x0, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero)
+    _, i1, _, _ = calculate_state_currents(x1, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero)
+    _, _, i2, _ = calculate_state_currents(x2, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero)
+    _, _, _, i3 = calculate_state_currents(x3, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero)
+    model = [i0, i1, i2, i3]
+    return model
 
 if __name__ == "__main__":
 
@@ -1884,9 +1845,11 @@ if __name__ == "__main__":
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
     )
 
-    ALPHA = 0.5
-    RETRAP = 0.4
+    ALPHA = 0.612
+    RETRAP = 0.6
     WIDTH = 1 / 2.1
+    persistent_current = 30
+    critical_current_zero = get_critical_current_intercept(data[0])
 
     data_dict1 = sio.loadmat("measured_state_currents_290.mat")
     data_dict2 = sio.loadmat("measured_state_currents_300.mat")
@@ -1895,26 +1858,40 @@ if __name__ == "__main__":
     dict_list = [data_dict1, data_dict2, data_dict3]
     colors = CMAP(np.linspace(0.1, 1, 4))
     fit_results = []
-    for data_dict in dict_list:
-        critical_current_zero = get_critical_current_intercept(data[0])
-        persistent_current = 1
+    for data_dict in [dict_list[1]]:
         fig, ax = plt.subplots()
         temp = data_dict["measured_temperature"].flatten()
         state_currents = data_dict["measured_state_currents"]
-        fit_funcs = [fit_function0, fit_function1, fit_function2, fit_function3]
+        x_list = []
+        y_list = []
         for i in range(4):
             x = temp
             y = state_currents[:, i]
             x, y = filter_nan(x, y)
-            func = fit_funcs[i]
-            if len(x) > 4:
+            ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
+            if len(x) > 0:
+                x_list.append(x)
+                y_list.append(y)
+            else:
+                x_list.append(None)
+                y_list.append(None)
+        print(critical_current_zero)
+        p0 = [ALPHA, RETRAP, WIDTH, persistent_current, critical_current_zero]
+        fit = least_squares(
+            residuals,
+            p0,
+            args=(x_list[0], y_list[0], x_list[1], y_list[1], x_list[2], y_list[2], x_list[3], y_list[3]),
+            bounds=([0, 0, 0, -100, 0], [1, 1, 1, 100, 5000]),
+        )
+        fit_results.append(fit.x)
+        model = model_function(x_list[0], x_list[1], x_list[2], x_list[3], *fit.x)
+        for i in range(4):
+            ax.plot(x_list[i], model[i], "--", color=colors[i])
 
-                popt, _ = curve_fit(func, x, y, p0=[ALPHA, RETRAP, WIDTH])
-                fit_results.append(popt)
-                xtemp = np.linspace(0, CRITICAL_TEMP, 100)
-                ax.plot(xtemp, func(xtemp, *popt), color=colors[i])
-            ax.plot(x, y, "o", color=colors[i], label=f"State {i}")
         ax.legend()
 
+        ax.set_xlim([6, 8.5])
+        ax.set_ylim([500, 1000])
+
     for f in fit_results:
-        print(f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Width: {f[2]:.2f}")
+        print(f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Width: {f[2]:.2f}, Persistent: {f[3]:.2f}, Critical Current Zero: {f[4]:.2f}")
