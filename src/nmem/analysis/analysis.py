@@ -11,6 +11,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.optimize import curve_fit
 
 from nmem.calculations.calculations import (
     calculate_heater_power,
@@ -21,10 +22,6 @@ from nmem.measurement.cells import CELLS
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
-
-ALPHA = 0.563
-RETRAP = 0.573
-WIDTH = 1 / 2.13
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
@@ -237,9 +234,9 @@ def calculate_state_currents(
     )
 
     fa = ichr + irhl
-    fb = ichl + irhr - 50 - persistent_current
-    fc = (ichl - persistent_current) / alpha - 130
-    fd = fb + persistent_current - 30
+    fb = ichl + irhr
+    fc = (ichl - persistent_current) / alpha 
+    fd = fb - persistent_current
 
     fa = np.maximum(fa, 0)
     fb = np.maximum(fb, 0)
@@ -843,7 +840,8 @@ def plot_calculated_filled_region(
 def plot_calculated_nominal_region(
     ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    critical_current_zero = get_critical_current_heater_off(data_dict)
+    # critical_current_zero = get_critical_current_heater_off(data_dict)
+    critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -870,7 +868,7 @@ def plot_calculated_nominal_region(
 def plot_calculated_inverting_region(
     ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    critical_current_zero = get_critical_current_heater_off(data_dict)
+    critical_current_zero = get_critical_current_intercept(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -1786,124 +1784,79 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
     return ax
 
+def filter_nan(x, y):
+    mask = np.isnan(y)
+    x = x[~mask]
+    y = y[~mask]
+    return x, y
 
-# if __name__ == "__main__":
+persistent_current = 30
+critical_current_zero = 910
+def fit_function0(x, alpha, retrap, width):
 
-#     # data = import_directory(
-#     #     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-#     # )
-
-#     enable_read_290_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_290uA"
-#     )
-#     enable_read_300_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_300uA"
-#     )
-#     enable_read_310_list = import_directory(
-#         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data_310uA"
-#     )
-#     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
-
-#     fig2, axs2 = plt.subplots(1, 3, figsize=(7, 4.3), sharey=True)
-#     persistent_currents = [0, 30, 60]
-#     for i in range(3):
-#         measured_temps, measured_state_currents = get_state_currents_measured_array(
-#             dict_list[i], ""
-#         )
-#         temp_array = np.linspace(measured_temps[0], measured_temps[-1], 100)
-#         temp_array = np.linspace(0, CRITICAL_TEMP, 100)
-#         plot_measured_state_current_list(axs2[i], dict_list[i])
-#         # plot_calculated_state_currents(
-#         #     axs2[i],
-#         #     temp_array,
-#         #     CRITICAL_TEMP,
-#         #     RETRAP,
-#         #     WIDTH,
-#         #     ALPHA,
-#         #     persistent_currents[i],
-#         #     CRITICAL_CURRENT_ZERO,
-#         # )
-#         plot_calculated_filled_region(
-#             axs2[i], temp_array, dict_list[i][2], persistent_currents[i]
-#         )
-
-#         axs2[i].set_xlim(6, 9)
-#         axs2[i].set_ylim(500, 1000)
-#         # axs2[i].set_ybound(lower=0)
-#         axs2[i].legend()
-#         axs2[i].grid()
-
-# if __name__ == "__main__":
-# dict_list = import_directory(
-#     r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
-# )
-# dict_list = dict_list[1:]
-# fig, axs = plt.subplots(1, 2, figsize=(6, 4), width_ratios=[1, 0.25])
-# dict_list = dict_list[::-1]
-# ax = axs[0]
-# plot_write_sweep(ax, dict_list)
-# ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-# ax.set_ylabel("BER")
-# ax.set_xlim(0, 300)
-# ichl_current_list = []
-# ichr_current_list = []
-# ichl_temp = []
-# ichr_temp = []
-# for data_dict in dict_list:
-#     bit_error_rate = get_bit_error_rate(data_dict)
-#     berargs = get_bit_error_rate_args(bit_error_rate)
-#     write_currents = get_read_currents(data_dict)
-#     enable_write_current = get_enable_write_current(data_dict)
-#     for i, arg in enumerate(berargs):
-#         if arg is not np.nan:
-
-#             if i==0:
-#                 ichl_current_list.append(write_currents[arg])
-#                 ichl_temp.append(get_channel_temperature(data_dict, "write"))
-#                 # ax.plot(
-#                 #     write_currents[arg],
-#                 #     bit_error_rate[arg],
-#                 #     color="C0",
-#                 #     marker="o",
-#                 #     markersize=5,
-#                 # )
-#             if i==2:
-#                 ichr_current_list.append(write_currents[arg])
-#                 ichr_temp.append(get_channel_temperature(data_dict, "write"))
-#                 # ax.plot(
-#                 #     write_currents[arg],
-#                 #     bit_error_rate[arg],
-#                 #     color="C1",
-#                 #     marker="o",
-#                 #     markersize=5,
-#                 # )
-# ax.axvline(30, color="grey", linestyle="--")
-# ax.axvline(110, color="grey", linestyle="--")
-# ax.axvline(140, color="grey", linestyle="--")
-
-# ax = axs[1]
-# # for data_dict in dict_list:
-# #     plot_channel_temperature(
-# #         ax,
-# #         data_dict,
-# #         "enable_write_current",
-# #         linestyle="-",
-# #         marker="o",
-# #         color="black",
-# #     )
-
-# # ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-# # ax.set_ylabel("$T_{\mathrm{channel}}$ [K]")
-# # plt.show()
-
-# # fig, ax = plt.subplots()
-# ax.plot(ichl_temp, ichl_current_list, marker="o")
-# ax.plot(ichr_temp, ichr_current_list, marker="o")
-# ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
-# ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
-# ax.set_ylim(0,300)
-# ax.grid()
+    i0, _, _, _ = calculate_state_currents(
+        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+    )
+    return i0
 
 
-# fig.subplots_adjust(wspace=0.3)
+def fit_function1(x, alpha, retrap, width):
+    _, i1, _, _ = calculate_state_currents(
+        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+    )
+    return i1
 
+def fit_function2(x, alpha, retrap, width):
+    _, _, i2, _ = calculate_state_currents(
+        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+    )
+    return i2
+
+def fit_function3(x, alpha, retrap, width):
+    _, _, _, i3 = calculate_state_currents(
+        x, CRITICAL_TEMP, retrap, width, alpha, persistent_current, critical_current_zero
+    )
+    return i3
+
+
+if __name__ == "__main__":
+
+    data = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
+    )
+
+
+    ALPHA = 0.5
+    RETRAP = 0.4
+    WIDTH = 1 / 2.1
+
+    data_dict1 = sio.loadmat("measured_state_currents_290.mat")
+    data_dict2 = sio.loadmat("measured_state_currents_300.mat")
+    data_dict3 = sio.loadmat("measured_state_currents_310.mat")
+
+    dict_list = [data_dict1, data_dict2, data_dict3]
+    colors = CMAP(np.linspace(0.1, 1, 4))
+    fit_results = []
+    for data_dict in dict_list:
+        critical_current_zero = get_critical_current_intercept(data[0])
+        persistent_current = 1
+        fig, ax = plt.subplots()
+        temp = data_dict["measured_temperature"].flatten()
+        state_currents = data_dict["measured_state_currents"]
+        fit_funcs = [fit_function0, fit_function1, fit_function2, fit_function3]
+        for i in range(4):
+            x = temp
+            y = state_currents[:, i]
+            x, y = filter_nan(x, y)
+            func = fit_funcs[i]
+            if len(x) > 4:
+
+                popt, _ = curve_fit(func, x, y, p0=[ALPHA, RETRAP, WIDTH])
+                fit_results.append(popt)
+                xtemp = np.linspace(0, CRITICAL_TEMP, 100)
+                ax.plot(xtemp, func(xtemp, *popt), color=colors[i])
+            ax.plot(x, y, "o", color=colors[i], label=f"State {i}")
+        ax.legend()
+
+    for f in fit_results:
+        print(f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Width: {f[2]:.2f}")
