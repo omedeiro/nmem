@@ -2,7 +2,6 @@ import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import (
-    get_write_temperature,
     import_directory,
     plot_fill_between_array,
     plot_read_sweep_array,
@@ -52,7 +51,6 @@ if __name__ == "__main__":
         axs[i].set_xlim(400, 1000)
         axs[i].set_ylim(0, 1)
         axs[i].set_xlabel("Read Current ($\mu$A)")
-        enable_write_temp = get_write_temperature(dict_list[i][0])
 
     axs[0].set_ylabel("Bit Error Rate")
     axs[2].legend(

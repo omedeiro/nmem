@@ -4,12 +4,11 @@ import numpy as np
 from nmem.analysis.analysis import (
     CMAP,
     get_enable_write_current,
-    get_enable_write_current_array,
     get_write_current,
-    get_write_temperatures_array,
     import_directory,
     plot_fill_between,
     plot_read_sweep,
+    get_channel_temperature
 )
 
 if __name__ == "__main__":
@@ -50,20 +49,26 @@ if __name__ == "__main__":
     #                 marker="o",
     #                 color=colors[j],
     #             )
-    write_current = get_write_current(data_dict)
-    enable_write_currents = get_enable_write_current_array(data_list)
-    # ax.set_xlabel("Write Temperature [K]")
-    # ax.set_ylabel("Read Current [$\mu$A]")
+    enable_write_currents = []
+    write_temperatures = []
 
-    write_temperatures = get_write_temperatures_array(data_list)
+    for j, data_dict in enumerate(data_list):
+        write_current = get_write_current(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
+
+        write_temperature = get_channel_temperature(data_dict, "write")
+        enable_write_currents.append(enable_write_current)
+        write_temperatures.append(write_temperature)
+
     ax.plot(
         enable_write_currents,
         write_temperatures,
         marker="o",
         color="black",
     )
+    
 
-    for i, idx in enumerate([0, 3, -6]):
+    for i, idx in enumerate([0, 3, -6, -1]):
         ax.plot(
             enable_write_currents[idx],
             write_temperatures[idx],
