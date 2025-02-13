@@ -147,12 +147,12 @@ def calculate_critical_current(data_dict: dict) -> np.ndarray:
     channel_temperature = calculate_channel_temperature(data_dict)
     critical_current_heater_off = get_critical_current_heater_off(data_dict)
 
-    return _calculate_critical_current_zero(
+    return calculate_critical_current_zero(
         critical_temperature, channel_temperature, critical_current_heater_off
     )
 
 
-def _calculate_critical_current_zero(
+def calculate_critical_current_zero(
     critical_temperature: float,
     substrate_temperature: float,
     critical_current_heater_off: float,
