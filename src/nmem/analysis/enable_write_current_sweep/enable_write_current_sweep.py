@@ -12,7 +12,10 @@ if __name__ == "__main__":
     dict_list = import_directory("data")
 
     fig, ax = plt.subplots()
-    ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:7])
+    ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list)
+    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    ax.set_ylabel("BER")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     plt.savefig("enable_write_sweep.pdf", bbox_inches="tight")
     plt.show()
     ax2.xaxis.set_major_locator(MultipleLocator(0.1))
