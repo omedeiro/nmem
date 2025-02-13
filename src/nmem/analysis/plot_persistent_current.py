@@ -1,4 +1,9 @@
-from nmem.analysis.analysis import plot_calculated_state_currents
+from nmem.analysis.analysis import (
+    plot_calculated_state_currents,
+    plot_calculated_filled_region,
+    import_directory,
+    get_critical_current_intercept,
+)
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,35 +12,48 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 910
 ALPHA = 0.563
 RETRAP = 0.573
 WIDTH = 1 / 2.13
 
 if __name__ == "__main__":
-    fig, axs = plt.subplots(1, 3, figsize=(9, 6))
-    persistent_currents = [0, 50, 150]
 
-    for i, current in enumerate(persistent_currents):
+    dict_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
+    )
+    data_dict = dict_list[0]
+    persistent_current = 30
+    fig, ax = plt.subplots()
+    critical_current_zero = get_critical_current_intercept(data_dict)
 
-        temperatures = np.linspace(0, CRITICAL_TEMP, 100)
-        plot_calculated_state_currents(
-            axs[i],
-            temperatures,
-            CRITICAL_TEMP,
-            RETRAP,
-            WIDTH,
-            ALPHA,
-            current, 
-            CRITICAL_CURRENT_ZERO,
-        )
+    temperatures = np.linspace(0, CRITICAL_TEMP, 100)
+    plot_calculated_state_currents(
+        ax,
+        temperatures,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+        critical_current_zero,
+    )
 
-        axs[i].set_xlabel("Temperature [K]")
-        axs[i].set_ylabel("Current [au]")
-        axs[i].grid()
-        axs[i].set_xlim(0, 12.3)
+    plot_calculated_filled_region(
+        ax,
+        temperatures,
+        data_dict,
+        persistent_current,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+    )
+    ax.set_xlabel("Temperature [K]")
+    ax.set_ylabel("Current [au]")
+    ax.grid()
+    ax.set_xlim(0, CRITICAL_TEMP)
 
-    axs[i].legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
 
     # ax.set_ylim(0, 1)
     plt.show()
