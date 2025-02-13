@@ -278,11 +278,12 @@ def get_optimal_enable_write_current(current_cell: str) -> float:
 
 
 def get_enable_current_sweep(data_dict: dict) -> np.ndarray:
+
     enable_current_array: np.ndarray = data_dict.get("x")[:, :, 0].flatten() * 1e6
     if len(enable_current_array) == 1:
         enable_current_array = data_dict.get("x")[:, 0].flatten() * 1e6
 
-    if len(enable_current_array) == 1:
+    if enable_current_array[0] == enable_current_array[1]:
         enable_current_array = data_dict.get("y")[:, :, 0].flatten() * 1e6
 
     return enable_current_array
@@ -457,10 +458,6 @@ def get_max_enable_current(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["x_intercept"]
 
-
-def get_switching_current_heater_off(data_dict: dict) -> float:
-    cell = get_current_cell(data_dict)
-    return CELLS[cell]["max_critical_current"] * 1e6
 
 
 def get_critical_current_intercept(data_dict: dict) -> float:
@@ -846,7 +843,7 @@ def plot_calculated_filled_region(
 def plot_calculated_nominal_region(
     ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    critical_current_zero = get_switching_current_heater_off(data_dict)
+    critical_current_zero = get_critical_current_heater_off(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -873,7 +870,7 @@ def plot_calculated_nominal_region(
 def plot_calculated_inverting_region(
     ax: Axes, temp: np.ndarray, data_dict: dict, persistent_current: float
 ) -> Axes:
-    critical_current_zero = get_switching_current_heater_off(data_dict)
+    critical_current_zero = get_critical_current_heater_off(data_dict)
     i0, i1, i2, i3 = calculate_state_currents(
         temp,
         CRITICAL_TEMP,
@@ -1048,7 +1045,7 @@ def plot_enable_current_relation(ax: Axes, dict_list: list[dict]) -> Axes:
 
 def plot_fill_between(ax, data_dict, fill_color):
     # fill the area between 0.5 and the curve
-    enable_write_currents = get_enable_current_sweep(data_dict, "write")
+    enable_write_currents = get_enable_current_sweep(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     verts = polygon_nominal(enable_write_currents, bit_error_rate)
     poly = PolyCollection([verts], facecolors=fill_color, alpha=0.3, edgecolors="k")
@@ -1414,7 +1411,7 @@ def get_state_current_markers(
     if current_sweep == "read_current":
         currents = get_read_currents(data_dict)
     if current_sweep == "enable_write_current":
-        currents = get_enable_current_sweep(data_dict, "write")
+        currents = get_enable_current_sweep(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     berargs = get_bit_error_rate_args(bit_error_rate)
     state_current_markers = np.zeros((2, 4))
