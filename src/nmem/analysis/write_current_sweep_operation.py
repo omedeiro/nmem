@@ -14,7 +14,7 @@ from nmem.analysis.analysis import (
     get_read_current,
     get_channel_temperature_sweep,
     get_channel_temperature,
-    get_switching_current_heater_off,
+    get_critical_current_heater_off,
     CRITICAL_TEMP
 )
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         write_current = get_write_current(data_dict)
         write_temps = get_channel_temperature_sweep(data_dict)
         write_current_array[j] = write_current
-        critical_current_zero = get_switching_current_heater_off(data_dict)
+        critical_current_zero = get_critical_current_heater_off(data_dict)
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
                 write_temp_array[j, i] = write_temps[arg]

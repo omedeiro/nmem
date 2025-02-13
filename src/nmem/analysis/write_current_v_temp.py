@@ -6,7 +6,7 @@ from nmem.analysis.analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_write_current,
-    get_write_temperatures,
+    get_channel_temperature_sweep,
     import_directory,
 )
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         write_current = get_write_current(data_dict)
-        write_temps = get_write_temperatures(data_dict)
+        write_temps = get_channel_temperature_sweep(data_dict)
 
         for i, arg in enumerate(berargs):
             write_temp = write_temps[arg]
