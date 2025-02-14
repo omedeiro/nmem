@@ -396,8 +396,8 @@ def calculate_bit_error_rate(
 
 
 def calculate_power(data_dict: dict):
-    one_voltage = data_dict.get("read_one_top")[1]
-    zero_voltage = data_dict.get("read_zero_top")[1]
+    one_voltage = data_dict.get("read_one_top")
+    zero_voltage = data_dict.get("read_zero_top")
     read_current = data_dict.get("read_current")
     write_current = data_dict.get("write_current")
 
