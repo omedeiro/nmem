@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-
+import pandas as pd
 from nmem.analysis.analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -12,16 +12,18 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    calculate_critical_current_temp,
+    calculate_channel_temperature,
+    CELLS,
 )
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-CRITICAL_CURRENT_ZERO = 1600
-ALPHA = 0.563
-RETRAP = 0.573
-WIDTH = 1 / 2.13
+CRITICAL_CURRENT_ZERO = 1250
+ALPHA = 0.38
+WIDTH = 0.4
 
 
 if __name__ == "__main__":
@@ -87,7 +89,7 @@ if __name__ == "__main__":
                     markersize=4,
                 )
     ax.axhline(read_current, color="black", linestyle="--", linewidth=1)
-        # plot_state_current_markers(ax, data_dict, "read_current")
+    # plot_state_current_markers(ax, data_dict, "read_current")
     # ax.axvline(write_current_fixed, color="black", linestyle="--")
     ax.set_xlim(0, 300)
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     # set the axes background to transparent
     ax.patch.set_alpha(0.0)
-    fig.patch.set_visible(False)
+    # fig.patch.set_visible(False)
     # ax.plot(write_current_list2, np.mean([ic_list, ic_list2], axis=0), "-", color="red", linewidth=0.5)
 
     error = np.abs(np.subtract(ic_list, ic_list2)) / 2
@@ -149,8 +151,71 @@ if __name__ == "__main__":
     # ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.set_ylabel("Optimal $I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    
-    fig.subplots_adjust(wspace=0.2, hspace=0.4)
-    fig.patch.set_visible(False)
 
-    plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
+    ax2 = ax.twinx()
+
+    ax2.plot(
+        write_current_list2,
+        np.subtract(ic_list2, ic_list),
+        "o",
+        color="red",
+        markersize=3,
+    )
+    ax2.set_ylabel("$\Delta I_{\mathrm{read}}$ [$\mu$A]")
+    ax2.set_ybound(lower=0)
+
+    ic = np.array(ic_list)
+    ic2 = np.array(ic_list2)
+    write_current_array = np.array(write_current_list)
+    read_temperature = _calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_read_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+
+    delta_read_current = np.subtract(ic2, ic)
+    persistent_current_est = np.minimum(write_current_array, delta_read_current)
+
+    critical_current_channel = calculate_critical_current_temp(
+        read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
+    )
+    critical_current_left = critical_current_channel * WIDTH
+    critical_current_right = critical_current_channel * (1 - WIDTH)
+
+    alpha_test = 1 - ((critical_current_right - persistent_current_est) / ic)
+    alpha_test2 = (critical_current_left - persistent_current_est) / ic2
+
+    retrap = (ic - critical_current_left) / critical_current_right
+    retrap2 = (ic2 - critical_current_right) / critical_current_left
+
+    i0 = critical_current_left * np.mean([retrap, retrap2]) + critical_current_right
+    axs["A"].axvline(i0, color="red", linestyle="--", linewidth=1)
+
+    print(alpha_test)
+
+    pd = pd.DataFrame(
+        {
+            "Write Current": write_current_list,
+            "Read Current": ic_list,
+            "Read Current 2": ic_list2,
+            "Delta Read Current": delta_read_current,
+            "Inductance Ratio": alpha_test,
+            "Inductance Ratio 2": alpha_test2,
+            "Channel Current": critical_current_channel * np.ones_like(alpha_test),
+            "Left Critical Current Diff": critical_current_left
+            * np.ones_like(alpha_test),
+            "Right Critical Current DIff": critical_current_right
+            * np.ones_like(alpha_test),
+            "Retrap": retrap,
+        }
+    )
+    print(pd)
+
+    minimum_persistent_current = np.min(np.subtract(ic_list2, ic_list))
+    maximum_persistent_current = np.max(np.subtract(ic_list2, ic_list))
+
+    fig.subplots_adjust(wspace=0.2, hspace=0.4)
+    # fig.patch.set_visible(False)
+    # print(minimum_persistent_current, maximum_persistent_current)
+    # plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
