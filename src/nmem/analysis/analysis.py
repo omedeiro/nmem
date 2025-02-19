@@ -102,26 +102,8 @@ def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
     return ber
 
 
+
 def calculate_channel_temperature(
-    data_dict: dict, operation: Literal["read", "write"]
-) -> np.ndarray:
-    critical_temperature: float = data_dict.get("critical_temperature", CRITICAL_TEMP)
-    substrate_temperature: float = data_dict.get(
-        "substrate_temperature", SUBSTRATE_TEMP
-    )
-
-    if operation == "read":
-        ih = get_enable_current_sweep(data_dict, "read")
-    elif operation == "write":
-        ih = get_enable_current_sweep(data_dict, "write")
-    max_enable_current = get_max_enable_current(data_dict)
-
-    return _calculate_channel_temperature(
-        critical_temperature, substrate_temperature, ih, max_enable_current
-    )
-
-
-def _calculate_channel_temperature(
     critical_temperature: float,
     substrate_temperature: float,
     ih: float,
@@ -456,7 +438,7 @@ def get_channel_temperature(
 
     max_enable_current = get_max_enable_current(data_dict)
 
-    channel_temp = _calculate_channel_temperature(
+    channel_temp = calculate_channel_temperature(
         CRITICAL_TEMP, SUBSTRATE_TEMP, enable_current, max_enable_current
     )
     return channel_temp
@@ -466,7 +448,7 @@ def get_channel_temperature_sweep(data_dict: dict) -> np.ndarray:
     enable_currents = get_enable_current_sweep(data_dict)
 
     max_enable_current = get_max_enable_current(data_dict)
-    channel_temps = _calculate_channel_temperature(
+    channel_temps = calculate_channel_temperature(
         CRITICAL_TEMP, SUBSTRATE_TEMP, enable_currents, max_enable_current
     )
     return channel_temps
@@ -1044,7 +1026,7 @@ def plot_critical_currents_from_dc_sweep(
     ax.legend(frameon=False, loc="upper left", handlelength=0.5, labelspacing=0.1)
 
     ax2 = ax.twinx()
-    temp = _calculate_channel_temperature(1.3, 12.3, np.abs(heater_currents), 500)
+    temp = calculate_channel_temperature(1.3, 12.3, np.abs(heater_currents), 500)
     ax2.plot(np.abs(heater_currents), temp, color="black", linewidth=0.5)
     ax2.set_ylim([0, 13])
     ax2.set_ylabel("Temperature [K]")
@@ -1811,3 +1793,52 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
     return ax
 
+
+ALPHA = 0.4
+RETRAP = 0.7
+WIDTH = 0.33
+
+if __name__ == "__main__":
+    from nmem.measurement.functions import calculate_power
+    dict_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
+    )
+    data_dict = dict_list[0]
+    power = calculate_power(data_dict)
+    persistent_current = 40
+    fig, ax = plt.subplots()
+    critical_current_zero = get_critical_current_intercept(data_dict)*0.88
+
+    temperatures = np.linspace(0, CRITICAL_TEMP, 100)
+    
+    plot_calculated_state_currents(
+        ax,
+        temperatures,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+        critical_current_zero,
+    )
+
+    plot_calculated_filled_region(
+        ax,
+        temperatures,
+        data_dict,
+        persistent_current,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        critical_current_zero,
+    )
+    ax.set_xlabel("Temperature [K]")
+    ax.set_ylabel("Current [au]")
+    ax.grid()
+    ax.set_xlim(0, CRITICAL_TEMP)
+    ax.plot([7], [800], marker="x", color="black", markersize=10)
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
+
+    # ax.set_ylim(0, 1)
+    plt.show()
