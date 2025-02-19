@@ -22,8 +22,15 @@ CRITICAL_TEMP = 12.3
 
 
 CRITICAL_CURRENT_ZERO = 1250
-ALPHA = 0.38
-WIDTH = 0.4
+WIDTH = 0.3
+
+
+def calculate_inductance_ratio(state0, state1, ic0):
+    alpha = (ic0-state1)/(state0-state1)
+    # alpha_test = 1 - ((critical_current_right - persistent_current_est) / ic)
+    # alpha_test2 = (critical_current_left - persistent_current_est) / ic2
+ 
+    return alpha
 
 
 if __name__ == "__main__":
@@ -56,7 +63,9 @@ if __name__ == "__main__":
     )
     plot_read_switch_probability_array(ax, dict_list)
     # plot_fill_between_array(ax, dict_list)
-    ax.axvline(read_current, color="black", linestyle="--", linewidth=1)
+    # ax.axvline(read_current, color="black", linestyle="--", linewidth=1)
+    ax.axvline(727, color="black", linestyle="--", linewidth=1)
+
     write_current_fixed = 100
     ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
     ax.set_ylabel("BER")
@@ -167,7 +176,7 @@ if __name__ == "__main__":
     ic = np.array(ic_list)
     ic2 = np.array(ic_list2)
     write_current_array = np.array(write_current_list)
-    read_temperature = _calculate_channel_temperature(
+    read_temperature = calculate_channel_temperature(
         CRITICAL_TEMP,
         SUBSTRATE_TEMP,
         data_dict["enable_read_current"] * 1e6,
@@ -183,16 +192,13 @@ if __name__ == "__main__":
     critical_current_left = critical_current_channel * WIDTH
     critical_current_right = critical_current_channel * (1 - WIDTH)
 
-    alpha_test = 1 - ((critical_current_right - persistent_current_est) / ic)
-    alpha_test2 = (critical_current_left - persistent_current_est) / ic2
-
+    alpha = calculate_inductance_ratio(ic, ic2, 730)
     retrap = (ic - critical_current_left) / critical_current_right
     retrap2 = (ic2 - critical_current_right) / critical_current_left
 
     i0 = critical_current_left * np.mean([retrap, retrap2]) + critical_current_right
     axs["A"].axvline(i0, color="red", linestyle="--", linewidth=1)
 
-    print(alpha_test)
 
     pd = pd.DataFrame(
         {
@@ -200,13 +206,12 @@ if __name__ == "__main__":
             "Read Current": ic_list,
             "Read Current 2": ic_list2,
             "Delta Read Current": delta_read_current,
-            "Inductance Ratio": alpha_test,
-            "Inductance Ratio 2": alpha_test2,
+            "Inductance Ratio": alpha,
             "Channel Current": critical_current_channel * np.ones_like(alpha_test),
             "Left Critical Current Diff": critical_current_left
-            * np.ones_like(alpha_test),
+            * np.ones_like(alpha),
             "Right Critical Current DIff": critical_current_right
-            * np.ones_like(alpha_test),
+            * np.ones_like(alpha),
             "Retrap": retrap,
         }
     )

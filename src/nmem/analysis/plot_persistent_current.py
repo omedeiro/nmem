@@ -12,8 +12,8 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-ALPHA = 0.4
-RETRAP = 0.7
+ALPHA = 0.583
+RETRAP = 0.65
 WIDTH = 0.33
 
 if __name__ == "__main__":
