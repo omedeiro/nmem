@@ -1794,6 +1794,13 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
+def filter_nan(x, y):
+    mask = np.isnan(y)
+    x = x[~mask]
+    y = y[~mask]
+    return x, y
+
+
 ALPHA = 0.4
 RETRAP = 0.7
 WIDTH = 0.33
@@ -1840,5 +1847,29 @@ if __name__ == "__main__":
     ax.plot([7], [800], marker="x", color="black", markersize=10)
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
 
+
+
+    
+    data_dict1 = sio.loadmat("measured_state_currents_290.mat")
+    data_dict2 = sio.loadmat("measured_state_currents_300.mat")
+    data_dict3 = sio.loadmat("measured_state_currents_310.mat")
+
+    dict_list = [data_dict1, data_dict2, data_dict3]
+    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+    fit_results = []
+    for data_dict in [dict_list[2]]:
+        temp = data_dict["measured_temperature"].flatten()
+        state_currents = data_dict["measured_state_currents"]
+        x_list = []
+        y_list = []
+        for i in range(4):
+            x = temp
+            y = state_currents[:, i]
+            x, y = filter_nan(x, y)
+            ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
+
+
+    ax.set_xlim(6, 9)
+    ax.set_ylim(500, 900)
     # ax.set_ylim(0, 1)
     plt.show()
