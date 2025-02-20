@@ -20,9 +20,9 @@ def filter_nan(x, y):
 
 
 def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3) -> float:
-    alpha, retrap, persistent, critical_current_zero = p
+    alpha, retrap, persistent = p
     model = model_function(
-        x0, x1, x2, x3, alpha, retrap, persistent, critical_current_zero
+        x0, x1, x2, x3, alpha, retrap, persistent
     )
     residuals = np.concatenate(
         [
@@ -35,8 +35,9 @@ def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3) -> float:
     return residuals
 
 
-def model_function(x0, x1, x2, x3, alpha, retrap, persistent, critical_current_zero):
+def model_function(x0, x1, x2, x3, alpha, retrap, persistent):
     width = WIDTH
+    critical_current_zero = 1240
     i0, _, _, _ = calculate_state_currents(
         x0, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
     )
@@ -63,8 +64,8 @@ if __name__ == "__main__":
     RETRAP = 0.7
     WIDTH = 0.3
     persistent_current = 30
-    critical_current_zero = get_critical_current_intercept(data[0]) * 0.88
-
+    # critical_current_zero = get_critical_current_intercept(data[0]) * 0.88
+    critical_current_zero = 1240
     data_dict1 = sio.loadmat("measured_state_currents_290.mat")
     data_dict2 = sio.loadmat("measured_state_currents_300.mat")
     data_dict3 = sio.loadmat("measured_state_currents_310.mat")
@@ -91,7 +92,7 @@ if __name__ == "__main__":
                 x_list.append(None)
                 y_list.append(None)
         print(critical_current_zero)
-        p0 = [ALPHA, RETRAP, persistent_current, critical_current_zero]
+        p0 = [ALPHA, RETRAP, persistent_current]
         fit = least_squares(
             residuals,
             p0,
@@ -105,7 +106,7 @@ if __name__ == "__main__":
                 x_list[3],
                 y_list[3],
             ),
-            bounds=([0, 0, -100, 0], [1, 1, 100, 5000]),
+            bounds=([0, 0, -100], [1, 1, 100]),
         )
         fit_results.append(fit.x)
         x_list_full = np.linspace(0, CRITICAL_TEMP, 100)
@@ -117,6 +118,9 @@ if __name__ == "__main__":
 
         ax.legend()
 
+        ax.set_xlabel("Temperature [K]")
+        ax.set_ylabel("Current [$\mu$A]")
+        ax.grid()
         # ax.set_xlim([6, 8.5])
         # ax.set_ylim([500, 1000])
 
@@ -131,10 +135,10 @@ if __name__ == "__main__":
             f[1],
             WIDTH,
             f[0],
-            f[3],
+            critical_current_zero,
         )
 
-        ax_inset = fig.add_axes([0.2, 0.2, 0.3, 0.3])
+        ax_inset = fig.add_axes([0.15, 0.15, 0.35, 0.35])
         for i in range(4):
             # ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
             ax_inset.plot(x_list[i], y_list[i], "o", color=colors[i])
@@ -147,7 +151,7 @@ if __name__ == "__main__":
                 f[1],
                 WIDTH,
                 f[0],
-                f[3],
+                critical_current_zero
             )
 
         ax_inset.set_xlim([6, 8.5])
@@ -155,7 +159,9 @@ if __name__ == "__main__":
         ax_inset.set_xticks([])
         ax_inset.set_yticks([])
 
+    
     for f in fit_results:
         print(
-            f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Persistent: {f[2]:.2f}, Critical Current Zero: {f[3]:.2f}"
+            f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Persistent: {f[2]:.2f}"
         )
+
