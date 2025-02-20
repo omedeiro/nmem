@@ -134,6 +134,27 @@ if __name__ == "__main__":
             f[3],
         )
 
+        ax_inset = fig.add_axes([0.2, 0.2, 0.3, 0.3])
+        for i in range(4):
+            # ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
+            ax_inset.plot(x_list[i], y_list[i], "o", color=colors[i])
+            plot_calculated_filled_region(
+                ax_inset,
+                x_list_full,
+                data_dict,
+                f[2],
+                CRITICAL_TEMP,
+                f[1],
+                WIDTH,
+                f[0],
+                f[3],
+            )
+
+        ax_inset.set_xlim([6, 8.5])
+        ax_inset.set_ylim([500, 950])
+        ax_inset.set_xticks([])
+        ax_inset.set_yticks([])
+
     for f in fit_results:
         print(
             f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Persistent: {f[2]:.2f}, Critical Current Zero: {f[3]:.2f}"
