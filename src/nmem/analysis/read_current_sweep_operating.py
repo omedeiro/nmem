@@ -24,6 +24,7 @@ CRITICAL_TEMP = 12.3
 CRITICAL_CURRENT_ZERO = 1250
 WIDTH = 0.3
 
+CENTER_POINT=727 
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0-state1)/(state0-state1)
@@ -64,8 +65,8 @@ if __name__ == "__main__":
     plot_read_switch_probability_array(ax, dict_list)
     # plot_fill_between_array(ax, dict_list)
     # ax.axvline(read_current, color="black", linestyle="--", linewidth=1)
-    ax.axvline(730, color="black", linestyle="--", linewidth=1)
-
+    
+    ax.axvline(CENTER_POINT, color="black", linestyle="--", linewidth=1)
     write_current_fixed = 100
     ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
     ax.set_ylabel("BER")
@@ -97,7 +98,8 @@ if __name__ == "__main__":
                     markeredgecolor="none",
                     markersize=4,
                 )
-    ax.axhline(read_current, color="black", linestyle="--", linewidth=1)
+    ax.axhline(CENTER_POINT, color="black", linestyle="--", linewidth=1, label="Center Point")
+
     # plot_state_current_markers(ax, data_dict, "read_current")
     # ax.axvline(write_current_fixed, color="black", linestyle="--")
     ax.set_xlim(0, 300)
@@ -158,23 +160,22 @@ if __name__ == "__main__":
     critical_current_left = critical_current_channel * WIDTH
     critical_current_right = critical_current_channel * (1 - WIDTH)
 
-    alpha = calculate_inductance_ratio(ic, ic2, 730)
+    alpha = calculate_inductance_ratio(ic, ic2, CENTER_POINT)
+
     retrap = (ic - critical_current_left) / critical_current_right
     retrap2 = (ic2 - critical_current_right) / critical_current_left
 
-    left_retrapping_current = critical_current_left * retrap2
+    left_retrapping_current = critical_current_left * retrap
+    right_retrapping_current = critical_current_right * retrap2
 
-    persistent_current_est = np.where(write_current_array < 100, delta_read_current, 100-write_current_array)
-    persistent_current_est = np.where(persistent_current_est<-left_retrapping_current, -left_retrapping_current, persistent_current_est)
-    persistent_current_est = np.where(persistent_current_est>left_retrapping_current, left_retrapping_current, persistent_current_est)
+    persistent_current_est = np.where(write_current_array*alpha > critical_current_left,-(write_current_array-left_retrapping_current[0]), write_current_array)
+    # persistent_current_est = np.where(persistent_current_est<-left_retrapping_current[0], -left_retrapping_current, persistent_current_est)
+    # persistent_current_est = np.where(persistent_current_est>left_retrapping_current[0], left_retrapping_current, persistent_current_est)
 
-    i0 = critical_current_left * retrap + critical_current_right
-    axs["A"].axvline(i0[0], color="red", linestyle="--", linewidth=1)
 
-    # ax = axs["C"].twinx()
-    # ax.plot(write_current_list, persistent_current_est, "-o", color="black", markersize=3)
-    # ax.set_ylabel("Persistent Current [$\mu$A]")
-    # ax.set_ylim(-100, 100)
+    i0 = critical_current_right + left_retrapping_current
+
+
     pd = pd.DataFrame(
         {
             "Write Current": write_current_list,
@@ -182,31 +183,30 @@ if __name__ == "__main__":
             "Read Current 2": ic_list2,
             "Delta Read Current": delta_read_current,
             "Inductance Ratio": alpha,
-            "Channel Current": critical_current_channel * np.ones_like(alpha),
-            "Left Critical Current": critical_current_left
-            * np.ones_like(alpha),
-            "Right Critical Current": critical_current_right
-            * np.ones_like(alpha),
             "Retrap": retrap,
             "Persistent Current": persistent_current_est,
             "Left Retrapping Current": left_retrapping_current,
+            "Right Retrapping Current": right_retrapping_current,
+            "I0": i0,
         }
     )
     print(pd)
 
-    minimum_persistent_current = np.min(np.subtract(ic_list2, ic_list))
-    maximum_persistent_current = np.max(np.subtract(ic_list2, ic_list))
+    ax = axs["A"]
+    ax.axvline(i0[0], color="black", linestyle="--", linewidth=1, label="i0")
+    ax.axvline(critical_current_right, color="red", linestyle="--", linewidth=1, label="i0")
+    ax.axvline(critical_current_channel, color="green", linestyle="--", linewidth=1, label="i0")
+    ax = axs["C"]
+    ax.axhline(i0[0], color="black", linestyle="--", linewidth=1, label="i0")
+    # ax.axhline(critical_current_right, color="red", linestyle="--", linewidth=1, label="i0")
+    # ax.axhline(critical_current_channel, color="green", linestyle="--", linewidth=1, label="i0")
+    
+    # Average inductance ratio
+    avgalpha = pd["Inductance Ratio"].mean()
+    print(f"Average inductance ratio: {avgalpha}")
+    avgretrap = pd["Retrap"].mean()
+    print(f"Average retrap: {avgretrap}")
 
-
-
-
-
-
-    error = np.abs(np.subtract(ic_list, ic_list2)) / 2
-
-    # ax = axs["D"]
-
-    # ax.errorbar(write_current_list2, np.mean([ic_list, ic_list2], axis=0), yerr=error, fmt="o", color="black", markersize=3)
     ax = axs["D"]
     ax.plot(
         np.append(0, write_current_list),
@@ -215,34 +215,10 @@ if __name__ == "__main__":
         color="black",
         markersize=3,
     )
-    # ax.set_ylim(0, 110)
-    # ax.plot([0, 110], [0, 110], color="black", linestyle="--", linewidth=1)
-    # ax.set_ylim(axs["C"].get_ylim())
-    # ax.axhline(read_current, color="black", linestyle="--", linewidth=1)
     ax.set_xlim(0, 300)
-    # ax.set_ylim(0, 1)
-    # ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.set_ylabel("$I_{\mathrm{persistent}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
 
-    # ax2 = ax.twinx()
-    # ax2.plot(
-    #     write_current_list2,
-    #     alpha,
-    #     "-o",
-    #     color="red",
-    #     markersize=3,
-    # )
-    # ax2.set_ylabel("$\\alpha$")
-
 
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
-    # fig.patch.set_visible(False)
-    # print(minimum_persistent_current, maximum_persistent_current)
-    # plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
-
     plt.show()
-
-    fig, ax = plt.subplots()
-    ax.plot(write_current_list, retrap, "-o", color="blue", markersize=3)
-    ax.plot(write_current_list2, retrap2, "-o", color="red", markersize=3)
