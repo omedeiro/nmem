@@ -14,7 +14,7 @@ from nmem.analysis.analysis import (
     plot_optimal_enable_currents,
     CMAP,
     get_max_enable_current, 
-    _calculate_channel_temperature,
+    calculate_channel_temperature,
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
 )
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         # plot_optimal_enable_currents(axs, data_dict)
 
         max_enable_current = get_max_enable_current(data_dict)
-        channel_temperature = _calculate_channel_temperature(
+        channel_temperature = calculate_channel_temperature(
             CRITICAL_TEMP, SUBSTRATE_TEMP, enable_currents, max_enable_current
         )
         axs2.plot(enable_currents, channel_temperature, color="grey", marker="o")
