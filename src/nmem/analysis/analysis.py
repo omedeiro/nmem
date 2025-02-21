@@ -200,9 +200,9 @@ def calculate_state_currents(
     )
 
     fa = ichr + irhl
-    fb = ichl + irhr - persistent_current - 40
+    fb = ichl + irhr - persistent_current
     fc = (ichl - persistent_current) / alpha
-    fd = fb - persistent_current - 40
+    fd = fb - persistent_current
 
     fa = np.maximum(fa, 0)
     fb = np.maximum(fb, 0)

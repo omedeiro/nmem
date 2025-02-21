@@ -20,9 +20,9 @@ def filter_nan(x, y):
 
 
 def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3) -> float:
-    alpha, retrap, persistent = p
+    alpha, persistent = p
     model = model_function(
-        x0, x1, x2, x3, alpha, retrap, persistent
+        x0, x1, x2, x3, alpha, persistent
     )
     residuals = np.concatenate(
         [
@@ -35,9 +35,10 @@ def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3) -> float:
     return residuals
 
 
-def model_function(x0, x1, x2, x3, alpha, retrap, persistent):
+def model_function(x0, x1, x2, x3, alpha, persistent):
     width = WIDTH
     critical_current_zero = 1240
+    retrap = 1
     i0, _, _, _ = calculate_state_currents(
         x0, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
     )
@@ -61,7 +62,6 @@ if __name__ == "__main__":
     )
 
     ALPHA = 0.612
-    RETRAP = 0.7
     WIDTH = 0.3
     persistent_current = 30
     # critical_current_zero = get_critical_current_intercept(data[0]) * 0.88
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # colors = CMAP(np.linspace(0.1, 1, 4))
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []
-    for data_dict in dict_list:
+    for data_dict in [dict_list[2]]:
         fig, ax = plt.subplots()
         temp = data_dict["measured_temperature"].flatten()
         state_currents = data_dict["measured_state_currents"]
@@ -92,7 +92,7 @@ if __name__ == "__main__":
                 x_list.append(None)
                 y_list.append(None)
         print(critical_current_zero)
-        p0 = [ALPHA, RETRAP, persistent_current]
+        p0 = [ALPHA, persistent_current]
         fit = least_squares(
             residuals,
             p0,
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 x_list[3],
                 y_list[3],
             ),
-            bounds=([0, 0, -100], [1, 1, 100]),
+            bounds=([0, -100], [1, 100]),
         )
         fit_results.append(fit.x)
         x_list_full = np.linspace(0, CRITICAL_TEMP, 100)
@@ -130,9 +130,9 @@ if __name__ == "__main__":
             ax,
             x_list_full,
             data_dict,
-            f[2],
-            CRITICAL_TEMP,
             f[1],
+            CRITICAL_TEMP,
+            1,
             WIDTH,
             f[0],
             critical_current_zero,
@@ -146,22 +146,24 @@ if __name__ == "__main__":
                 ax_inset,
                 x_list_full,
                 data_dict,
-                f[2],
-                CRITICAL_TEMP,
                 f[1],
+                CRITICAL_TEMP,
+                1,
                 WIDTH,
                 f[0],
                 critical_current_zero
             )
+            ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
 
         ax_inset.set_xlim([6, 8.5])
         ax_inset.set_ylim([500, 950])
         ax_inset.set_xticks([])
         ax_inset.set_yticks([])
 
-    
+    ax.set_ybound(lower=0)   
+    ax.set_xbound(lower=0) 
     for f in fit_results:
         print(
-            f"Alpha: {f[0]:.2f}, Retrap: {f[1]:.2f}, Persistent: {f[2]:.2f}"
+            f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}"
         )
 
