@@ -71,7 +71,7 @@ CELLS = {
         "enable_read_current": 105e-6,
         "slope": -2.274,
         "y_intercept": 1266.071,
-        "x_intercept": 540,
+        "x_intercept": 556.81,
         "resistance": 509.6,
         "resistance_cryo": 281.8,
         "max_critical_current": 810e-6,
