@@ -102,7 +102,6 @@ def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
     return ber
 
 
-
 def calculate_channel_temperature(
     critical_temperature: float,
     substrate_temperature: float,
@@ -201,9 +200,9 @@ def calculate_state_currents(
     )
 
     fa = ichr + irhl
-    fb = ichl + irhr - persistent_current
+    fb = ichl + irhr - persistent_current - 40
     fc = (ichl - persistent_current) / alpha
-    fd = fb - persistent_current
+    fd = fb - persistent_current - 40
 
     fa = np.maximum(fa, 0)
     fb = np.maximum(fb, 0)
@@ -1801,23 +1800,24 @@ def filter_nan(x, y):
     return x, y
 
 
-ALPHA = 0.4
-RETRAP = 0.7
+ALPHA = 0.25
+RETRAP = 1
 WIDTH = 0.33
 
 if __name__ == "__main__":
     from nmem.measurement.functions import calculate_power
+
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
     )
     data_dict = dict_list[0]
     power = calculate_power(data_dict)
-    persistent_current = 40
+    persistent_current = 80
     fig, ax = plt.subplots()
-    critical_current_zero = get_critical_current_intercept(data_dict)*0.88
-
+    # critical_current_zero = get_critical_current_intercept(data_dict)*0.88
+    critical_current_zero = 1250
     temperatures = np.linspace(0, CRITICAL_TEMP, 100)
-    
+
     plot_calculated_state_currents(
         ax,
         temperatures,
@@ -1847,9 +1847,6 @@ if __name__ == "__main__":
     ax.plot([7], [800], marker="x", color="black", markersize=10)
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
 
-
-
-    
     data_dict1 = sio.loadmat("measured_state_currents_290.mat")
     data_dict2 = sio.loadmat("measured_state_currents_300.mat")
     data_dict3 = sio.loadmat("measured_state_currents_310.mat")
@@ -1868,8 +1865,7 @@ if __name__ == "__main__":
             x, y = filter_nan(x, y)
             ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
 
-
-    ax.set_xlim(6, 9)
-    ax.set_ylim(500, 900)
+        ax.set_xlim(6, 9)
+        ax.set_ylim(500, 900)
     # ax.set_ylim(0, 1)
     plt.show()
