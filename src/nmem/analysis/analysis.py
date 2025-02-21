@@ -20,7 +20,7 @@ from nmem.measurement.cells import CELLS
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
-
+RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 
 font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
@@ -1852,7 +1852,6 @@ if __name__ == "__main__":
     data_dict3 = sio.loadmat("measured_state_currents_310.mat")
 
     dict_list = [data_dict1, data_dict2, data_dict3]
-    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []
     for data_dict in [dict_list[2]]:
         temp = data_dict["measured_temperature"].flatten()
@@ -1863,7 +1862,7 @@ if __name__ == "__main__":
             x = temp
             y = state_currents[:, i]
             x, y = filter_nan(x, y)
-            ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
+            ax.plot(x, y, "-o", color=RBCOLORS[i], label=f"State {i}")
 
         ax.set_xlim(6, 9)
         ax.set_ylim(500, 900)
