@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.calculations.calculations import (
     calculate_persistent_currents,
     calculate_read_currents,
