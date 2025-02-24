@@ -82,4 +82,4 @@ if __name__ == "__main__":
     nm.set_awg_off(b)
 
     t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    print(f"run time {(t2 - t1) / 60:.2f} minutes")

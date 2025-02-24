@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import import_directory, plot_read_delay
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
