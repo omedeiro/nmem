@@ -45,7 +45,7 @@ plt.rcParams.update(
     }
 )
 
-CMAP = plt.get_cmap("plasma").reversed()
+CMAP = plt.get_cmap("coolwarm")
 
 
 def build_array(
