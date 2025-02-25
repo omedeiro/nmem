@@ -21,8 +21,8 @@ from nmem.analysis.analysis import (
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
-
-
+IRM = 727
+IRHL_TR = 110
 CRITICAL_CURRENT_ZERO = 1250
 WIDTH = 0.3
 
@@ -88,8 +88,19 @@ if __name__ == "__main__":
     )
     critical_current_left = critical_current_channel * WIDTH
     critical_current_right = critical_current_channel * (1 - WIDTH)
-
-
+    read_current_difference = ic2 - ic
+    read1_dist = np.abs(ic - IRM)
+    read2_dist = np.abs(ic2 - IRM)
+    persistent_current = []
+    for i, write_current in enumerate(write_current_list):
+        if write_current > IRHL_TR/2:
+            ip = np.abs(write_current-IRHL_TR)/2
+        else:
+            ip = write_current
+        if ip > IRHL_TR/2:
+            ip = IRHL_TR/2
+        print(f"write_current: {write_current}, persistent current: {ip}")
+        persistent_current.append(ip)
     pd = pd.DataFrame(
         {
             "Write Current": write_current_list,
@@ -98,6 +109,11 @@ if __name__ == "__main__":
             "Channel Critical Current": critical_current_channel*np.ones_like(ic_list),
             "Channel Critical Current Left": critical_current_left*np.ones_like(ic_list),
             "Channel Critical Current Right": critical_current_right*np.ones_like(ic_list),
+            "Persistent Current": persistent_current,
+            "Read Current Difference": read_current_difference,
+            "Read Current 1 Distance": read1_dist,
+            "Read Current 2 Distance": read2_dist,
+
         }
     )
     
