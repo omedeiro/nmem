@@ -26,6 +26,7 @@ dist/
 
 # Data
 *.mat
+*.csv
 
 # Images
 *.png
