@@ -23,10 +23,12 @@ from nmem.analysis.analysis import (
 )
 
 CRITICAL_CURRENT_ZERO = 1250
+IRM = 727.5
+IRHL_TR = 105
 
 
 def calculate_inductance_ratio(state0, state1, ic0):
-    alpha = (ic0-state1)/(state0-state1)
+    alpha = (ic0 - state1) / (state0 - state1)
     return alpha
 
 
@@ -43,7 +45,7 @@ if __name__ == "__main__":
         "write_current",
     )
     plot_read_switch_probability_array(ax, dict_list)
-
+    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
     ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
     ax.set_ylabel("BER")
     ax.set_xlim(500, 850)
@@ -51,7 +53,6 @@ if __name__ == "__main__":
     ax2.set_ylim([0, 1])
     ax2.set_ylabel("Switching Probability")
     ax2.yaxis.set_major_locator(MultipleLocator(0.5))
-
 
     ax = axs["C"]
     for data_dict in dict_list:
@@ -72,10 +73,10 @@ if __name__ == "__main__":
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
 
-    ic_list = []
-    write_current_list = []
-    ic_list2 = []
-    write_current_list2 = []
+    ic_list = [IRM]
+    write_current_list = [0]
+    ic_list2 = [IRM]
+    write_current_list2 = [0]
     for data_dict in dict_list:
         write_current = get_write_current(data_dict)
 
@@ -101,12 +102,43 @@ if __name__ == "__main__":
     ax.set_xlim(0, 300)
     ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-
-
+    ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
+    persistent_current = []
+    upper = []
+    lower = []
+    for i, write_current in enumerate(write_current_list):
+        if write_current > IRHL_TR / 2:
+            ip = np.abs(write_current - IRHL_TR)
+        else:
+            ip = write_current
+        if ip > IRHL_TR:
+            ip = IRHL_TR
+        # ax.vlines(
+        #     write_current,
+        #     ymin=IRM - ip,
+        #     ymax=IRM + ip,
+        #     color="black",
+        #     linestyle="--",
+        #     linewidth=0.5,
+        # )
+    # write_current_array = np.array(write_current_list)
+    write_current_array = np.linspace(
+        write_current_list[0], write_current_list[-1], 1000
+    )
+    persistent_current = np.where(
+        write_current_array > IRHL_TR / 2,
+        np.abs(write_current_array - IRHL_TR),
+        write_current_array,
+    )
+    persistent_current = np.where(
+        persistent_current > IRHL_TR, IRHL_TR, persistent_current
+    )
+    upper = IRM + persistent_current / 2
+    lower = IRM - persistent_current / 2
+    ax.fill_between(write_current_array, lower, upper, color="black", alpha=0.1)
     ic = np.array(ic_list)
     ic2 = np.array(ic_list2)
 
-    write_current_array = np.array(write_current_list)
     read_temperature = calculate_channel_temperature(
         CRITICAL_TEMP,
         SUBSTRATE_TEMP,
@@ -134,7 +166,21 @@ if __name__ == "__main__":
     left_retrapping_current = critical_current_left * retrap2
     right_retrapping_current = critical_current_right * retrap2
 
+    ax = axs["D"]
+    ax.plot(write_current_list, np.abs(delta_read_current), "-o", color="black", markersize=3.5)
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$|\Delta I_{\mathrm{read}}|$ [$\mu$A]")
+    ax.set_xlim(0, 300)
+    ax.set_ylim(0, 110)
+    ax.patch.set_alpha(0)
+    ax.set_zorder(1)
 
-
+    ax2 = ax.twinx()
+    ax2.plot(write_current_array, persistent_current, "-", color="grey", zorder=-1)
+    ax2.set_ylabel("$I_{\mathrm{persistent}}$ [$\mu$A]")
+    ax2.set_ylim(0, 110)
+    ax2.set_zorder(0)
+    ax2.fill_between(write_current_array, np.zeros_like(write_current_array), persistent_current, color="black", alpha=0.1)
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
+    plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()
