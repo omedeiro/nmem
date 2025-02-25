@@ -112,9 +112,10 @@ if __name__ == "__main__":
             enable_write_currents[idx],
             write_temperatures[idx],
             marker="o",
-            markersize=6,
-            markeredgecolor="none",
+            markersize=8,
+            markeredgecolor="black",
             markerfacecolor=colors[i],
+            markeredgewidth=0.5,
         )
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
