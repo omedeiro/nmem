@@ -25,7 +25,8 @@ from nmem.analysis.analysis import (
 CRITICAL_CURRENT_ZERO = 1250
 IRM = 727.5
 IRHL_TR = 105
-
+MAX_IWRITE = 300
+MAX_IP = 110
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)
@@ -99,10 +100,13 @@ if __name__ == "__main__":
 
     ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
     ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
-    ax.set_xlim(0, 300)
+    ax.set_xlim(0, MAX_IWRITE)
     ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
+    ax.axvline(IRHL_TR, color="black", linestyle="--", linewidth=0.5)
+    # ax.axvline(IRHL_TR/2, color="black", linestyle="--", linewidth=0.5)
+
     persistent_current = []
     upper = []
     lower = []
@@ -170,15 +174,15 @@ if __name__ == "__main__":
     ax.plot(write_current_list, np.abs(delta_read_current), "-o", color="black", markersize=3.5)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$|\Delta I_{\mathrm{read}}|$ [$\mu$A]")
-    ax.set_xlim(0, 300)
-    ax.set_ylim(0, 110)
+    ax.set_xlim(0, MAX_IWRITE)
+    ax.set_ylim(0, MAX_IP)
     ax.patch.set_alpha(0)
     ax.set_zorder(1)
 
     ax2 = ax.twinx()
     ax2.plot(write_current_array, persistent_current, "-", color="grey", zorder=-1)
     ax2.set_ylabel("$I_{\mathrm{persistent}}$ [$\mu$A]")
-    ax2.set_ylim(0, 110)
+    ax2.set_ylim(0, MAX_IP)
     ax2.set_zorder(0)
     ax2.fill_between(write_current_array, np.zeros_like(write_current_array), persistent_current, color="black", alpha=0.1)
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
