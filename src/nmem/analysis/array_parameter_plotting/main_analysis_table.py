@@ -46,7 +46,7 @@ if __name__ == "__main__":
             * 1e-6
             / (WIDTH_LEFT * THICKNESS + WIDTH_RIGHT * THICKNESS)
         ) * (1 - (SUBSTRATE_TEMP / CRITICAL_TEMP) ** 3) ** -2.1
-
+        x_intercept = cell_dictionary[c]["x_intercept"]
 
         data.append(
             {
@@ -54,6 +54,7 @@ if __name__ == "__main__":
                 "Critical Current Tsub": critical_current_tsub,
                 # "Critical Current Tzero": critical_current_tzero,
                 "Y-Intercept": critical_current_intercept,
+                "X-Intercept": x_intercept,
                 # "Critical Current Tzero Alpha": critical_current_tzero_alpha,
                 "Max Heater Current": max_heater_current,
                 "Read Temperature": read_temperature,
