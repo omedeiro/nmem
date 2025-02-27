@@ -15,10 +15,16 @@ from nmem.analysis.analysis import (
     get_channel_temperature_sweep,
     get_channel_temperature,
     get_critical_current_heater_off,
+    get_critical_current_intercept,
+    calculate_branch_currents,
     CRITICAL_TEMP,
-    RBCOLORS,
 )
+WIDTH = 0.3
+RETRAP = 0.6
+IWRITE_XLIM = 100
+IWRITE_XLIM_2 = 300
 
+RBCOLORS = {0: "black", 1: "black", 2: "grey", 3: "grey"}
 if __name__ == "__main__":
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
@@ -42,6 +48,24 @@ if __name__ == "__main__":
     write_temp_array = np.empty((len(dict_list), 4))
     write_current_array = np.empty((len(dict_list), 1))
     for j, data_dict in enumerate(dict_list):
+        if j == 0:
+            read_temperature = np.array([get_channel_temperature(data_dict, "read")])
+            critical_current_zero = get_critical_current_intercept(data_dict)
+            channel_current_zero = calculate_critical_current_temp(
+                read_temperature,
+                CRITICAL_TEMP,
+                critical_current_zero,
+            )
+            ichl, irhl, ichr, irhr = calculate_branch_currents(
+                read_temperature,
+                CRITICAL_TEMP,
+                RETRAP, 
+                WIDTH, 
+                channel_current_zero
+            )
+            print(f"ichl: {ichl},\n irhl: {irhl},\n ichr: {ichr},\n irhr: {irhr}")
+                
+            
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         write_current = get_write_current(data_dict)
@@ -66,25 +90,29 @@ if __name__ == "__main__":
     ax2.set_ylim([ic_limits[0], ic_limits[1]])
 
     ax2.set_ylabel("$I_{\mathrm{CH}}$ [$\mu$A]")
-    ax.set_xlim(0, 100)
+    ax.set_xlim(0, IWRITE_XLIM)
     ax.xaxis.set_major_locator(plt.MultipleLocator(20))
-    ax.grid()
+    ax.grid(axis="x")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
+    # ax2.axhline(ichr+irhl, color="black", linestyle="--")
+    ax2.axhline(ichl+irhr, color="black", linestyle="--")
+    ax2.axhline(ichr, color="red", linestyle="--")
+    ax2.axhline(ichr+irhr, color="grey", linestyle="--")
 
     ax = axs["C"]
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
     )
     dict_list = dict_list[1:]
-    dict_list = dict_list[::-1]
+    # dict_list = dict_list[::-1]
     plot_write_sweep(ax, dict_list)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("BER")
-    ax.set_xlim(0, 300)
+    ax.set_xlim(0, IWRITE_XLIM_2)
     data = []
     data2 = []
-    for data_dict in dict_list:
+    for j, data_dict in enumerate(dict_list):
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         write_currents = get_read_currents(
@@ -104,6 +132,12 @@ if __name__ == "__main__":
                             "write_temp": get_channel_temperature(data_dict, "write"),
                             "read_current": read_current,
                             "enable_write_current": enable_write_current,
+                            "read_temp": get_channel_temperature(data_dict, "read"),
+                            "read_channel_current": calculate_critical_current_temp(
+                                get_channel_temperature(data_dict, "read"),
+                                CRITICAL_TEMP,
+                                critical_current_zero,
+                            ),
 
                         }
                     )
@@ -114,15 +148,25 @@ if __name__ == "__main__":
                             "write_temp": get_channel_temperature(data_dict, "write"),
                             "read_current": read_current,
                             "enable_write_current": enable_write_current,
+                            "read_temp": get_channel_temperature(data_dict, "read"),
+                            "read_channel_current": calculate_critical_current_temp(
+                                get_channel_temperature(data_dict, "read"),
+                                CRITICAL_TEMP,
+                                critical_current_zero,
+                            ),
                         }
                     )
 
+    ax.axvline(irhl, color="black", linestyle="--")
+
+
+
     ax = axs["D"]
-    ax.plot([d["write_temp"] for d in data], [d["write_current"] for d in data], "o", color="blue")
-    ax.plot([d["write_temp"] for d in data2], [d["write_current"] for d in data2], "o", color="red")
+    ax.plot([d["write_temp"] for d in data], [d["write_current"] for d in data], "--o", color="black")
+    ax.plot([d["write_temp"] for d in data2], [d["write_current"] for d in data2], "--o", color="grey")
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
-    ax.set_ylim(0, 300)
-    ax.grid()
+    ax.set_ylim(0, IWRITE_XLIM_2)
+    ax.grid(axis="y")
 
     fig.savefig("write_current_sweep_operation.pdf", bbox_inches="tight")
