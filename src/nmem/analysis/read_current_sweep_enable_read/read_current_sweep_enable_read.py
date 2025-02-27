@@ -42,6 +42,7 @@ if __name__ == "__main__":
     )
 
     ax = axs[1, 0]
+    dict_list = dict_list[::-1]
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "enable_read_current")
     plot_fill_between_array(ax, dict_list)
     ax.axvline(910, color="black", linestyle="--")
