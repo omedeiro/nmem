@@ -1800,9 +1800,9 @@ def filter_nan(x, y):
     return x, y
 
 
-ALPHA = 0.25
-RETRAP = 1
-WIDTH = 0.33
+ALPHA = 0.53
+RETRAP = 0.26
+WIDTH = 0.35
 
 if __name__ == "__main__":
     from nmem.measurement.functions import calculate_power
