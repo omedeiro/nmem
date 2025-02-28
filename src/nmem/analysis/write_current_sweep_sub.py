@@ -20,12 +20,13 @@ from nmem.analysis.analysis import (
     CRITICAL_TEMP,
 )
 
-ALPHA = 0.53
+ALPHA = 0.545
 WIDTH = 0.35
 RETRAP = 0.26
 IWRITE_XLIM = 100
 IWRITE_XLIM_2 = 300
 MAX_PERSISTENT = 50
+IREAD = 727.5
 RBCOLORS = {0: "black", 1: "black", 2: "grey", 3: "grey"}
 
 
@@ -92,11 +93,15 @@ if __name__ == "__main__":
     )
     ichl, irhl, ichr, irhr = get_branch_currents(dict_list[0])
 
-    fig, ax = plt.subplots()
+    fig, axs = plt.subplots(1, 2, figsize=(6, 4), constrained_layout=True)
+    ax = axs[0]
 
     persistent_current = np.linspace(0, 100, 1000)
     persistent_current = np.where(persistent_current > irhl, irhl, persistent_current)
     read_current = get_read_current(dict_list[0])
+    
+    left_branch_current = read_current*ALPHA
+    right_branch_current = read_current*(1-ALPHA)
     (
         write_current_array,
         write_temp_array,
@@ -108,7 +113,7 @@ if __name__ == "__main__":
         ax.plot(
             write_current_array,
             write_channel_array[:, i],
-            linestyle="--",
+            linestyle="-",
             marker="o",
             color=RBCOLORS[i],
         )
@@ -135,14 +140,39 @@ if __name__ == "__main__":
         linestyle="--",
         label="i_R",
     )
-
+    ax.set_aspect(1 / ax.get_data_ratio())
     ax.legend()
-    ax2 = ax.twinx()
-    ax2.plot(
+
+
+    ax.fill_between(
+        np.linspace(0, IWRITE_XLIM, 1000),
+        left_branch_current-persistent_current,
+        left_branch_current+persistent_current,
+        color="green",
+        alpha=0.1,
+    )
+    ax.fill_between(
+        np.linspace(0, IWRITE_XLIM, 1000),
+        right_branch_current-persistent_current,
+        right_branch_current+persistent_current,
+        color="blue",
+        alpha=0.1,
+    )
+
+
+    ax = axs[1]
+    ax.plot(
         np.linspace(0, IWRITE_XLIM, 1000),
         persistent_current,
         color="black",
         linestyle="-",
     )
-
+    ax.set_xlim(0, IWRITE_XLIM)
+    ax.set_ylim(0, MAX_PERSISTENT)
+    ax.set_aspect(1 / ax.get_data_ratio())
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$I_{\mathrm{P}}$ [$\mu$A]")    
     ax.axvline(irhl, color="black", linestyle="--")
+
+
+    # fig, ax = plt.subplots()
