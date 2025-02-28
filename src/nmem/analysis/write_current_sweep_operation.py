@@ -17,10 +17,12 @@ from nmem.analysis.analysis import (
     get_critical_current_heater_off,
     get_critical_current_intercept,
     calculate_branch_currents,
+    get_enable_current_sweep,
     CRITICAL_TEMP,
+    WIDTH,
+    RETRAP,
 )
-WIDTH = 0.3
-RETRAP = 0.6
+
 IWRITE_XLIM = 100
 IWRITE_XLIM_2 = 300
 
@@ -95,17 +97,19 @@ if __name__ == "__main__":
     ax.grid(axis="x")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
-    # ax2.axhline(ichr+irhl, color="black", linestyle="--")
-    ax2.axhline(ichl+irhr, color="black", linestyle="--")
-    ax2.axhline(ichr, color="red", linestyle="--")
-    ax2.axhline(ichr+irhr, color="grey", linestyle="--")
+    ax2.axhline(ichl+irhr, color="grey", linestyle="-")
+    ax2.axhline(ichr, color="C3", linestyle="--")
+    ax2.axhline(ichr+irhr, color="grey", linestyle="-")
 
-    ax = axs["C"]
+
+    # Write current sweep
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
     )
     dict_list = dict_list[1:]
-    # dict_list = dict_list[::-1]
+
+
+    ax = axs["C"]
     plot_write_sweep(ax, dict_list)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("BER")
@@ -157,7 +161,10 @@ if __name__ == "__main__":
                         }
                     )
 
-    ax.axvline(irhl, color="black", linestyle="--")
+    ax.axvline(irhl, color="C0", linestyle="--", label="_irhl")
+    ax.axvline(irhr, color="C1", linestyle="--", label="_irhr")
+    ax.axvline(ichl, color="C2", linestyle="--", label="_ichl")
+    ax.axvline(ichr, color="C3", linestyle="--", label="_ichr")
 
 
 
