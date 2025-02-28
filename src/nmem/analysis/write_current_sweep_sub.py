@@ -20,7 +20,7 @@ from nmem.analysis.analysis import (
     CRITICAL_TEMP,
 )
 
-ALPHA = 0.545
+ALPHA = 0.55
 WIDTH = 0.35
 RETRAP = 0.26
 IWRITE_XLIM = 100
@@ -132,16 +132,15 @@ if __name__ == "__main__":
     ax.axhline(ichr, color="red", linestyle="--", label="ichr")
     ax.axhline(ichr + irhl, color="black", linestyle="--", label="ichr + irhl")
     ax.axhline(
-        read_current * ALPHA, color="green", linestyle="--", label="i_L"
+        left_branch_current, color="green", linestyle="--", label="i_L"
     )
     ax.axhline(
-        read_current * (1 - ALPHA),
-        color="green",
+        right_branch_current,
+        color="blue",
         linestyle="--",
         label="i_R",
     )
     ax.set_aspect(1 / ax.get_data_ratio())
-    ax.legend()
 
 
     ax.fill_between(
@@ -150,6 +149,7 @@ if __name__ == "__main__":
         left_branch_current+persistent_current,
         color="green",
         alpha=0.1,
+        label="i_L $\pm$ I_P",
     )
     ax.fill_between(
         np.linspace(0, IWRITE_XLIM, 1000),
@@ -157,7 +157,9 @@ if __name__ == "__main__":
         right_branch_current+persistent_current,
         color="blue",
         alpha=0.1,
+        label="i_R $\pm$ I_P",
     )
+    ax.legend()
 
 
     ax = axs[1]
@@ -166,13 +168,14 @@ if __name__ == "__main__":
         persistent_current,
         color="black",
         linestyle="-",
+        label="I_P",
     )
     ax.set_xlim(0, IWRITE_XLIM)
     ax.set_ylim(0, MAX_PERSISTENT)
     ax.set_aspect(1 / ax.get_data_ratio())
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$I_{\mathrm{P}}$ [$\mu$A]")    
-    ax.axvline(irhl, color="black", linestyle="--")
+    ax.axvline(irhl, color="black", linestyle="--", label="irhl")
 
-
+    ax.legend()
     # fig, ax = plt.subplots()
