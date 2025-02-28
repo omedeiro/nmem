@@ -17,16 +17,20 @@ from nmem.analysis.analysis import (
     CELLS,
     RBCOLORS,
     WIDTH,
+    RETRAP,
     SUBSTRATE_TEMP,
     CRITICAL_TEMP,
     calculate_retrapping_current_temp,
+    calculate_branch_currents,
+    get_critical_current_intercept,
+    get_channel_temperature,
 )
 
-CRITICAL_CURRENT_ZERO = 1250
 IRM = 727.5
 IRHL_TR = 105
 MAX_IWRITE = 300
 MAX_IP = 110
+
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)
@@ -98,6 +102,13 @@ if __name__ == "__main__":
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
 
+    ichl, irhl, ichr, irhr = calculate_branch_currents(
+        np.array([get_channel_temperature(data_dict, "read")]),
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        get_critical_current_intercept(data_dict),
+    )
     ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
     ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
     ax.set_xlim(0, MAX_IWRITE)
@@ -105,6 +116,7 @@ if __name__ == "__main__":
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
     ax.axvline(IRHL_TR, color="black", linestyle="--", linewidth=0.5)
+
     # ax.axvline(IRHL_TR/2, color="black", linestyle="--", linewidth=0.5)
 
     persistent_current = []
@@ -159,7 +171,7 @@ if __name__ == "__main__":
     delta_read_current = np.subtract(ic2, ic)
 
     critical_current_channel = calculate_critical_current_temp(
-        read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
+        read_temperature, CRITICAL_TEMP, get_critical_current_intercept(data_dict)
     )
     critical_current_left = critical_current_channel * WIDTH
     critical_current_right = critical_current_channel * (1 - WIDTH)
@@ -171,7 +183,13 @@ if __name__ == "__main__":
     right_retrapping_current = critical_current_right * retrap2
 
     ax = axs["D"]
-    ax.plot(write_current_list, np.abs(delta_read_current), "-o", color="black", markersize=3.5)
+    ax.plot(
+        write_current_list,
+        np.abs(delta_read_current),
+        "-o",
+        color="black",
+        markersize=3.5,
+    )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$|\Delta I_{\mathrm{read}}|$ [$\mu$A]")
     ax.set_xlim(0, MAX_IWRITE)
@@ -184,7 +202,13 @@ if __name__ == "__main__":
     ax2.set_ylabel("$I_{\mathrm{persistent}}$ [$\mu$A]")
     ax2.set_ylim(0, MAX_IP)
     ax2.set_zorder(0)
-    ax2.fill_between(write_current_array, np.zeros_like(write_current_array), persistent_current, color="black", alpha=0.1)
+    ax2.fill_between(
+        write_current_array,
+        np.zeros_like(write_current_array),
+        persistent_current,
+        color="black",
+        alpha=0.1,
+    )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()
