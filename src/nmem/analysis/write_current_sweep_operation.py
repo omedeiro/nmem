@@ -21,6 +21,7 @@ from nmem.analysis.analysis import (
     CRITICAL_TEMP,
     WIDTH,
     RETRAP,
+    ALPHA,
 )
 
 IWRITE_XLIM = 100
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     ax.set_ylabel("BER")
     ax2.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    ax.grid()
 
     ax = axs["B"]
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
@@ -59,17 +61,13 @@ if __name__ == "__main__":
                 critical_current_zero,
             )
             ichl, irhl, ichr, irhr = calculate_branch_currents(
-                read_temperature,
-                CRITICAL_TEMP,
-                RETRAP, 
-                WIDTH, 
-                channel_current_zero
+                read_temperature, CRITICAL_TEMP, RETRAP, WIDTH, channel_current_zero
             )
             print(f"ichl: {ichl},\n irhl: {irhl},\n ichr: {ichr},\n irhr: {irhr}")
-                
-            
+
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
+        read_current = get_read_current(data_dict)
         write_current = get_write_current(data_dict)
         write_temps = get_channel_temperature_sweep(data_dict)
         write_current_array[j] = write_current
@@ -85,9 +83,8 @@ if __name__ == "__main__":
             marker="o",
             color=RBCOLORS[i],
         )
-    limits = ax.get_ylim()
     ic_limits = calculate_critical_current_temp(
-        np.array(limits), CRITICAL_TEMP, critical_current_zero
+        np.array(ax.get_ylim()), CRITICAL_TEMP, critical_current_zero
     )
     ax2.set_ylim([ic_limits[0], ic_limits[1]])
 
@@ -97,17 +94,17 @@ if __name__ == "__main__":
     ax.grid(axis="x")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
-    ax2.axhline(ichl+irhr, color="grey", linestyle="-")
+    ax2.axhline(ichl + irhr, color="grey", linestyle="-", label="I_{min}")
+    ax2.axhline(ichr + irhr, color="grey", linestyle="-", label="I_{max}")
     ax2.axhline(ichr, color="C3", linestyle="--")
-    ax2.axhline(ichr+irhr, color="grey", linestyle="-")
-
+    ax2.plot([0], read_current * ALPHA, color="C1", marker="p", markersize=8)
+    ax2.plot([0], read_current * (1 - ALPHA), color="C1", marker="p", markersize=8)
 
     # Write current sweep
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
     )
     dict_list = dict_list[1:]
-
 
     ax = axs["C"]
     plot_write_sweep(ax, dict_list)
@@ -119,16 +116,16 @@ if __name__ == "__main__":
     for j, data_dict in enumerate(dict_list):
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
-        write_currents = get_read_currents(
-            data_dict
-        )  # This is correct. "y" is the write current in this .mat.
+
+        # This is correct. "y" is the write current in this .mat.
+        write_currents = get_read_currents(data_dict)
+
         enable_write_current = get_enable_write_current(data_dict)
         read_current = get_read_current(data_dict)
         write_current = get_write_current(data_dict)
 
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
-
                 if i == 0:
                     data.append(
                         {
@@ -142,7 +139,6 @@ if __name__ == "__main__":
                                 CRITICAL_TEMP,
                                 critical_current_zero,
                             ),
-
                         }
                     )
                 if i == 2:
@@ -166,11 +162,23 @@ if __name__ == "__main__":
     ax.axvline(ichl, color="C2", linestyle="--", label="_ichl")
     ax.axvline(ichr, color="C3", linestyle="--", label="_ichr")
 
-
-
     ax = axs["D"]
-    ax.plot([d["write_temp"] for d in data], [d["write_current"] for d in data], "--o", color="black")
-    ax.plot([d["write_temp"] for d in data2], [d["write_current"] for d in data2], "--o", color="grey")
+    ax.plot(
+        [d["write_temp"] for d in data],
+        [d["write_current"] for d in data],
+        "--o",
+        color="black",
+    )
+    ax.plot(
+        [d["write_temp"] for d in data2],
+        [d["write_current"] for d in data2],
+        "--o",
+        color="grey",
+    )
+
+    ax.axhline(10, color="C2", linestyle="--", label="_ichl")
+    ax.axhline(110, color="C2", linestyle="--", label="_ichl")
+
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
     ax.set_ylim(0, IWRITE_XLIM_2)
