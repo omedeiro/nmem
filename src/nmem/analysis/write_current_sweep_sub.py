@@ -143,22 +143,22 @@ if __name__ == "__main__":
     ax.set_aspect(1 / ax.get_data_ratio())
 
 
-    ax.fill_between(
-        np.linspace(0, IWRITE_XLIM, 1000),
-        left_branch_current-persistent_current,
-        left_branch_current+persistent_current,
-        color="green",
-        alpha=0.1,
-        label="i_L $\pm$ I_P",
-    )
-    ax.fill_between(
-        np.linspace(0, IWRITE_XLIM, 1000),
-        right_branch_current-persistent_current,
-        right_branch_current+persistent_current,
-        color="blue",
-        alpha=0.1,
-        label="i_R $\pm$ I_P",
-    )
+    # ax.fill_between(
+    #     np.linspace(0, IWRITE_XLIM, 1000),
+    #     left_branch_current-persistent_current,
+    #     left_branch_current+persistent_current,
+    #     color="green",
+    #     alpha=0.1,
+    #     label="i_L $\pm$ I_P",
+    # )
+    # ax.fill_between(
+    #     np.linspace(0, IWRITE_XLIM, 1000),
+    #     right_branch_current-persistent_current,
+    #     right_branch_current+persistent_current,
+    #     color="blue",
+    #     alpha=0.1,
+    #     label="i_R $\pm$ I_P",
+    # )
     ax.legend()
 
 
