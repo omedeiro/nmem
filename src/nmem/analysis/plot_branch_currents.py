@@ -1,38 +1,59 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
+
 from nmem.analysis.analysis import (
-    plot_branch_currents,
+    CRITICAL_TEMP,
+    RETRAP,
+    SUBSTRATE_TEMP,
+    WIDTH,
     get_critical_current_intercept,
     import_directory,
+    plot_branch_currents,
 )
 
-CRITICAL_TEMP = 12.3
-ALPHA = 0.6
-RETRAP = 0.7
-WIDTH = 1 / 3
+N = 100
+YMAX = 2000
+experiment_marker = (7, 800)
 
-if __name__ == "__main__":
-    data_dict = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-    )[0]
-    fig, ax = plt.subplots()
 
-    critical_current_zero = get_critical_current_intercept(data_dict)*0.88
-    temps = np.linspace(0, CRITICAL_TEMP, 100)
+def create_branch_current_plot(
+    ax: plt.Axes, temp_array: np.ndarray, critical_current_zero: float
+) -> plt.Axes:
+    ax = plot_branch_currents(
+        ax, temp_array, CRITICAL_TEMP, RETRAP, WIDTH, critical_current_zero
+    )
 
-    plot_branch_currents(ax, temps, CRITICAL_TEMP, RETRAP, WIDTH, critical_current_zero)
-
-    ax.plot()
-
-    ax.axvline(1.3, color="black", linestyle="--", label="Substrate Temp")
+    ax.axvline(SUBSTRATE_TEMP, color="black", linestyle=":", label="Substrate Temp")
     ax.set_xlabel("Temperature [K]")
     ax.set_ylabel("Current [$\mu$A]")
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     ax.grid()
-    ax.set_xlim(0, 12.3)
-    ax.set_ylim(0, 2000)
+    ax.set_xlim(0, CRITICAL_TEMP)
+    ax.set_ylim(0, YMAX)
     ax.plot([0], [critical_current_zero], marker="x", color="black", markersize=10)
-    ax.plot([7], [800], marker="x", color="black", markersize=10)
-    plt.savefig("plot_branch_currents.pdf", bbox_inches="tight")
+    ax.plot(
+        experiment_marker[0],
+        experiment_marker[1],
+        marker="x",
+        color="black",
+        markersize=10,
+    )
+
+    return ax
+
+
+if __name__ == "__main__":
+    # Import
+    data_dict = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
+    )[0]
+
+    # Preprocess
+    critical_current_zero = get_critical_current_intercept(data_dict)
+    temps = np.linspace(0, CRITICAL_TEMP, N)
+
+    # Plot
+    fig, ax = plt.subplots()
+    ax = create_branch_current_plot(ax, temps, critical_current_zero)
+    fig.savefig("plot_branch_currents.pdf", bbox_inches="tight")
     plt.show()
