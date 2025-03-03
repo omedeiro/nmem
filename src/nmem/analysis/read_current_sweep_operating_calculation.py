@@ -1,8 +1,14 @@
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import pandas as pd
+
 from nmem.analysis.analysis import (
+    CELLS,
+    RBCOLORS,
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
+    calculate_state_currents,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_read_current,
@@ -12,11 +18,6 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    calculate_critical_current_temp,
-    calculate_channel_temperature,
-    calculate_state_currents,
-    CELLS,
-    RBCOLORS,
 )
 
 SUBSTRATE_TEMP = 1.3
@@ -25,7 +26,6 @@ IRM = 727
 IRHL_TR = 110
 CRITICAL_CURRENT_ZERO = 1250
 WIDTH = 0.3
-
 
 
 def calculate_inductance_ratio(state0, state1, ic0):
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         write_current = get_write_current(data_dict)
 
         bit_error_rate = get_bit_error_rate(data_dict)
-        
+
         berargs = get_bit_error_rate_args(bit_error_rate)
         read_currents = get_read_currents(data_dict)
         if not np.isnan(berargs[0]) and write_current < 100:
@@ -82,7 +82,6 @@ if __name__ == "__main__":
         CELLS[data_dict["cell"][0]]["x_intercept"],
     ).flatten()
 
-
     critical_current_channel = calculate_critical_current_temp(
         read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
     )
@@ -93,12 +92,12 @@ if __name__ == "__main__":
     read2_dist = np.abs(ic2 - IRM)
     persistent_current = []
     for i, write_current in enumerate(write_current_list):
-        if write_current > IRHL_TR/2:
-            ip = np.abs(write_current-IRHL_TR)/2
+        if write_current > IRHL_TR / 2:
+            ip = np.abs(write_current - IRHL_TR) / 2
         else:
             ip = write_current
-        if ip > IRHL_TR/2:
-            ip = IRHL_TR/2
+        if ip > IRHL_TR / 2:
+            ip = IRHL_TR / 2
         print(f"write_current: {write_current}, persistent current: {ip}")
         persistent_current.append(ip)
     pd = pd.DataFrame(
@@ -106,16 +105,17 @@ if __name__ == "__main__":
             "Write Current": write_current_list,
             "Read Current": ic_list,
             "Read Current 2": ic_list2,
-            "Channel Critical Current": critical_current_channel*np.ones_like(ic_list),
-            "Channel Critical Current Left": critical_current_left*np.ones_like(ic_list),
-            "Channel Critical Current Right": critical_current_right*np.ones_like(ic_list),
+            "Channel Critical Current": critical_current_channel
+            * np.ones_like(ic_list),
+            "Channel Critical Current Left": critical_current_left
+            * np.ones_like(ic_list),
+            "Channel Critical Current Right": critical_current_right
+            * np.ones_like(ic_list),
             "Persistent Current": persistent_current,
             "Read Current Difference": read_current_difference,
             "Read Current 1 Distance": read1_dist,
             "Read Current 2 Distance": read2_dist,
-
         }
     )
-    
-    pd.to_csv("read_current_sweep_operating.csv")
 
+    pd.to_csv("read_current_sweep_operating.csv")

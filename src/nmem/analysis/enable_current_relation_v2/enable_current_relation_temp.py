@@ -1,24 +1,24 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import (
+    CMAP,
+    CRITICAL_TEMP,
+    SUBSTRATE_TEMP,
+    calculate_channel_temperature,
+    convert_cell_to_coordinates,
+    filter_plateau,
+    get_current_cell,
+    get_fitting_points,
+    get_max_enable_current,
     import_directory,
     plot_column,
     plot_full_grid,
     plot_grid,
-    plot_row,
-    get_current_cell,
-    convert_cell_to_coordinates,
-    get_fitting_points,
-    filter_plateau,
     plot_linear_fit,
     plot_optimal_enable_currents,
-    CMAP,
-    get_max_enable_current, 
-    calculate_channel_temperature,
-    CRITICAL_TEMP,
-    SUBSTRATE_TEMP,
+    plot_row,
 )
-
 
 if __name__ == "__main__":
     dict_list = import_directory("data")

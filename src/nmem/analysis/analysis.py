@@ -12,6 +12,7 @@ from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import curve_fit, least_squares
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
@@ -162,7 +163,6 @@ def calculate_branch_currents(
     width_ratio: float,
     critical_current_zero: float,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-
     if any(T > Tc):
         raise ValueError("Temperature must be less than critical temperature.")
     ichr: np.ndarray = calculate_critical_current_temp(
@@ -241,7 +241,6 @@ def get_optimal_enable_write_current(current_cell: str) -> float:
 
 
 def get_enable_current_sweep(data_dict: dict) -> np.ndarray:
-
     enable_current_array: np.ndarray = data_dict.get("x")[:, :, 0].flatten() * 1e6
     if len(enable_current_array) == 1:
         enable_current_array = data_dict.get("x")[:, 0].flatten() * 1e6
@@ -772,7 +771,7 @@ def plot_branch_currents(
 
     ax.plot(T, ichr + irhl, label="$I_{0}(T)$", color="g", linestyle="-")
     print(f"ichr: {ichr[0]}, irhl: {irhl[0]}")
-    print(f"sum {ichr[0]+irhl[0]}")
+    print(f"sum {ichr[0] + irhl[0]}")
     return ax
 
 
@@ -806,7 +805,6 @@ def plot_calculated_filled_region(
     alpha: float,
     critical_current_zero: float,
 ) -> Axes:
-
     plot_calculated_nominal_region(
         ax,
         temp,
@@ -1285,7 +1283,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
         ax.plot(
             read_currents,
             bit_error_rate,
-            label=f"+{i+1}$\mu$s",
+            label=f"+{i + 1}$\mu$s",
             color=colors[i],
             marker=".",
             markeredgecolor="k",
@@ -1438,7 +1436,6 @@ def plot_state_current_markers(
     current_sweep: Literal["read_current", "enable_write_current"],
     **kwargs,
 ) -> Axes:
-
     state_current_markers = get_state_current_markers(data_dict, current_sweep)
     currents = state_current_markers[0, :]
     bit_error_rate = state_current_markers[1, :]

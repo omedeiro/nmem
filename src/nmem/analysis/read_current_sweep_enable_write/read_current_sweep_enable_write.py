@@ -3,12 +3,12 @@ import numpy as np
 
 from nmem.analysis.analysis import (
     CMAP,
+    get_channel_temperature,
     get_enable_write_current,
     get_write_current,
     import_directory,
     plot_fill_between,
     plot_read_sweep,
-    get_channel_temperature
 )
 
 if __name__ == "__main__":
@@ -16,8 +16,9 @@ if __name__ == "__main__":
     data_list2 = [data_list[0], data_list[3], data_list[-6]]
     colors = CMAP(np.linspace(0, 1, 4))
 
-    fig, axs = plt.subplots(1,2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, .25])
-
+    fig, axs = plt.subplots(
+        1, 2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, 0.25]
+    )
 
     ax = axs[0]
     for j, data_dict in enumerate(data_list2):
@@ -66,7 +67,6 @@ if __name__ == "__main__":
         marker="o",
         color="black",
     )
-    
 
     for i, idx in enumerate([0, 3, -6, -1]):
         ax.plot(
@@ -79,6 +79,6 @@ if __name__ == "__main__":
         )
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-    ax.yaxis.set_major_locator(plt.MultipleLocator(.2))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
     plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
     plt.show()

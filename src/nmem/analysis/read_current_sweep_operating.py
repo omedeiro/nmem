@@ -1,8 +1,17 @@
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import pandas as pd
+
 from nmem.analysis.analysis import (
+    CELLS,
+    CRITICAL_TEMP,
+    RBCOLORS,
+    SUBSTRATE_TEMP,
+    WIDTH,
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
+    calculate_retrapping_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_read_current,
@@ -12,14 +21,6 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    calculate_critical_current_temp,
-    calculate_channel_temperature,
-    CELLS,
-    RBCOLORS,
-    WIDTH,
-    SUBSTRATE_TEMP,
-    CRITICAL_TEMP,
-    calculate_retrapping_current_temp,
 )
 
 CRITICAL_CURRENT_ZERO = 1250
@@ -167,7 +168,13 @@ if __name__ == "__main__":
     right_retrapping_current = critical_current_right * retrap2
 
     ax = axs["D"]
-    ax.plot(write_current_list, np.abs(delta_read_current), "-o", color="black", markersize=3.5)
+    ax.plot(
+        write_current_list,
+        np.abs(delta_read_current),
+        "-o",
+        color="black",
+        markersize=3.5,
+    )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$|\Delta I_{\mathrm{read}}|$ [$\mu$A]")
     ax.set_xlim(0, 300)
@@ -180,7 +187,13 @@ if __name__ == "__main__":
     ax2.set_ylabel("$I_{\mathrm{persistent}}$ [$\mu$A]")
     ax2.set_ylim(0, 110)
     ax2.set_zorder(0)
-    ax2.fill_between(write_current_array, np.zeros_like(write_current_array), persistent_current, color="black", alpha=0.1)
+    ax2.fill_between(
+        write_current_array,
+        np.zeros_like(write_current_array),
+        persistent_current,
+        color="black",
+        alpha=0.1,
+    )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()

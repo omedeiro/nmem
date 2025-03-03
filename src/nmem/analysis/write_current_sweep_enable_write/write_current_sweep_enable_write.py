@@ -15,7 +15,6 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
 
-
 if __name__ == "__main__":
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
@@ -39,8 +38,7 @@ if __name__ == "__main__":
         enable_write_current = get_enable_write_current(data_dict)
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
-
-                if i==0:
+                if i == 0:
                     ichl_current_list.append(write_currents[arg])
                     ichl_temp.append(get_write_temperature(data_dict))
                     # ax.plot(
@@ -50,7 +48,7 @@ if __name__ == "__main__":
                     #     marker="o",
                     #     markersize=5,
                     # )
-                if i==2:
+                if i == 2:
                     ichr_current_list.append(write_currents[arg])
                     ichr_temp.append(get_write_temperature(data_dict))
                     # ax.plot(
@@ -59,20 +57,18 @@ if __name__ == "__main__":
                     #     color="C1",
                     #     marker="o",
                     #     markersize=5,
-                    # )                    
+                    # )
     ax.axvline(30, color="grey", linestyle="--")
     ax.axvline(110, color="grey", linestyle="--")
     ax.axvline(140, color="grey", linestyle="--")
 
     ax = axs[1]
 
-
     ax.plot(ichl_temp, ichl_current_list, marker="o")
     ax.plot(ichr_temp, ichr_current_list, marker="o")
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylim(0,300)
+    ax.set_ylim(0, 300)
     ax.grid()
-
 
     fig.subplots_adjust(wspace=0.3)

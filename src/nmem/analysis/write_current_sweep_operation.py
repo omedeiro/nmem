@@ -2,21 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import (
+    CRITICAL_TEMP,
+    RBCOLORS,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
+    get_channel_temperature,
+    get_channel_temperature_sweep,
+    get_critical_current_heater_off,
     get_enable_write_current,
+    get_read_current,
     get_read_currents,
     get_write_current,
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
-    get_read_current,
-    get_channel_temperature_sweep,
-    get_channel_temperature,
-    get_critical_current_heater_off,
-    CRITICAL_TEMP,
-    RBCOLORS,
 )
 
 if __name__ == "__main__":
@@ -96,7 +96,6 @@ if __name__ == "__main__":
 
         for i, arg in enumerate(berargs):
             if arg is not np.nan:
-
                 if i == 0:
                     data.append(
                         {
@@ -104,7 +103,6 @@ if __name__ == "__main__":
                             "write_temp": get_channel_temperature(data_dict, "write"),
                             "read_current": read_current,
                             "enable_write_current": enable_write_current,
-
                         }
                     )
                 if i == 2:
@@ -118,8 +116,18 @@ if __name__ == "__main__":
                     )
 
     ax = axs["D"]
-    ax.plot([d["write_temp"] for d in data], [d["write_current"] for d in data], "o", color="blue")
-    ax.plot([d["write_temp"] for d in data2], [d["write_current"] for d in data2], "o", color="red")
+    ax.plot(
+        [d["write_temp"] for d in data],
+        [d["write_current"] for d in data],
+        "o",
+        color="blue",
+    )
+    ax.plot(
+        [d["write_temp"] for d in data2],
+        [d["write_current"] for d in data2],
+        "o",
+        color="red",
+    )
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
     ax.set_ylim(0, 300)

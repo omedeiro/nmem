@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import matplotlib.ticker as ticker
+import numpy as np
+
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     get_bit_error_rate,
@@ -76,6 +77,5 @@ if __name__ == "__main__":
     )
     # cbar.set_ticks([1e-5, 1e-4, 1e-3, 1e-2])
 
-    
     plt.savefig("read_delay_retention_test.pdf", bbox_inches="tight")
     plt.show()

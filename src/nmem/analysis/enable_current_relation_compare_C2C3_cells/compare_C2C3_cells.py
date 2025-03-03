@@ -52,13 +52,12 @@ if __name__ == "__main__":
     xfit, yfit = get_fitting_points(x, y, ztotal)
     # axs[0].plot(xfit, yfit, label="C2", linestyle="-")
 
-
     save = True
     if save:
-        plt.savefig("enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight")
+        plt.savefig(
+            "enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight"
+        )
     plt.show()
-
-
 
     fig, ax = plt.subplots()
     plot_channel_temperature(ax, data_dict)

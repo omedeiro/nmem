@@ -1,13 +1,14 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.io as sio
 from scipy.optimize import least_squares
+
 from nmem.analysis.analysis import (
+    CMAP,
+    CRITICAL_TEMP,
     calculate_state_currents,
     get_critical_current_intercept,
     import_directory,
-    CRITICAL_TEMP,
-    CMAP,
     plot_calculated_filled_region,
 )
 
@@ -21,9 +22,7 @@ def filter_nan(x, y):
 
 def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3) -> float:
     alpha, persistent = p
-    model = model_function(
-        x0, x1, x2, x3, alpha, persistent
-    )
+    model = model_function(x0, x1, x2, x3, alpha, persistent)
     residuals = np.concatenate(
         [
             y0 - model[0],
@@ -56,7 +55,6 @@ def model_function(x0, x1, x2, x3, alpha, persistent):
 
 
 if __name__ == "__main__":
-
     data = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
     )
@@ -124,7 +122,6 @@ if __name__ == "__main__":
         # ax.set_xlim([6, 8.5])
         # ax.set_ylim([500, 1000])
 
-
         f = fit.x
         plot_calculated_filled_region(
             ax,
@@ -151,7 +148,7 @@ if __name__ == "__main__":
                 1,
                 WIDTH,
                 f[0],
-                critical_current_zero
+                critical_current_zero,
             )
             ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
 
@@ -160,10 +157,7 @@ if __name__ == "__main__":
         ax_inset.set_xticks([])
         ax_inset.set_yticks([])
 
-    ax.set_ybound(lower=0)   
-    ax.set_xbound(lower=0) 
+    ax.set_ybound(lower=0)
+    ax.set_xbound(lower=0)
     for f in fit_results:
-        print(
-            f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}"
-        )
-
+        print(f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}")

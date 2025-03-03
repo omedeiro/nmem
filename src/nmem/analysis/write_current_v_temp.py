@@ -5,8 +5,8 @@ from nmem.analysis.analysis import (
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_write_current,
     get_channel_temperature_sweep,
+    get_write_current,
     import_directory,
 )
 

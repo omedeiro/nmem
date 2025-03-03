@@ -21,7 +21,6 @@ if __name__ == "__main__":
         title="Write Current [$\mu$A]",
     )
 
-
     fig, ax = plt.subplots()
     dict_list = dict_list[4:]
     dict_list = dict_list[::-1]

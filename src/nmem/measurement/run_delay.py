@@ -85,7 +85,6 @@ if __name__ == "__main__":
         delay=1,
     )
 
-
     file_path, time_str = qf.save(
         b.properties, data_dict.get("measurement_name"), data_dict
     )
@@ -126,6 +125,6 @@ if __name__ == "__main__":
     nm.write_dict_to_file(file_path, measurement_settings)
 
     t2 = time.time()
-    print(f"run time {(t2-t1)/60:.2f} minutes")
+    print(f"run time {(t2 - t1) / 60:.2f} minutes")
     print(f"Bit Error Rate: {data_dict['bit_error_rate']}")
     nm.set_awg_off(b)

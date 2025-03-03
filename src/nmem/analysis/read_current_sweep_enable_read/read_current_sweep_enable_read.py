@@ -4,6 +4,9 @@ import numpy as np
 
 from nmem.analysis.analysis import (
     CMAP,
+    get_channel_temperature,
+    get_enable_currents_array,
+    get_enable_read_current,
     get_enable_write_current,
     get_write_current,
     import_directory,
@@ -11,9 +14,6 @@ from nmem.analysis.analysis import (
     plot_fill_between_array,
     plot_read_sweep,
     plot_read_sweep_array,
-    get_channel_temperature,
-    get_enable_currents_array,
-    get_enable_read_current,
 )
 
 if __name__ == "__main__":

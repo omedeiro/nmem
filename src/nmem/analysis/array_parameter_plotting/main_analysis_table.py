@@ -1,14 +1,13 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 
-
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
-    calculate_critical_current_zero,
-    calculate_channel_temperature,
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
+    calculate_channel_temperature,
+    calculate_critical_current_zero,
 )
-import pandas as pd
+from nmem.measurement.cells import CELLS
 
 ALPHA_FIT = 0.88
 BETA_FIT = 1.25
@@ -16,7 +15,6 @@ WIDTH_LEFT = 100e-9
 WIDTH_RIGHT = 300e-9
 THICKNESS = 23e-9
 if __name__ == "__main__":
-
     fig, ax = plt.subplots()
     data = []
     cell_dictionary = CELLS
@@ -46,7 +44,6 @@ if __name__ == "__main__":
             * 1e-6
             / (WIDTH_LEFT * THICKNESS + WIDTH_RIGHT * THICKNESS)
         ) * (1 - (SUBSTRATE_TEMP / CRITICAL_TEMP) ** 3) ** -2.1
-
 
         data.append(
             {

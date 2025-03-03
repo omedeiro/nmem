@@ -1,15 +1,17 @@
-from nmem.analysis.analysis import (
-    plot_calculated_state_currents,
-    plot_calculated_filled_region,
-    import_directory,
-    get_critical_current_intercept,
-    CMAP,
-    filter_nan,
-)
 import matplotlib.pyplot as plt
 import numpy as np
-from nmem.measurement.functions import calculate_power
 import scipy.io as sio
+
+from nmem.analysis.analysis import (
+    CMAP,
+    filter_nan,
+    get_critical_current_intercept,
+    import_directory,
+    plot_calculated_filled_region,
+    plot_calculated_state_currents,
+)
+from nmem.measurement.functions import calculate_power
+
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 
@@ -20,7 +22,6 @@ WIDTH = 0.3
 
 
 if __name__ == "__main__":
-
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
     )
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     critical_current_zero = 1250
 
     temperatures = np.linspace(0, CRITICAL_TEMP, 100)
-    
+
     plot_calculated_state_currents(
         ax,
         temperatures,
@@ -55,8 +56,6 @@ if __name__ == "__main__":
         critical_current_zero,
     )
 
-
-    
     data_dict1 = sio.loadmat("measured_state_currents_290.mat")
     data_dict2 = sio.loadmat("measured_state_currents_300.mat")
     data_dict3 = sio.loadmat("measured_state_currents_310.mat")
@@ -75,8 +74,6 @@ if __name__ == "__main__":
             x, y = filter_nan(x, y)
             ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
 
-
-            
     ax.set_xlabel("Temperature [K]")
     ax.set_ylabel("Current [au]")
     ax.grid()

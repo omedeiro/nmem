@@ -139,4 +139,4 @@ if __name__ == "__main__":
                     markeredgecolor="none",
                 )
     ax.axhline(736, color="black", linestyle="--")
-        # plot_state_current_markers(ax, data_dict, "read_current")
+    # plot_state_current_markers(ax, data_dict, "read_current")
