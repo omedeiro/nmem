@@ -1,13 +1,12 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.io as sio
 from scipy.optimize import least_squares
+
 from nmem.analysis.analysis import (
-    calculate_state_currents,
-    get_critical_current_intercept,
-    import_directory,
     CRITICAL_TEMP,
-    CMAP,
+    calculate_state_currents,
+    import_directory,
     plot_calculated_filled_region,
 )
 
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     # colors = CMAP(np.linspace(0.1, 1, 4))
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []
-    for data_dict in [dict_list[2]]:
+    for data_dict in dict_list:
         fig, ax = plt.subplots()
         temp = data_dict["measured_temperature"].flatten()
         state_currents = data_dict["measured_state_currents"]
@@ -121,9 +120,6 @@ if __name__ == "__main__":
         ax.set_xlabel("Temperature [K]")
         ax.set_ylabel("Current [$\mu$A]")
         ax.grid()
-        # ax.set_xlim([6, 8.5])
-        # ax.set_ylim([500, 1000])
-
 
         f = fit.x
         plot_calculated_filled_region(
@@ -140,7 +136,6 @@ if __name__ == "__main__":
 
         ax_inset = fig.add_axes([0.15, 0.15, 0.35, 0.35])
         for i in range(4):
-            # ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
             ax_inset.plot(x_list[i], y_list[i], "o", color=colors[i])
             plot_calculated_filled_region(
                 ax_inset,
