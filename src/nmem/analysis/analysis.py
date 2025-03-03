@@ -1140,7 +1140,7 @@ def plot_parameter_array(
     return ax
 
 
-def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
+def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Tuple[Axes, Axes]:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_enable_sweep_single(ax, data_dict, color=colors[i])
