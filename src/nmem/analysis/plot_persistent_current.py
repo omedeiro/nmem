@@ -1,15 +1,15 @@
-from nmem.analysis.analysis import (
-    plot_calculated_state_currents,
-    plot_calculated_filled_region,
-    import_directory,
-    get_critical_current_intercept,
-    CMAP,
-    filter_nan,
-)
 import matplotlib.pyplot as plt
 import numpy as np
-from nmem.measurement.functions import calculate_power
 import scipy.io as sio
+
+from nmem.analysis.analysis import (
+    filter_nan,
+    import_directory,
+    plot_calculated_filled_region,
+    plot_calculated_state_currents,
+)
+from nmem.measurement.functions import calculate_power
+
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 

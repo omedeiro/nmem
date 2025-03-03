@@ -1,22 +1,15 @@
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.ticker import MultipleLocator
 import pandas as pd
+
 from nmem.analysis.analysis import (
+    CELLS,
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_read_current,
     get_read_currents,
-    get_state_current_markers,
     get_write_current,
     import_directory,
-    plot_read_sweep_array,
-    plot_read_switch_probability_array,
-    calculate_critical_current_temp,
-    calculate_channel_temperature,
-    calculate_state_currents,
-    CELLS,
-    RBCOLORS,
 )
 
 SUBSTRATE_TEMP = 1.3

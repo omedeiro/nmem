@@ -1,27 +1,26 @@
+from typing import Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Tuple
+
 from nmem.analysis.analysis import (
+    CRITICAL_TEMP,
+    RETRAP,
+    WIDTH,
+    calculate_branch_currents,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_enable_write_current,
-    get_read_currents,
+    get_channel_temperature,
+    get_channel_temperature_sweep,
+    get_critical_current_heater_off,
+    get_critical_current_intercept,
+    get_enable_current_sweep,
+    get_read_current,
     get_write_current,
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
-    get_read_current,
-    get_channel_temperature_sweep,
-    get_channel_temperature,
-    get_critical_current_heater_off,
-    get_critical_current_intercept,
-    calculate_branch_currents,
-    get_enable_current_sweep,
-    CRITICAL_TEMP,
-    WIDTH,
-    RETRAP,
-    ALPHA,
 )
 
 IWRITE_XLIM = 100

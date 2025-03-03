@@ -11,7 +11,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.optimize import curve_fit, least_squares
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,

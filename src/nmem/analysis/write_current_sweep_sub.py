@@ -2,22 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import (
+    CRITICAL_TEMP,
+    calculate_branch_currents,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_enable_write_current,
-    get_read_currents,
-    get_write_current,
-    import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_write_sweep,
-    get_read_current,
-    get_channel_temperature_sweep,
     get_channel_temperature,
+    get_channel_temperature_sweep,
     get_critical_current_heater_off,
     get_critical_current_intercept,
-    calculate_branch_currents,
-    CRITICAL_TEMP,
+    get_read_current,
+    get_write_current,
+    import_directory,
 )
 
 ALPHA = 0.55

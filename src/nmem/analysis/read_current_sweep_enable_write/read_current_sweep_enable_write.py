@@ -3,12 +3,12 @@ import numpy as np
 
 from nmem.analysis.analysis import (
     CMAP,
+    get_channel_temperature,
     get_enable_write_current,
     get_write_current,
     import_directory,
     plot_fill_between,
     plot_read_sweep,
-    get_channel_temperature
 )
 
 if __name__ == "__main__":

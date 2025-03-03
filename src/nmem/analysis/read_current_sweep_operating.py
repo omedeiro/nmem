@@ -1,29 +1,27 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-import pandas as pd
+
 from nmem.analysis.analysis import (
+    CELLS,
+    CRITICAL_TEMP,
+    RBCOLORS,
+    RETRAP,
+    SUBSTRATE_TEMP,
+    WIDTH,
+    calculate_branch_currents,
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_read_current,
+    get_channel_temperature,
+    get_critical_current_intercept,
     get_read_currents,
     get_state_current_markers,
     get_write_current,
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    calculate_critical_current_temp,
-    calculate_channel_temperature,
-    CELLS,
-    RBCOLORS,
-    WIDTH,
-    RETRAP,
-    SUBSTRATE_TEMP,
-    CRITICAL_TEMP,
-    calculate_retrapping_current_temp,
-    calculate_branch_currents,
-    get_critical_current_intercept,
-    get_channel_temperature,
 )
 
 IRM = 727.5
