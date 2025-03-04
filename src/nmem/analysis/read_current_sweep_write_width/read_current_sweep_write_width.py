@@ -6,8 +6,7 @@ from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 plt.rcParams["figure.figsize"] = [5, 3.5]
 plt.rcParams["font.size"] = 14
 
-
-if __name__ == "__main__":
+def plot_read_sweep_write_width():
     dict_list = import_directory("data")
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_width")
@@ -20,3 +19,6 @@ if __name__ == "__main__":
         title="Write Width",
     )
     plt.show()
+
+if __name__ == "__main__":
+    plot_read_sweep_write_width()

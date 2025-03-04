@@ -8,60 +8,58 @@ from nmem.analysis.analysis import (
     plot_fitting,
 )
 
-if __name__ == "__main__":
-    data_list = import_directory("data")
-    data_dict = data_list[0]
-    data_dict2 = data_list[1]
 
-    split_idx = 10
+def plot_fit(ax, xfit, yfit, **kwargs):
+    plot_fitting(ax, xfit, yfit, **kwargs)
+    ax.legend()
+    ax.set_xlim([0, 500])
+    ax.set_ylim([0, 1000])
+    ax.set_xlabel("Enable Current ($\mu$A)")
+    ax.set_ylabel("Critical Current ($\mu$A)")
 
-    fig, axs = plt.subplots()
+    return ax
+
+
+def get_fit_points(data_dict: dict):
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
     xfit, yfit = get_fitting_points(x, y, ztotal)
-    axs.plot(xfit, yfit, label="C2", linestyle="-")
-    split_idx = 7
-    plot_fitting(axs, xfit[split_idx + 1 :], yfit[split_idx + 1 :])
 
-    split_idx = 10
-    x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
+    return xfit, yfit
 
-    xfit, yfit = get_fitting_points(x2, y2, ztotal2)
-    axs.plot(xfit, yfit, label="C3", linestyle="-")
-    axs.legend()
-    axs.set_ylim([0, 1000])
-    axs.set_xlim([0, 500])
+
+IDX_C2 = 5
+IDX_C3 = 10
+
+if __name__ == "__main__":
+    # Import
+    data_list = import_directory("data")
+    data_dict_C2 = data_list[0]
+    data_dict_C3 = data_list[1]
+
+    # Preprocess
+    xfit_c2, yfit_c2 = get_fit_points(data_dict_C2)
+    xfit_c3, yfit_c3 = get_fit_points(data_dict_C3)
+
+    # Plot
+    fig, ax = plt.subplots()
+    ax = plot_fitting(ax, xfit_c2[IDX_C2 + 1 :], yfit_c2[IDX_C2 + 1 :], linestyle="-")
+    ax.plot(xfit_c2, yfit_c2, label="C2", linestyle="-")
+    ax.plot(xfit_c3, yfit_c3, label="C3", linestyle="-")
+    ax.legend()
 
     fig, axs = plt.subplots(1, 2, figsize=(10, 10))
 
-    plot_fitting(
-        axs[0], xfit[split_idx + 1 :], yfit[split_idx + 1 :], label="C3", linestyle="-"
+    axs[0].plot(xfit_c3, yfit_c3, label="C3", linestyle="-")
+    axs[0] = plot_fit(axs[0], xfit_c3[:IDX_C3], yfit_c3[:IDX_C3], linestyle="-")
+    
+    axs[1].plot(xfit_c3, yfit_c3, label="C3", linestyle="-")
+    axs[1] = plot_fit(
+        axs[1], xfit_c3[IDX_C3 + 1 :], yfit_c3[IDX_C3 + 1 :], linestyle="-"
     )
-    axs[0].set_ylim([0, 1000])
-    axs[0].set_xlim([0, 500])
-    axs[0].plot(xfit, yfit, label="C2", linestyle="-")
-    axs[0].set_xlabel("Enable Current ($\mu$A)")
-    axs[0].set_ylabel("Critical Current ($\mu$A)")
-    plot_fitting(axs[1], xfit[:split_idx], yfit[:split_idx], label="C3", linestyle="-")
-    axs[1].plot(xfit, yfit, label="C2", linestyle="-")
-    axs[1].set_ylim([0, 1000])
-    axs[1].set_xlim([0, 500])
-    axs[1].set_xlabel("Enable Current ($\mu$A)")
-
-    # fig, axs = plt.subplots(1, 2, figsize=(10, 10))
-    x, y, ztotal = build_array(data_dict, "total_switches_norm")
-    xfit, yfit = get_fitting_points(x, y, ztotal)
-    # axs[0].plot(xfit, yfit, label="C2", linestyle="-")
-
 
     save = True
     if save:
-        plt.savefig("enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight")
-    plt.show()
-
-
-
-    fig, ax = plt.subplots()
-    plot_channel_temperature(ax, data_dict)
-    plot_channel_temperature(ax, data_dict2)
-
+        fig.savefig(
+            "enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight"
+        )
     plt.show()

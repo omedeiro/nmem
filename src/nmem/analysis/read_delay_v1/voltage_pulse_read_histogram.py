@@ -79,27 +79,9 @@ def create_trace_hist_plot(
     return ax_dict
 
 if __name__ == "__main__":
-    # dict_list = import_directory("data")
-    # fig, ax = plt.subplots()
-    # plot_read_delay(ax, dict_list)
-    # plt.show()
-
-    # fig, ax = plt.subplots()
-    # plot_voltage_hist(ax, dict_list[1])
-    # plt.show()
-
-    # dict_list2 = import_directory("data2")
-    # for data_dict in dict_list2:
-    #     fig, ax = plt.subplots()
-    #     plot_voltage_trace_bitstream(ax, data_dict, "trace_chan_out")
-    #     ax.set_xlabel("Time [$\mu$s]")
-    #     ax.set_ylabel("Voltage [V]")
-    #     plt.show()
-
     fig, ax = plt.subplots(figsize=(60/25.4, 45/25.4))
     dict_list = import_directory("data")
     plot_voltage_hist(ax, dict_list[1])
-    # plt.show()
     save = True
     if save:
         plt.savefig("delay_plotting_v3.pdf", bbox_inches="tight")
@@ -138,4 +120,6 @@ if __name__ == "__main__":
     ax_dict["B"].set_xlabel("Time [$\mu$s]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
-    plt.savefig("delay_plotting_v3_trace.pdf", bbox_inches="tight")
+    save = False
+    if save:
+        fig.savefig("delay_plotting_v3_trace.pdf", bbox_inches="tight")

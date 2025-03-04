@@ -16,7 +16,6 @@ from nmem.analysis.analysis import (
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
-
     colors = CMAP(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
 
@@ -37,24 +36,18 @@ if __name__ == "__main__":
             xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
         )
 
-        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-
-        # plot_linear_fit(
-        #     axs,
-        #     xfit,
-        #     yfit,
-        # )
-        # plot_optimal_enable_currents(axs, data_dict)
-
-        max_enable_current = get_max_enable_current(data_dict)
         channel_temperature = calculate_channel_temperature(
-            CRITICAL_TEMP, SUBSTRATE_TEMP, enable_currents, max_enable_current
+            CRITICAL_TEMP,
+            SUBSTRATE_TEMP,
+            enable_currents,
+            get_max_enable_current(data_dict),
         )
         axs2.plot(enable_currents, channel_temperature, color="grey", marker="o")
-        axs2.set_ybound(lower=0)
-        axs.legend(loc="upper right")
-        axs.set_xlim(0, 600)
-        axs.set_ylim(0, 1000)
+
+    axs2.set_ybound(lower=0)
+    axs.legend(loc="upper right")
+    axs.set_xlim(0, 600)
+    axs.set_ylim(0, 1000)
     axs.set_xlabel("Enable Current ($\mu$A)")
     axs.set_ylabel("Critical Current ($\mu$A)")
     axs2.set_ylabel("Channel Temperature (K)")

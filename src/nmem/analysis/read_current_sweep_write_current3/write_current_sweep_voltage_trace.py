@@ -6,13 +6,11 @@ from nmem.analysis.analysis import (
     plot_voltage_trace_stack,
 )
 
-plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 6
-
 
 TRACE_INDEX = 10
 
 if __name__ == "__main__":
+    # Import
     dict_list = import_directory("data")
     data_off = dict_list[0]
 
