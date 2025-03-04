@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
+
 def plot_read_sweep_import(dict_list):
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current")

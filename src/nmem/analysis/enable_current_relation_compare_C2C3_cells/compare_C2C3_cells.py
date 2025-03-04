@@ -4,7 +4,6 @@ from nmem.analysis.analysis import (
     build_array,
     get_fitting_points,
     import_directory,
-    plot_channel_temperature,
     plot_fitting,
 )
 

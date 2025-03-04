@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import (
-    get_state_current_markers,
-    get_write_current,
     import_directory,
     plot_read_sweep_array,
 )

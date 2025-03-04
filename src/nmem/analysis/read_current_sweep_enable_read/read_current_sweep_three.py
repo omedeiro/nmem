@@ -1,4 +1,3 @@
-import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import (
@@ -6,6 +5,7 @@ from nmem.analysis.analysis import (
     plot_fill_between_array,
     plot_read_sweep_array,
 )
+
 
 def plot_three_panel_sweep(axs:list[plt.Axes], dict_list:list[dict[str, list[float]]]):
     for i in range(3):

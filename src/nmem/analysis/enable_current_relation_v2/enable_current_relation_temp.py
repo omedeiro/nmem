@@ -7,7 +7,6 @@ from nmem.analysis.analysis import (
     SUBSTRATE_TEMP,
     calculate_channel_temperature,
     convert_cell_to_coordinates,
-    filter_plateau,
     get_current_cell,
     get_fitting_points,
     get_max_enable_current,

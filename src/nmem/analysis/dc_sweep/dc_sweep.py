@@ -1,4 +1,3 @@
-import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
@@ -7,6 +6,7 @@ from nmem.analysis.analysis import (
     plot_critical_currents_from_dc_sweep,
     plot_current_voltage_from_dc_sweep,
 )
+
 
 def plot_combined_figure(ax: Axes, dict_list: list, save: bool = False) -> Axes:
     ax[0, 0].axis("off")

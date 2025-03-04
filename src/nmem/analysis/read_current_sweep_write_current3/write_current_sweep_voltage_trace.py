@@ -6,7 +6,6 @@ from nmem.analysis.analysis import (
     plot_voltage_trace_stack,
 )
 
-
 TRACE_INDEX = 10
 
 if __name__ == "__main__":

@@ -4,14 +4,12 @@ import numpy as np
 from nmem.analysis.analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_enable_write_current,
-    get_read_currents,
     get_channel_temperature,
+    get_read_currents,
     import_directory,
     plot_write_sweep,
-    SUBSTRATE_TEMP,
-    CRITICAL_TEMP,
 )
+
 
 def plot_write_sweep_temps(ax: plt.Axes, dict_list: list[dict]):
     plot_write_sweep(ax, dict_list)

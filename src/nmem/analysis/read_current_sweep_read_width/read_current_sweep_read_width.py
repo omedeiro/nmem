@@ -2,8 +2,6 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
-
-
 if __name__ == "__main__":
     # Import
     dict_list = import_directory("data")
