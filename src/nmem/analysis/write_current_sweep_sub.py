@@ -93,6 +93,54 @@ def plot_write_array(
     return ax
 
 
+def plot_measured_state_currents(
+    ax: plt.Axes,
+    write_current_array,
+    write_channel_array,
+    ichl,
+    irhl,
+    ichr,
+    irhr,
+    left_branch_current,
+    right_branch_current,
+):
+    for i in range(4):
+        plot_write_array(
+            ax, write_current_array, write_channel_array[:, i], color=RBCOLORS[i]
+        )
+
+    ax.axhline(ichl + irhr, color="grey", linestyle="--", label="I_{min}")
+    ax.axhline(ichr + irhr, color="grey", linestyle="--", label="I_{max}")
+    ax.axhline(ichr, color="red", linestyle="--", label="ichr")
+    ax.axhline(left_branch_current, color="green", linestyle="--", label="i_L")
+    ax.axhline(
+        right_branch_current,
+        color="blue",
+        linestyle="--",
+        label="i_R",
+    )
+    return ax
+
+
+def plot_persistent_current_est(ax: plt.Axes, persistent_current, irhl):
+    ax.plot(
+        np.linspace(0, IWRITE_XLIM, 1000),
+        persistent_current,
+        color="black",
+        linestyle="-",
+        label="I_P",
+    )
+    ax.axvline(irhl, color="black", linestyle="--", label="irhl")
+
+    ax.set_xlim(0, IWRITE_XLIM)
+    ax.set_ylim(0, MAX_PERSISTENT)
+    ax.set_aspect(1 / ax.get_data_ratio())
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("$I_{\mathrm{P}}$ [$\mu$A]")
+    ax.legend()
+    return ax
+
+
 if __name__ == "__main__":
     # Import
     dict_list = import_directory(
@@ -118,43 +166,25 @@ if __name__ == "__main__":
         CRITICAL_TEMP,
         get_critical_current_intercept(dict_list[0]),
     )
+    
 
     # Plot
     fig, axs = plt.subplots(1, 2, figsize=(6, 4), constrained_layout=True)
-
-    ax: plt.Axes = axs[0]
-    for i in range(4):
-        plot_write_array(
-            ax, write_current_array, write_channel_array[:, i], color=RBCOLORS[i]
-        )
-
-    ax.axhline(ichl + irhr, color="grey", linestyle="--", label="I_{min}")
-    ax.axhline(ichr + irhr, color="grey", linestyle="--", label="I_{max}")
-    ax.axhline(ichr, color="red", linestyle="--", label="ichr")
-    ax.axhline(left_branch_current, color="green", linestyle="--", label="i_L")
-    ax.axhline(
+    plot_measured_state_currents(
+        axs[0],
+        write_current_array,
+        write_channel_array,
+        ichl,
+        irhl,
+        ichr,
+        irhr,
+        left_branch_current,
         right_branch_current,
-        color="blue",
-        linestyle="--",
-        label="i_R",
     )
 
-    ax: plt.Axes = axs[1]
-    ax.plot(
-        np.linspace(0, IWRITE_XLIM, 1000),
-        persistent_current,
-        color="black",
-        linestyle="-",
-        label="I_P",
-    )
-    ax.axvline(irhl, color="black", linestyle="--", label="irhl")
+    plot_persistent_current_est(axs[1], persistent_current, irhl)
 
-    ax.set_xlim(0, IWRITE_XLIM)
-    ax.set_ylim(0, MAX_PERSISTENT)
-    ax.set_aspect(1 / ax.get_data_ratio())
-    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("$I_{\mathrm{P}}$ [$\mu$A]")
-    ax.legend()
-
-    fig.savefig("write_current_sweep_sub.pdf", bbox_inches="tight")
+    save=False  
+    if save:
+        fig.savefig("write_current_sweep_sub.pdf", bbox_inches="tight")
     plt.show()
