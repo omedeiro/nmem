@@ -784,12 +784,11 @@ def plot_channel_temperature(
 ) -> plt.Axes:
     if channel_sweep == "enable_write_current":
         temp = get_channel_temperature(data_dict, "write")
-        current = get_enable_current_sweep(data_dict, "write")
-        print(f"temp: {temp}, current: {current}")
+        current = get_enable_current_sweep(data_dict)
     else:
         temp = get_channel_temperature(data_dict, "read")
-        current = get_enable_current_sweep(data_dict, "read")
-        print(f"2temp: {temp}, current: {current}")
+        current = get_enable_current_sweep(data_dict)
+
     ax.plot(current, temp, **kwargs)
 
     return ax
