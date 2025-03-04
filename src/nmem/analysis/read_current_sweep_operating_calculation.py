@@ -10,14 +10,15 @@ from nmem.analysis.analysis import (
     get_read_currents,
     get_write_current,
     import_directory,
+    SUBSTRATE_TEMP,
+    CRITICAL_TEMP,
+    WIDTH
 )
 
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
+from nmem.analysis.write_current_sweep_sub import calculate_persistent_currents
 IRM = 727
 IRHL_TR = 110
 CRITICAL_CURRENT_ZERO = 1250
-WIDTH = 0.3
 
 
 
@@ -84,16 +85,7 @@ if __name__ == "__main__":
     read_current_difference = ic2 - ic
     read1_dist = np.abs(ic - IRM)
     read2_dist = np.abs(ic2 - IRM)
-    persistent_current = []
-    for i, write_current in enumerate(write_current_list):
-        if write_current > IRHL_TR/2:
-            ip = np.abs(write_current-IRHL_TR)/2
-        else:
-            ip = write_current
-        if ip > IRHL_TR/2:
-            ip = IRHL_TR/2
-        print(f"write_current: {write_current}, persistent current: {ip}")
-        persistent_current.append(ip)
+    persistent_current = calculate_persistent_currents(write_current_array, IRHL_TR)
     pd = pd.DataFrame(
         {
             "Write Current": write_current_list,

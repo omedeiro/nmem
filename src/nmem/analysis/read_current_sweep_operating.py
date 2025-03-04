@@ -35,29 +35,9 @@ def calculate_inductance_ratio(state0, state1, ic0):
     return alpha
 
 
-if __name__ == "__main__":
-    fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
-
-    dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_write_current2\write_current_sweep_C3"
-    )
-    ax = plot_read_sweep_array(
-        axs["A"],
-        dict_list,
-        "bit_error_rate",
-        "write_current",
-    )
-    plot_read_switch_probability_array(ax, dict_list)
-    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
-    ax.set_ylabel("BER")
-    ax.set_xlim(500, 850)
-    ax2 = ax.twinx()
-    ax2.set_ylim([0, 1])
-    ax2.set_ylabel("Switching Probability")
-    ax2.yaxis.set_major_locator(MultipleLocator(0.5))
-
-    ax = axs["C"]
+def plot_extracted_state_currents(
+    ax: plt.Axes, dict_list: list[dict], persistent_currents, upper, lower
+):
     for data_dict in dict_list:
         state_current_markers = get_state_current_markers(data_dict, "read_current")
         write_current = get_write_current(data_dict)
@@ -72,9 +52,53 @@ if __name__ == "__main__":
                     markeredgecolor="none",
                     markersize=4,
                 )
+
+    ic_list, write_current_list, ic_list2, write_current_list2 = get_state_currents(
+        dict_list
+    )
     ax.set_xlim(0, write_current)
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
+    ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
+    ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
+    ax.axvline(IRHL_TR, color="black", linestyle="--", linewidth=0.5)
+    ax.fill_between(
+        write_current_array,
+        lower,
+        upper,
+        color="black",
+        alpha=0.1,
+    )
+    return ax
+
+
+def plot_read_sweep_write_inc(ax, dict_list):
+    ax = plot_read_sweep_array(
+        ax,
+        dict_list,
+        "bit_error_rate",
+        "write_current",
+    )
+    ax = plot_read_switch_probability_array(ax, dict_list)
+
+    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
+    ax.set_ylabel("BER")
+    ax.set_xlim(500, 850)
+
+    ax2 = ax.twinx()
+    ax2.set_ylim([0, 1])
+    ax2.set_ylabel("Switching Probability")
+    ax2.yaxis.set_major_locator(MultipleLocator(0.5))
+
+    # ax.fill_between(write_current_array, lower, upper, color="black", alpha=0.1)
+
+    return ax
+
+
+def get_state_currents(dict_list: list[dict]):
 
     ic_list = [IRM]
     write_current_list = [0]
@@ -100,45 +124,10 @@ if __name__ == "__main__":
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
 
-    ichl, irhl, ichr, irhr = calculate_branch_currents(
-        np.array([get_channel_temperature(data_dict, "read")]),
-        CRITICAL_TEMP,
-        RETRAP,
-        WIDTH,
-        get_critical_current_intercept(data_dict),
-    )
-    ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
-    ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
-    ax.set_xlim(0, MAX_IWRITE)
-    ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
-    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
-    ax.axvline(IRHL_TR, color="black", linestyle="--", linewidth=0.5)
+    return ic_list, write_current_list, ic_list2, write_current_list2
 
-    # ax.axvline(IRHL_TR/2, color="black", linestyle="--", linewidth=0.5)
 
-    persistent_current = []
-    upper = []
-    lower = []
-    for i, write_current in enumerate(write_current_list):
-        if write_current > IRHL_TR / 2:
-            ip = np.abs(write_current - IRHL_TR)
-        else:
-            ip = write_current
-        if ip > IRHL_TR:
-            ip = IRHL_TR
-        # ax.vlines(
-        #     write_current,
-        #     ymin=IRM - ip,
-        #     ymax=IRM + ip,
-        #     color="black",
-        #     linestyle="--",
-        #     linewidth=0.5,
-        # )
-    # write_current_array = np.array(write_current_list)
-    write_current_array = np.linspace(
-        write_current_list[0], write_current_list[-1], 1000
-    )
+def calculate_persistent_currents(write_current_array, IRHL_TR):
     persistent_current = np.where(
         write_current_array > IRHL_TR / 2,
         np.abs(write_current_array - IRHL_TR),
@@ -149,38 +138,12 @@ if __name__ == "__main__":
     )
     upper = IRM + persistent_current / 2
     lower = IRM - persistent_current / 2
-    ax.fill_between(write_current_array, lower, upper, color="black", alpha=0.1)
-    ic = np.array(ic_list)
-    ic2 = np.array(ic_list2)
+    return persistent_current, upper, lower
 
-    read_temperature = calculate_channel_temperature(
-        CRITICAL_TEMP,
-        SUBSTRATE_TEMP,
-        data_dict["enable_read_current"] * 1e6,
-        CELLS[data_dict["cell"][0]]["x_intercept"],
-    ).flatten()
-    write_temperature = calculate_channel_temperature(
-        CRITICAL_TEMP,
-        SUBSTRATE_TEMP,
-        data_dict["enable_write_current"] * 1e6,
-        CELLS[data_dict["cell"][0]]["x_intercept"],
-    ).flatten()
 
-    delta_read_current = np.subtract(ic2, ic)
-
-    critical_current_channel = calculate_critical_current_temp(
-        read_temperature, CRITICAL_TEMP, get_critical_current_intercept(data_dict)
-    )
-    critical_current_left = critical_current_channel * WIDTH
-    critical_current_right = critical_current_channel * (1 - WIDTH)
-
-    retrap = (ic - critical_current_left) / critical_current_right
-    retrap2 = (ic2 - critical_current_right) / critical_current_left
-
-    left_retrapping_current = critical_current_left * retrap2
-    right_retrapping_current = critical_current_right * retrap2
-
-    ax = axs["D"]
+def plot_expected_persistent_current(
+    ax: plt.Axes, write_current_list, delta_read_current, persistent_current
+):
     ax.plot(
         write_current_list,
         np.abs(delta_read_current),
@@ -206,6 +169,71 @@ if __name__ == "__main__":
         persistent_current,
         color="black",
         alpha=0.1,
+    )
+
+    return ax 
+
+
+if __name__ == "__main__":
+    # Import
+    dict_list = import_directory(
+        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_write_current2\write_current_sweep_C3"
+    )
+
+    # Preprocess
+    data_dict = dict_list[0]
+    persistent_current = []
+    upper = []
+    lower = []
+    ic_list, write_current_list, ic_list2, write_current_list2 = get_state_currents(
+        dict_list
+    )
+
+    write_current_array = np.linspace(
+        write_current_list[0], write_current_list[-1], 1000
+    )
+    persistent_current, upper, lower = calculate_persistent_currents(
+        write_current_array, IRHL_TR
+    )
+
+    ic = np.array(ic_list)
+    ic2 = np.array(ic_list2)
+
+    read_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_read_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+    write_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_write_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+
+    delta_read_current = np.subtract(ic2, ic)
+
+    # critical_current_channel = calculate_critical_current_temp(
+    #     read_temperature, CRITICAL_TEMP, get_critical_current_intercept(data_dict)
+    # )
+    # critical_current_left = critical_current_channel * WIDTH
+    # critical_current_right = critical_current_channel * (1 - WIDTH)
+
+    # retrap = (ic - critical_current_left) / critical_current_right
+    # retrap2 = (ic2 - critical_current_right) / critical_current_left
+
+    # left_retrapping_current = critical_current_left * retrap2
+    # right_retrapping_current = critical_current_right * retrap2
+
+    # Plot
+    fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
+
+    plot_read_sweep_write_inc(axs["A"], dict_list)
+    plot_extracted_state_currents(axs["C"], dict_list, persistent_current, upper, lower)
+
+    plot_expected_persistent_current(
+        axs["D"], write_current_list, delta_read_current, persistent_current
     )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
     plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
