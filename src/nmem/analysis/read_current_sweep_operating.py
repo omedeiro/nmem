@@ -182,9 +182,7 @@ if __name__ == "__main__":
 
     # Preprocess
     data_dict = dict_list[0]
-    persistent_current = []
-    upper = []
-    lower = []
+
     ic_list, write_current_list, ic_list2, write_current_list2 = get_state_currents(
         dict_list
     )
