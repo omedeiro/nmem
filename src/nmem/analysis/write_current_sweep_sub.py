@@ -103,21 +103,48 @@ def plot_measured_state_currents(
     irhr,
     left_branch_current,
     right_branch_current,
+    persistent_currents,
 ):
     for i in range(4):
         plot_write_array(
             ax, write_current_array, write_channel_array[:, i], color=RBCOLORS[i]
         )
 
-    ax.axhline(ichl + irhr, color="grey", linestyle="--", label="I_{min}")
-    ax.axhline(ichr + irhr, color="grey", linestyle="--", label="I_{max}")
-    ax.axhline(ichr, color="red", linestyle="--", label="ichr")
+    # ax.axhline(ichl + irhr, color="grey", linestyle="--", label="I_{min}")
+    # ax.axhline(ichr + irhr, color="grey", linestyle="--", label="I_{max}")
+    # ax.axhline(ichr, color="red", linestyle="--", label="ichr")
     ax.axhline(left_branch_current, color="green", linestyle="--", label="i_L")
     ax.axhline(
         right_branch_current,
         color="blue",
         linestyle="--",
         label="i_R",
+    )
+    write_currents = np.linspace(0, IWRITE_XLIM, 1000)
+    ax.plot(
+        write_currents,
+        right_branch_current + persistent_currents,
+        color="blue",
+        linestyle="-",
+    )
+    ax.plot(
+        write_currents,
+        right_branch_current - persistent_currents,
+        color="blue",
+        linestyle="-",
+    )
+
+    ax.plot(
+        write_currents,
+        left_branch_current + persistent_currents,
+        color="green",
+        linestyle="-",
+    )
+    ax.plot(
+        write_currents,
+        left_branch_current - persistent_currents,
+        color="green",
+        linestyle="-",
     )
     return ax
 
@@ -141,6 +168,28 @@ def plot_persistent_current_est(ax: plt.Axes, persistent_current, irhl):
     return ax
 
 
+def calculate_persistent_currents(
+    write_currents: np.ndarray, left_retrapping_current: float
+) -> np.ndarray:
+    persistent_currents = np.where(
+        write_currents > left_retrapping_current,
+        2 * left_retrapping_current - write_currents,
+        write_currents,
+    )
+    persistent_currents = np.where(
+        (write_currents>left_retrapping_current) * (persistent_currents < left_retrapping_current),
+        left_retrapping_current,
+        persistent_currents,
+    )
+    return persistent_currents
+
+
+def calculate_branch_currents_read(read_currents, alpha):
+    left_branch_current = read_currents * alpha
+    right_branch_current = read_currents * (1 - alpha)
+    return left_branch_current, right_branch_current
+
+
 if __name__ == "__main__":
     # Import
     dict_list = import_directory(
@@ -148,12 +197,16 @@ if __name__ == "__main__":
     )
 
     # Preprocess
-    ichl, irhl, ichr, irhr = get_branch_currents(dict_list[0])
-    persistent_current = np.linspace(0, IWRITE_XLIM, 1000)
-    persistent_current = np.where(persistent_current > irhl, irhl, persistent_current)
     read_current = get_read_current(dict_list[0])
-    left_branch_current = read_current * ALPHA
-    right_branch_current = read_current * (1 - ALPHA)
+
+    ichl, irhl, ichr, irhr = get_branch_currents(dict_list[0])
+    persistent_currents = calculate_persistent_currents(
+        np.linspace(0, IWRITE_XLIM, 1000), irhl
+    )
+    left_branch_current, right_branch_current = calculate_branch_currents_read(
+        read_current, ALPHA
+    )
+
     (
         write_current_array,
         write_temp_array,
@@ -166,7 +219,6 @@ if __name__ == "__main__":
         CRITICAL_TEMP,
         get_critical_current_intercept(dict_list[0]),
     )
-    
 
     # Plot
     fig, axs = plt.subplots(1, 2, figsize=(6, 4), constrained_layout=True)
@@ -180,11 +232,12 @@ if __name__ == "__main__":
         irhr,
         left_branch_current,
         right_branch_current,
+        persistent_currents,
     )
 
-    plot_persistent_current_est(axs[1], persistent_current, irhl)
+    plot_persistent_current_est(axs[1], persistent_currents, irhl)
 
-    save=False  
+    save = True
     if save:
         fig.savefig("write_current_sweep_sub.pdf", bbox_inches="tight")
     plt.show()

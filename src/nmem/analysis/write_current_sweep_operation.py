@@ -129,6 +129,33 @@ def get_write_current_array(dict_list: list[dict]) -> Tuple[np.ndarray, np.ndarr
     return write_channel_array, write_temp_array
 
 
+def plot_write_current_sweep(ax, write_sweep_dict_list):
+    ax = plot_write_sweep(ax, write_sweep_dict_list)
+    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_ylabel("BER")
+    ax.set_xlim(0, IWRITE_XLIM_2)
+
+    ax.axvline(irhl, color="C0", linestyle="--", label="_irhl")
+    ax.axvline(irhr, color="C1", linestyle="--", label="_irhr")
+    ax.axvline(ichl, color="C2", linestyle="--", label="_ichl")
+    ax.axvline(ichr, color="C3", linestyle="--", label="_ichr")
+
+    ax.plot(write_currents, persistent_current / IRHL_TR, color="black", linestyle="--")
+    return ax
+
+def plot_write_markers_temp(ax, write_sweep_temp, write_sweep_switch):
+    ax = plot_write_current_sweep_markers(
+        ax, write_sweep_temp[:, 0], write_sweep_switch[:, 0], color="black"
+    )
+    ax = plot_write_current_sweep_markers(
+        ax, write_sweep_temp[:, 2], write_sweep_switch[:, 2], color="grey"
+    )
+
+    ax.axhline(10, color="C2", linestyle="--", label="_ichl")
+    ax.axhline(110, color="C2", linestyle="--", label="_ichl")
+
+    return ax
+
 if __name__ == "__main__":
     # Import
     enable_sweep_dict_list = import_directory(
@@ -167,8 +194,9 @@ if __name__ == "__main__":
         persistent_current > IRHL_TR, IRHL_TR, persistent_current
     )
 
-
-    write_sweep_switch, write_sweep_temp = get_write_current_array(write_sweep_dict_list)
+    write_sweep_switch, write_sweep_temp = get_write_current_array(
+        write_sweep_dict_list
+    )
 
     # Plot
     fig, axs = plt.subplot_mosaic(
@@ -189,29 +217,9 @@ if __name__ == "__main__":
         )
 
     # Write current sweep
-    ax = axs["C"]
-    ax = plot_write_sweep(ax, write_sweep_dict_list)
-    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("BER")
-    ax.set_xlim(0, IWRITE_XLIM_2)
+    plot_write_current_sweep(axs["C"], write_sweep_dict_list)
 
-    ax.axvline(irhl, color="C0", linestyle="--", label="_irhl")
-    ax.axvline(irhr, color="C1", linestyle="--", label="_irhr")
-    ax.axvline(ichl, color="C2", linestyle="--", label="_ichl")
-    ax.axvline(ichr, color="C3", linestyle="--", label="_ichr")
-
-    ax.plot(write_currents, persistent_current / IRHL_TR, color="black", linestyle="--")
-
-    ax = axs["D"]
-    ax = plot_write_current_sweep_markers(
-        ax, write_sweep_temp[:, 0], write_sweep_switch[:, 0], color="black"
-    )
-    ax = plot_write_current_sweep_markers(
-        ax, write_sweep_temp[:, 2], write_sweep_switch[:, 2], color="grey"
-    )
-
-    ax.axhline(10, color="C2", linestyle="--", label="_ichl")
-    ax.axhline(110, color="C2", linestyle="--", label="_ichl")
+    plot_write_markers_temp(axs["D"], write_sweep_temp, write_sweep_switch)
 
     fig.savefig("write_current_sweep_operation.pdf", bbox_inches="tight")
 
