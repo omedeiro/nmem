@@ -192,7 +192,6 @@ if __name__ == "__main__":
 
     # Preprocess
     read_current = get_read_current(dict_list[0])
-
     ichl, irhl, ichr, irhr = get_branch_currents(dict_list[0])
     persistent_currents = calculate_persistent_currents(
         np.linspace(0, IWRITE_XLIM, 1000), irhl

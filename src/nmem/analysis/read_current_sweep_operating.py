@@ -30,6 +30,14 @@ MAX_IWRITE = 300
 MAX_IP = 110
 
 
+def calculate_state_difference(state0, state1):
+    return np.abs(np.subtract(state0, state1))
+
+
+def get_write_array(write_current_list, num_points=100):
+    return np.linspace(write_current_list[0], write_current_list[-1], num_points)
+
+
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)
     return alpha
@@ -177,19 +185,15 @@ if __name__ == "__main__":
     dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_write_current2\write_current_sweep_C3"
     )
-
-    # Preprocess
     data_dict = dict_list[0]
 
+    # Preprocess
     ic1, ic2, write_current_list = get_state_currents(dict_list)
-
-    write_current_array = np.linspace(
-        write_current_list[0], write_current_list[-1], 1000
-    )
+    write_current_array = get_write_array(write_current_list)
     persistent_current, upper, lower = calculate_persistent_currents(
         write_current_array, IRHL_TR
     )
-    delta_read_current = np.abs(np.subtract(ic1, ic2))
+    delta_read_current = calculate_state_difference(ic1, ic2)
 
     # Plot
     fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
