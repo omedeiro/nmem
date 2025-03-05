@@ -53,9 +53,7 @@ def plot_extracted_state_currents(
                     markersize=4,
                 )
 
-    ic_list, ic_list2, write_current_list = get_state_currents(
-        dict_list
-    )
+    ic_list, ic_list2, write_current_list = get_state_currents(dict_list)
     ax.set_xlim(0, write_current)
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
@@ -171,7 +169,7 @@ def plot_expected_persistent_current(
         alpha=0.1,
     )
 
-    return ax 
+    return ax
 
 
 if __name__ == "__main__":
@@ -183,9 +181,7 @@ if __name__ == "__main__":
     # Preprocess
     data_dict = dict_list[0]
 
-    ic1, ic2, write_current_list = get_state_currents(
-        dict_list
-    )
+    ic1, ic2, write_current_list = get_state_currents(dict_list)
 
     write_current_array = np.linspace(
         write_current_list[0], write_current_list[-1], 1000
@@ -193,35 +189,7 @@ if __name__ == "__main__":
     persistent_current, upper, lower = calculate_persistent_currents(
         write_current_array, IRHL_TR
     )
-
-
-
-    read_temperature = calculate_channel_temperature(
-        CRITICAL_TEMP,
-        SUBSTRATE_TEMP,
-        data_dict["enable_read_current"] * 1e6,
-        CELLS[data_dict["cell"][0]]["x_intercept"],
-    ).flatten()
-    write_temperature = calculate_channel_temperature(
-        CRITICAL_TEMP,
-        SUBSTRATE_TEMP,
-        data_dict["enable_write_current"] * 1e6,
-        CELLS[data_dict["cell"][0]]["x_intercept"],
-    ).flatten()
-
-    delta_read_current = np.subtract(ic2, ic)
-
-    # critical_current_channel = calculate_critical_current_temp(
-    #     read_temperature, CRITICAL_TEMP, get_critical_current_intercept(data_dict)
-    # )
-    # critical_current_left = critical_current_channel * WIDTH
-    # critical_current_right = critical_current_channel * (1 - WIDTH)
-
-    # retrap = (ic - critical_current_left) / critical_current_right
-    # retrap2 = (ic2 - critical_current_right) / critical_current_left
-
-    # left_retrapping_current = critical_current_left * retrap2
-    # right_retrapping_current = critical_current_right * retrap2
+    delta_read_current = np.abs(np.subtract(ic1, ic2))
 
     # Plot
     fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
