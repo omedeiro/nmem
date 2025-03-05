@@ -1,13 +1,13 @@
-from typing import Tuple, Literal
+from typing import Literal, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import (
+    ALPHA,
     CRITICAL_TEMP,
     RETRAP,
     WIDTH,
-    ALPHA,
     calculate_branch_currents,
     calculate_critical_current_temp,
     get_bit_error_rate,
@@ -23,7 +23,6 @@ from nmem.analysis.analysis import (
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
 )
-
 from nmem.analysis.write_current_sweep_sub import (
     calculate_persistent_currents,
 )

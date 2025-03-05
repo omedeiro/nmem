@@ -3,17 +3,18 @@ import numpy as np
 import scipy.io as sio
 
 from nmem.analysis.analysis import (
+    ALPHA,
+    CRITICAL_TEMP,
+    RETRAP,
+    WIDTH,
     filter_nan,
+    get_critical_current_intercept,
     import_directory,
     plot_calculated_filled_region,
     plot_calculated_state_currents,
-    CRITICAL_TEMP,
-    ALPHA,
-    RETRAP,
-    WIDTH,
-    get_critical_current_intercept,
 )
 from nmem.measurement.functions import calculate_power
+
 
 def plot_measured_markers(ax: plt.Axes, data_dict: dict) -> plt.Axes:
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}

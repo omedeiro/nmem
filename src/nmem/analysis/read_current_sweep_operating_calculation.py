@@ -3,6 +3,9 @@ import pandas as pd
 
 from nmem.analysis.analysis import (
     CELLS,
+    CRITICAL_TEMP,
+    SUBSTRATE_TEMP,
+    WIDTH,
     calculate_channel_temperature,
     calculate_critical_current_temp,
     get_bit_error_rate,
@@ -10,11 +13,7 @@ from nmem.analysis.analysis import (
     get_read_currents,
     get_write_current,
     import_directory,
-    SUBSTRATE_TEMP,
-    CRITICAL_TEMP,
-    WIDTH,
 )
-
 from nmem.analysis.write_current_sweep_sub import calculate_persistent_currents
 
 IRM = 727
