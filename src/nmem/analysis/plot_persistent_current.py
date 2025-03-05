@@ -7,31 +7,58 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_calculated_filled_region,
     plot_calculated_state_currents,
+    CRITICAL_TEMP,
+    ALPHA,
+    RETRAP,
+    WIDTH,
+    get_critical_current_intercept,
 )
 from nmem.measurement.functions import calculate_power
 
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
+def plot_measured_markers(ax: plt.Axes, data_dict: dict) -> plt.Axes:
+    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 
+    temp = data_dict["measured_temperature"].flatten()
+    state_currents = data_dict["measured_state_currents"]
 
-ALPHA = 0.23
-RETRAP = 1
-WIDTH = 0.3
+    for i in range(4):
+        x = temp
+        y = state_currents[:, i]
+        x, y = filter_nan(x, y)
+        ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
+
+    return ax
+
 
 
 if __name__ == "__main__":
-
-    dict_list = import_directory(
+    # Import
+    trace_meas_dict_list = import_directory(
         r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
     )
-    data_dict = dict_list[0]
-    power = calculate_power(data_dict)
-    persistent_current = 75
-    fig, ax = plt.subplots()
-    critical_current_zero = 1250
+    trace_meas_dict = trace_meas_dict_list[0]
+
+    data_dict1 = sio.loadmat("measured_state_currents_290.mat")
+    data_dict2 = sio.loadmat("measured_state_currents_300.mat")
+    data_dict3 = sio.loadmat("measured_state_currents_310.mat")
+    dict_list = [data_dict1]
+
+    # Preprocess
+    power = calculate_power(trace_meas_dict)
+    persistent_current = 0
+    critical_current_zero = get_critical_current_intercept(trace_meas_dict)
 
     temperatures = np.linspace(0, CRITICAL_TEMP, 100)
-    
+
+
+
+
+    # Plot
+    fig, ax = plt.subplots()
+    for data_dict in dict_list:
+        plot_measured_markers(ax, data_dict)
+
+
     plot_calculated_state_currents(
         ax,
         temperatures,
@@ -46,7 +73,7 @@ if __name__ == "__main__":
     plot_calculated_filled_region(
         ax,
         temperatures,
-        data_dict,
+        trace_meas_dict,
         persistent_current,
         CRITICAL_TEMP,
         RETRAP,
@@ -55,28 +82,6 @@ if __name__ == "__main__":
         critical_current_zero,
     )
 
-
-    
-    data_dict1 = sio.loadmat("measured_state_currents_290.mat")
-    data_dict2 = sio.loadmat("measured_state_currents_300.mat")
-    data_dict3 = sio.loadmat("measured_state_currents_310.mat")
-
-    dict_list = [data_dict1, data_dict2, data_dict3]
-    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
-    fit_results = []
-    for data_dict in [dict_list[1]]:
-        temp = data_dict["measured_temperature"].flatten()
-        state_currents = data_dict["measured_state_currents"]
-        x_list = []
-        y_list = []
-        for i in range(4):
-            x = temp
-            y = state_currents[:, i]
-            x, y = filter_nan(x, y)
-            ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
-
-
-            
     ax.set_xlabel("Temperature [K]")
     ax.set_ylabel("Current [au]")
     ax.grid()
@@ -85,5 +90,4 @@ if __name__ == "__main__":
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     ax.set_xlim(6, 9)
     ax.set_ylim(500, 900)
-    # ax.set_ylim(0, 1)
     plt.show()
