@@ -53,14 +53,14 @@ def plot_extracted_state_currents(
                     markersize=4,
                 )
 
-    ic_list, write_current_list, ic_list2, write_current_list2 = get_state_currents(
+    ic_list, ic_list2, write_current_list = get_state_currents(
         dict_list
     )
     ax.set_xlim(0, write_current)
     ax.set_ylabel("$I_{\mathrm{state}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
-    ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
+    ax.plot(write_current_list, ic_list2, "-", color="grey", linewidth=0.5)
     ax.set_ylabel("$I_{\mathrm{read}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
@@ -124,7 +124,7 @@ def get_state_currents(dict_list: list[dict]):
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
 
-    return ic_list, write_current_list, ic_list2, write_current_list2
+    return ic_list, ic_list2, write_current_list
 
 
 def calculate_persistent_currents(write_current_array, IRHL_TR):
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     # Preprocess
     data_dict = dict_list[0]
 
-    ic_list, write_current_list, ic_list2, write_current_list2 = get_state_currents(
+    ic1, ic2, write_current_list = get_state_currents(
         dict_list
     )
 
@@ -194,8 +194,7 @@ if __name__ == "__main__":
         write_current_array, IRHL_TR
     )
 
-    ic = np.array(ic_list)
-    ic2 = np.array(ic_list2)
+
 
     read_temperature = calculate_channel_temperature(
         CRITICAL_TEMP,
