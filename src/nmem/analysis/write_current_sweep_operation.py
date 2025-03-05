@@ -23,13 +23,11 @@ from nmem.analysis.analysis import (
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
 )
-from nmem.analysis.write_current_sweep_sub import (
-    calculate_persistent_currents,
-)
+
 
 IWRITE_XLIM = 100
 IWRITE_XLIM_2 = 300
-MAX_PERSISTENT = 50
+IP_YLIM = 50
 IREAD = 727.5
 
 RBCOLORS = {0: "black", 1: "black", 2: "grey", 3: "grey"}
@@ -152,6 +150,18 @@ def plot_measured_state_currents(
             ax, write_current_array, write_channel_array[:, i], color=RBCOLORS[i]
         )
 
+    # plot_branch_current_line(ax, left_branch_current, right_branch_current)
+    plot_estimated_persistent_current(
+        ax,
+        get_write_array(write_current_array),
+        right_branch_current,
+        left_branch_current,
+        persistent_currents,
+    )
+    return ax
+
+
+def plot_branch_current_line(ax: plt.Axes, left_branch_current, right_branch_current):
     ax.axhline(left_branch_current, color="green", linestyle="--", label="i_L")
     ax.axhline(
         right_branch_current,
@@ -159,7 +169,16 @@ def plot_measured_state_currents(
         linestyle="--",
         label="i_R",
     )
-    write_currents = get_write_array(write_current_array)
+    return ax
+
+
+def plot_estimated_persistent_current(
+    ax: plt.Axes,
+    write_currents,
+    right_branch_current,
+    left_branch_current,
+    persistent_currents,
+):
     ax.plot(
         write_currents,
         right_branch_current + persistent_currents,
@@ -234,7 +253,7 @@ def plot_persistent_current_est(ax: plt.Axes, persistent_current, irhl):
     ax.axvline(irhl, color="black", linestyle="--", label="irhl")
 
     ax.set_xlim(0, IWRITE_XLIM)
-    ax.set_ylim(0, MAX_PERSISTENT)
+    ax.set_ylim(0, IP_YLIM)
     ax.set_aspect(1 / ax.get_data_ratio())
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$I_{\mathrm{P}}$ [$\mu$A]")
@@ -242,7 +261,24 @@ def plot_persistent_current_est(ax: plt.Axes, persistent_current, irhl):
     return ax
 
 
-def plot_sub_figures():
+def calculate_persistent_currents(
+    write_currents: np.ndarray, left_retrapping_current: float
+) -> np.ndarray:
+    persistent_currents = np.where(
+        write_currents > left_retrapping_current / 2,
+        np.abs(write_currents - left_retrapping_current),
+        write_currents,
+    )
+    persistent_currents = np.where(
+        persistent_currents > left_retrapping_current,
+        left_retrapping_current,
+        persistent_currents,
+    )
+
+    return persistent_currents
+
+
+def plot_sub_figures(save=False):
     fig, axs = plt.subplots(1, 2, figsize=(6, 4), constrained_layout=True)
     plot_measured_state_currents(
         axs[0],
@@ -255,7 +291,6 @@ def plot_sub_figures():
 
     plot_persistent_current_est(axs[1], persistent_currents, irhl)
 
-    save = True
     if save:
         fig.savefig("write_current_sweep_sub.pdf", bbox_inches="tight")
     plt.show()
