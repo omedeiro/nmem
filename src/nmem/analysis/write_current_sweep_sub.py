@@ -16,7 +16,7 @@ from nmem.analysis.analysis import (
     import_directory,
 )
 
-ALPHA = 0.55
+ALPHA = 0.54
 WIDTH = 0.35
 RETRAP = 0.26
 IWRITE_XLIM = 100
@@ -97,10 +97,6 @@ def plot_measured_state_currents(
     ax: plt.Axes,
     write_current_array,
     write_channel_array,
-    ichl,
-    irhl,
-    ichr,
-    irhr,
     left_branch_current,
     right_branch_current,
     persistent_currents,
@@ -110,9 +106,6 @@ def plot_measured_state_currents(
             ax, write_current_array, write_channel_array[:, i], color=RBCOLORS[i]
         )
 
-    # ax.axhline(ichl + irhr, color="grey", linestyle="--", label="I_{min}")
-    # ax.axhline(ichr + irhr, color="grey", linestyle="--", label="I_{max}")
-    # ax.axhline(ichr, color="red", linestyle="--", label="ichr")
     ax.axhline(left_branch_current, color="green", linestyle="--", label="i_L")
     ax.axhline(
         right_branch_current,
@@ -172,15 +165,16 @@ def calculate_persistent_currents(
     write_currents: np.ndarray, left_retrapping_current: float
 ) -> np.ndarray:
     persistent_currents = np.where(
-        write_currents > left_retrapping_current,
-        2 * left_retrapping_current - write_currents,
+        write_currents > left_retrapping_current / 2,
+        np.abs(write_currents - left_retrapping_current),
         write_currents,
     )
     persistent_currents = np.where(
-        (write_currents>left_retrapping_current) * (persistent_currents < left_retrapping_current),
+        persistent_currents > left_retrapping_current,
         left_retrapping_current,
         persistent_currents,
     )
+
     return persistent_currents
 
 
@@ -226,10 +220,6 @@ if __name__ == "__main__":
         axs[0],
         write_current_array,
         write_channel_array,
-        ichl,
-        irhl,
-        ichr,
-        irhr,
         left_branch_current,
         right_branch_current,
         persistent_currents,
