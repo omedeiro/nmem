@@ -13,6 +13,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list)
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    ax2.set_xlabel("$T_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("BER")
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
 
