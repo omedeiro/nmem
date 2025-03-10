@@ -15,7 +15,7 @@ R4 out 0 1G
 .param E_clear=500u E_read=260u E_write=390u I_read=500u I_write=150u
 .tran 0 200n 0 1n
 .options reltol 1e-6
-.step param I_write 0 150u 5u
+.step param I_write 0 200u 1u
 .lib hTron_behavioral.lib
 .backanno
 .end
