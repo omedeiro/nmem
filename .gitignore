@@ -33,3 +33,7 @@ dist/
 
 # Documentation
 *.pdf
+
+
+*.raw
+*.log
