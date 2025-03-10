@@ -29,7 +29,7 @@ def plot_write_read_clear():
 def get_persistent_current(ltspice_data: ltspice.Ltspice, case: int = 0) -> np.ndarray:
     signal_l = ltspice_data.get_data("Ix(HL:drain)", case=case)
     signal_r = ltspice_data.get_data("Ix(HR:drain)", case=case)
-    return np.array([signal_r[-1]*1e6])
+    return np.array([np.abs(signal_r[-1]-signal_l[-1])/2*1e6])
 
 def get_write_current(ltspice_data: ltspice.Ltspice, case: int = 0) -> np.ndarray:
     signal = ltspice_data.get_data("I(R2)", case=case)
@@ -100,6 +100,21 @@ def plot_all_write_sweeps():
     plot_nmem_cell("spice_simulation_raw/nmem_cell_write_step_5uA.raw")
     plot_nmem_cell("spice_simulation_raw/nmem_cell_write_step_10uA.raw")
 
+def plot_nmem_cell_read():
+    file_name = "nmem_cell_read.raw"
+    l = ltspice.Ltspice(file_name)
+    l.parse()  # Parse the raw file
+    fig, ax = plt.subplots()
+    # ax = plot_data(ax, l, "V(ichr)")
+    time = l.get_time()
+    irhl = get_irhl(l)
+    irhr = get_irhr(l)
+    ichl = get_ichl(l)
+    ichr = get_ichr(l)
+    ax.plot(time, irhl, label="IRHL")
+    ax = plot_data(ax, l, "Ix(HL:drain)")
+    # ax = plot_data(ax, l, "Ix(HR:drain)")
 
 if __name__ == "__main__":
-    plot_nmem_cell("nmem_cell_write.raw")
+    # plot_nmem_cell_read()
+    plot_all_write_sweeps()
