@@ -25,4 +25,5 @@ dependencies:
     - pandas
     - scikit-optimize
     - matplotlib
+    - ltspice
 
