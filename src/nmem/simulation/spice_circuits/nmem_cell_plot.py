@@ -169,8 +169,8 @@ if __name__ == "__main__":
     ax.set_ylabel("Voltage (V)")
 
     fig, ax = plt.subplots()
-    ax.plot(read_current, read_output[:, 0], "-o", label="Read 0")
-    ax.plot(read_current, read_output[:, 1], "-o", label="Read 1")
+    ax.plot(read_current, read_output[:, 0]*1e3, "-o", label="Read 0")
+    ax.plot(read_current, read_output[:, 1]*1e3, "-o", label="Read 1")
     ax.legend()
     ax.set_ylabel("Output Voltage (V)")
-    ax.set_xlabel("Case")
+    ax.set_xlabel("Read Current (uA)")
