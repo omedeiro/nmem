@@ -7,6 +7,8 @@ from typing import Tuple
 CMAP = plt.get_cmap("coolwarm")
 WRITE_ONE_START = 1e-7
 WRITE_ONE_END = 1.5e-7
+IP_MEAS_START = 1.6e-7
+IP_MEAS_END = 2e-7
 READ_ONE_START = 2e-7
 READ_ONE_END = 2.5e-7
 READ_ZERO_START = 6e-7
@@ -123,32 +125,48 @@ def figure_plot_all_write_sweeps():
 
 
 def process_read_data(l: ltspice.Ltspice):
-    read_output = np.zeros((l.case_count, 2))
-    read_current = np.zeros((l.case_count, 1))
-    for i in range(0, l.case_count):
+    num_cases = l.case_count
+
+    read_output = np.zeros((num_cases, 2))
+    read_current = np.zeros(num_cases)
+    enable_read_current = np.zeros(num_cases)
+    enable_write_current = np.zeros(num_cases)
+    write_current = np.zeros(num_cases)
+    persistent_current = np.zeros(num_cases)
+
+    time_windows = {
+        "persistent_current": (IP_MEAS_START, IP_MEAS_END),
+        "write_one": (WRITE_ONE_START, WRITE_ONE_END),
+        "read_one": (READ_ONE_START, READ_ONE_END),
+        "read_zero": (READ_ZERO_START, READ_ZERO_END),
+        "enable_write": (1e-7, 1.5e-7),
+    }
+
+    for i in range(num_cases):
         time = l.get_time(i)
         enable_current = l.get_data("I(R1)", i) * 1e6
         channel_current = l.get_data("I(R2)", i) * 1e6
         branch_current = l.get_data("Ix(HR:drain)", i) * 1e6
         output_voltage = l.get_data("V(out)", i)
-        persistent_current_time = np.argwhere((time > 1.6e-7) & (time < 1.8e-7))
-        write_one_time = np.argwhere((time > WRITE_ONE_START) & (time < WRITE_ONE_END))
-        read_one_time = np.argwhere((time > READ_ONE_START) & (time < READ_ONE_END))
-        read_zero_time = np.argwhere((time > READ_ZERO_START) & (time < READ_ZERO_END))
-        read_one_voltage = np.max(output_voltage[read_one_time])
-        read_zero_voltage = np.max(output_voltage[read_zero_time])
 
-        persistent_current = np.max(branch_current[persistent_current_time])
-        write_current = np.max(channel_current[write_one_time])
-        read_output[i, 0] = read_zero_voltage
-        read_output[i, 1] = read_one_voltage
-        read_current[i] = np.max(channel_current[read_one_time])
-        enable_read_current = np.max(enable_current[read_one_time])
+        masks = {
+            key: (time > start) & (time < end)
+            for key, (start, end) in time_windows.items()
+        }
 
+        read_output[i, 0] = np.max(output_voltage[masks["read_zero"]])
+        read_output[i, 1] = np.max(output_voltage[masks["read_one"]])
+        arr = branch_current[masks["persistent_current"]]
+        persistent_current[i] = np.max(arr) if arr.size > 0 else 0
+        write_current[i] = np.max(channel_current[masks["write_one"]])
+        read_current[i] = np.max(channel_current[masks["read_one"]])
+        enable_read_current[i] = np.max(enable_current[masks["read_one"]])
+        enable_write_current[i] = np.max(enable_current[masks["enable_write"]])
     return {
         "read_current": read_current,
         "read_output": read_output,
         "enable_read_current": enable_read_current,
+        "enable_write_current": enable_write_current,
         "write_current": write_current,
         "persistent_current": persistent_current,
     }
@@ -218,6 +236,22 @@ def plot_read_current_output(
     return ax
 
 
+def plot_enable_write_current_output(
+    ax: plt.Axes,
+    enable_write_current: np.ndarray,
+    read_output: np.ndarray,
+) -> plt.Axes:
+    ax.plot(enable_write_current, read_output[:, 0] * 1e3, "-o", label="Read 0")
+    ax.plot(enable_write_current, read_output[:, 1] * 1e3, "-o", label="Read 1")
+    # ax.text(
+    #     0.1, 0.5, f"Enable Current: {enable_read_current:.0f}uA", transform=ax.transAxes
+    # )
+    ax.legend()
+    ax.set_ylabel("Output Voltage (mV)")
+    ax.set_xlabel("Enable Write Current (uA)")
+    return ax
+
+
 def plot_read_data_dict(data_dict: dict):
     fig, ax = plt.subplots()
     for key, data in data_dict.items():
@@ -256,8 +290,8 @@ def process_data_dict(data_dict: dict) -> Tuple[float, float]:
     else:
         one_current = read_current[one_switch.flatten()[0]]
 
-    zero_current = float(zero_current[0])
-    one_current = float(one_current[0])
+    zero_current = float(zero_current)
+    one_current = float(one_current)
     return zero_current, one_current
 
 
@@ -267,7 +301,6 @@ def process_data_array(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     zero_current = array[zero_switch, 0]
     one_current = array[one_switch, 0]
     return zero_current, one_current
-
 
 
 def process_data_dict_sweep(data_dict: dict):
@@ -283,7 +316,12 @@ def process_data_dict_sweep(data_dict: dict):
         zero_currents.append(zero_current)
         one_currents.append(one_current)
         enable_read_currents.append(key)
+
+    enable_read_currents = np.array(enable_read_currents)
+    zero_currents = np.array(zero_currents)
+    one_currents = np.array(one_currents)
     return enable_read_currents, zero_currents, one_currents
+
 
 def process_data_dict_write_sweep(data_dict: dict):
     zero_currents = []
@@ -307,11 +345,28 @@ def figure_plot_enable_read_sweep():
     enable_read_currents, zero_currents, one_currents = process_data_dict_sweep(
         data_dict
     )
+
     fig, ax = plt.subplots()
     ax.plot(enable_read_currents, zero_currents, "-o", label="Read 0")
     ax.plot(enable_read_currents, one_currents, "-o", label="Read 1")
     ax.set_ylabel("Read Current (uA)")
     ax.set_xlabel("Enable Read Current (uA)")
+    read_margin = zero_currents - one_currents
+    optimal_idx = np.argmax(read_margin)
+
+    ax.plot(
+        enable_read_currents[optimal_idx],
+        zero_currents[optimal_idx],
+        "x",
+        label="Optimal Read Margin",
+    )
+    optimal_read = np.array(zero_currents[optimal_idx])-np.array(read_margin[optimal_idx])/2
+    ax.plot(
+        enable_read_currents[optimal_idx],
+        optimal_read,
+        "x",
+        label="Optimal Read Margin",)
+    print(f"Optimal Read: {optimal_read}")
     ax.legend()
     plt.show()
 
@@ -323,12 +378,7 @@ def get_read_margin(l: ltspice.Ltspice) -> float:
     return float(read_margin)
 
 
-def get_persistent_current_state(l: ltspice.Ltspice):
-    read_outputs = process_read_data(l)
-    persistent_current = read_outputs["persistent_current"]
-    return persistent_current
-
-def get_write_sweep_data(file_path:str):
+def get_write_sweep_data(file_path: str):
     files = [f for f in os.listdir(file_path) if f.endswith(".csv")]
     files.sort()
     data_dict = {}
@@ -351,7 +401,10 @@ def get_write_sweep_data(file_path:str):
         }
     return data_dict
 
-def figure_plot_write_sweep_data(file_path: str = "spice_simulation_raw/write_current_sweep/"):
+
+def figure_plot_write_sweep_data(
+    file_path: str = "spice_simulation_raw/write_current_sweep/",
+):
     data_dict = get_write_sweep_data(file_path)
     plot_read_data_dict(data_dict)
     process_data_dict_sweep(data_dict)
@@ -365,28 +418,35 @@ def figure_plot_write_sweep_data(file_path: str = "spice_simulation_raw/write_cu
         read_margin_list.append(data["read_margin"])
 
     fig, ax = plt.subplots()
-    ax.plot(write_current_list, persistent_current_list, "-o", label="Persistent Current")
+    ax.plot(
+        write_current_list, persistent_current_list, "-o", label="Persistent Current"
+    )
     ax.plot(write_current_list, read_margin_list, "-o", label="Read Margin")
     ax.set_xlabel("Write Current (uA)")
     ax.set_ylabel("Current (uA)")
-    ax.legend() 
+    ax.legend()
+
+
 if __name__ == "__main__":
     # figure_plot_enable_read_sweep()
     # figure_plot_write_sweep_data()
     # figure_plot_all_write_sweeps()
     # figure_plot_write_read_clear()
 
-
     l = ltspice.Ltspice("nmem_cell_read.raw")
     l.parse()
-    save_write_data_file(l)
+    # save_write_data_file(l)
+    data_dict = process_read_data(l)
+    enable_write_current = data_dict["enable_write_current"]
+    persistent_current = data_dict["persistent_current"]
     read_margin = get_read_margin(l)
-    persistent_current = get_persistent_current_state(l)
-    print(
-        f"Persistent Current: {persistent_current:.2f}uA, Read Margin: {read_margin:.2f}uA"
-    )
 
-    
+    fig, ax = plt.subplots()
+    plot_enable_write_current_output(ax, enable_write_current, data_dict["read_output"])
+    plt.show()
 
-    # find the max read margin
-   
+    fig, ax = plt.subplots()
+    ax.plot(enable_write_current, persistent_current, "-o")
+    ax.set_ylabel("Persistent Current (uA)")
+    ax.set_xlabel("Enable Write Current (uA)")
+    plt.show()
