@@ -28,7 +28,7 @@ def plot_data(
     return ax
 
 
-def plot_write_read_clear():
+def figure_plot_write_read_clear():
     file_path = "spice_simulation_raw/nmem_cell_write_read_clear.raw"
     l = ltspice.Ltspice(file_path)
     l.parse()  # Parse the raw file
@@ -115,7 +115,7 @@ def get_max_output(ltspice_data: ltspice.Ltspice, case: int = 0) -> np.ndarray:
     return np.max(signal)
 
 
-def plot_all_write_sweeps():
+def figure_plot_all_write_sweeps():
     plot_nmem_cell("spice_simulation_raw/nmem_cell_write_200uA.raw")
     plot_nmem_cell("spice_simulation_raw/nmem_cell_write_1000uA.raw")
     plot_nmem_cell("spice_simulation_raw/nmem_cell_write_step_5uA.raw")
@@ -221,7 +221,11 @@ def plot_read_current_output(
 def plot_read_data_dict(data_dict: dict):
     fig, ax = plt.subplots()
     for key, data in data_dict.items():
-        data_array = data["data"]
+
+        if isinstance(data, np.ndarray):
+            data_array = data
+        else:
+            data_array = data["data"]
         read_current = data_array[:, 0]
         read_output = data_array[:, 1:]
         ax.plot(
@@ -265,12 +269,16 @@ def process_data_array(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return zero_current, one_current
 
 
+
 def process_data_dict_sweep(data_dict: dict):
     zero_currents = []
     one_currents = []
     enable_read_currents = []
     for key, data in data_dict.items():
-        data_array = data["data"]
+        if isinstance(data, np.ndarray):
+            data_array = data
+        else:
+            data_array = data["data"]
         zero_current, one_current = process_data_array(data_array)
         zero_currents.append(zero_current)
         one_currents.append(one_current)
@@ -291,9 +299,9 @@ def process_data_dict_write_sweep(data_dict: dict):
     return write_currents, zero_currents, one_currents
 
 
-def plot_enable_read_sweep():
+def figure_plot_enable_read_sweep():
 
-    data_dict = import_csv_dir("spice_simulation_raw/")
+    data_dict = import_csv_dir("spice_simulation_raw/read_current_sweep/")
 
     plot_read_data_dict(data_dict)
     enable_read_currents, zero_currents, one_currents = process_data_dict_sweep(
@@ -342,19 +350,9 @@ def get_write_sweep_data(file_path:str):
             "read_margin": read_margin,
         }
     return data_dict
-if __name__ == "__main__":
-    # plot_enable_read_sweep()
 
-    l = ltspice.Ltspice("nmem_cell_read.raw")
-    l.parse()
-    save_write_data_file(l)
-    read_margin = get_read_margin(l)
-    persistent_current = get_persistent_current_state(l)
-    print(
-        f"Persistent Current: {persistent_current:.2f}uA, Read Margin: {read_margin:.2f}uA"
-    )
-
-    data_dict = get_write_sweep_data("spice_simulation_raw/write_current_sweep/")
+def figure_plot_write_sweep_data(file_path: str = "spice_simulation_raw/write_current_sweep/"):
+    data_dict = get_write_sweep_data(file_path)
     plot_read_data_dict(data_dict)
     process_data_dict_sweep(data_dict)
 
@@ -372,3 +370,23 @@ if __name__ == "__main__":
     ax.set_xlabel("Write Current (uA)")
     ax.set_ylabel("Current (uA)")
     ax.legend() 
+if __name__ == "__main__":
+    # figure_plot_enable_read_sweep()
+    # figure_plot_write_sweep_data()
+    # figure_plot_all_write_sweeps()
+    # figure_plot_write_read_clear()
+
+
+    l = ltspice.Ltspice("nmem_cell_read.raw")
+    l.parse()
+    save_write_data_file(l)
+    read_margin = get_read_margin(l)
+    persistent_current = get_persistent_current_state(l)
+    print(
+        f"Persistent Current: {persistent_current:.2f}uA, Read Margin: {read_margin:.2f}uA"
+    )
+
+    
+
+    # find the max read margin
+   
