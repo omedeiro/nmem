@@ -38,19 +38,19 @@
 ** PARAMETERS AND MODEL DEFINITION **
 **************************************************
 .subckt hTron_behav heater_p heater_n drain source Meas_TCh Meas_Isw Meas_Ihs
-+ const_width=1u            heater_width=0.5u      
-+ const_thickness=23.6n      const_length=14u      
++ chan_width=1u            heater_width=0.5u      
++ chan_thickness=23.6n      chan_length=14u      
 + sheet_resistance=77.9      heater_resistance=50  
 + critical_temp=12.5         substrate_temp=4.2    
 + eta=3                     Jsw_tilde=70G         
-+ Isupp_tilde=1024u         Jconstr=100G          
++ Isupp_tilde=1024u         Jchanr=100G          
 + tau_on=7.74n              ICh_bias_on=827.8u    
 + Ih_bias_on=747.2u
 
-*   const_width - Channel width (m)
+*   chan_width - Channel width (m)
 *   heater_width - Heater width (m)
-*   const_thickness - Channel thickness (m)
-*   const_length - Channel length (m)
+*   chan_thickness - Channel thickness (m)
+*   chan_length - Channel length (m)
 *   sheet_resistance - Sheet resistance (Ohms)
 *   heater_resistance - Heater resistance (Ohms)
 *   critical_temp - Critical temperature (K)
@@ -58,7 +58,7 @@
 *   eta - Efficiency factor (2 or 3)
 *   Jsw_tilde - Switching current density (y-intercept) (A/m^2)
 *   Isupp_tilde - Enable suppression current density (x-intercept)(A)
-*   Jconstr - Constriction current density (A/m^2)
+*   Jchanr - Constriction current density (A/m^2)
 *   tau_on - Turn-on activation delay (s)
 *   ICh_bias_on - Channel bias point for set activation delay (A)
 *   Ih_bias_on - Heater bias point for set activation delay (A)
@@ -67,13 +67,13 @@
 ** PARAMETERS **
 **************************************************
 * Number of squares in superconducting channel
-.PARAM const_squares=const_length/const_width
+.PARAM chan_squares=chan_length/chan_width
 
 * Normal state resistance
-.PARAM const_resistance = sheet_resistance*const_length/const_width
+.PARAM chan_resistance = sheet_resistance*chan_length/chan_width
 
 * Resistivity (Ohm m)
-.PARAM rho = sheet_resistance*const_thickness
+.PARAM rho = sheet_resistance*chan_thickness
 
 * Thermal conductivity (W/m K)
 .PARAM kappa = 0.108
@@ -88,16 +88,16 @@
 .PARAM inductivity = {1.38p*sheet_resistance/critical_temp}
 
 * Channel inductance (pH)
-.PARAM const_inductance = {inductivity*const_squares}
+.PARAM chan_inductance = {inductivity*chan_squares}
 
 * Characteristic velocity (m/s)
-.PARAM vo={1*sqrt(hc*kappa/const_thickness)/heatCapacity_c}
+.PARAM vo={1*sqrt(hc*kappa/chan_thickness)/heatCapacity_c}
 
 * Switching current at substrate temperature (A)
 .PARAM Isw_Tsub = Isw(substrate_temp)
 
 * Stekly parameter (unitless)
-.PARAM psi = rho*(Isw_Tsub)**2/(hc*(const_width**2)*const_thickness*(critical_temp-substrate_temp))
+.PARAM psi = rho*(Isw_Tsub)**2/(hc*(chan_width**2)*chan_thickness*(critical_temp-substrate_temp))
 
 * Retrapping current (A)
 .PARAM Ir = sqrt(2/psi)*Isw_Tsub
@@ -118,7 +118,7 @@
 .PARAM a = (critical_temp**4 - substrate_temp**4) / Ih_supp**eta
 
 * Temperature at which the channel switched (i.e at which Isw(Tch)=ICh_bias_on)
-.PARAM T_switch = critical_temp*(1-(ICh_bias_on/(Jc_0K*const_thickness*const_width))**(1/2.1))**(1/3)
+.PARAM T_switch = critical_temp*(1-(ICh_bias_on/(Jc_0K*chan_thickness*chan_width))**(1/2.1))**(1/3)
 * Heater current needed to reach TCh = T_switch
 .PARAM Ih_switch = max(1p, ( (T_switch**4 - substrate_temp**4)/(critical_temp**4-substrate_temp**4))**(1/eta)*Ih_supp)
 * RC time constant that makes the filtered heater current reach Ih_switch in time tau_on
@@ -145,11 +145,11 @@ R_heater heater_p heater_n {heater_resistance}
 **************************************************
 * The sub-circuit is split into two sources for stability
 * V(N_c_Isw_state) is 1 if the current in channel overcomes Isw, 0 otherwise
-BI_safe_Lc const_current 0 V = sgn(i(Lc)) * max(abs(i(Lc)), 1n)
+BI_safe_Lc chan_current 0 V = sgn(i(Lc)) * max(abs(i(Lc)), 1n)
 
 B_c_Isw_state N_c_Isw_state 0
 + V = stp(
-+     abs(V(const_current)) * scale
++     abs(V(chan_current)) * scale
 +     - V(Meas_Isw) * scale
 + )
 
@@ -170,15 +170,15 @@ B_c_state N_c_state 0
 ** HOTSPOT GROWTH INTEGRATOR SUBCIRCUIT **
 **************************************************
 R_enable N_enable 0 1G
-B_enable N_enable 0 V = if(V(N_c_state) & (V(N_hotspot_resistance) < const_resistance), 1, 0)
+B_enable N_enable 0 V = if(V(N_c_state) & (V(N_hotspot_resistance) < chan_resistance), 1, 0)
 
-BI_ratio N_norm_current 0 V = V(const_current) / V(Meas_Isw)
+BI_ratio N_norm_current 0 V = V(chan_current) / V(Meas_Isw)
 
 B_sqrt_arg N_sqrt_arg 0 V = psi * V(N_norm_current)**2 - 1
 B_sqrt_approx N_sqrt_approx 0 V = (V(N_sqrt_arg) + delta) / 2
 
 B_c_hotspot N_hotspot_resistance 0 V = sdt(
-+   V(N_enable) * ( (2 * sheet_resistance * vo / const_width) * 
++   V(N_enable) * ( (2 * sheet_resistance * vo / chan_width) * 
 +   (psi * V(N_norm_current)**2 - 2) /
 +   (max(V(N_sqrt_arg), 0) + {delta}) ),
 +   0, 
@@ -208,10 +208,10 @@ C1 heat 0 {tau_thermal}
 
 * Determine the switching current from the nanowire temperature
 .func Isw(T) 
-+ Jc_0K * const_width * const_thickness * (1 - (T / critical_temp)**3) ** 2.1
++ Jc_0K * chan_width * chan_thickness * (1 - (T / critical_temp)**3) ** 2.1
 
 .funct Iretrap(T)
-+ sqrt(hc*(const_width**2)*const_thickness*critical_temp/rho)*sqrt(1-(T/critical_temp))
++ sqrt(hc*(chan_width**2)*chan_thickness*critical_temp/rho)*sqrt(1-(T/critical_temp))
 **************************************************
 ** BEHAVIORAL SOURCES **
 **************************************************
@@ -222,7 +222,7 @@ B1 Meas_TCh 0
   * Channel temperature
 
 B2 Meas_Isw 0 
-+ V = min(Jconstr * const_width * const_thickness , Isw(V(Meas_TCh)))
++ V = min(Jchanr * chan_width * chan_thickness , Isw(V(Meas_TCh)))
   * Channel switching current, with the possibility of adding a constriction plateau
 
 * Replace 1 by 0.99 in B3 to improve stability in large circuits
@@ -236,7 +236,7 @@ B3 Meas_Ihs 0
 **************************************************
 
 Lc drain N_hs 
-+ Flux = {const_inductance} * x / (2.0 * cos(0.67 * asin(0.6 * abs(x) / Isw_Tsub)) - 1) 
++ Flux = {chan_inductance} * x / (2.0 * cos(0.67 * asin(0.6 * abs(x) / Isw_Tsub)) - 1) 
 + Rser = 1e-100 
 + Rpar = 1e6
   * Channel inductor
