@@ -3,7 +3,7 @@
 I1 0 N001 PULSE(0 {E_read} 220n 1n 1n 50n 400n 2)
 I2 0 N003 PULSE(0 {I_read} 200n 1n 1n 40n 400n 2)
 I3 0 N003 PULSE(0 {I_write} 100n 1n 1n 40n 100n 1)
-I4 0 N001 PULSE(0 {E_write} 110n 1n 1n 25n 400n 2)
+I4 0 N001 PULSE(0 {E_write} 100n 1n 1n 25n 400n 2)
 R1 N001 N002 1n
 R2 N003 out 1n
 R3 out 0 50
@@ -14,10 +14,10 @@ I6 0 N003 PULSE(0 {-I_write} 500n 1n 1n 40n 400n 1)
 R4 out 0 1G
 L1 out N005 0.1n Rser=1n
 L2 out N006 0.1n Rser=1n
-.param E_clear=500u E_read=250u E_write=390u I_read=420u I_write=100u
+.param E_clear=500u E_read=260u E_write=390u I_read=520u I_write=120u
 .tran 0 1u 0 10n
 .options reltol 1e-6
-.step param I_read 000u 800u 10u
+* .step param E_write 0 500u 10u
 .lib hTron_behavioral.lib
 .backanno
 .end
