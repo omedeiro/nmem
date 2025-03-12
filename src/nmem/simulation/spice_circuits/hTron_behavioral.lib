@@ -218,7 +218,7 @@ C1 heat 0 {tau_thermal}
 
 * Used to get values of functions at every time point
 B1 Meas_TCh 0 
-+ V = min(Tc-1m, TCh(V(heat)))
++ V = min(critical_temp-1m, TCh(V(heat)))
   * Channel temperature
 
 B2 Meas_Isw 0 
