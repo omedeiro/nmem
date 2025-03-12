@@ -22,7 +22,11 @@ SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 
-font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+
+if os.name == "Windows":
+    font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
+if os.name == "posix":
+    font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
 
