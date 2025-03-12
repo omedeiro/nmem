@@ -3,16 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from typing import Tuple
+import scipy.io as sio
+from nmem.analysis.analysis import import_directory, filter_first
 
 CMAP = plt.get_cmap("coolwarm")
-WRITE_ONE_START = 1e-7
-WRITE_ONE_END = 1.5e-7
-IP_MEAS_START = 1.6e-7
-IP_MEAS_END = 2e-7
-READ_ONE_START = 2e-7
-READ_ONE_END = 2.5e-7
-READ_ZERO_START = 6e-7
-READ_ZERO_END = 6.5e-7
+
 VOUT_YMAX = 40
 VOLTAGE_THRESHOLD = 2.0e-3
 
@@ -133,12 +128,17 @@ def process_read_data(l: ltspice.Ltspice):
     enable_write_current = np.zeros(num_cases)
     write_current = np.zeros(num_cases)
     persistent_current = np.zeros(num_cases)
+    write_one_voltage = np.zeros(num_cases)
+    write_zero_voltage = np.zeros(num_cases)
+    read_zero_voltage = np.zeros(num_cases)
+    read_one_voltage = np.zeros(num_cases)
 
     time_windows = {
-        "persistent_current": (IP_MEAS_START, IP_MEAS_END),
-        "write_one": (WRITE_ONE_START, WRITE_ONE_END),
-        "read_one": (READ_ONE_START, READ_ONE_END),
-        "read_zero": (READ_ZERO_START, READ_ZERO_END),
+        "persistent_current": (1.5e-7, 2e-7),
+        "write_one": (1e-7, 1.5e-7),
+        "write_zero": (5e-7, 5.5e-7),
+        "read_one": (2e-7, 2.5e-7),
+        "read_zero": (6e-7, 6.5e-7),
         "enable_write": (1e-7, 1.5e-7),
     }
 
@@ -162,6 +162,11 @@ def process_read_data(l: ltspice.Ltspice):
         read_current[i] = np.max(channel_current[masks["read_one"]])
         enable_read_current[i] = np.max(enable_current[masks["read_one"]])
         enable_write_current[i] = np.max(enable_current[masks["enable_write"]])
+        write_one_voltage[i] = np.max(output_voltage[masks["write_one"]])
+        write_zero_voltage[i] = np.min(output_voltage[masks["write_zero"]])
+        read_zero_voltage[i] = np.max(output_voltage[masks["read_zero"]])
+        read_one_voltage[i] = np.max(output_voltage[masks["read_one"]])
+
     return {
         "read_current": read_current,
         "read_output": read_output,
@@ -169,6 +174,10 @@ def process_read_data(l: ltspice.Ltspice):
         "enable_write_current": enable_write_current,
         "write_current": write_current,
         "persistent_current": persistent_current,
+        "write_one_voltage": write_one_voltage,
+        "write_zero_voltage": write_zero_voltage,
+        "read_zero": read_zero_voltage,
+        "read_one": read_one_voltage,
     }
 
 
@@ -193,16 +202,42 @@ def save_enable_data_file(l: ltspice.Ltspice):
 
 
 def save_write_data_file(l: ltspice.Ltspice):
-    read_outputs = process_read_data(l)
-    write_current = read_outputs["write_current"]
-    read_current = read_outputs["read_current"]
-    read_output = read_outputs["read_output"]
-    persistent_current = read_outputs["persistent_current"]
+    data_dict = process_read_data(l)
+    read_outputs = data_dict["read_output"]
+    read_current = data_dict["read_current"]
+    read_current = read_current.reshape(-1, 1)
+    write_current = filter_first(data_dict["write_current"])
+    read_output = data_dict["read_output"]
+    persistent_current = filter_first(data_dict["persistent_current"])
     np.savetxt(
-        f"spice_simulation_raw/write_current_sweep/read_data_write_current_sweep_{write_current:03.0f}uA_{persistent_current:03.0f}uA.csv",
-        np.hstack((read_current, read_output)),
+        f"read_data_write_current_sweep_{write_current:03.0f}uA_{persistent_current:03.0f}uA.csv",
+        np.hstack((read_current, read_outputs)),
         delimiter=",",
         header="read_current, read_output_0, read_output_1",
+    )
+
+
+def save_enable_data_file(l: ltspice.Ltspice):
+    read_outputs = process_read_data(l)
+    write_current = read_outputs["write_current"]
+    if len(write_current) > 1:
+        write_current = write_current[0]
+    enable_write_current = read_outputs["enable_write_current"]
+    enable_write_current_array = enable_write_current.reshape(-1, 1)
+    read_output = read_outputs["read_output"]
+
+    data_dict = {
+        "enable_write_current": enable_write_current,
+        "read_output": read_output,
+        "write_current": write_current,
+        "persistent_current": read_outputs["persistent_current"],
+        "write_zero_voltage": read_outputs["write_zero_voltage"],
+        "write_one_voltage": read_outputs["write_one_voltage"],
+    }
+
+    sio.savemat(
+        f"spice_simulation_raw/enable_write_sweep/enable_write_current_sweep_{write_current:03.0f}uA.mat",
+        data_dict,
     )
 
 
@@ -223,13 +258,9 @@ def plot_read_current_output(
     ax: plt.Axes,
     read_current: np.ndarray,
     read_output: np.ndarray,
-    enable_read_current: float,
 ) -> plt.Axes:
     ax.plot(read_current, read_output[:, 0] * 1e3, "-o", label="Read 0")
     ax.plot(read_current, read_output[:, 1] * 1e3, "-o", label="Read 1")
-    ax.text(
-        0.1, 0.5, f"Enable Current: {enable_read_current:.0f}uA", transform=ax.transAxes
-    )
     ax.legend()
     ax.set_ylabel("Output Voltage (mV)")
     ax.set_xlabel("Read Current (uA)")
@@ -296,8 +327,15 @@ def process_data_dict(data_dict: dict) -> Tuple[float, float]:
 
 
 def process_data_array(array: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    zero_switch = np.argwhere(array[:, 1] > VOLTAGE_THRESHOLD)[0]
-    one_switch = np.argwhere(array[:, 2] > VOLTAGE_THRESHOLD)[0]
+    if any(array[:, 1] > VOLTAGE_THRESHOLD):
+        zero_switch = np.argwhere(array[:, 1] > VOLTAGE_THRESHOLD).flat[0]
+    else:
+        zero_switch = 0
+
+    if any(array[:, 2] > VOLTAGE_THRESHOLD):
+        one_switch = np.argwhere(array[:, 2] > VOLTAGE_THRESHOLD).flat[0]
+    else:
+        one_switch = 0
     zero_current = array[zero_switch, 0]
     one_current = array[one_switch, 0]
     return zero_current, one_current
@@ -360,12 +398,15 @@ def figure_plot_enable_read_sweep():
         "x",
         label="Optimal Read Margin",
     )
-    optimal_read = np.array(zero_currents[optimal_idx])-np.array(read_margin[optimal_idx])/2
+    optimal_read = (
+        np.array(zero_currents[optimal_idx]) - np.array(read_margin[optimal_idx]) / 2
+    )
     ax.plot(
         enable_read_currents[optimal_idx],
         optimal_read,
         "x",
-        label="Optimal Read Margin",)
+        label="Optimal Read Margin",
+    )
     print(f"Optimal Read: {optimal_read}")
     ax.legend()
     plt.show()
@@ -435,18 +476,15 @@ if __name__ == "__main__":
 
     l = ltspice.Ltspice("nmem_cell_read.raw")
     l.parse()
-    # save_write_data_file(l)
     data_dict = process_read_data(l)
+    read_outputs = data_dict["read_output"]
+    read_current = data_dict["read_current"]
+    read_current = read_current.reshape(-1, 1)
+    write_current = filter_first(data_dict["write_current"])
+    read_output = data_dict["read_output"]
+    persistent_current = filter_first(data_dict["persistent_current"])
+    read_zero_voltage = data_dict["read_zero"]
+    read_one_voltage = data_dict["read_one"]
     enable_write_current = data_dict["enable_write_current"]
-    persistent_current = data_dict["persistent_current"]
-    read_margin = get_read_margin(l)
-
     fig, ax = plt.subplots()
-    plot_enable_write_current_output(ax, enable_write_current, data_dict["read_output"])
-    plt.show()
-
-    fig, ax = plt.subplots()
-    ax.plot(enable_write_current, persistent_current, "-o")
-    ax.set_ylabel("Persistent Current (uA)")
-    ax.set_xlabel("Enable Write Current (uA)")
-    plt.show()
+    plot_read_current_output(ax, enable_write_current, read_output)
