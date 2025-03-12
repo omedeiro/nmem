@@ -18,7 +18,7 @@ LINE Normal -161 -49 -208 -49
 LINE Normal -161 1 -208 1
 LINE Normal -161 48 -208 48
 WINDOW 0 -33 -80 Bottom 2
-SYMATTR SpiceLine const_width=1u, heater_width=100n, const_thickness=23.6n, const_length=14u, sheet_resistance=77.9, heater_resistance=50, critical_temp=12.5, substrate_temp=4.2, eta=3, Jsw_tilde=88.3G, Isupp_tilde=389.7u, Jconstr=100G, tau_on=11.85n, ICh_bias_on=280u, Ih_bias_on=1455u
+SYMATTR SpiceLine chan_width=1u, heater_width=100n, chan_thickness=23.6n, chan_length=14u, sheet_resistance=77.9, heater_resistance=50, critical_temp=12.5, substrate_temp=4.2, eta=3, Jsw_tilde=88.3G, Isupp_tilde=389.7u, Jchanr=100G, tau_on=11.85n, ICh_bias_on=280u, Ih_bias_on=1455u
 SYMATTR ModelFile hTron_behavioral.lib
 SYMATTR SpiceModel hTron_behav
 SYMATTR Prefix X
