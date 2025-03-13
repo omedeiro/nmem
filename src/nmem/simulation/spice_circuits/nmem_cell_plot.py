@@ -121,6 +121,21 @@ def plot_current_sweep_output(
     ax2.legend()
     return ax
 
+def plot_persistent_current(
+    ax: plt.Axes,
+    data_dict: dict,
+    cases=[0],
+) -> plt.Axes:
+    for i in cases:
+        data = data_dict[i]
+        print(data)
+        sweep_param = get_sweep_parameter(data)
+        ax.plot(data[sweep_param], data["persistent_current"], "-o", label="Persistent Current")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Current (uA)")
+    ax.legend()
+    return ax
+
 
 def plot_enable_write_current_output(
     ax: plt.Axes,
@@ -152,3 +167,6 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     plot_current_transient(ax, data_dict, cases=[CASE], side="right")
     plot_branch_fill(ax, data_dict, cases=[CASE], side="right")
+
+    fig, ax = plt.subplots()
+    plot_persistent_current(ax, data_dict, cases=[CASE])
