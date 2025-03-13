@@ -106,11 +106,19 @@ def plot_current_sweep_output(
     sweep_current = data_dict[sweep_param]
     read_zero_voltage = data_dict["read_zero_voltage"]
     read_one_voltage = data_dict["read_one_voltage"]
+    ber = np.ones_like(sweep_current) * 0.5
+    ber = np.where((read_one_voltage<VOLTAGE_THRESHOLD) & (read_zero_voltage>VOLTAGE_THRESHOLD), 1, ber)
+    ber = np.where((read_one_voltage>VOLTAGE_THRESHOLD) & (read_zero_voltage<VOLTAGE_THRESHOLD), 0, ber)
+
     ax.plot(sweep_current, read_zero_voltage * 1e3, "-o", label="Read 0")
     ax.plot(sweep_current, read_one_voltage * 1e3, "-o", label="Read 1")
     ax.legend()
     ax.set_ylabel("Output Voltage (mV)")
     ax.set_xlabel(f"{sweep_param} (uA)")
+    ax2 = ax.twinx()
+    ax2.plot(sweep_current, ber, "-o", label="BER", color="red")
+    ax2.set_ylabel("Bit Error Rate")
+    ax2.legend()
     return ax
 
 
@@ -137,7 +145,7 @@ if __name__ == "__main__":
     plot_current_sweep_output(ax, data_dict)
     plt.show()
 
-    CASE = 2
+    CASE = 10
     fig, ax = plt.subplots()
     plot_current_transient(ax, data_dict, cases=[CASE])
     plot_branch_fill(ax, data_dict, cases=[CASE])
