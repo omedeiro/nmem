@@ -1,7 +1,7 @@
 import ltspice
 import matplotlib.pyplot as plt
 import numpy as np
-import imageio
+import imageio.v2 as imageio
 import os
 from nmem.analysis.analysis import CMAP
 from nmem.simulation.spice_circuits.functions import (
@@ -40,8 +40,10 @@ def example_transient_operation() -> None:
     ltsp.parse()
     data_dict = process_read_data(ltsp)
     fig, ax = plt.subplots()
-    ax = plot_transient(ax, data_dict, signal_name="tran_left_branch_current") 
-    ax = plot_transient(ax, data_dict, signal_name="tran_right_branch_current", color="grey")
+    ax = plot_transient(ax, data_dict, signal_name="tran_left_branch_current")
+    ax = plot_transient(
+        ax, data_dict, signal_name="tran_right_branch_current", color="grey"
+    )
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Voltage (V)")
     ax.legend()
@@ -85,9 +87,15 @@ def example_transient_branch_currents(case: int = 18) -> None:
 
     fig, axs = plt.subplots(2, 1, figsize=(6, 6))
     ax: plt.Axes = axs[0]
-    plot_transient(ax, data_dict, cases=[case], signal_name="tran_left_critical_current")
     plot_transient(
-        ax, data_dict, cases=[case], signal_name="tran_left_branch_current", color="grey"
+        ax, data_dict, cases=[case], signal_name="tran_left_critical_current"
+    )
+    plot_transient(
+        ax,
+        data_dict,
+        cases=[case],
+        signal_name="tran_left_branch_current",
+        color="grey",
     )
     plot_transient_fill(
         ax,
@@ -99,9 +107,15 @@ def example_transient_branch_currents(case: int = 18) -> None:
     ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
 
     ax: plt.Axes = axs[1]
-    plot_transient(ax, data_dict, cases=[case], signal_name="tran_right_critical_current")
     plot_transient(
-        ax, data_dict, cases=[case], signal_name="tran_right_branch_current", color="grey"
+        ax, data_dict, cases=[case], signal_name="tran_right_critical_current"
+    )
+    plot_transient(
+        ax,
+        data_dict,
+        cases=[case],
+        signal_name="tran_right_branch_current",
+        color="grey",
     )
     plot_transient_fill(
         ax,
@@ -112,7 +126,6 @@ def example_transient_branch_currents(case: int = 18) -> None:
     )
     ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
     plt.show()
-
 
 
 def example_step_enable_write_sweep_write() -> None:
@@ -155,10 +168,14 @@ def example_step_enable_write_sweep_write() -> None:
 
 
 def example_transient_write_sweep() -> None:
-    ltsp = ltspice.Ltspice("spice_simulation_raw/write_current_sweep/nmem_cell_write_200uA.raw").parse()
+    ltsp = ltspice.Ltspice(
+        "spice_simulation_raw/write_current_sweep/nmem_cell_write_200uA.raw"
+    ).parse()
     data_dict = process_read_data(ltsp)
 
-    frame_path = os.path.join(os.getcwd(), "spice_simulation_raw", "write_current_sweep", "frames")
+    frame_path = os.path.join(
+        os.getcwd(), "spice_simulation_raw", "write_current_sweep", "frames"
+    )
     os.makedirs(frame_path, exist_ok=True)
     frame_filenames = []
 
@@ -220,9 +237,90 @@ def example_transient_write_sweep() -> None:
                 writer.append_data(image)
 
         print(f"GIF saved as {gif_filename}")
+
+
+def example_step_read_current() -> None:
+    ltsp = ltspice.Ltspice("spice_simulation_raw/step_read_current/nmem_cell_read_IER_250uA.raw").parse()
+    data_dict = process_read_data(ltsp)
+
+    frame_path = os.path.join(
+        os.getcwd(), "spice_simulation_raw", "step_read_current", "frames"
+    )
+    os.makedirs(frame_path, exist_ok=True)
+    frame_filenames = []
+
+    for case in range(0, ltsp.case_count, 20):
+        enable_read_current = data_dict[case]["enable_read_current"][case]
+        read_current = data_dict[case]["read_current"][case]
+
+        fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+        ax: plt.Axes = axs[0]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_left_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_left_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_left_critical_current",
+            s2="tran_left_branch_current",
+        )
+        ax.set_ylim(-100, 400)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax: plt.Axes = axs[1]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_right_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_right_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_right_critical_current",
+            s2="tran_right_branch_current",
+        )
+        ax.set_ylim(-100, 700)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax.text(
+            0.1,
+            0.8,
+            f"enable read current {enable_read_current}uA",
+            transform=ax.transAxes,
+        )
+        frame_filename = f"{frame_path}/frame_{case}.png"
+        plt.savefig(frame_filename)
+        frame_filenames.append(frame_filename)
+        plt.close(fig)
+
+    # Create GIF
+    save_gif = False
+    if save_gif:
+        gif_filename = frame_path + "/step_read_current.gif"
+        with imageio.get_writer(gif_filename, mode="I", duration=2, loop=0) as writer:
+            for filename in frame_filenames:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+
+        print(f"GIF saved as {gif_filename}")
+
+
 if __name__ == "__main__":
     # example_transient_operation()
     # example_step_read_sweep_write()
     # example_step_enable_write_sweep_write()
     # example_transient_branch_currents()
-    example_transient_write_sweep()
+    # example_transient_write_sweep()
+    example_step_read_current()
