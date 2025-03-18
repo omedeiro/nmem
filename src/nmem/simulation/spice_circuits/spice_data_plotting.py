@@ -13,7 +13,6 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_persistent,
     plot_transient,
     plot_transient_fill,
-    plot_tran_data,
 )
 
 
@@ -38,10 +37,10 @@ def example_transient_operation() -> None:
     file_path = "spice_simulation_raw/nmem_cell_write_read_clear.raw"
     ltsp = ltspice.Ltspice(file_path)
     ltsp.parse()
-
+    data_dict = process_read_data(ltsp)
     fig, ax = plt.subplots()
-    ax = plot_tran_data(ax, ltsp, "Ix(HR:drain)")
-    ax = plot_tran_data(ax, ltsp, "V(ichr)")
+    ax = plot_transient(ax, data_dict, signal_name="tran_left_branch_current") 
+    ax = plot_transient(ax, data_dict, signal_name="tran_right_branch_current", color="grey")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Voltage (V)")
     ax.legend()
@@ -73,17 +72,18 @@ def example_step_read_sweep_write() -> None:
             ax, processed_data, color=colors[i], label="Write " + write_current + "uA"
         )
     ax.legend(loc="upper left", ncol=1, prop={"size": 12}, bbox_to_anchor=(1.05, 1))
+    plt.show()
 
 
-def figure_plot_all_write_sweeps(case: int = 18) -> None:
+def example_transient_branch_currents(case: int = 18) -> None:
     ltsp = ltspice.Ltspice("spice_simulation_raw/nmem_cell_write_1000uA.raw").parse()
     data_dict = process_read_data(ltsp)
 
     if case > ltsp.case_count:
         raise ValueError(f"Case {case} not found in data")
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
-    ax = axs[0]
+    fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+    ax: plt.Axes = axs[0]
     plot_transient(ax, data_dict, cases=[case], signal_name="tran_left_critical_current")
     plot_transient(
         ax, data_dict, cases=[case], signal_name="tran_left_branch_current", color="grey"
@@ -95,8 +95,9 @@ def figure_plot_all_write_sweeps(case: int = 18) -> None:
         s1="tran_left_critical_current",
         s2="tran_left_branch_current",
     )
+    ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
 
-    ax = axs[1]
+    ax: plt.Axes = axs[1]
     plot_transient(ax, data_dict, cases=[case], signal_name="tran_right_critical_current")
     plot_transient(
         ax, data_dict, cases=[case], signal_name="tran_right_branch_current", color="grey"
@@ -108,15 +109,9 @@ def figure_plot_all_write_sweeps(case: int = 18) -> None:
         s1="tran_right_critical_current",
         s2="tran_right_branch_current",
     )
-    # fig, ax = plt.subplots()
-    # plot_tran_data(ax, "spice_simulation_raw/nmem_cell_write_1000uA.raw", "I(ichr)")
-    # plt.show()
-    # fig, ax = plt.subplots()
-    # plot_tran_data(ax, "spice_simulation_raw/nmem_cell_write_step_5uA.raw", "I(ichr)")
-    # plt.show()
-    # fig, ax = plt.subplots()
-    # plot_tran_data(ax, "spice_simulation_raw/nmem_cell_write_step_10uA.raw", "I(ichr)")
-    # plt.show()
+    ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+    plt.show()
+
 
 
 def example_step_enable_write_sweep_write() -> None:
@@ -159,8 +154,7 @@ def example_step_enable_write_sweep_write() -> None:
 
 
 if __name__ == "__main__":
-    # example_transient_operation()
-    # example_step_read_sweep_write()
-    # example_step_enable_write_sweep_write()
-
-    figure_plot_all_write_sweeps()
+    example_transient_operation()
+    example_step_read_sweep_write()
+    example_step_enable_write_sweep_write()
+    example_transient_branch_currents()
