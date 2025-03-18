@@ -1,9 +1,9 @@
-import numpy as np
-import ltspice
-from typing import Tuple
 import os
+from typing import Tuple
+
+import ltspice
+import numpy as np
 import scipy.io as sio
-from nmem.analysis.analysis import filter_first
 
 FILL_WIDTH = 5
 VOUT_YMAX = 40
@@ -26,10 +26,9 @@ def get_max_output(ltspice_data: ltspice.Ltspice, case: int = 0) -> np.ndarray:
     return np.max(signal)
 
 
-def process_read_state_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
+def get_processed_state_currents(data_dict: dict) -> Tuple[np.ndarray, np.ndarray]:
     read_zero_voltage = data_dict.get("read_zero_voltage")
     read_one_voltage = data_dict.get("read_one_voltage")
-
     if any(read_zero_voltage > VOLTAGE_THRESHOLD):
         zero_switch = np.argwhere(read_zero_voltage > VOLTAGE_THRESHOLD).flat[0]
     else:
@@ -50,21 +49,18 @@ def process_data_dict_sweep(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     zero_currents = []
     one_currents = []
-    enable_read_currents = []
+    step_parameter = []
     for key, data in data_dict.items():
-        if isinstance(data, np.ndarray):
-            data_array = data
-        else:
-            data_array = data["data"]
-        zero_current, one_current = process_read_state_currents(data)
+        step_parameter_str = get_step_parameter(data)
+        zero_current, one_current = get_processed_state_currents(data)
         zero_currents.append(zero_current)
         one_currents.append(one_current)
-        enable_read_currents.append(key)
+        step_parameter.append(key)
 
-    enable_read_currents = np.array(enable_read_currents)
+    step_parameter = np.array(step_parameter)
     zero_currents = np.array(zero_currents)
     one_currents = np.array(one_currents)
-    return enable_read_currents, zero_currents, one_currents
+    return step_parameter, zero_currents, one_currents, step_parameter_str
 
 
 def process_data_dict_write_sweep(
@@ -75,7 +71,7 @@ def process_data_dict_write_sweep(
     write_currents = []
     persistent_currents = []
     for key, data in data_dict.items():
-        zero_current, one_current = process_read_state_currents(data)
+        zero_current, one_current = get_processed_state_currents(data)
         zero_currents.append(zero_current)
         one_currents.append(one_current)
         write_currents.append(key)
@@ -91,7 +87,7 @@ def get_write_sweep_data(file_path: str) -> dict:
         write_current = float(file[-15:-12])
         persistent_current = float(file[-9:-6])
         data = np.genfromtxt(file_path + file, delimiter=",")
-        zero_current, one_current = process_read_state_currents(data)
+        zero_current, one_current = get_processed_state_currents(data)
         read_margin = zero_current - one_current
         data_dict[write_current] = {
             "data": data,
@@ -104,10 +100,38 @@ def get_write_sweep_data(file_path: str) -> dict:
     return data_dict
 
 
+def get_bit_error_rate(
+    read_zero_voltage: float,
+    read_one_voltage: float,
+    voltage_threshold: float = VOLTAGE_THRESHOLD,
+) -> float:
+    ber = np.where(
+        (read_one_voltage < voltage_threshold)
+        & (read_zero_voltage > voltage_threshold),
+        1,
+        0.5,
+    )
+    ber = np.where(
+        (read_one_voltage > voltage_threshold)
+        & (read_zero_voltage < voltage_threshold),
+        0,
+        ber,
+    )
+    return ber
+
+
+def get_current_or_voltage(
+    l: ltspice.Ltspice, signal: str, case: int = 0
+) -> np.ndarray:
+    signal_data = l.get_data(f"I({signal})", case=case)
+    if signal_data is None:
+        signal_data = l.get_data(f"V({signal})", case=case)
+    return signal_data * 1e6
+
+
 def process_read_data(l: ltspice.Ltspice) -> dict:
     num_cases = l.case_count
 
-    read_output = np.zeros((num_cases, 2))
     read_current = np.zeros(num_cases)
     enable_read_current = np.zeros(num_cases)
     enable_write_current = np.zeros(num_cases)
@@ -117,6 +141,8 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
     write_zero_voltage = np.zeros(num_cases)
     read_zero_voltage = np.zeros(num_cases)
     read_one_voltage = np.zeros(num_cases)
+    read_margin = np.zeros(num_cases)
+    bit_error_rate = np.zeros(num_cases)
 
     time_windows = {
         "persistent_current": (1.5e-7, 2e-7),
@@ -134,10 +160,10 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
         channel_current = l.get_data("I(R2)", i) * 1e6
         right_branch_current = l.get_data("Ix(HR:drain)", i) * 1e6
         left_branch_current = l.get_data("Ix(HL:drain)", i) * 1e6
-        left_critical_current = l.get_data("I(ichl)", i) * 1e6
-        right_critical_current = l.get_data("I(ichr)", i) * 1e6
-        left_retrapping_current = l.get_data("I(irhl)", i) * 1e6
-        right_retrapping_current = l.get_data("I(irhr)", i) * 1e6
+        left_critical_current = get_current_or_voltage(l, "ichl", i)
+        right_critical_current = get_current_or_voltage(l, "ichr", i)
+        left_retrapping_current = get_current_or_voltage(l, "irhl", i)
+        right_retrapping_current = get_current_or_voltage(l, "irhr", i)
         output_voltage = l.get_data("V(out)", i)
 
         masks = {
@@ -155,7 +181,9 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
         write_zero_voltage[i] = np.min(output_voltage[masks["write_zero"]])
         read_zero_voltage[i] = np.max(output_voltage[masks["read_zero"]])
         read_one_voltage[i] = np.max(output_voltage[masks["read_one"]])
-
+        bit_error_rate[i] = get_bit_error_rate(
+            read_zero_voltage[i], read_one_voltage[i]
+        )
         data_dict[i] = {
             "time": time,
             "tran_enable_current": enable_current,
@@ -177,11 +205,13 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
             "write_zero_voltage": write_zero_voltage,
             "persistent_current": persistent_current,
             "case_count": l.case_count,
+            "read_margin": read_margin,
+            "bit_error_rate": bit_error_rate,
         }
     return data_dict
 
 
-def get_sweep_parameter(data_dict: dict) -> str:
+def get_step_parameter(data_dict: dict) -> str:
     keys = [
         "write_current",
         "read_current",
@@ -215,6 +245,20 @@ def import_csv_dir(file_path: str) -> dict:
     return data_dict
 
 
+def import_raw_dir(file_path: str) -> dict:
+    # get only raw from directory
+    files = [f for f in os.listdir(file_path) if f.endswith(".raw")]
+    files.sort()
+    data_dict = {}
+    for file in files:
+
+        l = ltspice.Ltspice(os.path.join(file_path, file))
+        l.parse()
+        data_dict[file] = l
+
+    return data_dict
+
+
 def save_enable_data_file(l: ltspice.Ltspice):
     read_outputs = process_read_data(l)
     write_current = read_outputs["write_current"]
@@ -237,3 +281,11 @@ def save_enable_data_file(l: ltspice.Ltspice):
         f"spice_simulation_raw/enable_write_sweep/enable_write_current_sweep_{write_current:03.0f}uA.mat",
         data_dict,
     )
+
+
+if __name__ == "__main__":
+
+    data_dict = import_raw_dir("spice_simulation_raw/read_current_sweep_2/")
+    print(data_dict)
+
+    case_dict = process_read_data(data_dict["nmem_cell_read_100uA.raw"])

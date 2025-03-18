@@ -1,13 +1,12 @@
+from typing import Literal
+
 import ltspice
-import numpy as np
 import matplotlib.pyplot as plt
-import os
-from typing import Tuple, Literal
-import scipy.io as sio
-from nmem.analysis.analysis import import_directory, filter_first
-from nmem.simulation.spice_circuits.spice_data_processing import (
+import numpy as np
+
+from nmem.simulation.spice_circuits.functions import (
+    get_step_parameter,
     process_read_data,
-    get_sweep_parameter,
 )
 
 CMAP = plt.get_cmap("coolwarm")
@@ -99,28 +98,42 @@ def plot_branch_fill(
 def plot_current_sweep_output(
     ax: plt.Axes,
     data_dict: dict,
+    **kwargs,
 ) -> plt.Axes:
     if len(data_dict) > 1:
         data_dict = data_dict[0]
-    sweep_param = get_sweep_parameter(data_dict)
+    sweep_param = get_step_parameter(data_dict)
     sweep_current = data_dict[sweep_param]
     read_zero_voltage = data_dict["read_zero_voltage"]
     read_one_voltage = data_dict["read_one_voltage"]
-    ber = np.ones_like(sweep_current) * 0.5
-    ber = np.where((read_one_voltage<VOLTAGE_THRESHOLD) & (read_zero_voltage>VOLTAGE_THRESHOLD), 1, ber)
-    ber = np.where((read_one_voltage>VOLTAGE_THRESHOLD) & (read_zero_voltage<VOLTAGE_THRESHOLD), 0, ber)
 
-    ax.plot(sweep_current, read_zero_voltage * 1e3, "-o", label="Read 0")
-    ax.plot(sweep_current, read_one_voltage * 1e3, "-o", label="Read 1")
-    ax.legend()
+    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    kwargs.pop("label", None)
+    ax.plot(sweep_current, read_zero_voltage * 1e3, "-o", label=f"{base_label} Read 0", **kwargs)
+    ax.plot(sweep_current, read_one_voltage * 1e3, "--o", label=f"{base_label} Read 1", **kwargs)
     ax.set_ylabel("Output Voltage (mV)")
     ax.set_xlabel(f"{sweep_param} (uA)")
-    ax2 = ax.twinx()
-    ax2.plot(sweep_current, ber, "-o", label="BER", color="red")
-    ax2.set_ylabel("Bit Error Rate")
-    ax2.legend()
     return ax
 
+def plot_current_sweep_ber(
+    ax: plt.Axes,
+    data_dict: dict,
+    **kwargs,
+) -> plt.Axes:
+    if len(data_dict) > 1:
+        data_dict = data_dict[0]
+    sweep_param = get_step_parameter(data_dict)
+    sweep_current = data_dict[sweep_param]
+    ber = data_dict["bit_error_rate"]
+
+    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    kwargs.pop("label", None)
+    ax.plot(sweep_current, ber , "-o", label=f"{base_label}", **kwargs)
+    ax.set_ylabel("BER")
+    ax.set_xlabel(f"{sweep_param} (uA)")
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.1))
+    return ax
 def plot_persistent_current(
     ax: plt.Axes,
     data_dict: dict,
@@ -128,9 +141,13 @@ def plot_persistent_current(
 ) -> plt.Axes:
     for i in cases:
         data = data_dict[i]
-        print(data)
-        sweep_param = get_sweep_parameter(data)
-        ax.plot(data[sweep_param], data["persistent_current"], "-o", label="Persistent Current")
+        sweep_param = get_step_parameter(data)
+        ax.plot(
+            data[sweep_param],
+            data["persistent_current"],
+            "-o",
+            label="Persistent Current",
+        )
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Current (uA)")
     ax.legend()
@@ -151,6 +168,18 @@ def plot_enable_write_current_output(
     return ax
 
 
+def plot_retrapping_ratio(ax: plt.axes, data_dict: dict, cases: list = [0]) -> plt.Axes:
+    for i in cases:
+        data = data_dict[i]
+        time = data["time"]
+        left_branch_critical_current = data["tran_left_critical_current"]
+        right_branch_critical_current = data["tran_right_critical_current"]
+        left_retrapping_current = data["tran_left_retrapping_current"]
+        right_retrapping_current = data["tran_right_retrapping_current"]
+        retrapping_ratio = left_retrapping_current / left_branch_critical_current
+        ax.plot(time, retrapping_ratio, label="Retrapping Ratio")
+
+
 if __name__ == "__main__":
 
     l = ltspice.Ltspice("nmem_cell_read.raw")
@@ -160,7 +189,7 @@ if __name__ == "__main__":
     plot_current_sweep_output(ax, data_dict)
     plt.show()
 
-    CASE = 10
+    CASE = 4
     fig, ax = plt.subplots()
     plot_current_transient(ax, data_dict, cases=[CASE])
     plot_branch_fill(ax, data_dict, cases=[CASE])
@@ -170,3 +199,4 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     plot_persistent_current(ax, data_dict, cases=[CASE])
+    plt.show()
