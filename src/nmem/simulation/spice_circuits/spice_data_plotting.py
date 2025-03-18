@@ -11,18 +11,37 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_output,
     plot_current_sweep_persistent,
+    plot_transient,
+    plot_transient_fill,
     plot_tran_data,
 )
 
 
-def example_write_read_clear() -> None:
+def example_transient_operation() -> None:
+    """
+    This function loads the simulation data from the specified RAW file,
+    parses it using the ltspice library, and creates a plot showing both
+    the drain current (Ix(HR:drain)) and control voltage (V(ichr)) over time.
+
+    Returns:
+        None: This function displays a plot but does not return any values.
+
+    File:
+        The function uses data from "spice_simulation_raw/nmem_cell_write_read_clear.raw"
+        This file contains the following sequence of operations:
+        1. Write pulse of 50uA
+        2. Read operation
+        3. Clear operation
+        4. Write pulse of -50uA
+        5. Read operation
+    """
     file_path = "spice_simulation_raw/nmem_cell_write_read_clear.raw"
-    l = ltspice.Ltspice(file_path)
-    l.parse()
+    ltsp = ltspice.Ltspice(file_path)
+    ltsp.parse()
 
     fig, ax = plt.subplots()
-    ax = plot_tran_data(ax, l, "Ix(HR:drain)")
-    ax = plot_tran_data(ax, l, "V(ichr)")
+    ax = plot_tran_data(ax, ltsp, "Ix(HR:drain)")
+    ax = plot_tran_data(ax, ltsp, "V(ichr)")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Voltage (V)")
     ax.legend()
@@ -30,23 +49,65 @@ def example_write_read_clear() -> None:
 
 
 def example_step_read_sweep_write() -> None:
+    """
+    This function loads the simulation data from the specified RAW files,
+    parses it using the ltspice library, and creates a plot showing the
+    output voltage (V(ichr)) for a series of read operations with different
+    write currents.
 
+    Returns:
+        None: This function displays a plot but does not return any values.
+
+    Files:
+        The function uses data from the following directory:
+        "spice_simulation_raw/read_current_sweep_2/"
+        For write currents of 100uA, 140uA, 150uA, 200uA, 250uA
+    """
     data_dict = import_raw_dir("spice_simulation_raw/read_current_sweep_2/")
     fig, ax = plt.subplots()
     colors = CMAP(np.linspace(0, 1, len(data_dict)))
-    for i, (key, l) in enumerate(data_dict.items()):
+    for i, (key, ltsp) in enumerate(data_dict.items()):
         write_current = key[-9:-6]
-        processed_data = process_read_data(l)
+        processed_data = process_read_data(ltsp)
         ax = plot_current_sweep_output(
             ax, processed_data, color=colors[i], label="Write " + write_current + "uA"
         )
     ax.legend(loc="upper left", ncol=1, prop={"size": 12}, bbox_to_anchor=(1.05, 1))
 
 
-def figure_plot_all_write_sweeps() -> None:
-    fig, ax = plt.subplots()
-    plot_tran_data(ax, "spice_simulation_raw/nmem_cell_write_200uA.raw", "I(ichr)")
-    plt.show()
+def figure_plot_all_write_sweeps(case: int = 18) -> None:
+    ltsp = ltspice.Ltspice("spice_simulation_raw/nmem_cell_write_1000uA.raw").parse()
+    data_dict = process_read_data(ltsp)
+
+    if case > ltsp.case_count:
+        raise ValueError(f"Case {case} not found in data")
+
+    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
+    ax = axs[0]
+    plot_transient(ax, data_dict, cases=[case], signal_name="tran_left_critical_current")
+    plot_transient(
+        ax, data_dict, cases=[case], signal_name="tran_left_branch_current", color="grey"
+    )
+    plot_transient_fill(
+        ax,
+        data_dict,
+        cases=[case],
+        s1="tran_left_critical_current",
+        s2="tran_left_branch_current",
+    )
+
+    ax = axs[1]
+    plot_transient(ax, data_dict, cases=[case], signal_name="tran_right_critical_current")
+    plot_transient(
+        ax, data_dict, cases=[case], signal_name="tran_right_branch_current", color="grey"
+    )
+    plot_transient_fill(
+        ax,
+        data_dict,
+        cases=[case],
+        s1="tran_right_critical_current",
+        s2="tran_right_branch_current",
+    )
     # fig, ax = plt.subplots()
     # plot_tran_data(ax, "spice_simulation_raw/nmem_cell_write_1000uA.raw", "I(ichr)")
     # plt.show()
@@ -62,8 +123,8 @@ def example_step_enable_write_sweep_write() -> None:
     data_dict = import_raw_dir("spice_simulation_raw/enable_write_sweep/")
     fig, axs = plt.subplots(3, 1, figsize=(10, 10))
     colors = CMAP(np.linspace(0, 1, len(data_dict)))
-    for i, (key, l) in enumerate(data_dict.items()):
-        processed_data = process_read_data(l)
+    for i, (key, ltsp) in enumerate(data_dict.items()):
+        processed_data = process_read_data(ltsp)
         write_current = key[-9:-6]
         ax = axs[0]
         ax = plot_current_sweep_ber(
@@ -98,6 +159,8 @@ def example_step_enable_write_sweep_write() -> None:
 
 
 if __name__ == "__main__":
-    # example_write_read_clear()
-    example_step_read_sweep_write()
+    # example_transient_operation()
+    # example_step_read_sweep_write()
     # example_step_enable_write_sweep_write()
+
+    figure_plot_all_write_sweeps()
