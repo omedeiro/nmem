@@ -25,6 +25,7 @@ plt.rcParams["legend.frameon"] = False
 plt.rcParams["xtick.major.size"] = 1
 plt.rcParams["ytick.major.size"] = 1
 
+
 def plot_read_delay(ax: Axes, dict_list: list[dict]) -> Axes:
     bers = []
     for i in range(4):
@@ -56,7 +57,7 @@ def create_trace_hist_plot(
         ax_dict["B"],
         dict_list[4],
         "trace_read1_avg",
-        color="#ff14f0",
+        color="#ff7f0e",
         linestyle="--",
         label="Read 1",
     )
@@ -78,6 +79,7 @@ def create_trace_hist_plot(
 
     return ax_dict
 
+
 if __name__ == "__main__":
     # dict_list = import_directory("data")
     # fig, ax = plt.subplots()
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     #     ax.set_ylabel("Voltage [V]")
     #     plt.show()
 
-    fig, ax = plt.subplots(figsize=(60/25.4, 45/25.4))
+    fig, ax = plt.subplots(figsize=(60 / 25.4, 45 / 25.4))
     dict_list = import_directory("data")
     plot_voltage_hist(ax, dict_list[1])
     # plt.show()
@@ -104,8 +106,9 @@ if __name__ == "__main__":
     if save:
         plt.savefig("delay_plotting_v3.pdf", bbox_inches="tight")
 
-
-    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=(60/25.4, 45/25.4), constrained_layout=True)
+    fig, ax_dict = plt.subplot_mosaic(
+        "A;B", figsize=(60 / 25.4, 45 / 25.4), constrained_layout=True
+    )
     ax2 = ax_dict["A"].twinx()
     ax3 = ax_dict["B"].twinx()
     plot_voltage_trace_averaged(
@@ -121,7 +124,7 @@ if __name__ == "__main__":
         ax_dict["B"],
         dict_list[4],
         "trace_read1_avg",
-        color="#ff14f0",
+        color="#ff7f0e",
         linestyle="--",
         label="Read 1",
     )

@@ -26,4 +26,5 @@ dependencies:
     - scikit-optimize
     - matplotlib
     - ltspice
+    - imageio
 
