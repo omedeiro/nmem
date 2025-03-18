@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
+
 from nmem.analysis.analysis import (
-    plot_branch_currents,
     get_critical_current_intercept,
     import_directory,
+    plot_branch_currents,
 )
 
 CRITICAL_TEMP = 12.3

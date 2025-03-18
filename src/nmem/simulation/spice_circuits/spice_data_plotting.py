@@ -3,16 +3,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import CMAP
-from nmem.simulation.spice_circuits.plotting import (
-    plot_tran_data,
-    plot_current_sweep_ber,
-)
 from nmem.simulation.spice_circuits.functions import (
-    get_write_sweep_data,
     import_raw_dir,
-    process_data_dict_sweep,
     process_read_data,
-    get_step_parameter,
+)
+from nmem.simulation.spice_circuits.plotting import (
+    plot_current_sweep_ber,
+    plot_current_sweep_output,
+    plot_current_sweep_persistent,
+    plot_tran_data,
 )
 
 
@@ -43,37 +42,6 @@ def example_step_read_sweep_write() -> None:
         )
     ax.legend(loc="upper left", ncol=1, prop={"size": 12}, bbox_to_anchor=(1.05, 1))
 
-    # for i, (key, data) in enumerate(processed_data.items()):
-    #     step_parameter, zero_currents, one_currents, step_parameter_str = process_data_dict_sweep(
-    #         data
-    #     )
-    #     fig, ax = plt.subplots()
-    #     ax.plot(step_parameter, zero_currents, "-o", label="Read 0")
-    #     ax.plot(step_parameter, one_currents, "-o", label="Read 1")
-    #     ax.set_ylabel("Read Current (uA)")
-    #     ax.set_xlabel(f"{step_parameter_str}")
-    #     read_margin = zero_currents - one_currents
-    #     optimal_idx = np.argmax(read_margin)
-
-    #     ax.plot(
-    #         step_parameter[optimal_idx],
-    #         zero_currents[optimal_idx],
-    #         "x",
-    #         label="Optimal Read Margin",
-    #     )
-    #     optimal_read = (
-    #         np.array(zero_currents[optimal_idx]) - np.array(read_margin[optimal_idx]) / 2
-    #     )
-    #     ax.plot(
-    #         step_parameter[optimal_idx],
-    #         optimal_read,
-    #         "x",
-    #         label="Optimal Read Margin",
-    #     )
-    #     ax.legend()
-    #     ax.title = f"Write {write_current}uA"
-    #     plt.show()
-
 
 def figure_plot_all_write_sweeps() -> None:
     fig, ax = plt.subplots()
@@ -92,22 +60,44 @@ def figure_plot_all_write_sweeps() -> None:
 
 def example_step_enable_write_sweep_write() -> None:
     data_dict = import_raw_dir("spice_simulation_raw/enable_write_sweep/")
-    fig, ax = plt.subplots()
+    fig, axs = plt.subplots(3, 1, figsize=(10, 10))
     colors = CMAP(np.linspace(0, 1, len(data_dict)))
     for i, (key, l) in enumerate(data_dict.items()):
         processed_data = process_read_data(l)
         write_current = key[-9:-6]
+        ax = axs[0]
         ax = plot_current_sweep_ber(
             ax,
             processed_data,
             label=f"Write current {write_current}uA",
             color=colors[i],
         )
-    ax.legend(loc="upper left", ncol=1, prop={"size": 12}, bbox_to_anchor=(1.05, 1))
+        ax.set_ylabel("BER")
+
+        ax = axs[1]
+        ax = plot_current_sweep_output(
+            ax,
+            processed_data,
+            label=f"Write current {write_current}uA",
+            color=colors[i],
+        )
+        ax.set_ylabel("Output Voltage (mV)")
+
+        ax = axs[2]
+        ax = plot_current_sweep_persistent(
+            ax,
+            processed_data,
+            label=f"Write current {write_current}uA",
+            color=colors[i],
+        )
+
+    for ax in axs:
+
+        ax.legend(loc="upper left", ncol=1, prop={"size": 12}, bbox_to_anchor=(1.05, 1))
     plt.show()
 
 
 if __name__ == "__main__":
     # example_write_read_clear()
-    # example_step_read_sweep_write()
-    example_step_enable_write_sweep_write()
+    example_step_read_sweep_write()
+    # example_step_enable_write_sweep_write()

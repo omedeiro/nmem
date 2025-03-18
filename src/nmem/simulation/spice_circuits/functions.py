@@ -121,16 +121,16 @@ def get_bit_error_rate(
 
 
 def get_current_or_voltage(
-    l: ltspice.Ltspice, signal: str, case: int = 0
+    ltsp: ltspice.Ltspice, signal: str, case: int = 0
 ) -> np.ndarray:
-    signal_data = l.get_data(f"I({signal})", case=case)
+    signal_data = ltsp.get_data(f"I({signal})", case=case)
     if signal_data is None:
-        signal_data = l.get_data(f"V({signal})", case=case)
+        signal_data = ltsp.get_data(f"V({signal})", case=case)
     return signal_data * 1e6
 
 
-def process_read_data(l: ltspice.Ltspice) -> dict:
-    num_cases = l.case_count
+def process_read_data(ltsp: ltspice.Ltspice) -> dict:
+    num_cases = ltsp.case_count
 
     read_current = np.zeros(num_cases)
     enable_read_current = np.zeros(num_cases)
@@ -154,17 +154,17 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
     }
     data_dict = {}
     for i in range(num_cases):
-        time = l.get_time(i)
+        time = ltsp.get_time(i)
 
-        enable_current = l.get_data("I(R1)", i) * 1e6
-        channel_current = l.get_data("I(R2)", i) * 1e6
-        right_branch_current = l.get_data("Ix(HR:drain)", i) * 1e6
-        left_branch_current = l.get_data("Ix(HL:drain)", i) * 1e6
-        left_critical_current = get_current_or_voltage(l, "ichl", i)
-        right_critical_current = get_current_or_voltage(l, "ichr", i)
-        left_retrapping_current = get_current_or_voltage(l, "irhl", i)
-        right_retrapping_current = get_current_or_voltage(l, "irhr", i)
-        output_voltage = l.get_data("V(out)", i)
+        enable_current = ltsp.get_data("I(R1)", i) * 1e6
+        channel_current = ltsp.get_data("I(R2)", i) * 1e6
+        right_branch_current = ltsp.get_data("Ix(HR:drain)", i) * 1e6
+        left_branch_current = ltsp.get_data("Ix(HL:drain)", i) * 1e6
+        left_critical_current = get_current_or_voltage(ltsp, "ichl", i)
+        right_critical_current = get_current_or_voltage(ltsp, "ichr", i)
+        left_retrapping_current = get_current_or_voltage(ltsp, "irhl", i)
+        right_retrapping_current = get_current_or_voltage(ltsp, "irhr", i)
+        output_voltage = ltsp.get_data("V(out)", i)
 
         masks = {
             key: (time > start) & (time < end)
@@ -204,7 +204,7 @@ def process_read_data(l: ltspice.Ltspice) -> dict:
             "write_one_voltage": write_one_voltage,
             "write_zero_voltage": write_zero_voltage,
             "persistent_current": persistent_current,
-            "case_count": l.case_count,
+            "case_count": ltsp.case_count,
             "read_margin": read_margin,
             "bit_error_rate": bit_error_rate,
         }
@@ -239,7 +239,7 @@ def import_csv_dir(file_path: str) -> dict:
     data_dict = {}
     for file in files:
         enable_read_current = float(file[-9:-6])
-        data = np.genfromtxt(file_path + file, delimiter=",")
+        data = np.genfromtxt(os.path.join(file_path, file), delimiter=",")
         data_dict[enable_read_current] = data
 
     return data_dict
@@ -251,16 +251,12 @@ def import_raw_dir(file_path: str) -> dict:
     files.sort()
     data_dict = {}
     for file in files:
-
-        l = ltspice.Ltspice(os.path.join(file_path, file))
-        l.parse()
-        data_dict[file] = l
-
+        data_dict[file] = ltspice.Ltspice(os.path.join(file_path, file)).parse()
     return data_dict
 
 
-def save_enable_data_file(l: ltspice.Ltspice):
-    read_outputs = process_read_data(l)
+def save_enable_data_file(ltsp: ltspice.Ltspice):
+    read_outputs = process_read_data(ltsp)
     write_current = read_outputs["write_current"]
     if len(write_current) > 1:
         write_current = write_current[0]

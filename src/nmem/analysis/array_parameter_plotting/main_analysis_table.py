@@ -1,14 +1,13 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 
-
-from nmem.measurement.cells import CELLS
 from nmem.analysis.analysis import (
-    calculate_critical_current_zero,
-    calculate_channel_temperature,
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
+    calculate_channel_temperature,
+    calculate_critical_current_zero,
 )
-import pandas as pd
+from nmem.measurement.cells import CELLS
 
 ALPHA_FIT = 0.88
 BETA_FIT = 1.25

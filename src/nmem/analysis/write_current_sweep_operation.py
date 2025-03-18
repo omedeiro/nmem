@@ -2,21 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.analysis import (
+    CRITICAL_TEMP,
+    RBCOLORS,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
+    get_channel_temperature,
+    get_channel_temperature_sweep,
+    get_critical_current_heater_off,
     get_enable_write_current,
+    get_read_current,
     get_read_currents,
     get_write_current,
     import_directory,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
-    get_read_current,
-    get_channel_temperature_sweep,
-    get_channel_temperature,
-    get_critical_current_heater_off,
-    CRITICAL_TEMP,
-    RBCOLORS,
 )
 
 if __name__ == "__main__":

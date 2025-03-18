@@ -1,13 +1,12 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.io as sio
 from scipy.optimize import least_squares
+
 from nmem.analysis.analysis import (
-    calculate_state_currents,
-    get_critical_current_intercept,
-    import_directory,
     CRITICAL_TEMP,
-    CMAP,
+    calculate_state_currents,
+    import_directory,
     plot_calculated_filled_region,
 )
 

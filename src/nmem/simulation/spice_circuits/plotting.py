@@ -134,37 +134,23 @@ def plot_current_sweep_ber(
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.1))
     return ax
-def plot_persistent_current(
+
+def plot_current_sweep_persistent(
     ax: plt.Axes,
     data_dict: dict,
-    cases=[0],
+    **kwargs,
 ) -> plt.Axes:
-    for i in cases:
-        data = data_dict[i]
-        sweep_param = get_step_parameter(data)
-        ax.plot(
-            data[sweep_param],
-            data["persistent_current"],
-            "-o",
-            label="Persistent Current",
-        )
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Current (uA)")
-    ax.legend()
-    return ax
+    if len(data_dict) > 1:
+        data_dict = data_dict[0]
+    sweep_param = get_step_parameter(data_dict)
+    sweep_current = data_dict[sweep_param]
+    persistent_current = data_dict["persistent_current"]
 
-
-def plot_enable_write_current_output(
-    ax: plt.Axes,
-    data_dict: dict,
-) -> plt.Axes:
-    enable_write_current = data_dict["enable_write_current"]
-    read_output = data_dict["read_output"]
-    ax.plot(enable_write_current, read_output[:, 0] * 1e3, "-o", label="Read 0")
-    ax.plot(enable_write_current, read_output[:, 1] * 1e3, "-o", label="Read 1")
-    ax.legend()
-    ax.set_ylabel("Output Voltage (mV)")
-    ax.set_xlabel("Enable Write Current (uA)")
+    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    kwargs.pop("label", None)
+    ax.plot(sweep_current, persistent_current, "-o", label=f"{base_label}", **kwargs)
+    ax.set_ylabel("Persistent Current (uA)")
+    ax.set_xlabel(f"{sweep_param} (uA)")
     return ax
 
 
@@ -197,6 +183,3 @@ if __name__ == "__main__":
     plot_current_transient(ax, data_dict, cases=[CASE], side="right")
     plot_branch_fill(ax, data_dict, cases=[CASE], side="right")
 
-    fig, ax = plt.subplots()
-    plot_persistent_current(ax, data_dict, cases=[CASE])
-    plt.show()
