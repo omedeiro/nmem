@@ -31,38 +31,34 @@ def plot_tran_data(
     return ax
 
 
-def plot_current_transient(
-    ax: plt.Axes, data_dict: dict, cases=[0], side: Literal["left", "right"] = "left"
+def plot_transient(
+    ax: plt.Axes,
+    data_dict: dict,
+    cases=[0],
+    signal_name: str = "tran_left_critical_current",
+    **kwargs,
 ) -> plt.Axes:
     for i in cases:
         data = data_dict[i]
         time = data["time"]
-        if side == "left":
-            left_critical_current = data["tran_left_critical_current"]
-            left_branch_current = data["tran_left_branch_current"]
-            ax.plot(
-                time, left_critical_current, label="Left Critical Current", color="grey"
-            )
-            ax.plot(
-                time, left_branch_current, label="Left Branch Current", color="blue"
-            )
-        if side == "right":
-            right_critical_current = data["tran_right_critical_current"]
-            right_branch_current = data["tran_right_branch_current"]
-            ax.plot(
-                time,
-                right_critical_current,
-                label="Right Critical Current",
-                color="grey",
-            )
-            ax.plot(
-                time, right_branch_current, label="Right Branch Current", color="blue"
-            )
+        signal = data[signal_name]
+        ax.plot(time, signal, label=f"{signal_name}", **kwargs)
     ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Current (uA)")
+    ax.set_ylabel(f"{signal_name}")
     ax.legend()
     return ax
 
+def plot_transient_fill(
+    ax: plt.Axes, data_dict: dict, cases=[0], s1: str = "tran_left_critical_current", s2: str = "tran_left_branch_current"
+) -> plt.Axes:
+    for i in cases:
+        data = data_dict[i]
+        time = data["time"]
+        signal1 = data[s1]
+        signal2 = data[s2]
+        ax.fill_between(time, signal2, signal1, color=CMAP(0.5), alpha=0.5, label="Left Branch")
+    return ax
+    
 
 def plot_branch_fill(
     ax: plt.Axes, data_dict: dict, cases=[0], side: Literal["left", "right"] = "left"
@@ -107,13 +103,26 @@ def plot_current_sweep_output(
     read_zero_voltage = data_dict["read_zero_voltage"]
     read_one_voltage = data_dict["read_one_voltage"]
 
-    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    base_label = f" {kwargs['label']}" if "label" in kwargs else ""
     kwargs.pop("label", None)
-    ax.plot(sweep_current, read_zero_voltage * 1e3, "-o", label=f"{base_label} Read 0", **kwargs)
-    ax.plot(sweep_current, read_one_voltage * 1e3, "--o", label=f"{base_label} Read 1", **kwargs)
+    ax.plot(
+        sweep_current,
+        read_zero_voltage * 1e3,
+        "-o",
+        label=f"{base_label} Read 0",
+        **kwargs,
+    )
+    ax.plot(
+        sweep_current,
+        read_one_voltage * 1e3,
+        "--o",
+        label=f"{base_label} Read 1",
+        **kwargs,
+    )
     ax.set_ylabel("Output Voltage (mV)")
     ax.set_xlabel(f"{sweep_param} (uA)")
     return ax
+
 
 def plot_current_sweep_ber(
     ax: plt.Axes,
@@ -126,14 +135,15 @@ def plot_current_sweep_ber(
     sweep_current = data_dict[sweep_param]
     ber = data_dict["bit_error_rate"]
 
-    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    base_label = f" {kwargs['label']}" if "label" in kwargs else ""
     kwargs.pop("label", None)
-    ax.plot(sweep_current, ber , "-o", label=f"{base_label}", **kwargs)
+    ax.plot(sweep_current, ber, "-o", label=f"{base_label}", **kwargs)
     ax.set_ylabel("BER")
     ax.set_xlabel(f"{sweep_param} (uA)")
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.1))
     return ax
+
 
 def plot_current_sweep_persistent(
     ax: plt.Axes,
@@ -146,7 +156,7 @@ def plot_current_sweep_persistent(
     sweep_current = data_dict[sweep_param]
     persistent_current = data_dict["persistent_current"]
 
-    base_label = f" {kwargs['label']}" if 'label' in kwargs else ""
+    base_label = f" {kwargs['label']}" if "label" in kwargs else ""
     kwargs.pop("label", None)
     ax.plot(sweep_current, persistent_current, "-o", label=f"{base_label}", **kwargs)
     ax.set_ylabel("Persistent Current (uA)")
@@ -168,18 +178,28 @@ def plot_retrapping_ratio(ax: plt.axes, data_dict: dict, cases: list = [0]) -> p
 
 if __name__ == "__main__":
 
-    l = ltspice.Ltspice("nmem_cell_read.raw")
-    l.parse()
-    data_dict = process_read_data(l)
+    ltsp = ltspice.Ltspice("nmem_cell_read.raw")
+    ltsp.parse()
+    data_dict = process_read_data(ltsp)
     fig, ax = plt.subplots()
     plot_current_sweep_output(ax, data_dict)
     plt.show()
 
     CASE = 4
     fig, ax = plt.subplots()
-    plot_current_transient(ax, data_dict, cases=[CASE])
+    plot_transient(
+        ax, data_dict, cases=[CASE], signal_name="tran_left_critical_current"
+    )
+    plot_transient(
+        ax,
+        data_dict,
+        cases=[CASE],
+        signal_name="tran_left_branch_current",
+        color="grey",
+    )
     plot_branch_fill(ax, data_dict, cases=[CASE])
     fig, ax = plt.subplots()
-    plot_current_transient(ax, data_dict, cases=[CASE], side="right")
+    plot_transient(
+        ax, data_dict, cases=[CASE], signal_name="tran_right_critical_current"
+    )
     plot_branch_fill(ax, data_dict, cases=[CASE], side="right")
-
