@@ -128,6 +128,15 @@ def get_current_or_voltage(
         signal_data = ltsp.get_data(f"V({signal})", case=case)
     return signal_data * 1e6
 
+def safe_max(arr: np.ndarray, mask: np.ndarray) -> float:
+    if np.any(mask):
+        return np.max(arr[mask])
+    return 0
+
+def safe_min(arr: np.ndarray, mask: np.ndarray) -> float:
+    if np.any(mask):
+        return np.min(arr[mask])
+    return 0
 
 def process_read_data(ltsp: ltspice.Ltspice) -> dict:
     num_cases = ltsp.case_count
@@ -165,22 +174,21 @@ def process_read_data(ltsp: ltspice.Ltspice) -> dict:
         left_retrapping_current = get_current_or_voltage(ltsp, "irhl", i)
         right_retrapping_current = get_current_or_voltage(ltsp, "irhr", i)
         output_voltage = ltsp.get_data("V(out)", i)
-
         masks = {
             key: (time > start) & (time < end)
             for key, (start, end) in time_windows.items()
         }
 
-        arr = right_branch_current[masks["persistent_current"]]
-        persistent_current[i] = np.max(arr) if arr.size > 0 else 0
-        write_current[i] = np.max(channel_current[masks["write_one"]])
-        read_current[i] = np.max(channel_current[masks["read_one"]])
-        enable_read_current[i] = np.max(enable_current[masks["read_one"]])
-        enable_write_current[i] = np.max(enable_current[masks["enable_write"]])
-        write_one_voltage[i] = np.max(output_voltage[masks["write_one"]])
-        write_zero_voltage[i] = np.min(output_voltage[masks["write_zero"]])
-        read_zero_voltage[i] = np.max(output_voltage[masks["read_zero"]])
-        read_one_voltage[i] = np.max(output_voltage[masks["read_one"]])
+        persistent_current[i] = safe_max(right_branch_current, masks["persistent_current"])
+        write_current[i] = safe_max(channel_current, masks["write_one"])
+        read_current[i] = safe_max(channel_current, masks["read_one"])
+        enable_read_current[i] = safe_max(enable_current, masks["read_one"])
+        enable_write_current[i] = safe_max(enable_current, masks["enable_write"])
+        write_one_voltage[i] = safe_max(output_voltage, masks["write_one"])
+        write_zero_voltage[i] = safe_min(output_voltage, masks["write_zero"])
+        read_zero_voltage[i] = safe_max(output_voltage, masks["read_zero"])
+        read_one_voltage[i] = safe_max(output_voltage, masks["read_one"])
+        read_margin[i] = read_zero_voltage[i] - read_one_voltage[i]
         bit_error_rate[i] = get_bit_error_rate(
             read_zero_voltage[i], read_one_voltage[i]
         )
@@ -280,8 +288,8 @@ def save_enable_data_file(ltsp: ltspice.Ltspice):
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-    data_dict = import_raw_dir("spice_simulation_raw/read_current_sweep_2/")
-    print(data_dict)
-
-    case_dict = process_read_data(data_dict["nmem_cell_read_100uA.raw"])
+    fig, ax = plt.subplots()
+    ltsp = ltspice.Ltspice("spice_simulation_raw/nmem_cell_write_200uA.raw").parse()
+    data_dict = process_read_data(ltsp)
