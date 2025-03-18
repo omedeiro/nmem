@@ -16,21 +16,6 @@ VOUT_YMAX = 40
 VOLTAGE_THRESHOLD = 2.0e-3
 
 
-def plot_tran_data(
-    ax: plt.Axes,
-    ltspice_data: ltspice.Ltspice,
-    signal_name: str,
-    case: int = 0,
-    scale: float = 1e6,
-    **kwargs,
-) -> plt.Axes:
-    time = ltspice_data.get_time(case=case)
-    signal = ltspice_data.get_data(signal_name, case=case)
-    signal_out = signal * scale if signal is not None else np.zeros_like(time)
-    ax.plot(time, signal_out, label=signal_name, **kwargs)
-    return ax
-
-
 def plot_transient(
     ax: plt.Axes,
     data_dict: dict,
@@ -60,7 +45,7 @@ def plot_transient_fill(
     return ax
     
 
-def plot_branch_fill(
+def plot_transient_fill_branch(
     ax: plt.Axes, data_dict: dict, cases=[0], side: Literal["left", "right"] = "left"
 ) -> plt.Axes:
     for i in cases:
@@ -197,9 +182,9 @@ if __name__ == "__main__":
         signal_name="tran_left_branch_current",
         color="grey",
     )
-    plot_branch_fill(ax, data_dict, cases=[CASE])
+    plot_transient_fill_branch(ax, data_dict, cases=[CASE])
     fig, ax = plt.subplots()
     plot_transient(
         ax, data_dict, cases=[CASE], signal_name="tran_right_critical_current"
     )
-    plot_branch_fill(ax, data_dict, cases=[CASE], side="right")
+    plot_transient_fill_branch(ax, data_dict, cases=[CASE], side="right")
