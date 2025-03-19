@@ -398,6 +398,7 @@ def example_transient_write_sweep3() -> None:
 def example_step_read_current() -> None:
     ltsp = ltspice.Ltspice("spice_simulation_raw/step_read_current/nmem_cell_read_IER_250uA.raw").parse()
     data_dict = process_read_data(ltsp)
+    save_gif = False
 
     frame_path = os.path.join(
         os.getcwd(), "spice_simulation_raw", "step_read_current", "frames"
@@ -456,13 +457,15 @@ def example_step_read_current() -> None:
             f"enable read current {enable_read_current}uA",
             transform=ax.transAxes,
         )
-        frame_filename = f"{frame_path}/frame_{case}.png"
-        plt.savefig(frame_filename)
-        frame_filenames.append(frame_filename)
-        plt.close(fig)
+        if save_gif:
+            frame_filename = f"{frame_path}/frame_{case}.png"
+            plt.savefig(frame_filename)
+            frame_filenames.append(frame_filename)
+            plt.close(fig)
+        else:
+            plt.show()
 
     # Create GIF
-    save_gif = False
     if save_gif:
         gif_filename = frame_path + "/step_read_current.gif"
         with imageio.get_writer(gif_filename, mode="I", duration=2, loop=0) as writer:
@@ -478,5 +481,5 @@ if __name__ == "__main__":
     # example_step_read_sweep_write()
     # example_step_enable_write_sweep_write()
     # example_transient_branch_currents()
-    example_transient_write_sweep3()
-    # example_step_read_current()
+    # example_transient_write_sweep3()
+    example_step_read_current()
