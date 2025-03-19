@@ -33,6 +33,8 @@ prop = fm.FontProperties(fname=font_path)
 plt.rcParams.update(
     {
         "figure.figsize": [3.5, 3.5],
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "font.size": 7,
         "axes.linewidth": 0.5,
         "xtick.major.width": 0.5,
