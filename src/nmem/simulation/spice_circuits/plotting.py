@@ -28,6 +28,8 @@ VOLTAGE_THRESHOLD = 2.0e-3
 plt.rcParams.update(
     {
         "figure.figsize": [3.5, 3.5],
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
         "font.size": 7,
         "axes.linewidth": 0.5,
         "xtick.major.width": 0.5,
@@ -163,6 +165,7 @@ def plot_current_sweep_output(
     )
     ax.set_ylabel("Output Voltage (mV)")
     ax.set_xlabel(f"{sweep_param} (uA)")
+    ax.legend()
     return ax
 
 
@@ -183,7 +186,27 @@ def plot_current_sweep_ber(
     ax.set_ylabel("BER")
     ax.set_xlabel(f"{sweep_param} (uA)")
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(plt.MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
+    return ax
+
+def plot_current_sweep_switching(
+    ax: plt.Axes,
+    data_dict: dict,
+    **kwargs,
+) -> plt.Axes:
+    if len(data_dict) > 1:
+        data_dict = data_dict[0]
+    sweep_param = get_step_parameter(data_dict)
+    sweep_current = data_dict[sweep_param]
+    switching_probability = data_dict["switching_probability"]
+
+    base_label = f" {kwargs['label']}" if "label" in kwargs else ""
+    kwargs.pop("label", None)
+    ax.plot(sweep_current, switching_probability, "-o", label=f"{base_label}", **kwargs)
+    ax.set_ylabel("switching_probability")
+    ax.set_xlabel(f"{sweep_param} (uA)")
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     return ax
 
 
@@ -332,4 +355,89 @@ def plot_panes() -> None:
 
 
 if __name__ == "__main__":
-    plot_panes()
+    ltsp = ltspice.Ltspice(
+        "nmem_cell_write.raw",
+    ).parse()
+    data_dict = process_read_data(ltsp)
+    save_gif = False
+    if save_gif:
+        frame_path = os.path.join(
+            os.getcwd(), "spice_simulation_raw", "write_current_sweep", "frames2"
+        )
+        os.makedirs(frame_path, exist_ok=True)
+        frame_filenames = []
+
+    print(ltsp.case_count)
+    colors = plt.cm.viridis(np.linspace(0, 1, ltsp.case_count))
+    time_windows = {
+        0: (100e-9, 150e-9),
+        1: (200e-9, 250e-9),
+        2: (300e-9, 350e-9),
+        3: (400e-9, 450e-9),
+    }
+    for case in range(0, ltsp.case_count, 1):
+        fig, axs = plt.subplots(2, 4, figsize=(6, 3))
+        for i, time_window in time_windows.items():
+            sweep_param = data_dict[case]["read_current"]
+            sweep_param = sweep_param[case]
+            ax: plt.Axes = axs[0, i]
+            plot_case(ax, data_dict, case, "left")
+            plot_case(ax, data_dict, case, "right")
+
+            ax.set_ylim(-150, 900)
+            ax.set_xlim(time_window)
+            ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+            ax.xaxis.set_major_locator(plt.MultipleLocator(10e-9))
+            ax.yaxis.set_major_locator(plt.MultipleLocator(500))
+            ax.yaxis.set_minor_locator(plt.MultipleLocator(100))
+            ax.set_xticklabels([])
+            if i != 0:
+                ax.set_yticklabels([])
+            else:
+                ax.set_ylabel("I ($\mu$A)")
+
+            # ax.text(0.1, 0.8, f"read current {sweep_param}uA", transform=ax.transAxes)
+            ax: plt.Axes = axs[1, i]
+            plot_case_vout(
+                ax, data_dict, case, "tran_output_voltage", color=colors[case]
+            )
+            ax.set_ylim(-40e-3, 40e-3)
+            ax.set_xlim(time_window)
+            ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+            ax.yaxis.set_major_locator(plt.MultipleLocator(10e-3))
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e3:.0f}"))
+            if i != 0:
+                ax.set_yticklabels([])
+            else:
+                ax.set_xlabel("Time (ns)")
+                ax.set_ylabel("V (mV)")
+            ax.xaxis.set_major_locator(plt.MultipleLocator(50e-9))
+            ax.xaxis.set_minor_locator(plt.MultipleLocator(10e-9))
+            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e9:.0f}"))
+        
+        if save_gif:
+            frame_filename = f"{frame_path}/frame_{case}.png"
+            plt.savefig(frame_filename)
+            frame_filenames.append(frame_filename)
+            plt.close(fig)
+        else:
+            plt.show()
+
+    # Create GIF
+    if save_gif:
+        gif_filename = frame_path + "/write_current_sweep.gif"
+        with imageio.get_writer(gif_filename, mode="I", duration=0.2, loop=0) as writer:
+            for filename in frame_filenames:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+
+        print(f"GIF saved as {gif_filename}")
+    fig.subplots_adjust(hspace=0.2, wspace=0.2)
+    plt.show()
+
+    fig, ax = plt.subplots(4, 1, figsize=(6, 3))
+    plot_current_sweep_output(ax[0], data_dict)
+    plot_current_sweep_ber(ax[1], data_dict)
+    plot_current_sweep_persistent(ax[2], data_dict)
+    plot_current_sweep_switching(ax[3], data_dict)
+    plt.show()
