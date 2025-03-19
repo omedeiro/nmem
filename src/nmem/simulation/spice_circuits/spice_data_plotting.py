@@ -27,7 +27,7 @@ def example_transient_operation() -> None:
         None: This function displays a plot but does not return any values.
 
     File:
-        The function uses data from "spice_simulation_raw/nmem_cell_write_read_clear.raw"
+        The function uses data from "spice_simulation_raw/single_transient_operation/nmem_cell_write_read_clear.raw"
         This file contains the following sequence of operations:
         1. Write pulse of 50uA
         2. Read operation
@@ -35,7 +35,7 @@ def example_transient_operation() -> None:
         4. Write pulse of -50uA
         5. Read operation
     """
-    file_path = "spice_simulation_raw/nmem_cell_write_read_clear.raw"
+    file_path = "spice_simulation_raw/single_transient_operation/nmem_cell_write_read_clear.raw"
     ltsp = ltspice.Ltspice(file_path)
     ltsp.parse()
     data_dict = process_read_data(ltsp)
@@ -239,6 +239,162 @@ def example_transient_write_sweep() -> None:
         print(f"GIF saved as {gif_filename}")
 
 
+def example_transient_write_sweep2() -> None:
+    ltsp = ltspice.Ltspice(
+        "spice_simulation_raw/write_current_sweep_2/write_sweep_0_300uA_1uA.raw"
+    ).parse()
+    data_dict = process_read_data(ltsp)
+    save_gif = False
+
+    frame_path = os.path.join(
+        os.getcwd(), "spice_simulation_raw", "write_current_sweep_2", "frames"
+    )
+    os.makedirs(frame_path, exist_ok=True)
+    frame_filenames = []
+
+    for case in range(0, ltsp.case_count, 20):
+        write_current = data_dict[case]["write_current"]
+        write_current = write_current[case]
+        fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+        ax: plt.Axes = axs[0]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_left_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_left_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_left_critical_current",
+            s2="tran_left_branch_current",
+        )
+        ax.set_ylim(-100, 300)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax: plt.Axes = axs[1]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_right_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_right_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_right_critical_current",
+            s2="tran_right_branch_current",
+        )
+        ax.set_ylim(-100, 900)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax.text(0.1, 0.8, f"write current {write_current}uA", transform=ax.transAxes)
+        
+        if save_gif:
+            frame_filename = f"{frame_path}/frame_{case}.png"
+            plt.savefig(frame_filename)
+            frame_filenames.append(frame_filename)
+            plt.close(fig)
+        else:
+            plt.show()
+
+    # Create GIF
+    if save_gif:
+        gif_filename = frame_path + "/write_current_sweep_3.gif"
+        with imageio.get_writer(gif_filename, mode="I", duration=0.2, loop=0) as writer:
+            for filename in frame_filenames:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+
+        print(f"GIF saved as {gif_filename}")
+
+def example_transient_write_sweep3() -> None:
+    ltsp = ltspice.Ltspice(
+        "spice_simulation_raw/write_current_sweep_3/nmem_cell_write_step_5uA.raw"
+    ).parse()
+    data_dict = process_read_data(ltsp)
+    save_gif = True
+
+    frame_path = os.path.join(
+        os.getcwd(), "spice_simulation_raw", "write_current_sweep_3", "frames"
+    )
+    os.makedirs(frame_path, exist_ok=True)
+    frame_filenames = []
+
+    for case in range(0, ltsp.case_count, 10):
+        write_current = data_dict[case]["write_current"]
+        write_current = write_current[case]
+        fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+        ax: plt.Axes = axs[0]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_left_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_left_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_left_critical_current",
+            s2="tran_left_branch_current",
+        )
+        ax.set_ylim(-100, 300)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax: plt.Axes = axs[1]
+        plot_transient(
+            ax, data_dict, cases=[case], signal_name="tran_right_critical_current"
+        )
+        plot_transient(
+            ax,
+            data_dict,
+            cases=[case],
+            signal_name="tran_right_branch_current",
+            color="grey",
+        )
+        plot_transient_fill(
+            ax,
+            data_dict,
+            cases=[case],
+            s1="tran_right_critical_current",
+            s2="tran_right_branch_current",
+        )
+        ax.set_ylim(-100, 900)
+        ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+        ax.text(0.1, 0.8, f"write current {write_current}uA", transform=ax.transAxes)
+        
+        if save_gif:
+            frame_filename = f"{frame_path}/frame_{case}.png"
+            plt.savefig(frame_filename)
+            frame_filenames.append(frame_filename)
+            plt.close(fig)
+        else:
+            plt.show()
+
+    # Create GIF
+    if save_gif:
+        gif_filename = frame_path + "/write_current_sweep_3.gif"
+        with imageio.get_writer(gif_filename, mode="I", duration=0.2, loop=0) as writer:
+            for filename in frame_filenames:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+
+        print(f"GIF saved as {gif_filename}")
+
+
+
 def example_step_read_current() -> None:
     ltsp = ltspice.Ltspice("spice_simulation_raw/step_read_current/nmem_cell_read_IER_250uA.raw").parse()
     data_dict = process_read_data(ltsp)
@@ -322,5 +478,5 @@ if __name__ == "__main__":
     # example_step_read_sweep_write()
     # example_step_enable_write_sweep_write()
     # example_transient_branch_currents()
-    # example_transient_write_sweep()
-    example_step_read_current()
+    example_transient_write_sweep3()
+    # example_step_read_current()
