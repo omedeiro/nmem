@@ -172,7 +172,7 @@ def example_transient_write_sweep() -> None:
         "spice_simulation_raw/write_current_sweep/nmem_cell_write_200uA.raw"
     ).parse()
     data_dict = process_read_data(ltsp)
-
+    save_gif = False
     frame_path = os.path.join(
         os.getcwd(), "spice_simulation_raw", "write_current_sweep", "frames"
     )
@@ -222,13 +222,16 @@ def example_transient_write_sweep() -> None:
         )
         ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
         ax.text(0.1, 0.8, f"write current {write_current}uA", transform=ax.transAxes)
-        frame_filename = f"{frame_path}/frame_{case}.png"
-        plt.savefig(frame_filename)
-        frame_filenames.append(frame_filename)
-        plt.close(fig)
+
+        if save_gif:
+            frame_filename = f"{frame_path}/frame_{case}.png"
+            plt.savefig(frame_filename)
+            frame_filenames.append(frame_filename)
+            plt.close(fig)
+        else:
+            plt.show()
 
     # Create GIF
-    save_gif = True
     if save_gif:
         gif_filename = frame_path + "/write_current_sweep.gif"
         with imageio.get_writer(gif_filename, mode="I", duration=0.2, loop=0) as writer:
@@ -481,5 +484,5 @@ if __name__ == "__main__":
     # example_step_read_sweep_write()
     # example_step_enable_write_sweep_write()
     # example_transient_branch_currents()
-    # example_transient_write_sweep3()
-    example_step_read_current()
+    example_transient_write_sweep()
+    # example_step_read_current()
