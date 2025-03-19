@@ -119,6 +119,24 @@ def get_bit_error_rate(
     )
     return ber
 
+def get_switching_probability(
+    read_zero_voltage: float,
+    read_one_voltage: float,
+    voltage_threshold: float = VOLTAGE_THRESHOLD,
+) -> float:
+    switching_probability = np.where(
+        (read_one_voltage > voltage_threshold)
+        & (read_zero_voltage > voltage_threshold),
+        1,
+        0.5,
+    )
+    switching_probability = np.where(
+        (read_one_voltage < voltage_threshold)
+        & (read_zero_voltage < voltage_threshold),
+        0,
+        switching_probability,
+    )
+    return switching_probability
 
 def get_current_or_voltage(
     ltsp: ltspice.Ltspice, signal: str, case: int = 0
@@ -152,13 +170,14 @@ def process_read_data(ltsp: ltspice.Ltspice) -> dict:
     read_one_voltage = np.zeros(num_cases)
     read_margin = np.zeros(num_cases)
     bit_error_rate = np.zeros(num_cases)
+    switching_probability = np.zeros(num_cases)
 
     time_windows = {
         "persistent_current": (1.5e-7, 2e-7),
         "write_one": (1e-7, 1.5e-7),
         "write_zero": (5e-7, 5.5e-7),
         "read_one": (2e-7, 2.5e-7),
-        "read_zero": (6e-7, 6.8e-7),
+        "read_zero": (4e-7, 4.5e-7),
         "enable_write": (1e-7, 1.5e-7),
     }
     data_dict = {}
@@ -192,6 +211,9 @@ def process_read_data(ltsp: ltspice.Ltspice) -> dict:
         bit_error_rate[i] = get_bit_error_rate(
             read_zero_voltage[i], read_one_voltage[i]
         )
+        switching_probability[i] = get_switching_probability(
+            read_zero_voltage[i], read_one_voltage[i]
+        )
         data_dict[i] = {
             "time": time,
             "tran_enable_current": enable_current,
@@ -215,6 +237,7 @@ def process_read_data(ltsp: ltspice.Ltspice) -> dict:
             "case_count": ltsp.case_count,
             "read_margin": read_margin,
             "bit_error_rate": bit_error_rate,
+            "switching_probability": switching_probability,
         }
     return data_dict
 
