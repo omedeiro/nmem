@@ -41,8 +41,15 @@ plt.rcParams.update(
         "lines.linewidth": 1.2,
         "legend.fontsize": 5,
         "legend.frameon": False,
-        "xtick.major.size": 2,
-        "ytick.major.size": 2,
+        "axes.linewidth": 0.5,  # Thin axis lines
+        "xtick.major.size": 3,
+        "ytick.major.size": 3,
+        "xtick.major.width": 0.5,
+        "ytick.major.width": 0.5,
+        "xtick.minor.size": 2,
+        "ytick.minor.size": 2,
+        "xtick.minor.width": 0.4,
+        "ytick.minor.width": 0.4,
     }
 )
 
@@ -185,9 +192,10 @@ def plot_current_sweep_ber(
     ax.plot(sweep_current, ber, "-o", label=f"{base_label}", **kwargs)
     ax.set_ylabel("BER")
     ax.set_xlabel(f"{sweep_param} (uA)")
-    ax.set_ylim(0, 1)
+    ax.set_ylim(-0.1, 1.1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     return ax
+
 
 def plot_current_sweep_switching(
     ax: plt.Axes,
@@ -205,7 +213,7 @@ def plot_current_sweep_switching(
     ax.plot(sweep_current, switching_probability, "-o", label=f"{base_label}", **kwargs)
     ax.set_ylabel("switching_probability")
     ax.set_xlabel(f"{sweep_param} (uA)")
-    ax.set_ylim(0, 1)
+    ax.set_ylim(-0.1, 1.1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     return ax
 
@@ -375,7 +383,7 @@ if __name__ == "__main__":
         2: (300e-9, 350e-9),
         3: (400e-9, 450e-9),
     }
-    for case in range(0, ltsp.case_count, 1):
+    for case in range(0, ltsp.case_count, 5):
         fig, axs = plt.subplots(2, 4, figsize=(6, 3))
         for i, time_window in time_windows.items():
             sweep_param = data_dict[case]["read_current"]
@@ -414,7 +422,7 @@ if __name__ == "__main__":
             ax.xaxis.set_major_locator(plt.MultipleLocator(50e-9))
             ax.xaxis.set_minor_locator(plt.MultipleLocator(10e-9))
             ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e9:.0f}"))
-        
+
         if save_gif:
             frame_filename = f"{frame_path}/frame_{case}.png"
             plt.savefig(frame_filename)
