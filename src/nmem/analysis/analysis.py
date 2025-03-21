@@ -29,10 +29,12 @@ if os.name == "posix":
     font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
-
+golden_ratio = (1 + 5**0.5) / 2  # ≈1.618  
+width = 3.5  # Example width in inches (single-column for Nature)  
+height = width / golden_ratio  
 plt.rcParams.update(
     {
-        "figure.figsize": [3.5, 3.5],
+        "figure.figsize": [width, height],
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
         "font.size": 7,
@@ -42,7 +44,7 @@ plt.rcParams.update(
         "xtick.direction": "out",
         "ytick.direction": "out",
         "font.family": "Inter",
-        "lines.markersize": 2,
+        "lines.markersize": 4,
         "lines.linewidth": 1.2,
         "legend.fontsize": 5,
         "legend.frameon": False,
@@ -1236,28 +1238,29 @@ def plot_read_sweep(
         value,
         label=label,
         marker=".",
-        markeredgecolor="k",
         **kwargs,
     )
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.yaxis.set_major_locator(MultipleLocator(0.1))
     return ax
 
 
 def plot_read_sweep_switch_probability(
     ax: Axes,
     data_dict: dict,
+    **kwargs,
 ) -> Axes:
     read_currents = get_read_currents(data_dict)
     _, _, total_switch_probability = build_array(data_dict, "total_switches_norm")
     ax.plot(
         read_currents,
         total_switch_probability,
-        color="grey",
-        linestyle="--",
-        linewidth=0.5,
-        zorder=-1,
+        marker=".",
+        markeredgecolor="none",
+        **kwargs,
     )
+    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.set_ylim(0, 1)
     return ax
 
 
@@ -1278,9 +1281,10 @@ def plot_read_sweep_array(
 
 
 def plot_read_switch_probability_array(ax: Axes, dict_list: list[dict]) -> Axes:
-    for data_dict in dict_list:
-        plot_read_sweep_switch_probability(ax, data_dict)
-    return ax
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    for i, data_dict in enumerate(dict_list):
+        plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
+    return ax   
 
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
