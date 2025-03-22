@@ -1280,10 +1280,14 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_switch_probability_array(ax: Axes, dict_list: list[dict]) -> Axes:
+def plot_read_switch_probability_array(ax: Axes, dict_list: list[dict], write_list=None) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    
     for i, data_dict in enumerate(dict_list):
-        plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
+        if write_list is not None:
+            plot_read_sweep_switch_probability(ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A")
+        else:
+            plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
     return ax   
 
 
