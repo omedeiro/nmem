@@ -180,10 +180,11 @@ B_sqrt_approx N_sqrt_approx 0 V = (V(N_sqrt_arg) + delta) / 2
 B_c_hotspot N_hotspot_resistance 0 V = sdt(
 +   V(N_enable) * ( (2 * sheet_resistance * vo / chan_width) * 
 +   (psi * V(N_norm_current)**2 - 2) /
-+   (max(V(N_sqrt_arg), 0) + {delta}) ),
++   max(1n, V(N_sqrt_arg) + {delta}) ),
 +   0, 
 +   V(N_c_state) < 0.5
 + )
+
 
 **************************************************
 ** TRANSIENT BEHAVIOR: HEAT TRANSFER SUB-CIRCUIT **
@@ -197,7 +198,8 @@ R1 heat N001 1
 C1 heat 0 {tau_thermal}
   * {tau_thermal} makes sure the activation delay is {tau_on} at the bias point [ICh_bias_on, Ih_bias_on]
   * V(heat) is the "filtered" output node of the subcircuit
-
+R_stab N001 0 1G
+  * Stability resistor
 
 **************************************************
 ** STATIC BEHAVIOR: PARAMETERS AND FITTING **
@@ -211,7 +213,7 @@ C1 heat 0 {tau_thermal}
 + Jc_0K * chan_width * chan_thickness * (1 - (T / critical_temp)**3) ** 2.1
 
 .funct Iretrap(T)
-+ sqrt(hc*(chan_width**2)*chan_thickness*critical_temp/rho)*sqrt(1-(T/critical_temp))
++ sqrt(max(1n, hc*(chan_width**2)*chan_thickness*critical_temp/rho)) * sqrt(max(1n, 1 - (T / critical_temp)))
 **************************************************
 ** BEHAVIORAL SOURCES **
 **************************************************
@@ -227,7 +229,7 @@ B2 Meas_Isw 0
 
 * Replace 1 by 0.99 in B3 to improve stability in large circuits
 B3 Meas_Ihs 0 
-+ V = min(Iretrap(V(Meas_TCh)) , 0.99 * V(Meas_Isw))
++ V = min(Iretrap(V(Meas_TCh))*2, 0.99 * V(Meas_Isw))
   * Retrapping current
 
 
