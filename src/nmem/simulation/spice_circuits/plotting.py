@@ -17,6 +17,7 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    filter_first,
 )
 
 CMAP = plt.get_cmap("coolwarm")
@@ -44,7 +45,7 @@ plt.rcParams.update(
         "ytick.direction": "out",
         "font.family": "Inter",
         "lines.markersize": 2,
-        "lines.linewidth": 1.2,
+        "lines.linewidth": 1.5,
         "legend.fontsize": 5,
         "legend.frameon": False,
         "axes.linewidth": 0.5,  # Thin axis lines
@@ -248,17 +249,6 @@ def plot_current_sweep_persistent(
     return ax
 
 
-def plot_retrapping_ratio(ax: plt.axes, data_dict: dict, cases: list = [0]) -> plt.Axes:
-    for i in cases:
-        data = data_dict[i]
-        time = data["time"]
-        left_branch_critical_current = data["tran_left_critical_current"]
-        right_branch_critical_current = data["tran_right_critical_current"]
-        left_retrapping_current = data["tran_left_retrapping_current"]
-        right_retrapping_current = data["tran_right_retrapping_current"]
-        retrapping_ratio = left_retrapping_current / left_branch_critical_current
-        ax.plot(time, retrapping_ratio, label="Retrapping Ratio")
-
 
 def plot_case(ax, data_dict, case, signal_name="left", color=None):
     if color is None:
@@ -293,25 +283,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         label="Right Branch Current",
     )
     pos = ax.get_position()
-    ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.6])
-
-
-def plot_case2(ax, data_dict, case, signal_name="left", color=None):
-    plot_transient(
-        ax,
-        data_dict,
-        cases=[case],
-        signal_name=f"tran_left_branch_current",
-        color=color,
-    )
-    plot_transient(
-        ax,
-        data_dict,
-        cases=[case],
-        signal_name=f"tran_right_branch_current",
-        color=color,
-    )
-    ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
+    # ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.6])
 
 
 def plot_case_vout(ax, data_dict, case, signal_name, **kwargs):
@@ -320,66 +292,7 @@ def plot_case_vout(ax, data_dict, case, signal_name, **kwargs):
     )
     ax.yaxis.set_major_locator(plt.MultipleLocator(50e-3))
     pos = ax.get_position()
-    ax.set_position([pos.x0, pos.y0, pos.width, pos.height / 1.6])
-
-
-def plot_panes() -> None:
-    ltsp = ltspice.Ltspice(
-        "spice_simulation_raw/step_read_current/nmem_cell_read.raw",
-    ).parse()
-    # colors = plt.cm.viridis(np.linspace(0, 1, 10))
-    data_dict = process_read_data(ltsp)
-    print(ltsp.case_count)
-    colors = plt.cm.viridis(np.linspace(0, 1, ltsp.case_count))
-    fig, axs = plt.subplots(2, 4, figsize=(6, 3))
-    time_windows = {
-        0: (100e-9, 150e-9),
-        1: (200e-9, 250e-9),
-        2: (300e-9, 350e-9),
-        3: (400e-9, 450e-9),
-    }
-    for case in range(ltsp.case_count):
-        for i, time_window in time_windows.items():
-            init_case = 0
-            sweep_param = data_dict[case]["read_current"]
-            sweep_param = sweep_param[case]
-            ax: plt.Axes = axs[0, i]
-            plot_case(ax, data_dict, init_case, "left")
-            plot_case(ax, data_dict, init_case, "right")
-
-            ax.set_ylim(-150, 900)
-            ax.set_xlim(time_window)
-            ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
-            ax.xaxis.set_major_locator(plt.MultipleLocator(10e-9))
-            ax.yaxis.set_major_locator(plt.MultipleLocator(500))
-            ax.yaxis.set_minor_locator(plt.MultipleLocator(100))
-            ax.set_xticklabels([])
-            if i != 0:
-                ax.set_yticklabels([])
-            else:
-                ax.set_ylabel("I ($\mu$A)")
-
-            # ax.text(0.1, 0.8, f"read current {sweep_param}uA", transform=ax.transAxes)
-            ax: plt.Axes = axs[1, i]
-            plot_case_vout(
-                ax, data_dict, case, "tran_output_voltage", color=COLORS[case]
-            )
-            ax.set_ylim(-1e-3, 50e-3)
-            ax.set_xlim(time_window)
-            ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
-            ax.yaxis.set_major_locator(plt.MultipleLocator(50e-3))
-            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e3:.0f}"))
-            if i != 0:
-                ax.set_yticklabels([])
-            else:
-                ax.set_xlabel("Time (ns)")
-                ax.set_ylabel("V (mV)")
-            ax.xaxis.set_major_locator(plt.MultipleLocator(50e-9))
-            ax.xaxis.set_minor_locator(plt.MultipleLocator(10e-9))
-            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e9:.0f}"))
-
-    fig.subplots_adjust(hspace=0.2, wspace=0.2)
-    plt.show()
+    ax.set_position([pos.x0, pos.y0+0.1, pos.width, pos.height / 1.6])
 
 
 def create_plot(
@@ -419,10 +332,9 @@ def create_plot(
             ax.set_xlim(time_window)
             ax.yaxis.set_major_locator(plt.MultipleLocator(500))
             ax.yaxis.set_minor_locator(plt.MultipleLocator(100))
-            if i != 0:
-                ax.set_yticklabels([])
-            else:
-                ax.set_ylabel("I ($\mu$A)")
+
+            ax.set_ylabel("I ($\mu$A)", labelpad=-4)
+            ax.set_xlabel("Time (ns)", labelpad=-3)
             ax.yaxis.set_major_locator(plt.MultipleLocator(250))
             ax.yaxis.set_minor_locator(plt.MultipleLocator(50))
             ax.xaxis.set_major_locator(plt.MultipleLocator(50e-9))
@@ -438,115 +350,13 @@ def create_plot(
             ax.axhline(0, color="black", linestyle="--", linewidth=0.5)
             ax.yaxis.set_major_locator(plt.MultipleLocator(50e-3))
             ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e3:.0f}"))
-            if i != 0:
-                ax.set_yticklabels([])
-            else:
-                ax.set_xlabel("Time (ns)", labelpad=-3)
-                ax.set_ylabel("V (mV)")
+            ax.set_xlabel("Time (ns)", labelpad=-3)
+            ax.set_ylabel("V (mV)", labelpad=-3)
             ax.xaxis.set_major_locator(plt.MultipleLocator(50e-9))
             ax.xaxis.set_minor_locator(plt.MultipleLocator(10e-9))
             ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e9:.0f}"))
 
+            # ax2 = ax.twinx()
+            # plot_transient(ax2, data_dict, cases=[case], signal_name="tran_right_branch_current", color="C0")
     return axs
 
-
-if __name__ == "__main__":
-
-    ltsp = ltspice.Ltspice(
-        "nmem_cell_read.raw",
-    ).parse()
-    ltsp_data_dict = process_read_data(ltsp)
-
-    inner = [
-        ["T0", "T1", "T2", "T3"],
-        ["B0", "B1", "B2", "B3"],
-    ]
-    inner2 = [
-        ["A", "C"],
-    ]
-    inner3 = [
-        ["B", "D"],
-    ]
-    outer_nested_mosaic = [
-        [inner],
-        [inner2],
-        [inner3],
-    ]
-    fig, axs = plt.subplot_mosaic(
-        outer_nested_mosaic, figsize=(183 / 25.4, 183 / 25.4), height_ratios=[1, 1, 1]
-    )
-
-    CASE = 8
-    create_plot(axs, ltsp_data_dict, cases=[CASE])
-    case_current = ltsp_data_dict[CASE]["read_current"][CASE]
-
-    handles, labels = axs["T0"].get_legend_handles_labels()
-    # Select specific items
-    selected_labels = [
-        "Left Branch Current",
-        "Right Branch Current",
-        "Left Critical Current",
-        "Right Critical Current",
-    ]
-    selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
-
-    # Place legend in separate panel
-    ax_legend = fig.add_axes([0, 0.5, 0.5, 0.53])
-    ax_legend.axis("off")
-    ax_legend.legend(
-        selected_handles,
-        selected_labels,
-        loc="center",
-        ncol=4,
-        bbox_to_anchor=(1.0, 1.05),
-        frameon=False,
-        handlelength=2.5,
-        fontsize=7,
-    )
-
-
-
-    dict_list = import_directory(
-        "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_write_current2/write_current_sweep_C3"
-    )
-    write_current_list = []
-    for data_dict in dict_list:
-        write_current = data_dict["write_current"].flatten()[0]
-        write_current_list.append(write_current)
-
-    sorted_args = np.argsort(write_current_list)
-    dict_list = [dict_list[i] for i in sorted_args]
-
-    plot_read_sweep_array(
-        axs["A"],
-        dict_list,
-        "bit_error_rate",
-        "write_current",
-    )
-    axs["A"].set_xlim(650, 850)
-    axs["A"].set_ylabel("BER")
-
-    plot_read_switch_probability_array(axs["B"], dict_list)
-    axs["B"].set_xlim(650, 850)
-    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-1)
-    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-1)
-
-    axs["B"].set_ylabel("Switching Probability")
-
-
-
-    colors = CMAP(np.linspace(0, 1, len(data_dict)))
-    ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
-    plot_current_sweep_ber(
-        axs["C"], ltsp_data_dict, color=CMAP(ltsp_write_current / 300)
-    )
-    plot_current_sweep_switching(
-        axs["D"], ltsp_data_dict, color=CMAP(ltsp_write_current / 300)
-    )
-    # fig.subplots_adjust(constrain
-    axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["C"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    plt.show()
