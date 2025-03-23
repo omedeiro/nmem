@@ -35,10 +35,10 @@ if __name__ == "__main__":
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
 
-    data = ltspice.Ltspice(
+    ltsp_data = ltspice.Ltspice(
         "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_sim/nmem_cell_read_example_trace.raw"
     ).parse()
-    ltsp_data_dict = process_read_data(data)
+    ltsp_data_dict = process_read_data(ltsp_data)
 
     inner = [
         ["T0", "T1", "T2", "T3"],
@@ -59,7 +59,9 @@ if __name__ == "__main__":
         [inner3],
     ]
     fig, axs = plt.subplot_mosaic(
-        outer_nested_mosaic, figsize=(180/25.4, 180/25.4), height_ratios=[2, 0.5, 1, 1]
+        outer_nested_mosaic,
+        figsize=(180 / 25.4, 180 / 25.4),
+        height_ratios=[2, 0.5, 1, 1],
     )
 
     CASE = 16
@@ -82,7 +84,6 @@ if __name__ == "__main__":
     ]
     selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
 
-
     dict_list = import_directory(
         "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_write_current2/write_current_sweep_C3"
     )
@@ -101,11 +102,16 @@ if __name__ == "__main__":
         dict_list,
         "bit_error_rate",
         "write_current",
+        marker=".",
+        linestyle="-",
+        markersize=4,
     )
     axs["A"].set_xlim(650, 850)
     axs["A"].set_ylabel("BER")
     axs["A"].set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-1)
-    plot_read_switch_probability_array(axs["B"], dict_list, write_current_list)
+    plot_read_switch_probability_array(
+        axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
+    )
     axs["B"].set_xlim(650, 850)
     # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
     axs["B"].set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-1)
@@ -121,10 +127,11 @@ if __name__ == "__main__":
     # fig, ax = plt.subplots(4, 1, figsize=(6, 3))
 
     # plot_current_sweep_output(ax[0], data_dict)
-    colors = CMAP(np.linspace(0, 1, len(data_dict)))
-
-    for i in [0, 3, 10]:
-        file = files[i]
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    col_set = [colors[i] for i in [0, 2, -1]]
+    print(len(data_dict))
+    files = [files[i] for i in [0, 2, 11]]
+    for i, file in enumerate(files):
         data = ltspice.Ltspice(
             f"/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_sim/{file}"
         ).parse()
@@ -133,15 +140,20 @@ if __name__ == "__main__":
         plot_current_sweep_ber(
             axs["C"],
             ltsp_data_dict,
-            color=CMAP(ltsp_write_current / 300),
+            color=col_set[i],
             label=f"{ltsp_write_current} $\mu$A",
+            marker=".",
+            linestyle="-",
+            markersize=5,
         )
 
         plot_current_sweep_switching(
             axs["D"],
             ltsp_data_dict,
-            color=CMAP(ltsp_write_current / 300),
+            color=col_set[i],
             label=f"{ltsp_write_current} $\mu$A",
+            marker=".",
+            markersize=5,
         )
 
     axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
@@ -151,7 +163,7 @@ if __name__ == "__main__":
 
     # axs["A"].legend(loc="upper left", bbox_to_anchor=(1.0, 1.05))
     axs["B"].legend(
-        loc="upper right", 
+        loc="upper right",
         labelspacing=0.1,
         fontsize=6,
     )
@@ -164,9 +176,8 @@ if __name__ == "__main__":
         fontsize=6,
     )
 
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.patch.set_alpha(0)
-
 
     ax_legend = fig.add_axes([0.5, 0.89, 0.1, 0.01])
     ax_legend.axis("off")
