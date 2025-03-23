@@ -139,8 +139,8 @@ CELLS = {
         "x_intercept": 531.08,
         "resistance": 518.1,
         "resistance_cryo": 253.3,
-        "min_bit_error_rate": 1.00e-05,
         "max_critical_current": 910e-6,
+        "min_bit_error_rate": 1.00e-05,
     },
     "C4": {
         "write_current": 200e-6,
