@@ -643,6 +643,7 @@ def get_state_currents_array(dict_list: list[dict]) -> np.ndarray:
 def import_directory(file_path: str) -> list[dict]:
     dict_list = []
     files = get_file_names(file_path)
+    files = sorted(files)
     for file in files:
         data = sio.loadmat(os.path.join(file_path, file))
         dict_list.append(data)
@@ -1179,7 +1180,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     cbar.set_label("Write Current [$\mu$A]")
 
     write_temps = get_channel_temperature_sweep(data_dict)
-
+    print(write_currents)
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
@@ -1261,11 +1262,10 @@ def plot_read_sweep(
         read_currents,
         value,
         label=label,
-        marker=".",
         **kwargs,
     )
     ax.set_ylim(0, 1)
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
 
@@ -1279,11 +1279,9 @@ def plot_read_sweep_switch_probability(
     ax.plot(
         read_currents,
         total_switch_probability,
-        marker=".",
-        markeredgecolor="none",
         **kwargs,
     )
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.set_ylim(0, 1)
     return ax
 
@@ -1296,23 +1294,23 @@ def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
 
 
 def plot_read_sweep_array(
-    ax: Axes, dict_list: list[dict], value_name: str, variable_name: str
+    ax: Axes, dict_list: list[dict], value_name: str, variable_name: str, **kwargs
 ) -> Axes:
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
-        plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i])
+        plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i], **kwargs)
     return ax
 
 
 def plot_read_switch_probability_array(
-    ax: Axes, dict_list: list[dict], write_list=None
+    ax: Axes, dict_list: list[dict], write_list=None, **kwargs
 ) -> Axes:
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    print(f"len dict_list: {len(dict_list)}")
     for i, data_dict in enumerate(dict_list):
         if write_list is not None:
             plot_read_sweep_switch_probability(
-                ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A"
+                ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A", **kwargs
             )
         else:
             plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
