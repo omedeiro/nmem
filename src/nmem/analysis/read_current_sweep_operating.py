@@ -31,27 +31,25 @@ def calculate_inductance_ratio(state0, state1, ic0):
 
 
 if __name__ == "__main__":
-    fig, axs = plt.subplot_mosaic("AA;CD", figsize=(8.3, 4))
+    fig, axs = plt.subplot_mosaic("AB", figsize=(8.3, 4))
 
     dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_write_current2\write_current_sweep_C3"
+        "read_current_sweep_write_current2/write_current_sweep_C3"
     )
-    ax = plot_read_sweep_array(
+    plot_read_sweep_array(
         axs["A"],
         dict_list,
         "bit_error_rate",
         "write_current",
     )
-    plot_read_switch_probability_array(ax, dict_list)
-    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
-    ax.set_ylabel("BER")
-    ax.set_xlim(500, 850)
-    ax2 = ax.twinx()
-    ax2.set_ylim([0, 1])
-    ax2.set_ylabel("Switching Probability")
-    ax2.yaxis.set_major_locator(MultipleLocator(0.5))
+    axs["A"].set_xlim(650, 850)
 
+    plot_read_switch_probability_array(axs["B"], dict_list)
+    axs["B"].set_xlim(650, 850)
+    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
+    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]", labelpad=-3)
+    axs["A"].set_ylabel("BER")
+    
     ax = axs["C"]
     for data_dict in dict_list:
         state_current_markers = get_state_current_markers(data_dict, "read_current")

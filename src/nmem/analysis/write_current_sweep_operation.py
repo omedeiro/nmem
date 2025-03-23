@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 from nmem.analysis.analysis import (
     CRITICAL_TEMP,
     RBCOLORS,
@@ -104,7 +104,6 @@ if __name__ == "__main__":
                             "write_temp": get_channel_temperature(data_dict, "write"),
                             "read_current": read_current,
                             "enable_write_current": enable_write_current,
-
                         }
                     )
                 if i == 2:
@@ -118,8 +117,18 @@ if __name__ == "__main__":
                     )
 
     ax = axs["D"]
-    ax.plot([d["write_temp"] for d in data], [d["write_current"] for d in data], "o", color="blue")
-    ax.plot([d["write_temp"] for d in data2], [d["write_current"] for d in data2], "o", color="red")
+    ax.plot(
+        [d["write_temp"] for d in data],
+        [d["write_current"] for d in data],
+        "o",
+        color="blue",
+    )
+    ax.plot(
+        [d["write_temp"] for d in data2],
+        [d["write_current"] for d in data2],
+        "o",
+        color="red",
+    )
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
     ax.set_ylim(0, 300)
