@@ -11,12 +11,14 @@ from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
+import matplotlib.cm as cm
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
+from matplotlib import colors as mcolors
+from cycler import cycler
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
@@ -29,9 +31,9 @@ if os.name == "posix":
     font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
 fm.fontManager.addfont(font_path)
 prop = fm.FontProperties(fname=font_path)
-golden_ratio = (1 + 5**0.5) / 2  # ≈1.618  
-width = 3.5  # Example width in inches (single-column for Nature)  
-height = width / golden_ratio  
+golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
+width = 3.5  # Example width in inches (single-column for Nature)
+height = width / golden_ratio
 plt.rcParams.update(
     {
         "figure.figsize": [width, height],
@@ -52,9 +54,23 @@ plt.rcParams.update(
         "ytick.major.size": 2,
     }
 )
+COLORS = [
+    "#1b9e77",  # Teal green
+    "#d95f02",  # Burnt orange
+    "#7570b3",  # Muted blue-purple
+    "#e7298a",  # Reddish pink
+    "#66a61e",  # Olive green
+    "#e6ab02",  # Mustard yellow
+    "#a6761d",  # Brown
+    "#666666",  # Dark gray
+]
 
+plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
+C0 = "#1b9e77"
+C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
-
+CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
+CMAP3 = plt.get_cmap("viridis")
 
 def build_array(
     data_dict: dict, parameter_z: Literal["total_switches_norm"]
@@ -1150,16 +1166,23 @@ def plot_parameter_array(
 
 def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    write_currents = []
     for i, data_dict in enumerate(dict_list):
         plot_enable_sweep_single(ax, data_dict, color=colors[i])
+        write_currents.append(get_write_current(data_dict))
+    norm = mcolors.Normalize(
+        vmin=min(write_currents), vmax=max(write_currents)
+    )  # Normalize for colormap
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
+    cbar.set_label("Write Current [$\mu$A]")
 
-    ax2 = ax.twiny()
     write_temps = get_channel_temperature_sweep(data_dict)
-    ax2.set_xlim([write_temps[0], write_temps[-1]])
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    return ax, ax2
+    return ax
 
 
 def plot_enable_sweep_single(
@@ -1174,13 +1197,14 @@ def plot_enable_sweep_single(
         enable_currents,
         bit_error_rate,
         label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
-        linewidth=2,
+        marker=".",
         **kwargs,
     )
-
     ax.set_xlim(enable_currents[0], enable_currents[-1])
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.xaxis.set_major_locator(MultipleLocator(25))
+    ax.xaxis.set_minor_locator(MultipleLocator(5))
     return ax
 
 
@@ -1280,15 +1304,19 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_switch_probability_array(ax: Axes, dict_list: list[dict], write_list=None) -> Axes:
+def plot_read_switch_probability_array(
+    ax: Axes, dict_list: list[dict], write_list=None
+) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    
+
     for i, data_dict in enumerate(dict_list):
         if write_list is not None:
-            plot_read_sweep_switch_probability(ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A")
+            plot_read_sweep_switch_probability(
+                ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A"
+            )
         else:
             plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
-    return ax   
+    return ax
 
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
@@ -1311,22 +1339,32 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
 
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    # cmap = plt.get_cmap("viridis")
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    colors = CMAP3(np.linspace(0.1, 1, len(dict_list)))
+    write_temp_list = []
+    enable_write_current_list = []
     for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
         write_temp = get_channel_temperature(data_dict, "write")
         enable_write_current = get_enable_write_current(data_dict)
+        write_temp_list.append(write_temp)
+        enable_write_current_list.append(enable_write_current)
         ax.plot(
             y,
             ztotal,
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} $\mu$A",
             color=colors[dict_list.index(data_dict)],
+            marker=".",
         )
     ax.set_ylim([0, 1])
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-
+    norm = mcolors.Normalize(
+        vmin=min(enable_write_current_list), vmax=max(enable_write_current_list)
+    )
+    sm = plt.cm.ScalarMappable(cmap=CMAP3, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
+    cbar.set_label("Enable Write Current [$\mu$A]")
     return ax
 
 
