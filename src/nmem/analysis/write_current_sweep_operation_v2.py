@@ -32,16 +32,16 @@ RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
 
 
-def plot_enable_sweep(ax, dict_list):
+def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict]):
     # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
     ax = plot_enable_write_sweep_multiple(ax, dict_list[::2])
 
     ax.set_ylabel("BER")
-    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]", labelpad=-1)
+    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     return ax
 
 
-def plot_enable_sweep_markers(ax, dict_list):
+def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
     ax.set_ylim([8.3, 9.7])
 
@@ -71,12 +71,6 @@ def plot_enable_sweep_markers(ax, dict_list):
             markeredgewidth=0.5,
             color=RBCOLORS[i],
         )
-    ax2 = ax.twiny()
-    print(f"min write temp: {np.min(write_temp_array)}")
-    ax2.set_xlim(np.min(write_temp_array), np.max(write_temp_array))
-    ax2.xaxis.set_major_locator(plt.MultipleLocator(0.5))
-    ax2.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
-    ax2.set_xlabel("$T_{\mathrm{write}}$ [K]", labelpad=2)
     ax.set_ylim(0, 100)
     ax.set_xlim(250, 340)
     ax.yaxis.set_major_locator(plt.MultipleLocator(20))
@@ -101,7 +95,7 @@ def plot_enable_sweep_markers(ax, dict_list):
     )
 
 
-def plot_write_sweep_formatted(ax, dict_list):
+def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     plot_write_sweep(ax, dict_list)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("BER")
@@ -109,7 +103,7 @@ def plot_write_sweep_formatted(ax, dict_list):
     return ax
 
 
-def plot_write_sweep_formatted_markers(ax, data_dict):
+def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
     colors = CMAP2(np.linspace(0, 1, 4))
@@ -139,7 +133,7 @@ def plot_write_sweep_formatted_markers(ax, data_dict):
     return ax
 
 
-def plot_delay(ax, data_dict):
+def plot_delay(ax: plt.Axes, data_dict: dict):
     delay_list = data_dict.get("delay")
     bit_error_rate = data_dict.get("bit_error_rate")
 
@@ -162,7 +156,7 @@ def plot_delay(ax, data_dict):
     ax.set_aspect(1 / ax.get_data_ratio())
 
 
-def plot_ber_grid(ax):
+def plot_ber_grid(ax: plt.Axes):
     ARRAY_SIZE = (4, 4)
     param_dict = initialize_dict(ARRAY_SIZE)
     xloc_list = []
@@ -275,18 +269,18 @@ if __name__ == "__main__":
     innerb = [
         ["B", "D"],
     ]
-    inncerc = [
+    innerc = [
         ["delay", "bergrid"],
     ]
     outer_nested_mosaic = [
-        [inncerc],
         [inner],
         [innerb],
+        [innerc],
     ]
 
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
-        figsize=(180 / 25.4 / 1.6 * 1.6, 180 / 25.4),
+        figsize=(180 / 25.4, 180 / 25.4),
     )
 
     dict_list = import_directory(
@@ -313,6 +307,16 @@ if __name__ == "__main__":
     plot_delay(axs["delay"], delay_dict)
 
     plot_ber_grid(axs["bergrid"])
-
     fig.subplots_adjust(wspace=0.4, hspace=0.5)
+
+    axpos = axs["A"].get_position()
+    ax2pos = axs["B"].get_position()
+    axs["B"].set_position(
+        [ax2pos.x0, ax2pos.y0, axpos.width, axpos.height]
+    )
+    ax3pos = axs["C"].get_position()
+    ax4pos = axs["D"].get_position()
+    axs["D"].set_position(
+        [ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height]
+    )
     fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
