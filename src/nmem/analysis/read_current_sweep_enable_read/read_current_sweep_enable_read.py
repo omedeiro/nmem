@@ -48,10 +48,10 @@ def plot_enable_write_temp(ax: plt.Axes, enable_write_currents, write_temperatur
             enable_write_currents[idx],
             write_temperatures[idx],
             marker="o",
-            markersize=8,
+            markersize=6,
             markeredgecolor="black",
             markerfacecolor=colors[idx],
-            markeredgewidth=0.5,
+            markeredgewidth=0.2,
         )
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
@@ -85,10 +85,10 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
             enable_read_currents[i],
             read_temperatures[i],
             marker="o",
-            markersize=7,
+            markersize=5,
             markeredgecolor="black",
             markerfacecolor=colors[i],
-            markeredgewidth=0.5,
+            markeredgewidth=0.2,
         )
 
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
