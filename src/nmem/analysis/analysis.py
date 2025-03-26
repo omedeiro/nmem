@@ -1167,20 +1167,23 @@ def plot_parameter_array(
 
 def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    write_currents = []
+    write_current_list = []
+    for data_dict in dict_list:
+        write_current = get_write_current(data_dict)
+        write_current_list.append(write_current)
+
     for i, data_dict in enumerate(dict_list):
-        plot_enable_sweep_single(ax, data_dict, color=colors[i])
-        write_currents.append(get_write_current(data_dict))
+        write_current_norm = write_current_list[i] / max(write_current_list)
+        plot_enable_sweep_single(ax, data_dict, color=CMAP(write_current_norm))
+
     norm = mcolors.Normalize(
-        vmin=min(write_currents), vmax=max(write_currents)
+        vmin=min(write_current_list), vmax=max(write_current_list)
     )  # Normalize for colormap
     sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
     cbar.set_label("Write Current [$\mu$A]")
 
-    write_temps = get_channel_temperature_sweep(data_dict)
-    print(write_currents)
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
@@ -1198,7 +1201,6 @@ def plot_enable_sweep_single(
         enable_currents,
         bit_error_rate,
         label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
-        marker=".",
         **kwargs,
     )
     ax.set_xlim(enable_currents[0], enable_currents[-1])
@@ -1297,8 +1299,20 @@ def plot_read_sweep_array(
     ax: Axes, dict_list: list[dict], value_name: str, variable_name: str, **kwargs
 ) -> Axes:
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    variable_list = []
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i], **kwargs)
+        variable_list.append(data_dict[variable_name].flatten()[0]*1e6)
+
+    # norm = mcolors.Normalize(
+    #     vmin=min(variable_list), vmax=max(variable_list)
+    # )  # Normalize for colormap
+    # sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
+    # sm.set_array([])
+    # cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
+    # cbar.set_label("Write Current [$\mu$A]")
+    
+    
     return ax
 
 
