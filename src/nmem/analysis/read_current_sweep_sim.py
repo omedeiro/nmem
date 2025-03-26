@@ -129,7 +129,6 @@ if __name__ == "__main__":
     # plot_current_sweep_output(ax[0], data_dict)
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     col_set = [colors[i] for i in [0, 2, -1]]
-    print(len(data_dict))
     files = [files[i] for i in [0, 2, 11]]
     for i, file in enumerate(files):
         data = ltspice.Ltspice(
