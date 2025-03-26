@@ -32,9 +32,12 @@ RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
 
 
-def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict]):
+# range set 1 [::2]
+def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict], range=None):
+    if range is not None:
+        dict_list = dict_list[range]
     # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax = plot_enable_write_sweep_multiple(ax, dict_list[::2])
+    ax = plot_enable_write_sweep_multiple(ax, dict_list)
 
     ax.set_ylabel("BER")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
@@ -291,7 +294,7 @@ if __name__ == "__main__":
     )
 
     ax = axs["A"]
-    plot_enable_sweep(ax, sort_dict_list)
+    plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
 
     ax = axs["B"]
     plot_enable_sweep_markers(ax, sort_dict_list)
@@ -311,12 +314,8 @@ if __name__ == "__main__":
 
     axpos = axs["A"].get_position()
     ax2pos = axs["B"].get_position()
-    axs["B"].set_position(
-        [ax2pos.x0, ax2pos.y0, axpos.width, axpos.height]
-    )
+    axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
     ax3pos = axs["C"].get_position()
     ax4pos = axs["D"].get_position()
-    axs["D"].set_position(
-        [ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height]
-    )
+    axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
     fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
