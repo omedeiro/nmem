@@ -72,6 +72,7 @@ CMAP = plt.get_cmap("coolwarm")
 CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
 CMAP3 = plt.get_cmap("viridis")
 
+
 def build_array(
     data_dict: dict, parameter_z: Literal["total_switches_norm"]
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -1296,23 +1297,30 @@ def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
 
 
 def plot_read_sweep_array(
-    ax: Axes, dict_list: list[dict], value_name: str, variable_name: str, **kwargs
+    ax: Axes,
+    dict_list: list[dict],
+    value_name: str,
+    variable_name: str,
+    colorbar=None,
+    **kwargs,
 ) -> Axes:
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     variable_list = []
     for i, data_dict in enumerate(dict_list):
-        plot_read_sweep(ax, data_dict, value_name, variable_name, color=colors[i], **kwargs)
-        variable_list.append(data_dict[variable_name].flatten()[0]*1e6)
+        plot_read_sweep(
+            ax, data_dict, value_name, variable_name, color=colors[i], **kwargs
+        )
+        variable_list.append(data_dict[variable_name].flatten()[0] * 1e6)
 
-    # norm = mcolors.Normalize(
-    #     vmin=min(variable_list), vmax=max(variable_list)
-    # )  # Normalize for colormap
-    # sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-    # sm.set_array([])
-    # cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    # cbar.set_label("Write Current [$\mu$A]")
-    
-    
+    if colorbar is not None:
+        norm = mcolors.Normalize(
+            vmin=min(variable_list), vmax=max(variable_list)
+        )  # Normalize for colormap
+        sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
+        sm.set_array([])
+        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
+        cbar.set_label("Write Current [$\mu$A]")
+
     return ax
 
 
@@ -1324,7 +1332,11 @@ def plot_read_switch_probability_array(
     for i, data_dict in enumerate(dict_list):
         if write_list is not None:
             plot_read_sweep_switch_probability(
-                ax, data_dict, color=colors[i], label=f"{write_list[i]} $\mu$A", **kwargs
+                ax,
+                data_dict,
+                color=colors[i],
+                label=f"{write_list[i]} $\mu$A",
+                **kwargs,
             )
         else:
             plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
