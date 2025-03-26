@@ -13,11 +13,12 @@ def plot_write_current_sweep(
     # ax.legend(
     #     frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left", title="Write Current"
     # )
-    
+
     return ax
 
+
 def main():
-    fig, axs = plt.subplot_mosaic("A;B", figsize=(90/25.4, 150/25.4))
+    fig, axs = plt.subplot_mosaic("A;B", figsize=(90 / 25.4, 150 / 25.4))
     write_current_sweep = import_directory(
         "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_write_current2/write_current_sweep_C3",
     )
@@ -33,6 +34,7 @@ def main():
     plot_enable_sweep(axs["B"], sort_dict_list, range=slice(0, len(sort_dict_list)))
 
     plt.savefig("sup_full_param_sweeps.pdf", bbox_inches="tight")
+    plt.show()
 
 
 if __name__ == "__main__":
