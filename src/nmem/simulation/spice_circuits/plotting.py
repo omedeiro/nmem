@@ -203,7 +203,7 @@ def plot_current_sweep_ber(
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax.set_xlim(650, 850)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(25))
+    ax.xaxis.set_major_locator(plt.MultipleLocator(50))
     return ax
 
 
@@ -226,7 +226,7 @@ def plot_current_sweep_switching(
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.5))
     ax.set_xlim(650, 850)
-    ax.xaxis.set_major_locator(plt.MultipleLocator(25))
+    ax.xaxis.set_major_locator(plt.MultipleLocator(50))
     return ax
 
 
