@@ -139,24 +139,30 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
 def plot_delay(ax: plt.Axes, data_dict: dict):
     delay_list = data_dict.get("delay")
     bit_error_rate = data_dict.get("bit_error_rate")
-
+    N=200e3
     sort_index = np.argsort(delay_list)
     delay_list = np.array(delay_list)[sort_index]
     bit_error_rate = np.array(bit_error_rate)[sort_index]
-    ax.plot(delay_list, bit_error_rate, marker="o", color="black")
+    bit_error_rate = np.array(bit_error_rate).flatten()
+    ber_std = np.sqrt(bit_error_rate * (1 - bit_error_rate) / N)
+    ax.errorbar(
+        delay_list,
+        bit_error_rate,
+        yerr=ber_std,
+        fmt="-",
+        marker=".",
+        color="black",
+    )
     ax.set_ylabel("BER")
     ax.set_xlabel("Memory Retention Time (s)")
 
     ax.set_xscale("log")
     ax.set_xbound(lower=1e-6)
-    # ax.xaxis.set_label_position("top")
-    # ax.xaxis.set_ticks_position("top")
     ax.grid(True, which="both", linestyle="--")
 
     ax.set_yscale("log")
     ax.set_ylim([1e-4, 1e-3])
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
-    ax.set_aspect(1 / ax.get_data_ratio())
 
 
 def plot_ber_grid(ax: plt.Axes):
@@ -318,4 +324,9 @@ if __name__ == "__main__":
     ax3pos = axs["C"].get_position()
     ax4pos = axs["D"].get_position()
     axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
+    delay_pos = axs["delay"].get_position()
+    axs["delay"].set_position(
+        [delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height]
+    )
+    bergrid_pos = axs["bergrid"].get_position()
     fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
