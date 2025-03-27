@@ -130,6 +130,7 @@ if __name__ == "__main__":
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     col_set = [colors[i] for i in [0, 2, -1]]
     files = [files[i] for i in [0, 2, 11]]
+    max_write_current = 300
     for i, file in enumerate(files):
         data = ltspice.Ltspice(
             f"/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_sim/{file}"
@@ -139,7 +140,7 @@ if __name__ == "__main__":
         plot_current_sweep_ber(
             axs["C"],
             ltsp_data_dict,
-            color=col_set[i],
+            color=CMAP(ltsp_write_current / max_write_current),
             label=f"{ltsp_write_current} $\mu$A",
             marker=".",
             linestyle="-",
@@ -149,7 +150,7 @@ if __name__ == "__main__":
         plot_current_sweep_switching(
             axs["D"],
             ltsp_data_dict,
-            color=col_set[i],
+            color=CMAP(ltsp_write_current / max_write_current),
             label=f"{ltsp_write_current} $\mu$A",
             marker=".",
             markersize=5,
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
     fig.patch.set_alpha(0)
 
-    ax_legend = fig.add_axes([0.5, 0.89, 0.1, 0.01])
+    ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
     ax_legend.axis("off")
     ax_legend.legend(
         selected_handles,
