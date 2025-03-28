@@ -115,12 +115,16 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
         [d["write_temp"] for d in data],
         "d",
         color=colors[0],
+        markeredgecolor="black",
+        markeredgewidth=0.5,
     )
     ax.plot(
         [d["write_current"] for d in data2],
         [d["write_temp"] for d in data2],
         "o",
         color=colors[2],
+        markeredgecolor="black",
+        markeredgewidth=0.5,
     )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
@@ -131,6 +135,7 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
         fontsize=6,
         facecolor="white",
         frameon=True,
+
     )
     ax.grid()
     return ax
