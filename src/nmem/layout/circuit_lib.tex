@@ -1,0 +1,77 @@
+
+\makeatletter
+% used to process styles for to-path
+\def\TikzBipolePath#1#2{\pgf@circ@bipole@path{#1}{#2}}
+\makeatother
+\newlength{\ResUp} \newlength{\ResDown}
+\newlength{\ResLeft} \newlength{\ResRight}
+
+
+% Nanowire
+\ctikzset{bipoles/nanowire/height/.initial=.30}
+\ctikzset{bipoles/nanowire/width/.initial=.80}
+\pgfcircdeclarebipole{}
+{\ctikzvalof{bipoles/nanowire/height}}
+{nanowire}
+{\ctikzvalof{bipoles/nanowire/height}}
+{\ctikzvalof{bipoles/nanowire/width}}
+{
+    \pgfsetlinewidth{\pgfkeysvalueof{/tikz/circuitikz/bipoles/thickness}\pgfstartlinewidth}
+    \pgfextractx{\ResRight}{\northeast}
+    \pgfextractx{\ResLeft}{\southwest}
+    \pgfextracty{\ResDown}{\southwest}
+    \pgfpathmoveto{\pgfpoint{\ResLeft}{0}}
+    \pgfpathlineto{\pgfpoint{0.5\ResLeft}{0}}
+    \pgfpathlineto{\pgfpoint{1.1\ResLeft}{1.1\ResDown}}
+    \pgfpathlineto{\pgfpoint{1.1\ResRight}{1.1\ResDown}}
+    \pgfpathlineto{\pgfpoint{0.5\ResRight}{0}}
+    \pgfpathlineto{\pgfpoint{\ResRight}{0}}
+    \pgfusepath{draw} %draw nanowire
+}
+\def\nanowirepath#1{\TikzBipolePath{nanowire}{#1}}
+\tikzset{nanowire/.style = {\circuitikzbasekey, /tikz/to path=\nanowirepath, l=#1}}
+
+\ctikzsubcircuitdef{htron}{in 1, out 1, in 2, out 2, center}{%
+    % reference anchor is -center
+    coordinate (#1-center)
+    (#1-center) ++ (-1.2,0.5) coordinate (#1-in 1)
+    (#1-center) ++ (-1.2,-0.5) coordinate (#1-in 2)
+    (#1-center) ++ (1.2,0.5) coordinate (#1-out 1)
+    (#1-center) ++ (1.2,-0.5) coordinate (#1-out 2)
+    (#1-center) ++ (0,1) coordinate (#1-up)
+    (#1-in 1) to[nanowire, o-o] (#1-out 1)
+    (#1-in 2) to[R, o-o] (#1-out 2)
+}
+
+
+\ctikzsubcircuitdef{nmem}{in 1, out 1, in 2, out 2, center}{%
+    % reference anchor is -center
+    coordinate (#1-center)
+    %
+    (#1-center) ++ (0,1.5) coordinate (#1-in 1)
+    (#1-center) ++ (0,-1.5) coordinate (#1-out 1)
+    %
+    (#1-center) ++ (-2, 0) coordinate (#1-in 2)
+    (#1-center) ++ (2,0) coordinate (#1-out 2)
+    %
+    (#1-center) ++ (0,1) coordinate (#1-up)
+    (#1-center) ++ (0,-1) coordinate (#1-down)
+    (#1-center) ++ (-1, 0) coordinate (#1-left)
+    (#1-center) ++ (1, 0) coordinate (#1-right)
+    %
+    (#1-center) ++ (-0.5, -0.5) coordinate (#1-sw)
+    (#1-center) ++ (0.5, 0.5) coordinate (#1-ne)
+    (#1-in 1) to[short] (#1-up) --++ (-0.5, 0) coordinate (#1-nw)
+    (#1-nw) to[nanowire] ++ (0,-2) coordinate (#1-sw)
+    (#1-up) to[short, *-] ++ (0.5, 0) coordinate (#1-ne)
+    (#1-ne) to[nanowire, mirror] ++ (0,-2) coordinate (#1-se)
+    (#1-sw)-- (#1-se)
+    (#1-out 1) to[short, -*] (#1-down)
+    %
+    (#1-nw) ++ (-0.8, 0) to[R] ++ (0,-2) coordinate (r1out)
+    (#1-ne) ++ (0.8, 0) to[R] ++ (0,-2) coordinate (r2out)
+    (r1out) --++ (0, -.25) to[short] ++ (2.6,0)-- (r2out)
+    %
+    (#1-in 2) to[short, -*] ++ (0.2, 0) --++ (0, 1) --++ (0.5,0)
+    (#1-out 2) to[short, -*] ++ (-0.2, 0) --++ (0, 1) --++ (-0.5,0)
+}
