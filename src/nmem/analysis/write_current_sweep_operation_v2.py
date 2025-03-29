@@ -33,11 +33,20 @@ CMAP2 = plt.get_cmap("viridis")
 
 
 # range set 1 [::2]
-def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict], range=None, add_errorbar=False):
+def plot_enable_sweep(
+    ax: plt.Axes,
+    dict_list: list[dict],
+    range=None,
+    add_errorbar=False,
+    add_colorbar=False,
+):
+    N = len(dict_list)
     if range is not None:
         dict_list = dict_list[range]
     # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax = plot_enable_write_sweep_multiple(ax, dict_list, add_errorbar=add_errorbar)
+    ax = plot_enable_write_sweep_multiple(
+        ax, dict_list, add_errorbar=add_errorbar, N=N, add_colorbar=add_colorbar
+    )
 
     ax.set_ylabel("BER")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
@@ -135,7 +144,6 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
         fontsize=6,
         facecolor="white",
         frameon=True,
-
     )
     ax.grid()
     return ax
@@ -144,7 +152,7 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
 def plot_delay(ax: plt.Axes, data_dict: dict):
     delay_list = data_dict.get("delay")
     bit_error_rate = data_dict.get("bit_error_rate")
-    N=200e3
+    N = 200e3
     sort_index = np.argsort(delay_list)
     delay_list = np.array(delay_list)[sort_index]
     bit_error_rate = np.array(bit_error_rate)[sort_index]
@@ -328,8 +336,6 @@ if __name__ == "__main__":
     ax4pos = axs["D"].get_position()
     axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
     delay_pos = axs["delay"].get_position()
-    axs["delay"].set_position(
-        [delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height]
-    )
+    axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
     bergrid_pos = axs["bergrid"].get_position()
     fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")

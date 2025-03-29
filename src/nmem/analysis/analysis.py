@@ -1167,27 +1167,30 @@ def plot_parameter_array(
 
 
 def plot_enable_write_sweep_multiple(
-    ax: Axes, dict_list: list[dict], add_errorbar: bool = False
+    ax: Axes, dict_list: list[dict], add_errorbar: bool = False, N: int = None, add_colorbar: bool = True
 ) -> Axes:
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    if N is None:
+        N = len(dict_list)
+    colors = CMAP(np.linspace(0, 1, N))
     write_current_list = []
     for data_dict in dict_list:
         write_current = get_write_current(data_dict)
         write_current_list.append(write_current)
 
     for i, data_dict in enumerate(dict_list):
-        write_current_norm = write_current_list[i] / max(write_current_list)
+        write_current_norm = write_current_list[i] / 100
         plot_enable_sweep_single(
             ax, data_dict, color=CMAP(write_current_norm), add_errorbar=add_errorbar
         )
 
-    norm = mcolors.Normalize(
-        vmin=min(write_current_list), vmax=max(write_current_list)
-    )  # Normalize for colormap
-    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    cbar.set_label("Write Current [$\mu$A]")
+    if add_colorbar:
+        norm = mcolors.Normalize(
+            vmin=min(write_current_list), vmax=max(write_current_list)
+        )  # Normalize for colormap
+        sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
+        sm.set_array([])
+        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
+        cbar.set_label("Write Current [$\mu$A]")
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
