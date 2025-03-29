@@ -7,7 +7,7 @@ import os
 def plot_write_current_sweep(
     ax: plt.Axes, dict_list: list[dict[str, list[float]]]
 ) -> plt.Axes:
-    plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current")
+    plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current", add_errorbar=False)
     ax.set_xlabel("Read Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
     # ax.legend(
@@ -31,7 +31,7 @@ def main():
     sort_dict_list = sorted(
         dict_list, key=lambda x: x.get("write_current").flatten()[0]
     )
-    plot_enable_sweep(axs["B"], sort_dict_list, range=slice(0, len(sort_dict_list)))
+    plot_enable_sweep(axs["B"], sort_dict_list, range=slice(0, len(sort_dict_list)), add_errorbar=False)
 
     plt.savefig("sup_full_param_sweeps.pdf", bbox_inches="tight")
     plt.show()

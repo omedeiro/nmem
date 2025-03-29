@@ -1166,7 +1166,9 @@ def plot_parameter_array(
     return ax
 
 
-def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
+def plot_enable_write_sweep_multiple(
+    ax: Axes, dict_list: list[dict], add_errorbar: bool = False
+) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     write_current_list = []
     for data_dict in dict_list:
@@ -1175,7 +1177,9 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
 
     for i, data_dict in enumerate(dict_list):
         write_current_norm = write_current_list[i] / max(write_current_list)
-        plot_enable_sweep_single(ax, data_dict, color=CMAP(write_current_norm))
+        plot_enable_sweep_single(
+            ax, data_dict, color=CMAP(write_current_norm), add_errorbar=add_errorbar
+        )
 
     norm = mcolors.Normalize(
         vmin=min(write_current_list), vmax=max(write_current_list)
@@ -1193,6 +1197,7 @@ def plot_enable_write_sweep_multiple(ax: Axes, dict_list: list[dict]) -> Axes:
 def plot_enable_sweep_single(
     ax: Axes,
     data_dict: dict,
+    add_errorbar: bool = False,
     **kwargs,
 ) -> Axes:
     enable_currents = get_enable_current_sweep(data_dict)
@@ -1204,6 +1209,20 @@ def plot_enable_sweep_single(
         label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
         **kwargs,
     )
+    if add_errorbar:
+        # ax.errorbar(
+        #     enable_currents,
+        #     bit_error_rate,
+        #     yerr=np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+        #     **kwargs,
+        # )
+        ax.fill_between(
+            enable_currents, 
+            bit_error_rate - np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+            bit_error_rate + np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+            alpha=0.1,
+            color=kwargs.get("color"),
+        )
     ax.set_xlim(enable_currents[0], enable_currents[-1])
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
@@ -1269,11 +1288,18 @@ def plot_read_sweep(
         **kwargs,
     )
     if add_errorbar:
-        ax.errorbar(
+        # ax.errorbar(
+        #     read_currents,
+        #     value,
+        #     yerr=np.sqrt(value * (1 - value) / len(value)),
+        #     **kwargs,
+        # )
+        ax.fill_between(
             read_currents,
-            value,
-            yerr=np.sqrt(value * (1 - value) / len(value)),
-            **kwargs
+            value - np.sqrt(value * (1 - value) / len(value)),
+            value + np.sqrt(value * (1 - value) / len(value)),
+            alpha=0.1,
+            color=kwargs.get("color"),
         )
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
@@ -1310,13 +1336,20 @@ def plot_read_sweep_array(
     value_name: str,
     variable_name: str,
     colorbar=None,
+    add_errorbar=False,
     **kwargs,
 ) -> Axes:
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
     variable_list = []
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(
-            ax, data_dict, value_name, variable_name, color=colors[i], **kwargs
+            ax,
+            data_dict,
+            value_name,
+            variable_name,
+            color=colors[i],
+            add_errorbar=add_errorbar,
+            **kwargs,
         )
         variable_list.append(data_dict[variable_name].flatten()[0] * 1e6)
 

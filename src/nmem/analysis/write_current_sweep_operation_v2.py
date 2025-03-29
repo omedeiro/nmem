@@ -33,11 +33,11 @@ CMAP2 = plt.get_cmap("viridis")
 
 
 # range set 1 [::2]
-def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict], range=None):
+def plot_enable_sweep(ax: plt.Axes, dict_list: list[dict], range=None, add_errorbar=False):
     if range is not None:
         dict_list = dict_list[range]
     # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax = plot_enable_write_sweep_multiple(ax, dict_list)
+    ax = plot_enable_write_sweep_multiple(ax, dict_list, add_errorbar=add_errorbar)
 
     ax.set_ylabel("BER")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
@@ -181,8 +181,6 @@ def plot_ber_grid(ax: plt.Axes):
         xloc_list.append(xloc)
         yloc_list.append(yloc)
 
-    xloc_array = np.array(xloc_list)
-    yloc_array = np.array(yloc_list)
     plot_parameter_array(
         ax,
         xloc_list,
