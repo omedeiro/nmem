@@ -1224,6 +1224,7 @@ def plot_read_sweep(
         "enable_read_current",
         "enable_write_width",
     ],
+    add_errorbar: bool = False,
     **kwargs,
 ) -> Axes:
     write_temp = None
@@ -1267,6 +1268,13 @@ def plot_read_sweep(
         label=label,
         **kwargs,
     )
+    if add_errorbar:
+        ax.errorbar(
+            read_currents,
+            value,
+            yerr=np.sqrt(value * (1 - value) / len(value)),
+            **kwargs
+        )
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
