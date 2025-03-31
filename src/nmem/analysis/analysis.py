@@ -46,9 +46,9 @@ plt.rcParams.update(
         "xtick.direction": "out",
         "ytick.direction": "out",
         "font.family": "Inter",
-        "lines.markersize": 4,
+        "lines.markersize": 3,
         "lines.linewidth": 1.2,
-        "legend.fontsize": 5,
+        "legend.fontsize": 6,
         "legend.frameon": False,
         "xtick.major.size": 2,
         "ytick.major.size": 2,
@@ -70,7 +70,7 @@ C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
 CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
-CMAP3 = plt.get_cmap("viridis")
+CMAP3 = plt.get_cmap("plasma").reversed()
 
 
 def build_array(
@@ -1097,22 +1097,25 @@ def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes
     return ax
 
 
-def plot_linear_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray) -> Axes:
+def plot_linear_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text:bool=False) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
     x_intercept = -z[1] / z[0]
-    ax.scatter(xfit, yfit, color="#08519C")
+    # ax.scatter(xfit, yfit, color="#08519C")
     xplot = np.linspace(0, x_intercept, 10)
     ax.plot(xplot, p(xplot), "--", color="#740F15")
-    ax.text(
-        0.1,
-        0.1,
-        f"{p[1]:.3f}x + {p[0]:.3f}\n$x_{{int}}$ = {x_intercept:.2f}",
-        fontsize=12,
-        color="red",
-        backgroundcolor="white",
-        transform=ax.transAxes,
-    )
+    if add_text:
+        ax.text(
+            0.1,
+            0.1,
+            f"{p[1]:.3f}x + {p[0]:.3f}\n$x_{{int}}$ = {x_intercept:.2f}",
+            fontsize=12,
+            color="red",
+            backgroundcolor="white",
+            transform=ax.transAxes,
+        )
+    ax.set_xlim((0, 600))
+    ax.set_ylim((0, 2000))
 
     return ax
 
@@ -1167,7 +1170,11 @@ def plot_parameter_array(
 
 
 def plot_enable_write_sweep_multiple(
-    ax: Axes, dict_list: list[dict], add_errorbar: bool = False, N: int = None, add_colorbar: bool = True
+    ax: Axes,
+    dict_list: list[dict],
+    add_errorbar: bool = False,
+    N: int = None,
+    add_colorbar: bool = True,
 ) -> Axes:
     if N is None:
         N = len(dict_list)
@@ -1220,9 +1227,11 @@ def plot_enable_sweep_single(
         #     **kwargs,
         # )
         ax.fill_between(
-            enable_currents, 
-            bit_error_rate - np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
-            bit_error_rate + np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+            enable_currents,
+            bit_error_rate
+            - np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+            bit_error_rate
+            + np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
             alpha=0.1,
             color=kwargs.get("color"),
         )
@@ -1783,7 +1792,7 @@ def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
 
 
 def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
-    colors = CMAP(np.linspace(0.1, 1, 4))
+    colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
@@ -1794,7 +1803,13 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
         ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(x, y, ztotal)
         axs[row, column].plot(
-            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+            xfit,
+            yfit,
+            label=f"{cell}",
+            color=colors[column],
+            marker=markers[row],
+            markeredgecolor="k",
+            markeredgewidth=0.1,
         )
 
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
@@ -1804,17 +1819,17 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
             xfit,
             yfit,
         )
-        plot_optimal_enable_currents(axs[row, column], data_dict)
+        # plot_optimal_enable_currents(axs[row, column], data_dict)
         axs[row, column].legend(loc="upper right")
         axs[row, column].set_xlim(0, 600)
-        axs[row, column].set_ylim(0, 1000)
+        axs[row, column].set_ylim(0, 1500)
     axs[-1, 0].set_xlabel("Enable Current ($\mu$A)")
     axs[-1, 0].set_ylabel("Critical Current ($\mu$A)")
     return axs
 
 
 def plot_row(axs, dict_list):
-    colors = CMAP(np.linspace(0.1, 1, 4))
+    colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
@@ -1825,18 +1840,24 @@ def plot_row(axs, dict_list):
         xfit, yfit = get_fitting_points(x, y, ztotal)
 
         axs[column].plot(
-            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+            xfit,
+            yfit,
+            label=f"{cell}",
+            color=colors[column],
+            marker=markers[row],
+            markeredgecolor="k",
+            markeredgewidth=0.1,
         )
-        plot_optimal_enable_currents(axs[column], data_dict)
+        # plot_optimal_enable_currents(axs[column], data_dict)
 
-        axs[column].legend(loc="lower left")
-        axs[column].set_xlim(0, 500)
-        axs[column].set_ylim(0, 1000)
+        axs[column].legend(loc="upper right")
+        axs[column].set_xlim(0, 600)
+        axs[column].set_ylim(0, 1500)
     return axs
 
 
 def plot_column(axs, dict_list):
-    colors = CMAP(np.linspace(0.1, 1, 4))
+    colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
@@ -1847,12 +1868,18 @@ def plot_column(axs, dict_list):
         xfit, yfit = get_fitting_points(x, y, ztotal)
 
         axs[row].plot(
-            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
+            xfit,
+            yfit,
+            label=f"{cell}",
+            color=colors[column],
+            marker=markers[row],
+            markeredgecolor="k",
+            markeredgewidth=0.1,
         )
-        plot_optimal_enable_currents(axs[row], data_dict)
-        axs[row].legend(loc="lower left")
-        axs[row].set_xlim(0, 500)
-        axs[row].set_ylim(0, 1000)
+        # plot_optimal_enable_currents(axs[row], data_dict)
+        axs[row].legend(loc="upper right")
+        axs[row].set_xlim(0, 600)
+        axs[row].set_ylim(0, 1500)
     return axs
 
 
