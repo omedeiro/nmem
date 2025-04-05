@@ -1,43 +1,52 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-import numpy as np
-
+# Save waveform to file
 def save_pwl_file(filename, time, current):
     with open(filename, "w") as f:
         for t, i in zip(time, current):
             f.write(f"{t:.9e} {i:.9e}\n")
 
+# Flat-top Gaussian pulse generator
+def flat_top_gaussian(t_center, sigma, hold_width, amp, dt):
+    total_width = 8 * sigma + hold_width
+    t_start = t_center - total_width / 2
+    t_end = t_center + total_width / 2
 
+    t_rise = np.arange(t_start, t_center - hold_width / 2, dt)
+    t_hold = np.arange(t_center - hold_width / 2, t_center + hold_width / 2, dt)
+    t_fall = np.arange(t_center + hold_width / 2, t_end, dt)
+
+    i_rise = amp * np.exp(-0.5 * ((t_rise - (t_center - hold_width / 2)) / sigma) ** 2)
+    i_hold = np.full_like(t_hold, amp)
+    i_fall = amp * np.exp(-0.5 * ((t_fall - (t_center + hold_width / 2)) / sigma) ** 2)
+
+    # Avoid duplicate time steps at transitions
+    t = np.concatenate([t_rise, t_hold[1:], t_fall[1:]])
+    i = np.concatenate([i_rise, i_hold[1:], i_fall[1:]])
+    return t, i
+
+# Build waveform for a sequence of memory ops
 def generate_memory_protocol_sequence(
-    num_slots=50,
-    cycle_time=20e-9,
-    pulse_sigma=1e-9,
-    write_amplitude=100e-6,
-    read_amplitude=100e-6,
-    enab_amplitude=50e-6,
-    clear_amplitude=500e-6,
+    cycle_time=200e-9,
+    pulse_sigma=10e-9,
+    hold_width_write=20e-9,
+    hold_width_read=50e-9,
+    hold_width_clear=0,
+    write_amplitude=180e-6,
+    read_amplitude=700e-6,
+    enab_write_amplitude=440e-6,
+    enab_read_amplitude=330e-6,
+    clear_amplitude=700e-6,
     dt=0.1e-9,
-    read_fraction=0.3,
-    enab_fraction=0.5,
     seed=None,
 ):
     if seed is not None:
         np.random.seed(seed)
 
-    # # Select random op per slot
-    # ops = np.random.choice(["write_1", "write_0", "read", "idle"], size=num_slots)
-
-    # # Select random enab on/off pattern
-    # enab_on = np.random.rand(num_slots) < enab_fraction
-
-
     patterns = [
-        ["write_0", "read", "write_0", "read"],
-        ["write_0", "read", "write_1", "read"],
         ["write_1", "read", "write_0", "read"],
-        ["write_1", "read", "write_1", "read"], 
+        ["write_0", "read", "write_1", "read"],
     ]
 
     ops = []
@@ -47,77 +56,76 @@ def generate_memory_protocol_sequence(
             if op == "read":
                 ops.append("clear")
 
-    num_slots = len(ops)
-    enab_on = np.ones(num_slots, dtype=bool)  # Enable is ON for all ops
-
-
-    t_chan = []
-    i_chan = []
-    t_enab = []
-    i_enab = []
+    t_chan, i_chan = [], []
+    t_enab, i_enab = [], []
+    enab_on = np.ones(len(ops), dtype=bool)
 
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
-        # CHANNEL waveform (data)
+        # --- I_chan: data line ---
         if op == "write_1":
             amp = write_amplitude
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_write, amp, dt)
+            t_chan.extend(t_vec)
+            i_chan.extend(i_vec)
         elif op == "write_0":
             amp = -write_amplitude
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_write, amp, dt)
+            t_chan.extend(t_vec)
+            i_chan.extend(i_vec)
         elif op == "read":
             amp = read_amplitude
-        else:
-            amp = 0  # clear has no signal on I_chan
-
-        if amp != 0:
-            t_vec = np.arange(t_center - 4 * pulse_sigma, t_center + 4 * pulse_sigma, dt)
-            i_vec = amp * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma) ** 2)
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_read, amp, dt)
             t_chan.extend(t_vec)
             i_chan.extend(i_vec)
 
-        # ENABLE waveform (word-line select)
-        if op in ["write_1", "write_0", "read"]:
-            amp = enab_amplitude
+        # --- I_enab: word-line select ---
+        if op in ["write_1", "write_0"]:
+            amp = enab_write_amplitude
+            hold = hold_width_write
+        elif op == "read":
+            amp = enab_read_amplitude
+            hold = hold_width_read
         elif op == "clear":
             amp = clear_amplitude
+            hold = hold_width_clear
         else:
             amp = 0
 
-        if amp != 0:
-            t_vec = np.arange(t_center - 4 * pulse_sigma, t_center + 4 * pulse_sigma, dt)
-            i_vec = amp * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma) ** 2)
+        if amp > 0:
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold, amp, dt)
             t_enab.extend(t_vec)
             i_enab.extend(i_vec)
 
     return np.array(t_chan), np.array(i_chan), np.array(t_enab), np.array(i_enab), ops, enab_on
 
-
-
-# Generate waveforms
+# --- Main execution ---
 t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence(
-    num_slots=40,
-    cycle_time=100e-9,
+    cycle_time=200e-9,
     pulse_sigma=10e-9,
-    write_amplitude=100e-6,
-    read_amplitude=650e-6,
-    enab_amplitude=450e-6,
+    hold_width_write=20e-9,
+    hold_width_read=50e-9,
+    hold_width_clear=0,
+    write_amplitude=180e-6,
+    read_amplitude=700e-6,
+    enab_write_amplitude=440e-6,
+    enab_read_amplitude=330e-6,
     clear_amplitude=700e-6,
     dt=0.1e-9,
-    read_fraction=0.3,
-    enab_fraction=0.5,
     seed=42
 )
 
-# Save to files for LTspice
+# Save for LTspice
 save_pwl_file("/home/omedeiro/hTron-behavioral-model/chan.txt", t_chan, i_chan)
 save_pwl_file("/home/omedeiro/hTron-behavioral-model/enab.txt", t_enab, i_enab)
 
-# Print out operation schedule (first 10)
+# Summary print
 print("Slot | Operation | Wordline Active")
-for i in range(10):
+for i in range(min(10, len(ops))):
     print(f"{i:>4} | {ops[i]:>9} | {'ON' if enab_on[i] else 'OFF'}")
 
-# Optional: plot waveforms for visual confirmation
+# Plot
 plt.figure(figsize=(10, 4))
 plt.plot(t_chan * 1e9, i_chan * 1e6, label="I_chan (data)", color="tab:blue")
 plt.plot(t_enab * 1e9, i_enab * 1e6, label="I_enab (word-line)", color="tab:orange")
