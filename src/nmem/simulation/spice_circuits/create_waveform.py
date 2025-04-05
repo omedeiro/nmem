@@ -17,6 +17,7 @@ def generate_memory_protocol_sequence(
     write_amplitude=100e-6,
     read_amplitude=100e-6,
     enab_amplitude=50e-6,
+    clear_amplitude=500e-6,
     dt=0.1e-9,
     read_fraction=0.3,
     enab_fraction=0.5,
@@ -39,10 +40,12 @@ def generate_memory_protocol_sequence(
         ["write_1", "read", "write_1", "read"], 
     ]
 
-    # Interleave each write pair with a read
     ops = []
     for pair in patterns:
-        ops.extend(pair)
+        for op in pair:
+            ops.append(op)
+            if op == "read":
+                ops.append("clear")
 
     num_slots = len(ops)
     enab_on = np.ones(num_slots, dtype=bool)  # Enable is ON for all ops
@@ -56,7 +59,7 @@ def generate_memory_protocol_sequence(
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
-        # Determine channel waveform
+        # CHANNEL waveform (data)
         if op == "write_1":
             amp = write_amplitude
         elif op == "write_0":
@@ -64,18 +67,25 @@ def generate_memory_protocol_sequence(
         elif op == "read":
             amp = read_amplitude
         else:
-            amp = 0
+            amp = 0  # clear has no signal on I_chan
 
         if amp != 0:
-            t_vec = np.arange(t_center - 4*pulse_sigma, t_center + 4*pulse_sigma, dt)
-            i_vec = amp * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma)**2)
+            t_vec = np.arange(t_center - 4 * pulse_sigma, t_center + 4 * pulse_sigma, dt)
+            i_vec = amp * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma) ** 2)
             t_chan.extend(t_vec)
             i_chan.extend(i_vec)
 
-        # Determine enable line
-        if enab_on[i] and op in ["write_1", "write_0", "read"]:
-            t_vec = np.arange(t_center - 4*pulse_sigma, t_center + 4*pulse_sigma, dt)
-            i_vec = enab_amplitude * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma)**2)
+        # ENABLE waveform (word-line select)
+        if op in ["write_1", "write_0", "read"]:
+            amp = enab_amplitude
+        elif op == "clear":
+            amp = clear_amplitude
+        else:
+            amp = 0
+
+        if amp != 0:
+            t_vec = np.arange(t_center - 4 * pulse_sigma, t_center + 4 * pulse_sigma, dt)
+            i_vec = amp * np.exp(-0.5 * ((t_vec - t_center) / pulse_sigma) ** 2)
             t_enab.extend(t_vec)
             i_enab.extend(i_vec)
 
@@ -91,6 +101,7 @@ t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence
     write_amplitude=100e-6,
     read_amplitude=650e-6,
     enab_amplitude=450e-6,
+    clear_amplitude=700e-6,
     dt=0.1e-9,
     read_fraction=0.3,
     enab_fraction=0.5,
