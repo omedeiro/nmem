@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 # Save waveform to file
 def save_pwl_file(filename, time, current):
     with open(filename, "w") as f:
         for t, i in zip(time, current):
             f.write(f"{t:.9e} {i:.9e}\n")
+
 
 # Flat-top Gaussian pulse generator
 def flat_top_gaussian(t_center, sigma, hold_width, amp, dt):
@@ -26,6 +28,7 @@ def flat_top_gaussian(t_center, sigma, hold_width, amp, dt):
     i = np.concatenate([i_rise, i_hold[1:], i_fall[1:]])
     return t, i
 
+
 # Build waveform for a sequence of memory ops
 def generate_memory_protocol_sequence(
     cycle_time=200e-9,
@@ -38,6 +41,8 @@ def generate_memory_protocol_sequence(
     enab_write_amplitude=440e-6,
     enab_read_amplitude=330e-6,
     clear_amplitude=700e-6,
+    enab_fraction=0.5,
+    phase_offset=0,
     dt=0.1e-9,
     seed=None,
 ):
@@ -45,75 +50,93 @@ def generate_memory_protocol_sequence(
         np.random.seed(seed)
 
     patterns = [
-        ["write_1", "read", "write_0", "read"],
-        ["write_0", "read", "write_1", "read"],
+        ["write_1", "read", "enab", "read"],
+        ["write_0", "read", "enab", "read"],
+        ["write_1", "write_0", "idle", "read"],
+        ["write_0", "write_1", "idle", "read"],
     ]
 
     ops = []
     for pair in patterns:
         for op in pair:
             ops.append(op)
-            if op == "read":
-                ops.append("clear")
+            # if op == "read":
+            #     ops.append("clear")
 
     t_chan, i_chan = [], []
     t_enab, i_enab = [], []
-    enab_on = np.ones(len(ops), dtype=bool)
 
+    enab_on = np.ones(len(ops), dtype=bool)
+    enab_on[1:2] = False  # Disable word-line select for read operations
+    enab_on[5:6] = False  # Disable word-line select for read operations
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
         # --- I_chan: data line ---
         if op == "write_1":
             amp = write_amplitude
-            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_write, amp, dt)
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_write, amp, dt
+            )
             t_chan.extend(t_vec)
             i_chan.extend(i_vec)
         elif op == "write_0":
             amp = -write_amplitude
-            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_write, amp, dt)
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_write, amp, dt
+            )
             t_chan.extend(t_vec)
             i_chan.extend(i_vec)
         elif op == "read":
             amp = read_amplitude
-            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_read, amp, dt)
-            t_chan.extend(t_vec)
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_read, amp, dt
+            )
+            t_chan.extend(t_vec + 20e-9)
             i_chan.extend(i_vec)
 
         # --- I_enab: word-line select ---
-        if op in ["write_1", "write_0"]:
+        if op in ["write_1", "write_0", "enab"]:
             amp = enab_write_amplitude
-            hold = hold_width_write
+            hold = 5e-9
         elif op == "read":
             amp = enab_read_amplitude
-            hold = hold_width_read
+            hold = 5e-9
         elif op == "clear":
             amp = clear_amplitude
             hold = hold_width_clear
         else:
             amp = 0
 
-        if amp > 0:
+        if amp > 0 and enab_on[i]:
             t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold, amp, dt)
-            t_enab.extend(t_vec)
+            t_enab.extend(t_vec + phase_offset)
             i_enab.extend(i_vec)
 
-    return np.array(t_chan), np.array(i_chan), np.array(t_enab), np.array(i_enab), ops, enab_on
+    return (
+        np.array(t_chan),
+        np.array(i_chan),
+        np.array(t_enab),
+        np.array(i_enab),
+        ops,
+        enab_on,
+    )
+
 
 # --- Main execution ---
 t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence(
     cycle_time=200e-9,
-    pulse_sigma=10e-9,
+    pulse_sigma=15e-9,
     hold_width_write=20e-9,
     hold_width_read=50e-9,
     hold_width_clear=0,
     write_amplitude=180e-6,
-    read_amplitude=700e-6,
-    enab_write_amplitude=440e-6,
-    enab_read_amplitude=330e-6,
+    read_amplitude=710e-6,
+    enab_write_amplitude=420e-6,
+    enab_read_amplitude=315e-6,
     clear_amplitude=700e-6,
     dt=0.1e-9,
-    seed=42
+    seed=42,
 )
 
 # Save for LTspice
