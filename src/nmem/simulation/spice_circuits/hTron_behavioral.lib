@@ -177,13 +177,13 @@ BI_ratio N_norm_current 0 V = V(chan_current) / V(Meas_Isw)
 B_sqrt_arg N_sqrt_arg 0 V = psi * V(N_norm_current)**2 - 1
 B_sqrt_approx N_sqrt_approx 0 V = (V(N_sqrt_arg) + delta) / 2
 
-B_c_hotspot N_hotspot_resistance 0 V = sdt(
-+   V(N_enable) * ( (2 * sheet_resistance * vo / chan_width) * 
-+   (psi * V(N_norm_current)**2 - 2) /
-+   max(1n, V(N_sqrt_arg) + {delta}) ),
-+   0, 
-+   V(N_c_state) < 0.5
-+ )
+  B_c_hotspot N_hotspot_resistance 0 V = sdt(
+  +   V(N_enable) * ( (2 * sheet_resistance * vo / chan_width) * 
+  +   (psi * V(N_norm_current)**2 - 2) /
+  +   max(1u, V(N_sqrt_arg) + {delta}) ),
+  +   0, 
+  +   V(N_c_state) < 0.5
+  + )
 
 
 **************************************************
@@ -229,7 +229,7 @@ B2 Meas_Isw 0
 
 * Replace 1 by 0.99 in B3 to improve stability in large circuits
 B3 Meas_Ihs 0 
-+ V = min(Iretrap(V(Meas_TCh))*2, 0.99 * V(Meas_Isw))
++ V = max(1n, min(Iretrap(V(Meas_TCh))*2, 0.99 * V(Meas_Isw)))
   * Retrapping current
 
 
@@ -243,9 +243,13 @@ Lc drain N_hs
 + Rpar = 1e6
   * Channel inductor
 
-B_Rhs N_hs source 
-+ V = V(N_hotspot_resistance) * i(B_Rhs)
-  * V(N_c_hotspot) is the hotspot resistance
+V_sense N_hs N_rhs 0
+B_Rhs N_rhs source V = V(N_hotspot_resistance) * i(V_sense)
+
+
+R_GND N_hs 0 1T
+R_GND2 source 0 1T
+  * Ground resistors
 
 
 .ends hTron_behav
