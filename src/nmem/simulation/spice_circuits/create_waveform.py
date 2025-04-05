@@ -50,10 +50,7 @@ def generate_memory_protocol_sequence(
         np.random.seed(seed)
 
     patterns = [
-        ["write_1", "read", "enab", "read"],
-        ["write_0", "read", "enab", "read"],
-        ["write_1", "write_0", "idle", "read"],
-        ["write_0", "write_1", "idle", "read"],
+        ["write_1"],
     ]
 
     ops = []
@@ -130,9 +127,9 @@ t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence
     hold_width_write=20e-9,
     hold_width_read=50e-9,
     hold_width_clear=0,
-    write_amplitude=180e-6,
+    write_amplitude=70e-6,
     read_amplitude=710e-6,
-    enab_write_amplitude=420e-6,
+    enab_write_amplitude=485e-6,
     enab_read_amplitude=315e-6,
     clear_amplitude=700e-6,
     dt=0.1e-9,
