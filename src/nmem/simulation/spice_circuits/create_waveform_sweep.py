@@ -31,7 +31,7 @@ def save_pwl_file(filename, time, current):
             f.write(f"{t:.9e} {i:.9e}\n")
 
 # Sweep write amplitudes from 0 to 100 µA in 10 µA steps
-sweep_values = np.arange(-100e-6, 150e-6, 50e-6)  # 0 to 100 µA
+sweep_values = np.arange(-500e-6, 550e-6, 50e-6)  # 0 to 100 µA
 
 # Signal parameters
 t_center = 100e-9
@@ -44,7 +44,7 @@ pwl_files = []
 
 for amp in sweep_values:
     t, i = flat_top_gaussian(t_center, pulse_sigma, hold_width, amp, dt)
-    filename = os.path.join(output_dir, f"write_amp_{int(amp * 1e6):04d}u.txt")
+    filename = os.path.join(output_dir, f"write_amp_{np.round(int(amp * 1e6),-1):+05d}u.txt")
     save_pwl_file(filename, t, i)
     pwl_files.append(filename)
 

@@ -33,7 +33,9 @@ dist/
 
 # Documentation
 *.pdf
-
-
+*.txt
 *.raw
 *.log
+
+# Spice files
+*.cir

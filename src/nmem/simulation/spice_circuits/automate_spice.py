@@ -16,7 +16,7 @@ for fname in sorted(os.listdir(wave_dir)):
 
     # Full paths
     full_pwl_path = os.path.join(wave_dir, fname)
-    amp_uA = int(fname.split("_")[-1].replace("u.txt", ""))
+    amp_uA = np.round(int(fname.split("_")[-1].replace("u.txt", "")), -1)
 
     # Generate a temporary netlist for this run
     modified_netlist = os.path.join(wave_dir, f"temp_{amp_uA}u.cir")
