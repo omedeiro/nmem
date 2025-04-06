@@ -36,7 +36,7 @@ def generate_memory_protocol_sequence(
     hold_width_write=20e-9,
     hold_width_read=50e-9,
     hold_width_clear=0,
-    write_amplitude=180e-6,
+    write_amplitude=100e-6,
     read_amplitude=700e-6,
     enab_write_amplitude=440e-6,
     enab_read_amplitude=330e-6,
@@ -137,8 +137,8 @@ t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence
 )
 
 # Save for LTspice
-save_pwl_file("/home/omedeiro/hTron-behavioral-model/chan.txt", t_chan, i_chan)
-save_pwl_file("/home/omedeiro/hTron-behavioral-model/enab.txt", t_enab, i_enab)
+save_pwl_file("chan.txt", t_chan, i_chan)
+save_pwl_file("enab.txt", t_enab, i_enab)
 
 # Summary print
 print("Slot | Operation | Wordline Active")
