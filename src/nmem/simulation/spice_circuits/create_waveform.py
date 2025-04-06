@@ -37,7 +37,7 @@ def generate_memory_protocol_sequence(
     hold_width_read=50e-9,
     hold_width_clear=0,
     write_amplitude=100e-6,
-    read_amplitude=700e-6,
+    read_amplitude=720e-6,
     enab_write_amplitude=440e-6,
     enab_read_amplitude=330e-6,
     clear_amplitude=700e-6,
@@ -49,8 +49,10 @@ def generate_memory_protocol_sequence(
     if seed is not None:
         np.random.seed(seed)
 
+
     patterns = [
-        ["write_1"],
+        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read"],
+        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read"],
     ]
 
     ops = []
@@ -64,8 +66,10 @@ def generate_memory_protocol_sequence(
     t_enab, i_enab = [], []
 
     enab_on = np.ones(len(ops), dtype=bool)
-    enab_on[1:2] = False  # Disable word-line select for read operations
-    enab_on[5:6] = False  # Disable word-line select for read operations
+    enab_on[0:1] = False  # Disable word-line select for read operations
+    enab_on[3:6] = False  # Disable word-line select for read operations
+    enab_on[7:8] = False  # Disable word-line select for read operations
+    enab_on[10:13] = False  # Disable word-line select for read operations
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 

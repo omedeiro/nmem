@@ -6,6 +6,101 @@ import pandas as pd
 output_dir = "data/write_amp_sweep"
 os.makedirs(output_dir, exist_ok=True)
 
+
+# Build waveform for a sequence of memory ops
+def generate_memory_protocol_sequence(
+    cycle_time=200e-9,
+    pulse_sigma=10e-9,
+    hold_width_write=20e-9,
+    hold_width_read=50e-9,
+    hold_width_clear=0,
+    write_amplitude=100e-6,
+    read_amplitude=730e-6,
+    enab_write_amplitude=440e-6,
+    enab_read_amplitude=440e-6,
+    clear_amplitude=700e-6,
+    enab_fraction=0.5,
+    phase_offset=0,
+    dt=0.1e-9,
+    seed=None,
+):
+    if seed is not None:
+        np.random.seed(seed)
+
+    patterns = [
+        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read"],
+        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read"],
+    ]
+
+    ops = []
+    for pair in patterns:
+        for op in pair:
+            ops.append(op)
+            # if op == "read":
+            #     ops.append("clear")
+
+    t_chan, i_chan = [], []
+    t_enab, i_enab = [], []
+
+    enab_on = np.ones(len(ops), dtype=bool)
+    enab_on[0:1] = False  # Disable word-line select for read operations
+    enab_on[3:6] = False  # Disable word-line select for read operations
+    enab_on[7:8] = False  # Disable word-line select for read operations
+    enab_on[10:13] = False  # Disable word-line select for read operations
+    for i, op in enumerate(ops):
+        t_center = i * cycle_time + cycle_time / 2
+
+        # --- I_chan: data line ---
+        if op == "write_1":
+            amp = write_amplitude
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_write, amp, dt
+            )
+            t_chan.extend(t_vec)
+            i_chan.extend(i_vec)
+        elif op == "write_0":
+            amp = -write_amplitude
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_write, amp, dt
+            )
+            t_chan.extend(t_vec)
+            i_chan.extend(i_vec)
+        elif op == "read":
+            amp = read_amplitude
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_read, amp, dt
+            )
+            t_chan.extend(t_vec + 20e-9)
+            i_chan.extend(i_vec)
+
+        # --- I_enab: word-line select ---
+        if op in ["write_1", "write_0", "enab"]:
+            amp = enab_write_amplitude
+            hold = 5e-9
+        elif op == "read":
+            amp = enab_read_amplitude
+            hold = 5e-9
+        elif op == "clear":
+            amp = clear_amplitude
+            hold = hold_width_clear
+        else:
+            amp = 0
+
+        if amp > 0 and enab_on[i]:
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold, amp, dt)
+            t_enab.extend(t_vec + phase_offset)
+            i_enab.extend(i_vec)
+
+    return (
+        np.array(t_chan),
+        np.array(i_chan),
+        np.array(t_enab),
+        np.array(i_enab),
+        ops,
+        enab_on,
+    )
+
+
 # Core waveform generation function (uses flat-top Gaussian shape)
 def flat_top_gaussian(t_center, sigma, hold_width, amp, dt):
     total_width = 8 * sigma + hold_width
@@ -24,14 +119,16 @@ def flat_top_gaussian(t_center, sigma, hold_width, amp, dt):
     i = np.concatenate([i_rise, i_hold[1:], i_fall[1:]])
     return t, i
 
+
 # Save waveform to file
 def save_pwl_file(filename, time, current):
     with open(filename, "w") as f:
         for t, i in zip(time, current):
             f.write(f"{t:.9e} {i:.9e}\n")
 
+
 # Sweep write amplitudes from 0 to 100 µA in 10 µA steps
-sweep_values = np.arange(-500e-6, 550e-6, 50e-6)  # 0 to 100 µA
+sweep_values = np.arange(0e-6, 110e-6, 10e-6)  # 0 to 100 µA
 
 # Signal parameters
 t_center = 100e-9
@@ -43,12 +140,27 @@ dt = 0.1e-9
 pwl_files = []
 
 for amp in sweep_values:
-    t, i = flat_top_gaussian(t_center, pulse_sigma, hold_width, amp, dt)
-    filename = os.path.join(output_dir, f"write_amp_{np.round(int(amp * 1e6),-1):+05d}u.txt")
-    save_pwl_file(filename, t, i)
+    # Generate the waveform
+    t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence(
+        cycle_time=200e-9,
+        pulse_sigma=15e-9,
+        hold_width_write=20e-9,
+        hold_width_read=50e-9,
+        hold_width_clear=0,
+        write_amplitude=amp,
+        read_amplitude=710e-6,
+        enab_write_amplitude=485e-6,
+        enab_read_amplitude=315e-6,
+        clear_amplitude=700e-6,
+        dt=0.1e-9,
+        seed=42,
+    )
+
+    # Save to file
+    filename = os.path.join(output_dir, f"write_amp_sweep_{int(amp * 1e6)}u.txt")
+    save_pwl_file(filename, t_chan, i_chan)
     pwl_files.append(filename)
 
-df = pd.DataFrame({
-    "Write Amplitude (uA)": sweep_values * 1e6,
-    "Waveform File": pwl_files
-})
+df = pd.DataFrame(
+    {"Write Amplitude (uA)": sweep_values * 1e6, "Waveform File": pwl_files}
+)

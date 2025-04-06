@@ -34,11 +34,11 @@ for fname in sorted(os.listdir(wave_dir)):
     l = ltspice.Ltspice(raw_path)
     l.parse()
 
-    # Example: extract max of voltage at node 'out'
+    # Extract persistent current at the time step between 150 and 170 nanoseconds
     time = l.get_time()
     ir = l.get_data("Ix(HR:drain)")
-    persistent_current = ir[-1]*1e6
-
+    mask = (time >= 400e-9) & (time <= 500e-9)
+    persistent_current = np.mean(ir[mask]) * 1e6  # Take the average within the range
 
     output_data.append({"Amplitude (uA)": amp_uA, "Persistent Current (uA)": persistent_current})
 
