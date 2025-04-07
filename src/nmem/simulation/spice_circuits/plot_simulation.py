@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import ltspice
+from matplotlib.ticker import MaxNLocator
+
 
 def load_ltspice_data(raw_dir: str) -> dict:
     data_dict = {}
@@ -19,8 +21,15 @@ def load_ltspice_data(raw_dir: str) -> dict:
         data_dict[fname] = ltsp
     return data_dict
 
+
 def plot_transient_traces_broken_axes(data_dict: dict):
-    fig, (ax4, ax3, ax1, ax2) = plt.subplots(4, 1, sharex=True, figsize=(10, 8), gridspec_kw={'height_ratios': [0.3, .3, .3, 1]})
+    fig, (ax4, ax3, ax1, ax2) = plt.subplots(
+        4,
+        1,
+        sharex=True,
+        figsize=(10, 8),
+        gridspec_kw={"height_ratios": [0.3, 0.3, 0.3, 1]},
+    )
     persistent_current_list = []
     write_current_list = []
 
@@ -61,14 +70,14 @@ def plot_transient_traces_broken_axes(data_dict: dict):
     # Y-axis break setup
     ax1.set_ylim(300, 2000)
     ax2.set_ylim(-50, 100)
-    ax1.spines['bottom'].set_visible(False)
-    ax2.spines['top'].set_visible(False)
+    ax1.spines["bottom"].set_visible(False)
+    ax2.spines["top"].set_visible(False)
     ax1.tick_params(labeltop=False)
     ax2.xaxis.tick_bottom()
 
     # Diagonal lines for axis break
-    d = .015
-    kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
+    d = 0.015
+    kwargs = dict(transform=ax1.transAxes, color="k", clip_on=False)
     ax1.plot((-d, +d), (-d, +d), **kwargs)
     ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)
     kwargs.update(transform=ax2.transAxes)
@@ -91,14 +100,25 @@ def plot_transient_traces_broken_axes(data_dict: dict):
 
     return write_current_list, persistent_current_list
 
-def plot_transient_traces(data_dict: dict):
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
+
+def plot_transient_traces(data_dict: dict, axs=None):
+    if axs is None:
+        fig, axs = plt.subplots(
+            4,
+            1,
+            figsize=(10, 6),
+            sharex=True,
+            gridspec_kw={"height_ratios": [0.3, 0.3, 0.3, 1]},
+        )
+    else:
+        fig = None
+
     for key, ltsp in data_dict.items():
         try:
             amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
         except ValueError:
             continue
-        if amp_uA < 35 or amp_uA > 45:
+        if amp_uA < 45 or amp_uA > 65:
             continue
         time = ltsp.get_time()
         left_current = ltsp.get_data("Ix(HL:drain)") * 1e6
@@ -106,21 +126,33 @@ def plot_transient_traces(data_dict: dict):
         ichl = ltsp.get_data("I(ichl)") * 1e6
         ichr = ltsp.get_data("I(ichr)") * 1e6
         enable_bias = ltsp.get_data("I(R1)") * 1e6
-        voltage = ltsp.get_data("V(out)") * 1e6
+        input_bias = ltsp.get_data("I(R2)") * 1e6
+        voltage = ltsp.get_data("V(out)") * 1e3
 
-        ax1.plot(time, left_current, color="C0")
-        ax1.plot(time, right_current, color="C1")
-        ax1.plot(time, ichl, linestyle="--", color="C0")
-        ax1.plot(time, ichr, linestyle="--", color="C1")
-        ax1.plot(time, enable_bias, color="C2")
+        axs[3].plot(time, left_current, color="C0")
+        axs[3].plot(time, right_current, color="C1")
+        axs[3].plot(time, ichl, linestyle="--", color="C0")
+        axs[3].plot(time, ichr, linestyle="--", color="C1")
 
-        ax2.plot(time, voltage, color="C3")
+        axs[2].plot(time, voltage, color="C3")
+        axs[0].plot(time, input_bias, color="C2")
+        axs[1].plot(time, enable_bias, color="C4")
 
-    ax1.set_xlabel("Time (s)")
-    ax1.set_ylabel("Current (uA)")
-    ax1.grid()
-    plt.tight_layout()  
-    plt.show()
+    for ax in axs:
+        ax.grid()
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+
+    axs[0].set_ylabel("Input Bias (uA)")
+    axs[1].set_ylabel("Enable Bias (uA)")
+    axs[2].set_ylabel("Voltage (mV)")
+    axs[3].set_ylabel("Current (uA)")
+    axs[3].set_xlabel("Time (s)")
+
+    if fig is not None:
+        plt.tight_layout()
+        plt.show()
+
+    return axs
 
 
 def plot_write_persistent(write_current_list, persistent_current_list):
