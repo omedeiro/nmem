@@ -3,7 +3,14 @@ import numpy as np
 import os
 import ltspice
 from matplotlib.ticker import MaxNLocator
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from cycler import cycler
 
+# Global Plot Settings
+plt.rcParams.update({
+    "font.size": 5,
+    "axes.prop_cycle": cycler(color=['#1f77b4', '#d62728'])
+})
 
 def load_ltspice_data(raw_dir: str) -> dict:
     data_dict = {}
@@ -21,95 +28,61 @@ def load_ltspice_data(raw_dir: str) -> dict:
         data_dict[fname] = ltsp
     return data_dict
 
+def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e6):
+    return {
+        "time": ltsp.get_time() * time_scale,
+        "left_current": ltsp.get_data("Ix(HL:drain)") * 1e6,
+        "right_current": ltsp.get_data("Ix(HR:drain)") * 1e6,
+        "ichl": ltsp.get_data("I(ichl)") * 1e6,
+        "ichr": ltsp.get_data("I(ichr)") * 1e6,
+        "enable_bias": ltsp.get_data("I(R1)") * 1e6,
+        "input_bias": ltsp.get_data("I(R2)") * 1e6 if "I(R2)" in ltsp.variables() else None,
+        "voltage": ltsp.get_data("V(out)") * voltage_scale,
+    }
 
-def plot_transient_traces_broken_axes(data_dict: dict):
-    fig, (ax4, ax3, ax1, ax2) = plt.subplots(
-        4,
-        1,
-        sharex=True,
-        figsize=(10, 8),
-        gridspec_kw={"height_ratios": [0.3, 0.3, 0.3, 1]},
-    )
-    persistent_current_list = []
-    write_current_list = []
-
+def plot_trace_slice(ax, data_dict, start_time, end_time, invert_ic=False, add_inverted=False):
     for key, ltsp in data_dict.items():
         try:
             amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
         except ValueError:
             continue
-        if amp_uA < 35 or amp_uA > 45:
+        if not (35 <= amp_uA <= 45):
             continue
-        time = ltsp.get_time()
-        left_current = ltsp.get_data("Ix(HL:drain)") * 1e6
-        right_current = ltsp.get_data("Ix(HR:drain)") * 1e6
-        ichl = ltsp.get_data("I(ichl)") * 1e6
-        ichr = ltsp.get_data("I(ichr)") * 1e6
-        enable_bias = ltsp.get_data("I(R1)") * 1e6
-        voltage = ltsp.get_data("V(out)") * 1e6
 
-        write_current = amp_uA
-        persistent_current = right_current[-1]
-        persistent_current_list.append(persistent_current)
-        write_current_list.append(write_current)
+        data = extract_trace_data(ltsp, time_scale=1e9)
+        mask = (data["time"] >= start_time) & (data["time"] <= end_time)
 
-        # Top and bottom current axes
-        ax1.plot(time, left_current, color="C0")
-        ax1.plot(time, right_current, color="C1")
-        ax1.plot(time, ichl, linestyle="--", color="C0")
-        ax1.plot(time, ichr, linestyle="--", color="C1")
+        if data["time"][mask][0] > 1600:
+            data["time"][mask] -= 1600
 
-        ax2.plot(time, left_current, color="C0")
-        ax2.plot(time, right_current, color="C1")
-        ax2.plot(time, ichl, linestyle="--", color="C0")
-        ax2.plot(time, ichr, linestyle="--", color="C1")
+        ax.plot(data["time"][mask], data["left_current"][mask], color="C0")
+        ax.plot(data["time"][mask], data["right_current"][mask], color="C1")
 
-        ax3.plot(time, enable_bias, color="C2")
-        ax4.plot(time, voltage, color="C3")
+        ichl = -data["ichl"][mask] if invert_ic else data["ichl"][mask]
+        ichr = -data["ichr"][mask] if invert_ic else data["ichr"][mask]
+        ax.plot(data["time"][mask], ichl, linestyle="--", color="C0", dashes=(1, 1))
+        ax.plot(data["time"][mask], ichr, linestyle="--", color="C1", dashes=(1, 1))
 
-    # Y-axis break setup
-    ax1.set_ylim(300, 2000)
-    ax2.set_ylim(-50, 100)
-    ax1.spines["bottom"].set_visible(False)
-    ax2.spines["top"].set_visible(False)
-    ax1.tick_params(labeltop=False)
-    ax2.xaxis.tick_bottom()
+        if add_inverted:
+            ax.plot(data["time"][mask], -ichl, linestyle="--", color="C0", dashes=(1, 1))
+            ax.plot(data["time"][mask], -ichr, linestyle="--", color="C1", dashes=(1, 1))
 
-    # Diagonal lines for axis break
-    d = 0.015
-    kwargs = dict(transform=ax1.transAxes, color="k", clip_on=False)
-    ax1.plot((-d, +d), (-d, +d), **kwargs)
-    ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)
-    kwargs.update(transform=ax2.transAxes)
-    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)
-    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
+        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.set_ylim(-40, 70)
 
-    # Labels
-    ax1.set_ylabel("Current (uA)")
-    ax2.set_ylabel("Current (uA)")
-    ax2.set_xlabel("Time (s)")
-    ax3.set_ylabel("Enable (uA)")
-    ax4.set_ylabel("Voltage (uV)")
+def plot_inset(ax, data_dict, start_time, end_time, xlim, ylim):
+    inset_ax = inset_axes(ax, width="30%", height="30%", loc="lower left")
+    plot_trace_slice(inset_ax, data_dict, start_time, end_time)
+    inset_ax.set_xlim(*xlim)
+    inset_ax.set_ylim(*ylim)
+    inset_ax.set_xticks([])
+    inset_ax.yaxis.tick_right()
+    inset_ax.yaxis.set_major_locator(MaxNLocator(3))
 
-    ax1.grid()
-    ax2.grid()
-    ax3.grid()
-    ax4.grid()
-    plt.tight_layout()
-    plt.show()
-
-    return write_current_list, persistent_current_list
-
-
-def plot_transient_traces(data_dict: dict, axs=None):
+def plot_transient_traces(data_dict, axs=None):
     if axs is None:
-        fig, axs = plt.subplots(
-            4,
-            1,
-            figsize=(10, 6),
-            sharex=True,
-            gridspec_kw={"height_ratios": [0.3, 0.3, 0.3, 1]},
-        )
+        fig, axs = plt.subplots(4, 1, figsize=(10, 6), sharex=True,
+                                gridspec_kw={"height_ratios": [0.3, 0.3, 0.3, 1]})
     else:
         fig = None
 
@@ -118,29 +91,23 @@ def plot_transient_traces(data_dict: dict, axs=None):
             amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
         except ValueError:
             continue
-        if amp_uA < 45 or amp_uA > 65:
+        if not (45 <= amp_uA <= 65):
             continue
-        time = ltsp.get_time()
-        left_current = ltsp.get_data("Ix(HL:drain)") * 1e6
-        right_current = ltsp.get_data("Ix(HR:drain)") * 1e6
-        ichl = ltsp.get_data("I(ichl)") * 1e6
-        ichr = ltsp.get_data("I(ichr)") * 1e6
-        enable_bias = ltsp.get_data("I(R1)") * 1e6
-        input_bias = ltsp.get_data("I(R2)") * 1e6
-        voltage = ltsp.get_data("V(out)") * 1e3
 
-        axs[3].plot(time, left_current, color="C0")
-        axs[3].plot(time, right_current, color="C1")
-        axs[3].plot(time, ichl, linestyle="--", color="C0")
-        axs[3].plot(time, ichr, linestyle="--", color="C1")
+        data = extract_trace_data(ltsp, time_scale=1e9, voltage_scale=1e3)
 
-        axs[2].plot(time, voltage, color="C3")
-        axs[0].plot(time, input_bias, color="C2")
-        axs[1].plot(time, enable_bias, color="C4")
+        axs[3].plot(data["time"], data["left_current"], color="C0")
+        axs[3].plot(data["time"], data["right_current"], color="C1")
+        axs[3].plot(data["time"], data["ichl"], linestyle="--", color="C0")
+        axs[3].plot(data["time"], data["ichr"], linestyle="--", color="C1")
+
+        axs[2].plot(data["time"], data["voltage"], color="C3")
+        axs[0].plot(data["time"], data["input_bias"], color="C2")
+        axs[1].plot(data["time"], data["enable_bias"], color="C4")
 
     for ax in axs:
         ax.grid()
-        ax.yaxis.set_major_locator(MaxNLocator(5))
+        ax.yaxis.set_major_locator(MaxNLocator(3))
 
     axs[0].set_ylabel("Input Bias (uA)")
     axs[1].set_ylabel("Enable Bias (uA)")
@@ -148,27 +115,85 @@ def plot_transient_traces(data_dict: dict, axs=None):
     axs[3].set_ylabel("Current (uA)")
     axs[3].set_xlabel("Time (s)")
 
-    if fig is not None:
+    if fig:
         plt.tight_layout()
         plt.show()
-
     return axs
 
-
-def plot_write_persistent(write_current_list, persistent_current_list):
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sorted_indices = np.argsort(write_current_list)
-    wc_sorted = np.array(write_current_list)[sorted_indices]
-    pc_sorted = np.array(persistent_current_list)[sorted_indices]
-    ax.plot(wc_sorted, pc_sorted, "o-")
+def plot_write_vs_persistent(write_list, persistent_list):
+    fig, ax = plt.subplots(figsize=(7, 7))
+    sorted_indices = np.argsort(write_list)
+    ax.plot(np.array(write_list)[sorted_indices],
+            np.array(persistent_list)[sorted_indices], "o-")
     ax.set_xlabel("Write Current (uA)")
     ax.set_ylabel("Persistent Current (uA)")
     ax.grid()
     plt.tight_layout()
     plt.show()
 
-
 if __name__ == "__main__":
     raw_dir = "data/write_amp_sweep"  # Update this path as needed
     data_dict = load_ltspice_data(raw_dir)
-    plot_transient_traces(data_dict)
+
+    fig, axs = plt.subplot_mosaic(
+        [
+            ["X", "X", "X", "X"],
+            ["A", "B", "C", "D"],
+            ["Y", "Y", "Y", "Y"],
+            ["E", "F", "G", "H"],
+        ],
+        width_ratios=[1, 1, 1, 1],
+        height_ratios=[1, 1, 1, 1],
+    )
+    axs["X"].set_axis_off()
+    axs["Y"].set_axis_off()
+    plot_transient_trace_slice(axs["A"], data_dict, 20, 180)
+    plot_transient_trace_slice(axs["B"], data_dict, 200, 400)
+    plot_transient_trace_slice(axs["C"], data_dict, 480, 520)
+
+    plot_transient_trace_slice(axs["D"], data_dict, 1220, 1400)
+    axs["D"].set_ylim(-500, 800)
+
+    plot_transient_trace_slice(axs["E"], data_dict, 1620, 1780, add_inverted=True)
+
+    plot_transient_trace_slice(axs["F"], data_dict, 1820, 1980, invert_ic=True)
+    plot_transient_trace_slice(axs["G"], data_dict, 2600, 2800)
+    plot_transient_trace_slice(axs["H"], data_dict, 2820, 3100)
+    axs["A"].set_ylim(-50, 50)
+    axs["B"].set_ylim(-30, 50)
+    axs["C"].set_ylim(-30, 50)
+    axs["E"].set_ylim(-50, 50)
+    axs["F"].set_ylim(-50, 30)
+    axs["G"].set_ylim(-50, 800)
+    axs["H"].set_ylim(-500, 800)
+    
+    axs["E"].set_ylabel("Current (uA)")
+    axs["E"].set_xlabel("Time (ns)")
+    axs["A"].set_ylabel("Current (uA)")
+    axs["A"].set_xlabel("Time (ns)")
+
+    # Add inset to axs["H"]
+
+    inset_ax: plt.Axes = inset_axes(axs["H"], width="30%", height="30%", loc="lower left")
+    plot_transient_trace_slice(inset_ax, data_dict, 2100, 2950)
+    inset_ax.set_xlim(1300, 1305)
+    inset_ax.set_ylim(610, 625)
+    inset_ax.set_xticks([])
+    inset_ax.yaxis.tick_right()
+    inset_ax.yaxis.set_major_locator(MaxNLocator(3))
+
+
+    # Add inset to axs["D"]
+    inset_ax2: plt.Axes = inset_axes(axs["D"], width="30%", height="30%", loc="lower left")
+    plot_transient_trace_slice(inset_ax2, data_dict, 1220, 1400)
+    inset_ax2.set_xlim(1298, 1305)
+    inset_ax2.set_ylim(610, 625)
+    inset_ax2.set_xticks([])
+    inset_ax2.yaxis.tick_right()
+    inset_ax2.yaxis.set_major_locator(MaxNLocator(3))
+
+    fig.subplots_adjust(hspace=0.2, wspace=0.4)
+    plt.savefig(
+        "data/write_amp_sweep/plot_write_persistent.pdf",
+        bbox_inches="tight",
+    )
