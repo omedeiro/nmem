@@ -5,7 +5,9 @@ import ltspice
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from cycler import cycler
+from nmem.simulation.spice_circuits.plotting import apply_snm_style
 
+# apply_snm_style()
 # Global Plot Settings
 plt.rcParams.update({
     "font.size": 5,
@@ -36,7 +38,7 @@ def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e6):
         "ichl": ltsp.get_data("I(ichl)") * 1e6,
         "ichr": ltsp.get_data("I(ichr)") * 1e6,
         "enable_bias": ltsp.get_data("I(R1)") * 1e6,
-        "input_bias": ltsp.get_data("I(R2)") * 1e6 if "I(R2)" in ltsp.variables() else None,
+        "input_bias": ltsp.get_data("I(R2)") * 1e6,
         "voltage": ltsp.get_data("V(out)") * voltage_scale,
     }
 
@@ -144,21 +146,22 @@ if __name__ == "__main__":
         ],
         width_ratios=[1, 1, 1, 1],
         height_ratios=[1, 1, 1, 1],
+        figsize=(5.6, 4.2),
     )
     axs["X"].set_axis_off()
     axs["Y"].set_axis_off()
-    plot_transient_trace_slice(axs["A"], data_dict, 20, 180)
-    plot_transient_trace_slice(axs["B"], data_dict, 200, 400)
-    plot_transient_trace_slice(axs["C"], data_dict, 480, 520)
+    plot_trace_slice(axs["A"], data_dict, 20, 180)
+    plot_trace_slice(axs["B"], data_dict, 200, 400)
+    plot_trace_slice(axs["C"], data_dict, 480, 520)
 
-    plot_transient_trace_slice(axs["D"], data_dict, 1220, 1400)
+    plot_trace_slice(axs["D"], data_dict, 1220, 1400)
     axs["D"].set_ylim(-500, 800)
 
-    plot_transient_trace_slice(axs["E"], data_dict, 1620, 1780, add_inverted=True)
+    plot_trace_slice(axs["E"], data_dict, 1620, 1780, add_inverted=True)
 
-    plot_transient_trace_slice(axs["F"], data_dict, 1820, 1980, invert_ic=True)
-    plot_transient_trace_slice(axs["G"], data_dict, 2600, 2800)
-    plot_transient_trace_slice(axs["H"], data_dict, 2820, 3100)
+    plot_trace_slice(axs["F"], data_dict, 1820, 1980, invert_ic=True)
+    plot_trace_slice(axs["G"], data_dict, 2600, 2800)
+    plot_trace_slice(axs["H"], data_dict, 2820, 3100)
     axs["A"].set_ylim(-50, 50)
     axs["B"].set_ylim(-30, 50)
     axs["C"].set_ylim(-30, 50)
@@ -174,24 +177,25 @@ if __name__ == "__main__":
 
     # Add inset to axs["H"]
 
-    inset_ax: plt.Axes = inset_axes(axs["H"], width="30%", height="30%", loc="lower left")
-    plot_transient_trace_slice(inset_ax, data_dict, 2100, 2950)
-    inset_ax.set_xlim(1300, 1305)
-    inset_ax.set_ylim(610, 625)
+    inset_ax: plt.Axes = inset_axes(axs["H"], width="45%", height="30%", loc="lower left")
+    plot_trace_slice(inset_ax, data_dict, 2100, 2950)
+    inset_ax.set_xlim(1298, 1305)
+    inset_ax.set_ylim(610, 630)
     inset_ax.set_xticks([])
     inset_ax.yaxis.tick_right()
     inset_ax.yaxis.set_major_locator(MaxNLocator(3))
-
+    inset_ax.set_yticks([])
 
     # Add inset to axs["D"]
-    inset_ax2: plt.Axes = inset_axes(axs["D"], width="30%", height="30%", loc="lower left")
-    plot_transient_trace_slice(inset_ax2, data_dict, 1220, 1400)
+    inset_ax2: plt.Axes = inset_axes(axs["D"], width="45%", height="30%", loc="lower left")
+    plot_trace_slice(inset_ax2, data_dict, 1220, 1400)
     inset_ax2.set_xlim(1298, 1305)
-    inset_ax2.set_ylim(610, 625)
+    inset_ax2.set_ylim(610, 630)
     inset_ax2.set_xticks([])
     inset_ax2.yaxis.tick_right()
     inset_ax2.yaxis.set_major_locator(MaxNLocator(3))
-
+    inset_ax2.set_yticks([])
+    
     fig.subplots_adjust(hspace=0.2, wspace=0.4)
     plt.savefig(
         "data/write_amp_sweep/plot_write_persistent.pdf",
