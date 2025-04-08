@@ -432,7 +432,7 @@ def get_critical_currents_from_trace(dict_list: list) -> Tuple[np.ndarray, np.nd
             / (1 / (data["freq"] * 4))
             * 1e6
         )
-
+        print(f"length of current_time_trend: {len(current_time_trend[0])}")
         avg_critical_current = np.mean(current_time_trend)
         std_critical_current = np.std(current_time_trend)
         critical_currents.append(avg_critical_current)
@@ -999,7 +999,7 @@ def plot_critical_currents_from_trace(ax: Axes, dict_list: list) -> Axes:
 
 
 def plot_critical_currents_from_dc_sweep(
-    ax: Axes, dict_list: list, save: bool = False
+    ax: Axes, dict_list: list, substrate_temp: float = 1.3, save: bool = False
 ) -> Axes:
 
     critical_currents, critical_currents_std = get_critical_currents_from_trace(
@@ -1012,15 +1012,12 @@ def plot_critical_currents_from_dc_sweep(
     ).flatten()
     heater_currents = np.round(heater_currents, 0).astype(int)
 
-    print(f"Critical currents: {critical_currents}")
-    print(f"Heater currents: {heater_currents}")
-
     ax.plot(
         heater_currents,
         critical_currents,
         "o--",
         color=cmap[0],
-        label="$I_{{h}}$",
+        label="$I_{{EN}}$",
         linewidth=0.5,
         markersize=0.5,
         markerfacecolor=cmap[0],
@@ -1035,21 +1032,21 @@ def plot_critical_currents_from_dc_sweep(
         edgecolor="none",
     )
 
-    ax.set_xlabel("$I_{{h}}$ [$\mu$A]")
-    ax.set_ylabel("$I_{{C}}$ [$\mu$A]", labelpad=-1)
+    ax.set_xlabel("$I_{{EN}}$ [$\mu$A]")
+    ax.set_ylabel("$I_{{c}}$ [$\mu$A]", labelpad=-1)
     ax.set_ylim([0, 400])
     ax.set_xlim([-500, 500])
 
     # Add secondary y-axis for temperature
     ax2 = ax.twinx()
     temp = calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, np.abs(heater_currents), 500
+        CRITICAL_TEMP, substrate_temp, np.abs(heater_currents), 500
     )
     ax2.plot(heater_currents, temp, "o--")
     ax2.set_ylim([0, 13])
     ax2.set_ylabel("Temperature [K]")
-    ax2.axhline(1.3, color="black", linestyle="--", linewidth=0.5)
-    ax2.axhline(12.3, color="black", linestyle="--", linewidth=0.5)
+    ax2.axhline(substrate_temp, color="black", linestyle="--", linewidth=0.5)
+    ax2.axhline(CRITICAL_TEMP, color="black", linestyle="--", linewidth=0.5)
 
     if save:
         plt.savefig("critical_currents_full.pdf", bbox_inches="tight")

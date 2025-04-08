@@ -11,18 +11,19 @@ from nmem.simulation.spice_circuits.plotting import apply_snm_style
 
 apply_snm_style()
 
-
+PROBE_STATION_TEMP = 3.5
 def plot_combined_figure(ax: Axes, dict_list: list, save: bool = True) -> Axes:
     ax[0].set_axis_off()
     ax[1] = plot_current_voltage_from_dc_sweep(ax[1], dict_list)
-    ax[2] = plot_critical_currents_from_dc_sweep(ax[2], dict_list)
+    ax[2] = plot_critical_currents_from_dc_sweep(ax[2], dict_list, substrate_temp=PROBE_STATION_TEMP)
     ax[1].legend(
-        loc="upper left",
+        loc="lower right",
         fontsize=5,
         frameon=False,
         handlelength=1,
         handleheight=1,
         borderpad=0.1,
+        labelspacing=0.2,
     )
     ax[1].set_box_aspect(1.0)
     ax[2].set_box_aspect(1.0)
