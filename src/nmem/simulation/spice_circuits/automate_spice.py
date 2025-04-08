@@ -19,7 +19,7 @@ for fname in sorted(os.listdir(wave_dir)):
     amp_uA = np.round(int(fname.split("_")[-1].replace("u.txt", "")), -1)
 
     # Generate a temporary netlist for this run
-    modified_netlist = os.path.join(wave_dir, f"temp_{amp_uA}u.cir")
+    modified_netlist = os.path.join(wave_dir, f"temp_{amp_uA:+05g}u.cir")
     with open(template_netlist, "r") as f:
         print(f"full_pwl_path: {full_pwl_path}")
         net = f.read().replace("CHANPWL", f'"{full_pwl_path}"')
