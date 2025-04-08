@@ -4,12 +4,12 @@ import ltspice
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import imageio.v2 as imageio
 import matplotlib.font_manager as fm
 from nmem.simulation.spice_circuits.functions import (
     get_step_parameter,
     process_read_data,
 )
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from cycler import cycler
 import scipy.io as sio
@@ -21,19 +21,30 @@ from nmem.analysis.analysis import (
 )
 
 CMAP = plt.get_cmap("coolwarm")
-if os.name == "Windows":
-    font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-if os.name == "posix":
-    font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
-fm.fontManager.addfont(font_path)
-prop = fm.FontProperties(fname=font_path)
+
 
 FILL_WIDTH = 5
 VOUT_YMAX = 40
 VOLTAGE_THRESHOLD = 2.0e-3
 
-plt.rcParams.update(
-    {
+
+def set_inter_font():
+    if os.name == "nt":  # Windows
+        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
+    elif os.name == "posix":
+        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
+    else:
+        font_path = None
+
+    if font_path and os.path.exists(font_path):
+        print(f"Font path: {font_path}")
+        fm.fontManager.addfont(font_path)
+        mpl.rcParams["font.family"] = "Inter"
+
+
+
+def apply_snm_style():
+    mpl.rcParams.update({
         "figure.figsize": [3.5, 3.5],
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
@@ -43,22 +54,17 @@ plt.rcParams.update(
         "ytick.major.width": 0.5,
         "xtick.direction": "out",
         "ytick.direction": "out",
-        "font.family": "Inter",
         "lines.markersize": 2,
         "lines.linewidth": 1.5,
         "legend.fontsize": 5,
         "legend.frameon": False,
-        "axes.linewidth": 0.5,  # Thin axis lines
         "xtick.major.size": 3,
         "ytick.major.size": 3,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
         "xtick.minor.size": 2,
         "ytick.minor.size": 2,
         "xtick.minor.width": 0.4,
         "ytick.minor.width": 0.4,
-    }
-)
+    })
 
 
 COLORS = [
