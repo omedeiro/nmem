@@ -1,44 +1,35 @@
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-
+from matplotlib.ticker import MultipleLocator
 from nmem.analysis.analysis import (
     import_directory,
     plot_critical_currents_from_dc_sweep,
     plot_current_voltage_from_dc_sweep,
 )
+from nmem.simulation.spice_circuits.plotting import apply_snm_style
 
-font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-fm.fontManager.addfont(font_path)
-prop = fm.FontProperties(fname=font_path)
-plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 5
-plt.rcParams["axes.linewidth"] = 0.5
-plt.rcParams["xtick.major.width"] = 0.5
-plt.rcParams["ytick.major.width"] = 0.5
-plt.rcParams["xtick.direction"] = "in"
-plt.rcParams["ytick.direction"] = "in"
-plt.rcParams["font.family"] = "Inter"
-plt.rcParams["lines.markersize"] = 2
-plt.rcParams["lines.linewidth"] = 0.5
-plt.rcParams["legend.fontsize"] = 5
-plt.rcParams["legend.frameon"] = False
+apply_snm_style()
 
 
-plt.rcParams["xtick.major.size"] = 1
-plt.rcParams["ytick.major.size"] = 1
-
-
-def plot_combined_figure(ax: Axes, dict_list: list, save: bool = False) -> Axes:
-    ax[0, 0].axis("off")
-    ax[0, 1].axis("off")
-    ax[0, 2].axis("off")
-    ax[1, 0].axis("off")
-    ax[1, 1] = plot_current_voltage_from_dc_sweep(ax[1, 1], dict_list)
-    ax[1, 2] = plot_critical_currents_from_dc_sweep(ax[1, 2], dict_list)
-
+def plot_combined_figure(ax: Axes, dict_list: list, save: bool = True) -> Axes:
+    ax[0].set_axis_off()
+    ax[1] = plot_current_voltage_from_dc_sweep(ax[1], dict_list)
+    ax[2] = plot_critical_currents_from_dc_sweep(ax[2], dict_list)
+    ax[1].legend(
+        loc="upper left",
+        fontsize=5,
+        frameon=False,
+        handlelength=1,
+        handleheight=1,
+        borderpad=0.1,
+    )
+    ax[1].set_box_aspect(1.0)
+    ax[2].set_box_aspect(1.0)
+    ax[2].set_xlim(-500, 500)
+    ax[2].xaxis.set_major_locator(MultipleLocator(250))
     if save:
-        plt.subplots_adjust(wspace=0.3)
+        plt.subplots_adjust(wspace=0.4)
         plt.savefig("iv_curve_combined.pdf", bbox_inches="tight")
 
     return ax
@@ -47,14 +38,15 @@ def plot_combined_figure(ax: Axes, dict_list: list, save: bool = False) -> Axes:
 if __name__ == "__main__":
     data_list = import_directory("data")
 
-    fig, ax = plt.subplots()
-    plot_critical_currents_from_dc_sweep(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_critical_currents_from_dc_sweep(ax, data_list)
+    # plt.show()
 
-    fig, ax = plt.subplots()
-    plot_current_voltage_from_dc_sweep(ax, data_list)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plot_current_voltage_from_dc_sweep(ax, data_list)
+    # plt.show()
 
-    fig, ax = plt.subplots(2, 3, figsize=(7, 3.5), height_ratios=[1, 0.7])
+    fig, ax = plt.subplots(1, 3, figsize=(7, 4))
     plot_combined_figure(ax, data_list)
+
     plt.show()
