@@ -51,8 +51,8 @@ def generate_memory_protocol_sequence(
 
 
     patterns = [
-        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read"],
-        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read"],
+        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read", "clear"],
+        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read", "clear"],
     ]
 
     ops = []
@@ -68,8 +68,8 @@ def generate_memory_protocol_sequence(
     enab_on = np.ones(len(ops), dtype=bool)
     enab_on[0:1] = False  # Disable word-line select for read operations
     enab_on[3:6] = False  # Disable word-line select for read operations
-    enab_on[7:8] = False  # Disable word-line select for read operations
-    enab_on[10:13] = False  # Disable word-line select for read operations
+    enab_on[8:9] = False  # Disable word-line select for read operations
+    enab_on[10:14] = False  # Disable word-line select for read operations
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
@@ -130,8 +130,8 @@ t_chan, i_chan, t_enab, i_enab, ops, enab_on = generate_memory_protocol_sequence
     pulse_sigma=15e-9,
     hold_width_write=20e-9,
     hold_width_read=50e-9,
-    hold_width_clear=0,
-    write_amplitude=70e-6,
+    hold_width_clear=5e-9,
+    write_amplitude=40e-6,
     read_amplitude=710e-6,
     enab_write_amplitude=485e-6,
     enab_read_amplitude=315e-6,
@@ -159,3 +159,4 @@ plt.legend()
 plt.grid(True, linestyle="--", alpha=0.5)
 plt.tight_layout()
 plt.show()
+
