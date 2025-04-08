@@ -10,26 +10,25 @@ os.makedirs(output_dir, exist_ok=True)
 # Build waveform for a sequence of memory ops
 def generate_memory_protocol_sequence(
     cycle_time=200e-9,
-    pulse_sigma=10e-9,
+    pulse_sigma=15e-9,
     hold_width_write=20e-9,
     hold_width_read=50e-9,
-    hold_width_clear=0,
-    write_amplitude=100e-6,
-    read_amplitude=730e-6,
-    enab_write_amplitude=440e-6,
-    enab_read_amplitude=440e-6,
+    hold_width_clear=5e-9,
+    write_amplitude=40e-6,
+    read_amplitude=710e-6,
+    enab_write_amplitude=485e-6,
+    enab_read_amplitude=315e-6,
     clear_amplitude=700e-6,
-    enab_fraction=0.5,
-    phase_offset=0,
     dt=0.1e-9,
-    seed=None,
+    seed=42,
+    phase_offset=0,
 ):
     if seed is not None:
         np.random.seed(seed)
 
     patterns = [
-        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read"],
-        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read"],
+        ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read", "clear"],
+        ["write_0", "write_0", "enab", "write_1", "write_0", "read", "read", "clear"],
     ]
 
     ops = []
@@ -45,8 +44,8 @@ def generate_memory_protocol_sequence(
     enab_on = np.ones(len(ops), dtype=bool)
     enab_on[0:1] = False  # Disable word-line select for read operations
     enab_on[3:6] = False  # Disable word-line select for read operations
-    enab_on[7:8] = False  # Disable word-line select for read operations
-    enab_on[10:13] = False  # Disable word-line select for read operations
+    enab_on[8:9] = False  # Disable word-line select for read operations
+    enab_on[10:14] = False  # Disable word-line select for read operations
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
@@ -146,7 +145,7 @@ for amp in sweep_values:
         pulse_sigma=15e-9,
         hold_width_write=20e-9,
         hold_width_read=50e-9,
-        hold_width_clear=0,
+        hold_width_clear=5e-9,
         write_amplitude=amp,
         read_amplitude=710e-6,
         enab_write_amplitude=485e-6,
@@ -157,7 +156,7 @@ for amp in sweep_values:
     )
 
     # Save to file
-    filename = os.path.join(output_dir, f"write_amp_sweep_{int(amp * 1e6)}u.txt")
+    filename = os.path.join(output_dir, f"write_amp_sweep_{int(amp * 1e6):+05g}u.txt")
     save_pwl_file(filename, t_chan, i_chan)
     pwl_files.append(filename)
 
