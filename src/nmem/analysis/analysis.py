@@ -19,18 +19,26 @@ from nmem.calculations.calculations import (
 from nmem.measurement.cells import CELLS
 from matplotlib import colors as mcolors
 from cycler import cycler
+import matplotlib as mpl
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 
 
-if os.name == "Windows":
-    font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
-if os.name == "posix":
-    font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
-fm.fontManager.addfont(font_path)
-prop = fm.FontProperties(fname=font_path)
+def set_inter_font():
+    if os.name == "nt":  # Windows
+        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
+    elif os.name == "posix":
+        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
+    else:
+        font_path = None
+
+    if font_path and os.path.exists(font_path):
+        fm.fontManager.addfont(font_path)
+        mpl.rcParams["font.family"] = "Inter"
+
+
 golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
 width = 3.5  # Example width in inches (single-column for Nature)
 height = width / golden_ratio
@@ -401,7 +409,7 @@ def get_bit_error_rate(data_dict: dict) -> np.ndarray:
     return data_dict.get("bit_error_rate").flatten()
 
 
-def get_critical_currents_from_trace(dict_list: list) -> Tuple[list, list]:
+def get_critical_currents_from_trace(dict_list: list) -> Tuple[np.ndarray, np.ndarray]:
     critical_currents = []
     critical_currents_std = []
     for data in dict_list:
@@ -429,7 +437,8 @@ def get_critical_currents_from_trace(dict_list: list) -> Tuple[list, list]:
         std_critical_current = np.std(current_time_trend)
         critical_currents.append(avg_critical_current)
         critical_currents_std.append(std_critical_current)
-
+    critical_currents = np.array(critical_currents)
+    critical_currents_std = np.array(critical_currents_std)
     return critical_currents, critical_currents_std
 
 
@@ -992,6 +1001,7 @@ def plot_critical_currents_from_trace(ax: Axes, dict_list: list) -> Axes:
 def plot_critical_currents_from_dc_sweep(
     ax: Axes, dict_list: list, save: bool = False
 ) -> Axes:
+
     critical_currents, critical_currents_std = get_critical_currents_from_trace(
         dict_list
     )
@@ -1000,65 +1010,49 @@ def plot_critical_currents_from_dc_sweep(
     heater_currents = np.array(
         [data["heater_current"].flatten() * 1e6 for data in dict_list]
     ).flatten()
-    positive_critical_currents = np.where(
-        heater_currents > 0, critical_currents, np.nan
-    )
-    negative_critical_currents = np.where(
-        heater_currents < 0, critical_currents, np.nan
-    )
-    ax.plot(
-        np.abs(heater_currents),
-        positive_critical_currents,
-        "o--",
-        color=cmap[0, :],
-        label="$+I_{{h}}$",
-        linewidth=0.5,
-        markersize=0.5,
-        markerfacecolor=cmap[0, :],
-    )
-    ax.plot(
-        np.abs(heater_currents),
-        negative_critical_currents,
-        "o--",
-        color=cmap[-5, :],
-        label="$-I_{{h}}$",
-        linewidth=0.5,
-        markersize=0.5,
-        markerfacecolor=cmap[-5, :],
-    )
-    ax.fill_between(
-        np.abs(heater_currents),
-        (positive_critical_currents + critical_currents_std),
-        (positive_critical_currents - critical_currents_std),
-        color=cmap[0, :],
-        alpha=0.3,
-        edgecolor="none",
-    )
-    ax.fill_between(
-        np.abs(heater_currents),
-        (negative_critical_currents + critical_currents_std),
-        (negative_critical_currents - critical_currents_std),
-        color=cmap[-5, :],
-        alpha=0.3,
-        edgecolor="none",
-    )
-    ax.tick_params(direction="in", top=True, right=True, bottom=True, left=True)
-    ax.set_xlabel("$|I_{{h}}|$[$\mu$A]")
+    heater_currents = np.round(heater_currents, 0).astype(int)
 
+    print(f"Critical currents: {critical_currents}")
+    print(f"Heater currents: {heater_currents}")
+
+    ax.plot(
+        heater_currents,
+        critical_currents,
+        "o--",
+        color=cmap[0],
+        label="$I_{{h}}$",
+        linewidth=0.5,
+        markersize=0.5,
+        markerfacecolor=cmap[0],
+    )
+
+    ax.fill_between(
+        heater_currents,
+        critical_currents + critical_currents_std,
+        critical_currents - critical_currents_std,
+        color=cmap[0],
+        alpha=0.3,
+        edgecolor="none",
+    )
+
+    ax.set_xlabel("$I_{{h}}$ [$\mu$A]")
     ax.set_ylabel("$I_{{C}}$ [$\mu$A]", labelpad=-1)
     ax.set_ylim([0, 400])
-    ax.set_xlim([0, 500])
-    ax.legend(frameon=False, loc="upper left", handlelength=0.5, labelspacing=0.1)
+    ax.set_xlim([-500, 500])
 
+    # Add secondary y-axis for temperature
     ax2 = ax.twinx()
-    temp = calculate_channel_temperature(1.3, 12.3, np.abs(heater_currents), 500)
-    ax2.plot(np.abs(heater_currents), temp, color="black", linewidth=0.5)
+    temp = calculate_channel_temperature(
+        CRITICAL_TEMP, SUBSTRATE_TEMP, np.abs(heater_currents), 500
+    )
+    ax2.plot(heater_currents, temp, "o--")
     ax2.set_ylim([0, 13])
     ax2.set_ylabel("Temperature [K]")
-    ax2.hlines([1.3, 12.3], 0, 500, color="black", linestyle="--", linewidth=0.5)
+    ax2.axhline(1.3, color="black", linestyle="--", linewidth=0.5)
+    ax2.axhline(12.3, color="black", linestyle="--", linewidth=0.5)
 
     if save:
-        plt.savefig("critical_currents_abs.pdf", bbox_inches="tight")
+        plt.savefig("critical_currents_full.pdf", bbox_inches="tight")
 
     return ax
 
@@ -1097,7 +1091,9 @@ def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes
     return ax
 
 
-def plot_linear_fit(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text:bool=False) -> Axes:
+def plot_linear_fit(
+    ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text: bool = False
+) -> Axes:
     z = np.polyfit(xfit, yfit, 1)
     p = np.poly1d(z)
     x_intercept = -z[1] / z[0]
@@ -1749,6 +1745,7 @@ def plot_current_voltage_from_dc_sweep(
     ax: Axes, dict_list: list, save: bool = False
 ) -> Axes:
     colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(dict_list) / 2) + 1))
+    colors = np.flipud(colors)
     for i, data in enumerate(dict_list):
         heater_current = np.abs(data["heater_current"].flatten()[0] * 1e6)
         ax = plot_current_voltage_curve(
@@ -1758,11 +1755,7 @@ def plot_current_voltage_from_dc_sweep(
             break
     ax.set_ylim([-500, 500])
     ax.set_xlabel("Voltage [V]")
-    ax.set_ylabel("Current [µA]", labelpad=-1)
-    ax.tick_params(direction="in", top=True, right=True)
-    ax.xaxis.set_major_locator(MultipleLocator(0.5))
-    ax.yaxis.set_major_locator(MultipleLocator(100))
-    ax.legend(frameon=False, handlelength=0.5, labelspacing=0.1)
+    ax.set_ylabel("Current [µA]")
 
     if save:
         plt.savefig("iv_curve.pdf", bbox_inches="tight")
@@ -1818,7 +1811,7 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
         axs[row, column].errorbar(
             xfit,
             yfit,
-            yerr=y_step_size* np.ones_like(yfit),
+            yerr=y_step_size * np.ones_like(yfit),
             fmt="o",
             color=colors[column],
             marker=markers[row],
@@ -2035,12 +2028,14 @@ WIDTH = 0.33
 #     plt.show()
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     dict_list = import_directory(
-    "/home/omedeiro/nmem/src/nmem/analysis/enable_current_relation_v2/data"
+        "/home/omedeiro/nmem/src/nmem/analysis/enable_current_relation_v2/data"
     )
 
-    fig, axs = plt.subplots(5, 5, figsize=(180/25.4, 180/25.4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(
+        5, 5, figsize=(180 / 25.4, 180 / 25.4), sharex=True, sharey=True
+    )
     plot_full_grid(axs, dict_list)
     # plt.savefig("enable_current_relation_full_grid.pdf", bbox_inches="tight")
     plt.show()
