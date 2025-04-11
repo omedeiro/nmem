@@ -17,8 +17,11 @@ import tables
 import tdgl
 from IPython.display import HTML, display
 from phidl.device_layout import Polygon
+from shapely.geometry import Polygon as ShapelyPolygon
+from phidl import quickplot as qp
 from tdgl.geometry import box
 from tdgl.visualization.animate import create_animation
+from shapely.validation import explain_validity
 
 os.environ["OPENBLAS_NUM_THREADS"] = "0"
 
@@ -27,6 +30,30 @@ plt.rcParams["figure.figsize"] = (5, 4)
 
 # sys.path.append(r'C:\Users\omedeiro\Documents\GitHub\py-tdgl\tdgl')
 
+def fix_polygon(coords):
+    """
+    Attempt to fix a self-intersecting polygon using Shapely's buffer(0) trick.
+    
+    Args:
+        coords (array-like): Nx2 array of [x, y] coordinates
+    
+    Returns:
+        Polygon or MultiPolygon: a valid geometry
+    """
+    # Convert to Polygon
+    poly = ShapelyPolygon(coords)
+    print("Original validity:", explain_validity(poly))
+    
+    if poly.is_valid:
+        return poly
+    
+    # Try to fix it
+    fixed = poly.buffer(0)
+    
+    if not fixed.is_valid:
+        print("Still invalid after fix:", explain_validity(fixed))
+    
+    return fixed
 
 def make_video_from_solution(
     solution,
@@ -83,12 +110,13 @@ mem = qg.memory_v4()
 
 pts = mem.polygons[0]
 p = pts.polygons[0]
-pout1 = p[1:305]
+pout1 = p[0:149]
 pout = np.append(pout1, p[-2:], axis=0)
-pin = p[305:-2]
+pout = np.append(pout, [p[0]], axis=0)
+pin = np.append(p[150:-2], [p[150]], axis=0)
 
-pp = Polygon(pout, 0, 0, None)
-
+fig, ax = plt.subplots()
+plt.plot(pin[:, 0], pin[:, 1], "r-")
 
 left_path = np.zeros((10, 2))
 left_path[:, 0] = np.linspace(-0.1, 0.1, 10)
@@ -103,12 +131,14 @@ y_positions = np.linspace(-3.75, 3.75, 50)
 field_positions = np.zeros((50 * 50, 2))
 field_positions[:, 0] = np.tile(x_positions, 50)
 field_positions[:, 1] = np.repeat(y_positions, 50)
-
+qp(mem)
 # %%
 plt.close()
-film = tdgl.Polygon("film", points=pout).buffer(0).resample(601)
 
-round_hole = tdgl.Polygon("center", points=pin).buffer(0).resample(601)
+
+film = tdgl.Polygon("film", points=pout)
+
+round_hole = tdgl.Polygon("center", points=pin).buffer(0)
 
 source = tdgl.Polygon("source", points=box(2.1, 1 / 10)).translate(dx=0.5, dy=3.4)
 
@@ -151,7 +181,7 @@ stime = 100
 
 prev_sol = None
 
-N = 11
+N = 1
 cr = np.linspace(0, applied_current, N)
 cr = np.append(cr, np.flipud(cr[0:-1]))
 n = len(cr)
@@ -163,7 +193,7 @@ voltage = np.zeros((n, 1))
 total_current = np.ones((n, 1))
 
 
-for i, current in enumerate(cr):
+for i, current in enumerate([200]):
     full_name = os.path.join(path, f"{i}current_{int(current)}uA")
     options = tdgl.SolverOptions(
         # Allow some time to equilibrate before saving data.
@@ -187,13 +217,11 @@ for i, current in enumerate(cr):
 
     prev_sol = nmem_solution
 
-    fig, axs = plt.subplots(ncols=4, nrows=2, figsize=(16, 9), layout="constrained")
 
     fig, ax = nmem_solution.plot_currents(
         dataset="supercurrent",
         # figsize=(6, 3),
         streamplot=False,
-        ax=axs[0, 0],
     )
     ax.plot(left_path[:, 0], left_path[:, 1], color="C0")
     ax.plot(right_path[:, 0], right_path[:, 1], color="C1")
@@ -202,15 +230,14 @@ for i, current in enumerate(cr):
         dataset="normal_current",
         # figsize=(6, 3),
         streamplot=False,
-        ax=axs[0, 1],
     )
     ax.plot(left_path[:, 0], left_path[:, 1], color="C0")
     ax.plot(right_path[:, 0], right_path[:, 1], color="C1")
 
-    fig, ax = nmem_solution.plot_order_parameter(ax=axs[0, 2:4])
+    fig, ax = nmem_solution.plot_order_parameter()
 
     fig, ax = nmem_solution.plot_field_at_positions(
-        field_positions, zs=0.1, ax=axs[1, 3], vmin=-3, vmax=3
+        field_positions, zs=0.1, vmin=-3, vmax=3
     )
 
     left_current[i] = nmem_solution.current_through_path(
@@ -233,7 +260,6 @@ for i, current in enumerate(cr):
     if total_current[i] == 0:
         total_current[i] = 1
 
-    ax = axs[1, 0]
     ax.plot(
         cr[0 : i + 1],
         left_current[0 : i + 1] / total_current[0 : i + 1],
@@ -254,7 +280,6 @@ for i, current in enumerate(cr):
     ax.set_xlabel("$I_{applied}$ [$\\mu$ A]")
     ax.set_ylim([0, 1])
 
-    ax = axs[1, 1]
     ax.plot(
         cr[0 : i + 1],
         left_ncurrent[0 : i + 1] / total_current[0 : i + 1],
@@ -275,7 +300,6 @@ for i, current in enumerate(cr):
     ax.set_xlabel("$I_{applied}$ [$\\mu$ A]")
     ax.set_ylim([0, 1])
 
-    ax = axs[1, 2]
     voltage[i] = nmem_solution.dynamics.voltage()[-1]
     ax.plot(total_current[0 : i + 1], voltage[0 : i + 1], marker="o")
     ax.set_xlabel("$I_{total}$ [$\\mu$ A]")
