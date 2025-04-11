@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Refactored TDGL Simulation for Superconducting Nanowire Memory
 Created on Tue Nov 28 19:21:58 2023
-
 @author: omedeiro
 """
 
@@ -16,312 +16,162 @@ import qnngds.geometry as qg
 import tables
 import tdgl
 from IPython.display import HTML, display
-from phidl.device_layout import Polygon
 from shapely.geometry import Polygon as ShapelyPolygon
-from phidl import quickplot as qp
+from shapely.validation import explain_validity
 from tdgl.geometry import box
 from tdgl.visualization.animate import create_animation
-from shapely.validation import explain_validity
 
+# Plot settings and environment variables
 os.environ["OPENBLAS_NUM_THREADS"] = "0"
-
-
 plt.rcParams["figure.figsize"] = (5, 4)
 
-# sys.path.append(r'C:\Users\omedeiro\Documents\GitHub\py-tdgl\tdgl')
-
-def fix_polygon(coords):
-    """
-    Attempt to fix a self-intersecting polygon using Shapely's buffer(0) trick.
-    
-    Args:
-        coords (array-like): Nx2 array of [x, y] coordinates
-    
-    Returns:
-        Polygon or MultiPolygon: a valid geometry
-    """
-    # Convert to Polygon
-    poly = ShapelyPolygon(coords)
-    print("Original validity:", explain_validity(poly))
-    
-    if poly.is_valid:
-        return poly
-    
-    # Try to fix it
-    fixed = poly.buffer(0)
-    
-    if not fixed.is_valid:
-        print("Still invalid after fix:", explain_validity(fixed))
-    
-    return fixed
-
-def make_video_from_solution(
-    solution,
-    quantities=("order_parameter", "phase"),
-    fps=20,
-    figsize=(5, 4),
-):
-    """Generates an HTML5 video from a tdgl.Solution."""
-    with tdgl.non_gui_backend():
-        with h5py.File(solution.path, "r") as h5file:
-            anim = create_animation(
-                h5file,
-                quantities=quantities,
-                fps=fps,
-                figure_kwargs=dict(figsize=figsize),
-            )
-            video = anim.to_html5_video()
-        return HTML(video)
-
-
-tempdir = tempfile.TemporaryDirectory()
-
-plt.close()
-
+# Physical constants
 length_units = "um"
-# Material parameters
 XI = 0.0062
 LONDONL = 0.2
 D = 0.01
-
-MU0 = 1.256637062120000e-06
-SIGMA = 1 / (2.5)  # (uΩ-cm)^-1
-H = 6.626070150000000e-34
-E = 1.602176634000000e-19
+MU0 = 4 * np.pi * 1e-7
+RESISTIVITY = 2.5
+SIGMA = 1 / RESISTIVITY
+H = 6.62607015e-34
+E = 1.602176634e-19
 PHI0 = H / (2 * E)
-# UNITS
 TAU0 = MU0 * SIGMA * LONDONL**2
 B0 = PHI0 / (2 * np.pi * XI**2)
 A0 = XI * B0
 J0 = (4 * XI * B0) / (MU0 * LONDONL**2)
-K0 = J0 * D  # uA/um
+K0 = J0 * D
 V0 = XI * J0 / SIGMA
 
-layer = tdgl.Layer(
-    coherence_length=XI,
-    london_lambda=LONDONL,
-    thickness=D,
-    conductivity=0.4,
-    gamma=23.8,
-)
+
+def fix_polygon(coords: np.ndarray) -> ShapelyPolygon:
+    poly = ShapelyPolygon(coords)
+    print("Original validity:", explain_validity(poly))
+    if poly.is_valid:
+        return poly
+    fixed = poly.buffer(0)
+    if not fixed.is_valid:
+        print("Still invalid after fix:", explain_validity(fixed))
+    return fixed
 
 
-mem = qg.memory_v4()
-
-pts = mem.polygons[0]
-p = pts.polygons[0]
-pout1 = p[0:149]
-pout = np.append(pout1, p[-2:], axis=0)
-pout = np.append(pout, [p[0]], axis=0)
-pin = np.append(p[150:-2], [p[150]], axis=0)
-
-fig, ax = plt.subplots()
-plt.plot(pin[:, 0], pin[:, 1], "r-")
-
-left_path = np.zeros((10, 2))
-left_path[:, 0] = np.linspace(-0.1, 0.1, 10)
-left_path[:, 1] = np.ones((10,)) * 0.3
-
-right_path = np.zeros((10, 2))
-right_path[:, 0] = np.linspace(2.7, 3.1, 10)
-right_path[:, 1] = np.ones((10,)) * 0.3
-
-x_positions = np.linspace(-0.7, 3.3, 50)
-y_positions = np.linspace(-3.75, 3.75, 50)
-field_positions = np.zeros((50 * 50, 2))
-field_positions[:, 0] = np.tile(x_positions, 50)
-field_positions[:, 1] = np.repeat(y_positions, 50)
-qp(mem)
-# %%
-plt.close()
+def make_video_from_solution(solution, quantities=("order_parameter", "phase"), fps=20, figsize=(5, 4)):
+    with tdgl.non_gui_backend():
+        with h5py.File(solution.path, "r") as h5file:
+            anim = create_animation(h5file, quantities=quantities, fps=fps, figure_kwargs=dict(figsize=figsize))
+            return HTML(anim.to_html5_video())
 
 
-film = tdgl.Polygon("film", points=pout)
-
-round_hole = tdgl.Polygon("center", points=pin).buffer(0)
-
-source = tdgl.Polygon("source", points=box(2.1, 1 / 10)).translate(dx=0.5, dy=3.4)
-
-drain = tdgl.Polygon("drain", points=box(2.1, 1 / 10)).translate(dx=0.5, dy=-3.4)
-
-probe_points = [(0.5, 3), (0.5, -3)]
+def make_animation_from_solution(solution, output_path, tag, quantities=("order_parameter", "phase"), fps=20):
+    video_html = make_video_from_solution(solution, quantities=quantities, fps=fps)
+    display(video_html)
+    html_file = os.path.join(output_path, f"data_{tag}.html")
+    with open(html_file, "w") as file:
+        file.write(video_html.data)
 
 
-device = tdgl.Device(
-    "weak_link",
-    layer=layer,
-    film=film,
-    holes=[round_hole],
-    terminals=[source, drain],
-    probe_points=probe_points,
-    length_units=length_units,
-)
+def make_device(xi=XI, d=D, london_lambda=LONDONL, conductivity=SIGMA, gamma=23.8):
+    layer = tdgl.Layer(
+        coherence_length=xi,
+        london_lambda=london_lambda,
+        thickness=d,
+        conductivity=conductivity,
+        gamma=gamma,
+    )
+    mem = qg.memory_v4()
+    p = mem.polygons[0].polygons[0]
+    pout = np.vstack((p[:149], p[-2:], p[:1]))
+    pin = np.vstack((p[150:-2], p[150:151]))
+
+    film = tdgl.Polygon("film", points=pout)
+    hole = tdgl.Polygon("center", points=pin).buffer(0)
+    source = tdgl.Polygon("source", points=box(2.1, 0.1)).translate(dx=0.5, dy=3.4)
+    drain = tdgl.Polygon("drain", points=box(2.1, 0.1)).translate(dx=0.5, dy=-3.4)
+    probes = [(0.5, 3), (0.5, -3)]
+
+    return tdgl.Device(
+        "weak_link",
+        layer=layer,
+        film=film,
+        holes=[hole],
+        terminals=[source, drain],
+        probe_points=probes,
+        length_units=length_units,
+    )
 
 
-fig, ax = device.draw()
-
-device.make_mesh(max_edge_length=XI * 10)
-fig, ax = device.plot(mesh=True, legend=False)
+def get_current_through_path(solution, path, dataset="supercurrent", with_units=True):
+    return solution.current_through_path([tuple(coord) for coord in path], with_units=with_units, dataset=dataset)
 
 
-# %%
-
-
-tables.file._open_files.close_all()
-strnow = datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
-
-dirname = r"G:\My Drive\___Projects\_physics\py-tdgl\nMem\test"
-simName = "IV_seed"
-path = os.path.join(dirname, simName, strnow)
-
-filename = f"nMem_{strnow}"
-
-applied_current = 2000
-stime = 100
-
-prev_sol = None
-
-N = 1
-cr = np.linspace(0, applied_current, N)
-cr = np.append(cr, np.flipud(cr[0:-1]))
-n = len(cr)
-left_current = np.zeros((n, 1))
-right_current = np.zeros((n, 1))
-left_ncurrent = np.zeros((n, 1))
-right_ncurrent = np.zeros((n, 1))
-voltage = np.zeros((n, 1))
-total_current = np.ones((n, 1))
-
-
-for i, current in enumerate([200]):
-    full_name = os.path.join(path, f"{i}current_{int(current)}uA")
+def run_simulation(device, current, stime, path, prev_sol=None):
     options = tdgl.SolverOptions(
-        # Allow some time to equilibrate before saving data.
         skip_time=500,
         solve_time=stime,
-        output_file=full_name + ".h5",
+        output_file=os.path.join(path, f"current_{int(current)}uA.h5"),
         field_units="mT",
         current_units="uA",
         save_every=50,
     )
-
-    nmem_solution = tdgl.solve(
+    return tdgl.solve(
         device,
         options,
-        # terminal_currents must satisfy current conservation, i.e.,
-        # sum(terminal_currents.values()) == 0.
         applied_vector_potential=0,
-        terminal_currents=dict(source=current, drain=-current),
+        terminal_currents={"source": current, "drain": -current},
         seed_solution=prev_sol,
     )
 
-    prev_sol = nmem_solution
 
+if __name__ == "__main__":
+    tempdir = tempfile.TemporaryDirectory()
+    tables.file._open_files.close_all()
+    plt.close()
 
-    fig, ax = nmem_solution.plot_currents(
-        dataset="supercurrent",
-        # figsize=(6, 3),
-        streamplot=False,
-    )
-    ax.plot(left_path[:, 0], left_path[:, 1], color="C0")
-    ax.plot(right_path[:, 0], right_path[:, 1], color="C1")
+    # Set up output directory
+    timestamp = datetime.today().strftime("%Y-%m-%d-%H-%M-%S")
+    output_root = r"G:\My Drive\___Projects\_physics\py-tdgl\nMem\test"
+    sim_name = "IV_seed"
+    output_path = os.path.join(output_root, sim_name, timestamp)
+    os.makedirs(output_path, exist_ok=True)
 
-    fig, ax = nmem_solution.plot_currents(
-        dataset="normal_current",
-        # figsize=(6, 3),
-        streamplot=False,
-    )
-    ax.plot(left_path[:, 0], left_path[:, 1], color="C0")
-    ax.plot(right_path[:, 0], right_path[:, 1], color="C1")
+    # Make device
+    device = make_device()
+    device.draw()
+    device.make_mesh(max_edge_length=XI * 10)
+    device.plot(mesh=True, legend=False)
 
-    fig, ax = nmem_solution.plot_order_parameter()
+    # Simulation parameters
+    current = 2000  # uA
+    stime = 100  # ps
+    prev_sol = None
 
-    fig, ax = nmem_solution.plot_field_at_positions(
-        field_positions, zs=0.1, vmin=-3, vmax=3
-    )
+    # Measurement paths
+    left_path = np.column_stack((np.linspace(-0.1, 0.1, 10), np.full(10, 0.3)))
+    right_path = np.column_stack((np.linspace(2.7, 3.1, 10), np.full(10, 0.3)))
 
-    left_current[i] = nmem_solution.current_through_path(
-        left_path, with_units=False, dataset="supercurrent"
-    )
-    left_ncurrent[i] = nmem_solution.current_through_path(
-        left_path, with_units=False, dataset="normal_current"
-    )
+    # Run simulation
+    sol = run_simulation(device, current=current, stime=stime, path=output_path, prev_sol=prev_sol)
 
-    right_current[i] = nmem_solution.current_through_path(
-        right_path, with_units=False, dataset="supercurrent"
-    )
-    right_ncurrent[i] = nmem_solution.current_through_path(
-        right_path, with_units=False, dataset="normal_current"
-    )
+    # Plot results
+    sol.plot_currents(dataset="supercurrent", streamplot=False)[1].plot(left_path[:, 0], left_path[:, 1], color="C0")
+    sol.plot_currents(dataset="supercurrent", streamplot=False)[1].plot(right_path[:, 0], right_path[:, 1], color="C1")
+    sol.plot_currents(dataset="normal_current", streamplot=False)[1].plot(left_path[:, 0], left_path[:, 1], color="C0")
+    sol.plot_currents(dataset="normal_current", streamplot=False)[1].plot(right_path[:, 0], right_path[:, 1], color="C1")
+    sol.plot_order_parameter()
 
-    total_current[i] = (
-        left_current[i] + left_ncurrent[i] + right_current[i] + right_ncurrent[i]
-    )
-    if total_current[i] == 0:
-        total_current[i] = 1
+    field_positions = np.column_stack((
+        np.tile(np.linspace(-0.7, 3.3, 50), 50),
+        np.repeat(np.linspace(-3.75, 3.75, 50), 50),
+    ))
+    sol.plot_field_at_positions(field_positions, zs=0.1, vmin=-3, vmax=3)
 
-    ax.plot(
-        cr[0 : i + 1],
-        left_current[0 : i + 1] / total_current[0 : i + 1],
-        color="C0",
-        marker="o",
-        label="left",
-    )
-    ax.plot(
-        cr[0 : i + 1],
-        right_current[0 : i + 1] / total_current[0 : i + 1],
-        color="C1",
-        marker="o",
-        label="right",
-    )
-    ax.legend()
-    ax.set_title("Supercurrent")
-    ax.set_ylabel("$I_{super}/I_{total}$")
-    ax.set_xlabel("$I_{applied}$ [$\\mu$ A]")
-    ax.set_ylim([0, 1])
+    # Extract currents
+    left_current = get_current_through_path(sol, left_path, "supercurrent")
+    right_current = get_current_through_path(sol, right_path, "supercurrent")
+    left_ncurrent = get_current_through_path(sol, left_path, "normal_current")
+    right_ncurrent = get_current_through_path(sol, right_path, "normal_current")
 
-    ax.plot(
-        cr[0 : i + 1],
-        left_ncurrent[0 : i + 1] / total_current[0 : i + 1],
-        color="C0",
-        marker="o",
-        label="left",
-    )
-    ax.plot(
-        cr[0 : i + 1],
-        right_ncurrent[0 : i + 1] / total_current[0 : i + 1],
-        color="C1",
-        marker="o",
-        label="right",
-    )
-    ax.legend()
-    ax.set_title("Normal current")
-    ax.set_ylabel("$I_{norm}$/$I_{total}$")
-    ax.set_xlabel("$I_{applied}$ [$\\mu$ A]")
-    ax.set_ylim([0, 1])
+    # Optional: animation
+    # make_animation_from_solution(sol, output_path, timestamp)
 
-    voltage[i] = nmem_solution.dynamics.voltage()[-1]
-    ax.plot(total_current[0 : i + 1], voltage[0 : i + 1], marker="o")
-    ax.set_xlabel("$I_{total}$ [$\\mu$ A]")
-    ax.set_ylabel("$V$ [$V_0$]")
-
-    fig.suptitle(full_name)
-    fig.savefig(full_name + "_fig")
-    plt.close(fig)
-# plt.savefig(args, kwargs)
-
-MAKE_ANIMATIONS = False
-
-tempdir.cleanup()
-
-
-if MAKE_ANIMATIONS:
-    nMem_video = make_video_from_solution(
-        nmem_solution,
-        quantities=["order_parameter", "phase", "scalar_potential"],
-        figsize=(6.5, 4),
-    )
-    display(nMem_video)
-
-    with open(path + "\data_" + strnow + ".html", "w") as file:
-        file.write(nMem_video.data)
+    tempdir.cleanup()
