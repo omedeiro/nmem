@@ -21,7 +21,7 @@ def run_simulation(
     os.makedirs(path, exist_ok=True)
     output_file = os.path.join(path, f"current_{int(current)}uA.h5")
     options = SolverOptions(
-        skip_time=500,
+        skip_time=50,
         solve_time=stime,
         output_file=output_file,
         field_units="mT",
@@ -32,8 +32,8 @@ def run_simulation(
         device,
         options,
         terminal_currents=lambda t: {
-            "source": time_dependent_current(t),
-            "drain": -time_dependent_current(t),
+            "source": time_dependent_current(t, current),
+            "drain": -time_dependent_current(t, current),
         },
         applied_vector_potential=0,
         seed_solution=prev_sol,
