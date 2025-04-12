@@ -15,6 +15,44 @@ from matplotlib import pyplot as plt
 from IPython.display import HTML, display
 import tdgl
 from tdgl.visualization.animate import create_animation
+import matplotlib.font_manager as fm
+import matplotlib as mpl
+
+
+def set_inter_font():
+    if os.name == "nt":  # Windows
+        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
+    elif os.name == "posix":
+        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
+    else:
+        font_path = None
+
+    if font_path and os.path.exists(font_path):
+        fm.fontManager.addfont(font_path)
+        mpl.rcParams["font.family"] = "Inter"
+
+
+set_inter_font()
+plt.rcParams.update(
+    {
+        # "figure.figsize": [width, height],
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+        "font.size": 7,
+        "axes.linewidth": 0.5,
+        "xtick.major.width": 0.5,
+        "ytick.major.width": 0.5,
+        "xtick.direction": "out",
+        "ytick.direction": "out",
+        "font.family": "Inter",
+        "lines.markersize": 3,
+        "lines.linewidth": 1.2,
+        "legend.fontsize": 6,
+        "legend.frameon": False,
+        "xtick.major.size": 2,
+        "ytick.major.size": 2,
+    }
+)
 
 
 def make_video_from_solution(
@@ -40,75 +78,96 @@ def find_latest_result_file(output_root: str = "output") -> str:
     return latest_file
 
 
-# --- Determine file to load ---
-file_to_load = find_latest_result_file()
-print(f"Loading: {file_to_load}")
-
-sol = Solution.from_hdf5(file_to_load)
-
-# --- Paths for current extraction ---
-main_path = np.column_stack((np.linspace(-0.5, 1.5, 100), np.full(100, 2.5)))
-left_path = np.column_stack((np.linspace(-0.1, 0.1, 100), np.full(100, 0.3)))
-right_path = np.column_stack((np.linspace(2.7, 3.1, 100), np.full(100, 0.3)))
-
-# --- Supercurrent plot ---
-fig, ax = sol.plot_currents(dataset="supercurrent", streamplot=True)
-
-ax.plot(left_path[:, 0], left_path[:, 1], color="C0", lw=1)
-ax.plot(right_path[:, 0], right_path[:, 1], color="C1", lw=1)
-ax.plot(main_path[:, 0], main_path[:, 1], color="C2", lw=1)
-fig.suptitle("Supercurrent")
-plt.show()
-# --- Normal current plot ---
-fig, ax = sol.plot_currents(dataset="normal_current", streamplot=True)
-ax.plot(left_path[:, 0], left_path[:, 1], color="C0", lw=1)
-ax.plot(right_path[:, 0], right_path[:, 1], color="C1", lw=1)
-fig.suptitle("Normal Current")
-plt.show()
-
-# --- Order parameter ---
-sol.plot_order_parameter()
+def plot_supercurrent(ax: plt.Axes, sol: Solution, solve_step: int = 200):
+    sol.solve_step = solve_step
+    sol.plot_currents(dataset="supercurrent", streamplot=True, ax=ax)
+    return ax
 
 
-# --- Magnetic field ---
-x_pos = np.linspace(-0.7, 3.3, 50)
-y_pos = np.linspace(-3.75, 3.75, 50)
-field_pos = np.column_stack((np.tile(x_pos, 50), np.repeat(y_pos, 50)))
-sol.plot_field_at_positions(field_pos, zs=0.01, vmin=-0.3, vmax=0.3)
-
-# --- Extract currents and print ---
-applied_supercurrent = get_current_through_path(sol, main_path, dataset="supercurrent")
-applied_normal = get_current_through_path(sol, main_path, dataset="normal_current")
-print(f"Applied supercurrent: {applied_supercurrent}")
-print(f"Applied normal current: {applied_normal}")
+def plot_normalcurrent(ax: plt.Axes, sol: Solution, solve_step: int = 200):
+    sol.solve_step = solve_step
+    sol.plot_currents(dataset="normal_current", streamplot=True, ax=ax)
+    return ax
 
 
-left_supercurrent = get_current_through_path(sol, left_path, dataset="supercurrent")
-right_supercurrent = get_current_through_path(sol, right_path, dataset="supercurrent")
-left_normal = get_current_through_path(sol, left_path, dataset="normal_current")
-right_normal = get_current_through_path(sol, right_path, dataset="normal_current")
-
-print(f"Left supercurrent: {left_supercurrent}")
-print(f"Right supercurrent: {right_supercurrent}")
-print(f"Left normal current: {left_normal}")
-print(f"Right normal current: {right_normal}")
-
-# --- Make animation ---
-output_path = os.path.dirname(file_to_load)
-tag = os.path.basename(file_to_load).split(".")[0]
-video_html= make_animation_from_solution(
-    sol,
-    output_path,
-    tag,
-    quantities=("order_parameter", "phase", "supercurrent", "normal_current"),
-)
-# --- Save animation as HTML ---
-html_file = os.path.join(output_path, f"data_{tag}.html")
-with open(html_file, "w") as file:
-    file.write(video_html.data)
+def plot_order_parameter(ax: plt.Axes, sol: Solution):
+    sol.plot
+    return ax
 
 
-# output_path = os.path.dirname(file_to_load)
-# tag = os.path.basename(file_to_load).split(".")[0]
+def plot_curlines(ax: plt.Axes, path: np.ndarray, color: str):
+    ax.plot(path[:, 0], path[:, 1], color=color, lw=1)
+    return ax
 
-make_field_animation(sol, output_path=output_path, tag=tag)
+
+if __name__ == "__main__":
+    # --- Determine file to load ---
+    # file_to_load = find_latest_result_file()
+    file_to_load = "output/2025-04-12-17-30-15/current_-1000uA.h5"
+    print(f"Loading: {file_to_load}")
+
+    sol = Solution.from_hdf5(file_to_load)
+
+    # --- Paths for current extraction ---
+    main_path = np.column_stack((np.linspace(-0.5, 1.5, 100), np.full(100, 2.5)))
+    left_path = np.column_stack((np.linspace(-0.1, 0.1, 100), np.full(100, 0.3)))
+    right_path = np.column_stack((np.linspace(2.7, 3.1, 100), np.full(100, 0.3)))
+
+    fig, axs = plt.subplot_mosaic(
+        """
+        AC
+        BD
+        """,
+        layout="constrained",
+        height_ratios=[1, 1],
+    )
+    # --- Supercurrent ---
+    plot_supercurrent(axs["A"], sol, 100)
+    axs["A"].set_title("Supercurrent")
+
+    # --- Normal current ---
+    plot_normalcurrent(axs["B"], sol, 100)
+    axs["B"].set_title("Normal current")
+    # # --- Order parameter ---
+    sol.plot_order_parameter(axes=[axs["C"], axs["D"]])
+
+    # --- Magnetic field ---
+    x_pos = np.linspace(-0.7, 3.3, 50)
+    y_pos = np.linspace(-3.75, 3.75, 50)
+    field_pos = np.column_stack((np.tile(x_pos, 50), np.repeat(y_pos, 50)))
+    sol.plot_field_at_positions(field_pos, zs=0.01, vmin=-1.5, vmax=1.5)
+
+    # --- Extract currents and print ---
+    applied_supercurrent = get_current_through_path(
+        sol, main_path, dataset="supercurrent"
+    )
+    applied_normal = get_current_through_path(sol, main_path, dataset="normal_current")
+    print(f"Applied supercurrent: {applied_supercurrent}")
+    print(f"Applied normal current: {applied_normal}")
+
+    left_supercurrent = get_current_through_path(sol, left_path, dataset="supercurrent")
+    right_supercurrent = get_current_through_path(
+        sol, right_path, dataset="supercurrent"
+    )
+    left_normal = get_current_through_path(sol, left_path, dataset="normal_current")
+    right_normal = get_current_through_path(sol, right_path, dataset="normal_current")
+
+    print(f"Left supercurrent: {left_supercurrent}")
+    print(f"Right supercurrent: {right_supercurrent}")
+    print(f"Left normal current: {left_normal}")
+    print(f"Right normal current: {right_normal}")
+
+    # # --- Make animation ---
+    output_path = os.path.dirname(file_to_load)
+    tag = os.path.basename(file_to_load).split(".")[0]
+    # video_html= make_animation_from_solution(
+    #     sol,
+    #     output_path,
+    #     tag,
+    #     quantities=("supercurrent"),
+    # )
+
+    # output_path = os.path.dirname(file_to_load)
+    # tag = os.path.basename(file_to_load).split(".")[0]
+
+    # make_field_animation(sol, output_path=output_path, tag=tag)

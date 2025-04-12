@@ -144,3 +144,44 @@ def make_field_animation(
     print(f"Saving animation to: {filename}")
     iio.imwrite(filename, images, fps=fps)
     plt.close(fig)
+
+
+def animate_currents(
+    solution,
+    output_path,
+    tag="normal_current",
+    dataset="normal_current",
+    fps=20,
+    resolution=100,
+    dpi=100,
+):
+    os.makedirs(output_path, exist_ok=True)
+    filename = os.path.join(output_path, f"{tag}_stream_animation.gif")
+    num_frames = solution.data_range[1] + 1
+
+    x = solution.device.mesh.x
+    y = solution.device.mesh.y
+    X, Y = np.meshgrid(np.linspace(x.min(), x.max(), resolution),
+                       np.linspace(y.min(), y.max(), resolution))
+    
+    fig, ax = plt.subplots(figsize=(5, 4))
+    images = []
+
+    for frame in tqdm(range(num_frames), desc="Animating streamplot"):
+        solution.solve_step = frame
+        Jx, Jy = solution.current_at_grid(X, Y, dataset=dataset)
+        ax.clear()
+        ax.streamplot(X, Y, Jx, Jy, density=1.2, linewidth=0.5, arrowsize=0.7)
+        ax.set_title(f"{dataset} Streamplot - Frame {frame}")
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(y.min(), y.max())
+        ax.set_aspect("equal")
+
+        fig.canvas.draw()
+        image = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+        image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+        images.append(image.copy())
+
+    print(f"Saving animation to: {filename}")
+    iio.imwrite(filename, images, fps=fps)
+    plt.close(fig)
