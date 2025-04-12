@@ -5,8 +5,8 @@ from nmem.simulation.pytdgl.devices.memory_cell import make_device
 from nmem.simulation.pytdgl.sim.util import run_simulation
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--current", type=float, default=2000, help="Source current in uA")
-parser.add_argument("--time", type=float, default=100, help="Solve time in ps")
+parser.add_argument("--current", type=float, default=1000, help="Source current in uA")
+parser.add_argument("--time", type=float, default=1000, help="Solve time in ps")
 parser.add_argument("--tag", type=str, default="", help="Tag for output folder")
 args = parser.parse_args()
 
