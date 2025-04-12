@@ -30,6 +30,7 @@ dist/
 *.wmv
 *.tiff
 *.png
+*.gif 
 
 # Documents
 *.pdf
