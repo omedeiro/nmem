@@ -1,19 +1,18 @@
 import os
-from tdgl import SolverOptions, solve, Device, Solution
-import numpy as np
 import glob
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import os
+import h5py
+from tdgl import SolverOptions, solve, Device, Solution
+from tqdm import tqdm
+import imageio.v3 as iio
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
 def time_dependent_current(t: float, current: float = 1000) -> float:
     """Return current in microamps at time t (in picoseconds)."""
-    # Example: Gaussian pulse centered at t=1000ps with width 200ps
-    return current * np.exp(-(((t - 500) / 200) ** 2))
+    return current * np.exp(-(((t - 500) / 100) ** 2))
 
 
 def run_simulation(
@@ -42,22 +41,18 @@ def run_simulation(
 
 
 def find_latest_result_file(output_root: str = "output") -> str:
-    """Finds the most recently modified .h5 file in the output directory tree."""
     files = glob.glob(f"{output_root}/**/*.h5", recursive=True)
     if not files:
         raise FileNotFoundError(f"No .h5 files found under {output_root}")
-    latest_file = max(files, key=os.path.getmtime)
-    return latest_file
+    return max(files, key=os.path.getmtime)
 
 
 def get_current_through_path(
     solution: Solution, path: np.ndarray, dataset="supercurrent", with_units=True
 ):
-    if not isinstance(path, np.ndarray):
-        path = np.array(path)
-        if path.ndim != 2 or path.shape[1] != 2:
-            raise ValueError("Path must be an Nx2 array of (x, y) coordinates.")
-
+    path = np.asarray(path)
+    if path.ndim != 2 or path.shape[1] != 2:
+        raise ValueError("Path must be an Nx2 array of (x, y) coordinates.")
     return solution.current_through_path(path, with_units=with_units, dataset=dataset)
 
 
@@ -70,86 +65,82 @@ def make_animation_from_solution(
 ):
     from tdgl.visualization.animate import create_animation
     from IPython.display import HTML, display
-    import h5py
 
     with h5py.File(solution.path, "r") as h5file:
-        anim = create_animation(h5file, quantities=quantities, fps=fps)
+        anim = create_animation(
+            h5file,
+            quantities=quantities,
+            fps=fps,
+            output_file=os.path.join(output_path, f"{tag}.gif"),
+        )
         html = anim.to_html5_video()
+
     display(HTML(html))
-    with open(os.path.join(output_path, f"{tag}.html"), "w") as f:
-        f.write(html)
 
 
 def make_field_animation(
-    solution,
-    output_path,
+    solution: Solution,
+    output_path: str,
     tag="field",
     zs=0.01,
     vmin=-0.3,
     vmax=0.3,
     fps=20,
-    resolution=50,
+    resolution=150,
     dpi=100,
 ):
-    """
-    Create and save a magnetic field animation from a TDGL Solution object.
+    """Create and save magnetic field animation with progress bar."""
+    num_frames = solution.data_range[1] + 1
+    print(f"Creating magnetic field animation ({num_frames} frames)...")
 
-    Args:
-        solution: tdgl.Solution object loaded from .h5
-        output_path: where to save the mp4 file
-        tag: filename prefix (no extension)
-        zs: z-plane to evaluate field (μm)
-        vmin, vmax: color scale limits
-        fps: frames per second for video
-        resolution: number of points per axis
-        dpi: resolution of the saved video
-    """
-    print(f"Creating magnetic field animation with {solution.num_frames} frames...")
-
-    # Define sampling grid
-    x_pos = np.linspace(
-        solution.mesh_bounds[0][0], solution.mesh_bounds[1][0], resolution
-    )
-    y_pos = np.linspace(
-        solution.mesh_bounds[0][1], solution.mesh_bounds[1][1], resolution
-    )
+    # Sampling grid
+    meshx = solution.device.points
+    meshy = solution.device.points
+    meshx = meshx[:, 0]
+    meshy = meshy[:, 1]
+    x_min, x_max = meshx.min(), meshx.max()
+    y_min, y_max = meshy.min(), meshy.max()
+    x_pos = np.linspace(x_min, x_max, resolution)
+    y_pos = np.linspace(y_min, y_max, resolution)
     field_pos = np.column_stack(
         (np.tile(x_pos, resolution), np.repeat(y_pos, resolution))
     )
-
-    # Set up plot
+    # Plot setup
     fig, ax = plt.subplots(figsize=(5, 4))
-    sc = ax.scatter(
-        field_pos[:, 0],
-        field_pos[:, 1],
-        c=np.zeros(len(field_pos)),
-        s=10,
+    Bz0 = solution.field_at_position(field_pos, zs=zs).reshape(len(y_pos), len(x_pos))
+    im = ax.imshow(
+        Bz0,
+        extent=[x_pos.min(), x_pos.max(), y_pos.min(), y_pos.max()],
+        origin="lower",
         vmin=vmin,
         vmax=vmax,
         cmap="RdBu_r",
     )
-    cb = plt.colorbar(sc, ax=ax)
+    cb = plt.colorbar(im, ax=ax)
     cb.set_label("Bₙ (mT)")
-    ax.set_aspect("equal")
     ax.set_title("Magnetic Field $B_z$")
-    ax.set_xlim(x_pos.min(), x_pos.max())
-    ax.set_ylim(y_pos.min(), y_pos.max())
 
-    # Frame update function
-    def update(frame_idx):
-        Bz = solution.get_field_at_positions(field_pos, zs=zs, frame=frame_idx)
-        sc.set_array(Bz)
+    # Generate frames
+    images = []
+    for frame_idx in tqdm(range(num_frames), desc="Generating frames"):
+        solution.solve_step = frame_idx
+        Bz = solution.field_at_position(field_pos, zs=zs).reshape(len(y_pos), len(x_pos))
+        im.set_data(Bz)
+        fig.canvas.draw()
+        image = np.frombuffer(fig.canvas.buffer_rgba(), dtype="uint8").reshape(
+            fig.canvas.get_width_height()[::-1] + (4,)
+        )
         ax.set_title(f"Magnetic Field $B_z$, Frame {frame_idx}")
-        return (sc,)
 
-    # Create animation
-    ani = animation.FuncAnimation(
-        fig, update, frames=solution.num_frames, interval=1000 / fps, blit=False
-    )
+        images.append(image.copy())
 
-    # Save to file
+    # Safety check
+    if not images:
+        raise RuntimeError("No frames were rendered — check that solve_step is working.")
+
+    # Save animation
     os.makedirs(output_path, exist_ok=True)
-    filename = os.path.join(output_path, f"{tag}_field_animation.mp4")
+    filename = os.path.join(output_path, f"{tag}_field_animation.gif")
     print(f"Saving animation to: {filename}")
-    ani.save(filename, writer="ffmpeg", fps=fps, dpi=dpi)
+    iio.imwrite(filename, images, fps=fps)
     plt.close(fig)
