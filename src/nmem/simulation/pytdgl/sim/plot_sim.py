@@ -100,10 +100,48 @@ def plot_curlines(ax: plt.Axes, path: np.ndarray, color: str):
     return ax
 
 
+def plot_magnetic_field(
+    ax: plt.Axes, sol: Solution, field_pos: np.ndarray, zs: float = 0.01, solve_step: int = 10
+):
+    sol.solve_step = solve_step
+    Bz0 = sol.field_at_position(field_pos, zs=zs).reshape(len(y_pos), len(x_pos))
+    im = ax.imshow(
+        Bz0,
+        extent=[x_pos.min(), x_pos.max(), y_pos.min(), y_pos.max()],
+        origin="lower",
+        # vmin=vmin,
+        # vmax=vmax,
+        cmap="RdBu_r",
+    )
+    return ax
+
+
+def get_currents():
+    # --- Extract currents and print ---
+    applied_supercurrent = get_current_through_path(
+        sol, main_path, dataset="supercurrent"
+    )
+    applied_normal = get_current_through_path(sol, main_path, dataset="normal_current")
+    left_supercurrent = get_current_through_path(sol, left_path, dataset="supercurrent")
+    right_supercurrent = get_current_through_path(
+        sol, right_path, dataset="supercurrent"
+    )
+    left_normal = get_current_through_path(sol, left_path, dataset="normal_current")
+    right_normal = get_current_through_path(sol, right_path, dataset="normal_current")
+    return (
+        applied_supercurrent,
+        applied_normal,
+        left_supercurrent,
+        right_supercurrent,
+        left_normal,
+        right_normal,
+    )
+
+
 if __name__ == "__main__":
     # --- Determine file to load ---
     # file_to_load = find_latest_result_file()
-    file_to_load = "output/2025-04-12-17-30-15/current_-1000uA.h5"
+    file_to_load = "output/2025-04-12-17-30-15/current_1000uA.h5"
     print(f"Loading: {file_to_load}")
 
     sol = Solution.from_hdf5(file_to_load)
@@ -115,47 +153,35 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         """
-        AC
-        BD
+        ABCD
+        EFGH
         """,
         layout="constrained",
         height_ratios=[1, 1],
     )
     # --- Supercurrent ---
-    plot_supercurrent(axs["A"], sol, 100)
-    axs["A"].set_title("Supercurrent")
+    plot_supercurrent(axs["A"], sol, 10)
+    plot_supercurrent(axs["B"], sol, 100)
+    plot_supercurrent(axs["C"], sol, 200)
 
-    # --- Normal current ---
-    plot_normalcurrent(axs["B"], sol, 100)
-    axs["B"].set_title("Normal current")
-    # # --- Order parameter ---
-    sol.plot_order_parameter(axes=[axs["C"], axs["D"]])
+    # sol.plot_order_parameter(axes=[axs["C"], axs["D"]])
 
     # --- Magnetic field ---
     x_pos = np.linspace(-0.7, 3.3, 50)
     y_pos = np.linspace(-3.75, 3.75, 50)
     field_pos = np.column_stack((np.tile(x_pos, 50), np.repeat(y_pos, 50)))
-    sol.plot_field_at_positions(field_pos, zs=0.01, vmin=-1.5, vmax=1.5)
+    
+    plot_magnetic_field(axs["D"], sol, field_pos, zs=0.01, solve_step=200)
 
-    # --- Extract currents and print ---
-    applied_supercurrent = get_current_through_path(
-        sol, main_path, dataset="supercurrent"
-    )
-    applied_normal = get_current_through_path(sol, main_path, dataset="normal_current")
-    print(f"Applied supercurrent: {applied_supercurrent}")
-    print(f"Applied normal current: {applied_normal}")
+    file_to_load = "output/2025-04-12-17-30-15/current_-1000uA.h5"
+    print(f"Loading: {file_to_load}")
 
-    left_supercurrent = get_current_through_path(sol, left_path, dataset="supercurrent")
-    right_supercurrent = get_current_through_path(
-        sol, right_path, dataset="supercurrent"
-    )
-    left_normal = get_current_through_path(sol, left_path, dataset="normal_current")
-    right_normal = get_current_through_path(sol, right_path, dataset="normal_current")
+    sol = Solution.from_hdf5(file_to_load)
+    plot_supercurrent(axs["E"], sol, 10)
+    plot_supercurrent(axs["F"], sol, 100)
+    plot_supercurrent(axs["G"], sol, 200)
 
-    print(f"Left supercurrent: {left_supercurrent}")
-    print(f"Right supercurrent: {right_supercurrent}")
-    print(f"Left normal current: {left_normal}")
-    print(f"Right normal current: {right_normal}")
+    plot_magnetic_field(axs["H"], sol, field_pos, zs=0.01, solve_step=200)
 
     # # --- Make animation ---
     output_path = os.path.dirname(file_to_load)
