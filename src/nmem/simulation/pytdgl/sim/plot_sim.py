@@ -78,9 +78,12 @@ def find_latest_result_file(output_root: str = "output") -> str:
     return latest_file
 
 
-def plot_supercurrent(ax: plt.Axes, sol: Solution, solve_step: int = 200):
+def plot_supercurrent(
+    ax: plt.Axes, sol: Solution, solve_step: int = 200, streamplot=True, **kwargs
+):
     sol.solve_step = solve_step
-    sol.plot_currents(dataset="supercurrent", streamplot=True, ax=ax)
+    sol.plot_currents(dataset="supercurrent", streamplot=streamplot, ax=ax, **kwargs)
+
     return ax
 
 
@@ -101,7 +104,11 @@ def plot_curlines(ax: plt.Axes, path: np.ndarray, color: str):
 
 
 def plot_magnetic_field(
-    ax: plt.Axes, sol: Solution, field_pos: np.ndarray, zs: float = 0.01, solve_step: int = 10
+    ax: plt.Axes,
+    sol: Solution,
+    field_pos: np.ndarray,
+    zs: float = 0.01,
+    solve_step: int = 10,
 ):
     sol.solve_step = solve_step
     Bz0 = sol.field_at_position(field_pos, zs=zs).reshape(len(y_pos), len(x_pos))
@@ -109,11 +116,9 @@ def plot_magnetic_field(
         Bz0,
         extent=[x_pos.min(), x_pos.max(), y_pos.min(), y_pos.max()],
         origin="lower",
-        # vmin=vmin,
-        # vmax=vmax,
         cmap="RdBu_r",
     )
-    return ax
+    return im
 
 
 def get_currents():
@@ -158,11 +163,19 @@ if __name__ == "__main__":
         """,
         layout="constrained",
         height_ratios=[1, 1],
+        width_ratios=[1, 1, 1, 1],
+        sharex=True,
+        sharey=True,
+        subplot_kw={"aspect": "equal"},
     )
+
+    sc_vmin = 0
+    sc_vmax = 3000
+
     # --- Supercurrent ---
-    plot_supercurrent(axs["A"], sol, 10)
-    plot_supercurrent(axs["B"], sol, 100)
-    plot_supercurrent(axs["C"], sol, 200)
+    plot_supercurrent(axs["A"], sol, 50, vmin=sc_vmin, vmax=sc_vmax)
+    plot_supercurrent(axs["B"], sol, 100, vmin=sc_vmin, vmax=sc_vmax)
+    plot_supercurrent(axs["C"], sol, 200, colorbar=True, vmin=sc_vmin, vmax=sc_vmax)
 
     # sol.plot_order_parameter(axes=[axs["C"], axs["D"]])
 
@@ -170,18 +183,57 @@ if __name__ == "__main__":
     x_pos = np.linspace(-0.7, 3.3, 50)
     y_pos = np.linspace(-3.75, 3.75, 50)
     field_pos = np.column_stack((np.tile(x_pos, 50), np.repeat(y_pos, 50)))
-    
-    plot_magnetic_field(axs["D"], sol, field_pos, zs=0.01, solve_step=200)
+
+    imd = plot_magnetic_field(axs["D"], sol, field_pos, zs=0.01, solve_step=200)
 
     file_to_load = "output/2025-04-12-17-30-15/current_-1000uA.h5"
     print(f"Loading: {file_to_load}")
 
     sol = Solution.from_hdf5(file_to_load)
-    plot_supercurrent(axs["E"], sol, 10)
-    plot_supercurrent(axs["F"], sol, 100)
-    plot_supercurrent(axs["G"], sol, 200)
+    plot_supercurrent(axs["E"], sol, 50,  vmin=sc_vmin, vmax=sc_vmax)
+    plot_supercurrent(axs["F"], sol, 100, vmin=sc_vmin, vmax=sc_vmax)
+    plot_supercurrent(axs["G"], sol, 200, colorbar=True, vmin=sc_vmin, vmax=sc_vmax)
 
-    plot_magnetic_field(axs["H"], sol, field_pos, zs=0.01, solve_step=200)
+    imh = plot_magnetic_field(axs["H"], sol, field_pos, zs=0.01, solve_step=200)
+
+    axs["A"].set_title("$t = 250~ps$")
+    axs["B"].set_title("$t = 500~ps$")
+    axs["C"].set_title("$t = 1000~ps$")
+    axs["D"].set_title("$t = 1000~ps$")
+    axs["A"].set_xlabel("x [μm]")
+    axs["B"].set_xlabel("x [μm]")
+    axs["C"].set_xlabel("x [μm]")
+    axs["D"].set_xlabel("x [μm]")
+    cbar = fig.colorbar(
+        imd, ax=axs["D"], label="$B_z$ [mT]", orientation="vertical",
+    )
+    imd.set_clim(-1, 1)
+    axs["A"].set_ylabel("y [μm]")
+    axs["E"].set_ylabel("y [μm]")
+    axs["B"].set_ylabel(None)
+    axs["C"].set_ylabel(None)
+
+    axs["E"].set_title("$t = 250~ps$")
+    axs["F"].set_title("$t = 500~ps$")
+    axs["G"].set_title("$t = 1000~ps$")
+    axs["H"].set_title("$t = 1000~ps$")
+    axs["E"].set_xlabel("x [μm]")
+    axs["F"].set_xlabel("x [μm]")
+    axs["G"].set_xlabel("x [μm]")
+    axs["H"].set_xlabel("x [μm]")
+    
+    axs["F"].set_ylabel(None)
+    axs["G"].set_ylabel(None)
+    cbar = fig.colorbar(
+        imh, ax=axs["H"], label="$B_z$ [mT]", orientation="vertical",
+    )
+    imh.set_clim(-1, 1)
+    
+
+    plt.savefig(
+        "output/2025-04-12-17-30-15/nmem_tdgl_simulation.pdf",
+        bbox_inches="tight",
+    )
 
     # # --- Make animation ---
     output_path = os.path.dirname(file_to_load)
@@ -197,3 +249,4 @@ if __name__ == "__main__":
     # tag = os.path.basename(file_to_load).split(".")[0]
 
     # make_field_animation(sol, output_path=output_path, tag=tag)
+
