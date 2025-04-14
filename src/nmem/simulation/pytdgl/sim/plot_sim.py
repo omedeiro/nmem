@@ -111,12 +111,19 @@ def plot_magnetic_field(
     solve_step: int = 10,
 ):
     sol.solve_step = solve_step
+    
     Bz0 = sol.field_at_position(field_pos, zs=zs).reshape(len(y_pos), len(x_pos))
+    vmin = float(np.nanmin(Bz0).magnitude)
+    vmax = float(np.nanmax(Bz0).magnitude)
+
+    max_val = np.max(np.abs([vmin, vmax]))
     im = ax.imshow(
         Bz0,
         extent=[x_pos.min(), x_pos.max(), y_pos.min(), y_pos.max()],
         origin="lower",
         cmap="RdBu_r",
+        vmin=-max_val,
+        vmax=max_val,
     )
     return im
 
@@ -177,8 +184,6 @@ if __name__ == "__main__":
     plot_supercurrent(axs["B"], sol, 100, vmin=sc_vmin, vmax=sc_vmax)
     plot_supercurrent(axs["C"], sol, 200, colorbar=True, vmin=sc_vmin, vmax=sc_vmax)
 
-    # sol.plot_order_parameter(axes=[axs["C"], axs["D"]])
-
     # --- Magnetic field ---
     x_pos = np.linspace(-0.7, 3.3, 50)
     y_pos = np.linspace(-3.75, 3.75, 50)
@@ -207,7 +212,6 @@ if __name__ == "__main__":
     cbar = fig.colorbar(
         imd, ax=axs["D"], label="$B_z$ [mT]", orientation="vertical",
     )
-    imd.set_clim(-1, 1)
     axs["A"].set_ylabel("y [μm]")
     axs["E"].set_ylabel("y [μm]")
     axs["B"].set_ylabel(None)
@@ -227,11 +231,11 @@ if __name__ == "__main__":
     cbar = fig.colorbar(
         imh, ax=axs["H"], label="$B_z$ [mT]", orientation="vertical",
     )
-    imh.set_clim(-1, 1)
     
 
     plt.savefig(
         "output/2025-04-12-17-30-15/nmem_tdgl_simulation.pdf",
+        dpi=300,
         bbox_inches="tight",
     )
 
