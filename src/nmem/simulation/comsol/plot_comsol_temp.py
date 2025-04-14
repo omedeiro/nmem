@@ -3,14 +3,29 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from matplotlib.path import Path
 import qnngds.geometry as qg
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from nmem.analysis.analysis import set_plot_style
+from matplotlib import ticker as mticker
+set_plot_style()
 
 
 def make_device():
     mem = qg.memory_v4()
     p = mem.polygons[0].polygons[0]
-    pout = np.vstack((p[:149], p[-2:], p[:1]))   # outer boundary (closed)
-    pin = np.vstack((p[150:-2], p[150:151]))     # inner cutout (closed)
+    pout = np.vstack((p[:149], p[-2:], p[:1]))  # outer boundary (closed)
+    pin = np.vstack((p[150:-2], p[150:151]))  # inner cutout (closed)
     return pout, pin
+
+
+def plot_device(ax, pout, pin):
+    """
+    Plot the device outline on the given axis.
+    """
+    ax.plot(pout[:, 0], pout[:, 1], color="black", linewidth=1.2)
+    ax.plot(pin[:, 0], pin[:, 1], color="black", linewidth=1.2)
+    ax.set_aspect("equal", adjustable="box")
+    ax.axis("off")
+    return ax
 
 
 def preprocess_griddata_inputs(x, y, T):
@@ -28,7 +43,7 @@ def compound_mask(X, Y, outer, inner):
     return (in_outer & ~in_inner).reshape(X.shape)
 
 
-def interpolate_comsol_data(x, y, T, N=1000, method='cubic'):
+def interpolate_comsol_data(x, y, T, N=1000, method="nearest"):
     x, y, T = preprocess_griddata_inputs(x, y, T)
     xi = np.linspace(x.min(), x.max(), N)
     yi = np.linspace(y.min(), y.max(), N)
@@ -37,36 +52,58 @@ def interpolate_comsol_data(x, y, T, N=1000, method='cubic'):
     return X, Y, Z
 
 
-def plot_field(ax, X, Y, Z, pout=None, pin=None, cmap='plasma', title='', colorbar=False):
+def plot_field(
+    ax, X, Y, Z, pout=None, pin=None, cmap="plasma", title="", colorbar=False
+):
+    """
+    Plot field with optional masking and tight inset colorbar.
+    """
     # Optional mask
     if pout is not None and pin is not None:
         mask = compound_mask(X, Y, outer=pout, inner=pin)
         Z = np.ma.array(Z, mask=~mask)
 
-    mesh = ax.pcolormesh(X, Y, Z, shading='auto', cmap=cmap)
+    vmin = np.nanmin(Z)
+    vmax = np.nanmax(Z)
+    mesh = ax.pcolormesh(X, Y, Z, shading="auto", cmap=cmap, rasterized=True)
     if pout is not None:
-        ax.plot(pout[:, 0], pout[:, 1], color='white', linewidth=1.2)
+        ax.plot(pout[:, 0], pout[:, 1], color="white", linewidth=1.2)
     if pin is not None:
-        ax.plot(pin[:, 0], pin[:, 1], color='white', linewidth=1.2)
-    if colorbar:
-        ax.figure.colorbar(mesh, ax=ax, label='Temperature (K)')
+        ax.plot(pin[:, 0], pin[:, 1], color="white", linewidth=1.2)
 
-    ax.set_xlabel('x (µm)')
-    ax.set_ylabel('y (µm)')
-    ax.set_title(title)
-    ax.set_aspect('equal', adjustable='box')
+    if colorbar:
+        # Add inset colorbar matching height of axes
+        cax = inset_axes(
+            ax,
+            width="3%",
+            height="100%",
+            loc="right",
+            bbox_to_anchor=(0.05, 0.0, 1, 1),
+            bbox_transform=ax.transAxes,
+            borderpad=0,
+        )
+        cbar = ax.figure.colorbar(
+            mesh, cax=cax, label=title, ticks=np.linspace(vmin, vmax, 5)
+        )
+        cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2f"))
+
+        
+
+    ax.set_xlabel("x (µm)")
+    ax.set_ylabel("y (µm)")
+    ax.set_aspect("equal", adjustable="box")
 
 
 if __name__ == "__main__":
     # Load and prepare unmasked file
     data1 = np.loadtxt("Last_nMem_temp_output.txt", skiprows=9)
-    x1, y1, T1 = data1[:, 2], data1[:, 3], data1[:, 4]
+    x1, y1, T1 = data1[:, 0], data1[:, 1], data1[:, 2]
     valid1 = ~np.isnan(T1)
     x1, y1, T1 = x1[valid1], y1[valid1], T1[valid1]
 
     # Load and prepare masked file
     data2 = np.loadtxt("Last_nMem_suppression_output.txt", skiprows=9)
-    x2, y2, T2 = data2[:, 2], data2[:, 3], data2[:, 4]
+    x2, y2, T2 = data2[:, 0], data2[:, 1], data2[:, 2]
     valid2 = ~np.isnan(T2)
     x2, y2, T2 = x2[valid2], y2[valid2], T2[valid2]
 
@@ -74,15 +111,26 @@ if __name__ == "__main__":
     pout, pin = make_device()
 
     # Create side-by-side plot
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
+    fig, axs = plt.subplots(1, 2, figsize=(7, 4), sharex=True, sharey=True)
 
     # Plot raw temperature slice (no mask)
     X1, Y1, Z1 = interpolate_comsol_data(x1, y1, T1)
-    plot_field(axs[0], X1, Y1, Z1, cmap='plasma', title='Unmasked Temperature')
+    plot_field(axs[0], X1, Y1, Z1, cmap="plasma", title="Temperature", colorbar=True)
 
     # Plot masked suppression slice
     X2, Y2, Z2 = interpolate_comsol_data(x2, y2, T2)
-    plot_field(axs[1], X2, Y2, Z2, pout, pin, cmap='plasma', title='Masked Suppression', colorbar=True)
+    plot_field(
+        axs[1],
+        X2,
+        Y2,
+        Z2,
+        pout,
+        pin,
+        cmap="viridis",
+        title="Suppression",
+        colorbar=True,
+    )
 
-    fig.tight_layout()
-    plt.show()
+    fig.subplots_adjust(wspace=0.4)
+
+    fig.savefig("comsol_temp.pdf", dpi=300)
