@@ -39,29 +39,33 @@ def set_inter_font():
         mpl.rcParams["font.family"] = "Inter"
 
 
-golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
-width = 3.5  # Example width in inches (single-column for Nature)
-height = width / golden_ratio
-plt.rcParams.update(
-    {
-        "figure.figsize": [width, height],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-        "font.size": 7,
-        "axes.linewidth": 0.5,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-        "xtick.direction": "out",
-        "ytick.direction": "out",
-        "font.family": "Inter",
-        "lines.markersize": 3,
-        "lines.linewidth": 1.2,
-        "legend.fontsize": 6,
-        "legend.frameon": False,
-        "xtick.major.size": 2,
-        "ytick.major.size": 2,
-    }
-)
+def set_plot_style() -> None:
+    set_inter_font()
+    golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
+    width = 3.5  # Example width in inches (single-column for Nature)
+    height = width / golden_ratio
+    plt.rcParams.update(
+        {
+            "figure.figsize": [width, height],
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+            "font.size": 7,
+            "axes.linewidth": 0.5,
+            "xtick.major.width": 0.5,
+            "ytick.major.width": 0.5,
+            "xtick.direction": "out",
+            "ytick.direction": "out",
+            "font.family": "Inter",
+            "lines.markersize": 3,
+            "lines.linewidth": 1.2,
+            "legend.fontsize": 6,
+            "legend.frameon": False,
+            "xtick.major.size": 2,
+            "ytick.major.size": 2,
+        }
+    )
+
+set_plot_style()
 COLORS = [
     "#1b9e77",  # Teal green
     "#d95f02",  # Burnt orange
