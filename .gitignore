@@ -21,6 +21,7 @@ dist/
 *.csv
 *.mat
 *.h5
+*.gds
 
 # Media files
 *.mp4
