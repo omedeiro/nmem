@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 from matplotlib.colors import LogNorm
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import MaxNLocator
 
 def load_autoprobe_data(filepath):
     """Load autoprobe data from a parsed .mat file."""
@@ -176,18 +177,19 @@ def plot_die_row(
         vmax=vmax,
     )
 
-    ax.set_title(f"Resistance Map: Die Row {row_letter.upper()}")
-    ax.set_xticks(np.linspace(3.5, 52.5, 7))
-    ax.set_xticklabels([str(i) for i in range(1, 8)])
-    ax.set_yticks(np.arange(0.5, 8.5, 1))
-    ax.set_yticklabels([str(i) for i in range(8)])
+    # ax.set_title(f"Resistance Map: Die Row {row_letter.upper()}")
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+    ax.set_yticks([])
+    ax.set_yticklabels([])
     ax.set_xlim(0, 56)
     ax.set_ylim(0, 8)
-    ax.set_xlabel("Die Column")
-    ax.set_ylabel("Device Index in Row")
-    cbar = plt.colorbar(im, ax=ax, label="Resistance (Ω)", orientation="horizontal", pad=0.2)
-    cbar.ax.xaxis.set_ticks_position('top')
-    cbar.ax.xaxis.set_label_position('top')
+    # ax.set_xlabel("Die Column")
+    # ax.set_ylabel("Device Index in Row")
+    divider = make_axes_locatable(ax)
+    # cax = divider.append_axes("right", size="5%", pad=0.1)
+    # cbar = plt.colorbar(im, cax=cax, label="(Ω)")
+    # cbar.ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.1g}"))
 
     return im
 
@@ -254,12 +256,15 @@ def plot_row_line(
                 row_letter.upper(), (np.nanmin(row_values), np.nanmax(row_values))
             )
         )
-    ax.set_title(f"Resistance Line Plot: Die Row {row_letter.upper()}")
+    # ax.set_title(f"Resistance Line Plot: Die Row {row_letter.upper()}")
     ax.set_xlabel("Device Index")
     ax.set_ylabel("Resistance (Ω)")
-    ax.set_yscale("log")
+    # ax.set_yscale("log")
     ax.grid(True)
-    ax.legend()
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.3g}"))
+    ax.yaxis.set_minor_formatter(plt.FuncFormatter(lambda x, _: f"{x:.3g}"))
+    ax.yaxis.set_major_locator(MaxNLocator(3))
+
 
     return {"mean": mean_val, "q1": q1, "median": median, "q3": q3}
 
@@ -285,34 +290,28 @@ if __name__ == "__main__":
         "G": (8e4, 1e6),
     }
 
-    fig, axs = plt.subplot_mosaic(
-        """
-        AB
-        CD
-        """,
-        layout="constrained",
-        width_ratios=[1, 1],
-        height_ratios=[1, 1],
-    )
-
-    plot_die_row(axs["A"], Rmeas, "B", resistance_threshold=10e6, bounds=bounds)
+    fig, axs = plt.subplots(4, 1, figsize=(4.5, 4))
+    # axs["G"].axis("off")
+    plot_die_row(axs[0], Rmeas, "B", resistance_threshold=10e6, bounds=bounds)
 
     stats = plot_row_line(
-        axs["C"],
+        axs[1],
         Rmeas,
         "B",
         resistance_threshold=10e6,
         filter_percentile=95,
         bounds=bounds,
     )
-
-    plot_die_row(axs["B"], Rmeas, "D", resistance_threshold=10e6, bounds=bounds)
+    axs[1].set_xticklabels([])
+    axs[1].set_xlabel("")
+    plot_die_row(axs[2], Rmeas, "D", resistance_threshold=10e6, bounds=bounds)
     stats = plot_row_line(
-        axs["D"],
+        axs[3],
         Rmeas,
         "D",
         resistance_threshold=10e6,
         filter_percentile=95,
         bounds=bounds,
     )
+    # fig.subplots_adjust(wspace=0.5, hspace=-0.4)
     plt.show()
