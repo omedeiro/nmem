@@ -37,6 +37,10 @@ def load_autoprobe_data(filepath, grid_size=56):
             if not np.isfinite(rmean) or rmean < 0:
                 continue  # skip bad resistance values
 
+            if y_die == 5:
+                squares = 50 * (x_dev + 1)
+            else:
+                squares = None
             records.append({
                 "id": f"{die_str}_{dev_str}",
                 "die": die_str,
@@ -49,6 +53,7 @@ def load_autoprobe_data(filepath, grid_size=56):
                 "y_abs": y_abs,
                 "Rmean": rmean,
                 "Rmse": rmse,
+                "squares": squares,
             })
 
         except Exception as e:
