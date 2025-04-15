@@ -36,6 +36,8 @@ def load_autoprobe_data(filepath, grid_size=56):
 
             if not np.isfinite(rmean) or rmean < 0:
                 continue  # skip bad resistance values
+            if rmse > 0.5:
+                rmean = np.nan  # set high Rmse to NaN
 
             if y_die == 5:
                 squares = 50 * (x_dev + 1)
