@@ -49,7 +49,7 @@ def set_plot_style() -> None:
             "figure.figsize": [width, height],
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
-            "font.size": 7,
+            "font.size": 10,
             "axes.linewidth": 0.5,
             "xtick.major.width": 0.5,
             "ytick.major.width": 0.5,
