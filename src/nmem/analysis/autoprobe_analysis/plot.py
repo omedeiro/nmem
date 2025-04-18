@@ -6,6 +6,7 @@ from nmem.analysis.autoprobe_analysis.utils import (
     get_log_norm_limits,
     annotate_matrix,
 )
+from matplotlib.colors import LogNorm
 
 
 # Helper function to set axis labels and titles
@@ -25,8 +26,10 @@ def apply_log_scale(ax, logscale, axis="y"):
             ax.set_xscale("log")
 
 
+
+
 def plot_die_resistance_map(
-    ax, df, die_name, cmap="turbo", logscale=True, annotate=False
+    ax, df, die_name, cmap="turbo", logscale=True, annotate=False, vmin=None, vmax=None
 ):
     die_df = df[df["die"] == die_name]
     if die_df.empty:
@@ -38,30 +41,56 @@ def plot_die_resistance_map(
         y_plot = 7 - y  # flip vertical
         Rmeas[y_plot, x] = row["Rmean"] if row["Rmean"] > 0 else np.nan
 
-    vmin, vmax = get_log_norm_limits(Rmeas)
-    if vmin is None:
+    # Robust color limits using percentiles
+    valid_vals = Rmeas[np.isfinite(Rmeas) & (Rmeas > 0)] / 1e3
+    print(
+        f"Die {die_name} min valid values: {valid_vals.min():.2f}, max: {valid_vals.max():.2f}"
+    )
+    print(f"vmin = {vmin}, vmax = {vmax}")
+    if valid_vals.size == 0:
         raise ValueError(f"Die {die_name} contains no valid (R > 0) data.")
+
 
     im = ax.imshow(
         Rmeas,
         cmap=cmap,
         origin="upper",
-        norm=LogNorm(vmin=vmin, vmax=vmax) if logscale else None,
+        # vmin=vmin,
+        # vmax=vmax,
     )
-
-    ax.set_xticks(np.arange(8))
-    ax.set_yticks(np.arange(8))
-    ax.set_xticklabels(list("ABCDEFGH"))
-    ax.set_yticklabels(np.arange(1, 9))
-    set_axis_labels(
-        ax, "Device Column", "Device Row", f"Resistance Map for Die {die_name}"
-    )
-    ax.set_aspect("equal")
 
     if annotate:
-        annotate_matrix(ax, Rmeas)
+        for y in range(8):
+            for x in range(8):
+                val = Rmeas[y, x]
+                if np.isfinite(val):
+                    ax.text(
+                        x,
+                        y,
+                        f"{val:.0f}",
+                        ha="center",
+                        va="center",
+                        fontsize=6,
+                        color="white",
+                    )
 
-    return ax
+    ax.set_xticks([])
+    ax.set_yticks([])
+    return ax, im
+
+    # ax.set_xticks(np.arange(8))
+    # ax.set_yticks(np.arange(8))
+    # ax.set_xticklabels(list("ABCDEFGH"))
+    # ax.set_yticklabels(np.arange(1, 9))
+    # set_axis_labels(
+    #     ax, "Device Column", "Device Row", f"Resistance Map for Die {die_name}"
+    # )
+    # ax.set_aspect("equal")
+
+    # if annotate:
+    #     annotate_matrix(ax, Rmeas)
+
+    # return ax, im
 
 
 def plot_resistance_map(
@@ -100,7 +129,9 @@ def plot_resistance_map(
     return ax
 
 
-def plot_die_row(axes, df, row_number, cmap="turbo", logscale=True, annotate=False):
+def plot_die_row(
+    axes, df, row_number, cmap="turbo", annotate=False, vmin=None, vmax=None
+):
     """
     Plot all dies in a given wafer row.
     row_number: 1 (top) to 7 (bottom)
@@ -110,18 +141,19 @@ def plot_die_row(axes, df, row_number, cmap="turbo", logscale=True, annotate=Fal
         raise ValueError("row_number must be between 1 and 7")
 
     die_names = [f"{col}{row_number}" for col in "ABCDEFG"]
-
+    im_list = []
     for ax, die_name in zip(axes, die_names):
         try:
-            plot_die_resistance_map(
-                ax, df, die_name, cmap=cmap, logscale=logscale, annotate=annotate
+            ax, im = plot_die_resistance_map(
+                ax, df, die_name, cmap=cmap, annotate=annotate, vmin=vmin, vmax=vmax
             )
+            im_list.append(im)
         except Exception as e:
             ax.set_title(f"{die_name} (Error)")
             ax.axis("off")
             print(f"Skipping {die_name}: {e}")
 
-    return axes
+    return axes, im_list
 
 
 def scatter_die_row_resistance(
