@@ -33,7 +33,7 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
 def combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7):
     fig, axs = plt.subplots(
         len(wafer_row_numbers), N + 2,
-        figsize=(2 * (N + 2), 2.5 * len(wafer_row_numbers)),
+        figsize=(5, 4),
         dpi=300,
         gridspec_kw={'width_ratios': [1] + [1]*N + [0.1]},
         constrained_layout=True
@@ -77,12 +77,12 @@ def combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7):
             im = ax.imshow(Rgrid.T, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
             im_list.append(im)
 
-            # Add device labels
-            for x in range(8):
-                for y in range(8):
-                    label = labels[x, y]
-                    if label:
-                        ax.text(x, y, label, ha="center", va="center", fontsize=6, color="white")
+            # # Add device labels
+            # for x in range(8):
+            #     for y in range(8):
+            #         label = labels[x, y]
+            #         if label:
+            #             ax.text(x, y, label, ha="center", va="center", fontsize=6, color="white")
 
 
             ax.set_xticks([])
@@ -108,6 +108,8 @@ def combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7):
                 cbar.solids.set_edgecolor("face")
 
     axs[-1, 0].set_xlabel("Resistance (kΩ)", fontsize=8)
+
+    axs[2, 0].set_xlim(500, 1500)
     fig.patch.set_visible(False)
     fig.savefig("combined_wafer_map_and_histograms.pdf", bbox_inches="tight", dpi=300)
     plt.show()
