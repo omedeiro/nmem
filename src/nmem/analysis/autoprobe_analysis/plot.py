@@ -43,20 +43,17 @@ def plot_die_resistance_map(
 
     # Robust color limits using percentiles
     valid_vals = Rmeas[np.isfinite(Rmeas) & (Rmeas > 0)] / 1e3
-    print(
-        f"Die {die_name} min valid values: {valid_vals.min():.2f}, max: {valid_vals.max():.2f}"
-    )
-    print(f"vmin = {vmin}, vmax = {vmax}")
+
     if valid_vals.size == 0:
         raise ValueError(f"Die {die_name} contains no valid (R > 0) data.")
 
 
     im = ax.imshow(
-        Rmeas,
+        Rmeas / 1e3,
         cmap=cmap,
         origin="upper",
-        # vmin=vmin,
-        # vmax=vmax,
+        vmin=vmin,
+        vmax=vmax,
     )
 
     if annotate:
