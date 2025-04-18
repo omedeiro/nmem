@@ -30,56 +30,82 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
 
-def combined_histogram_and_die_maps(df, wafer_rows, limit_dict, N=7):
+def combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7):
     fig, axs = plt.subplots(
-        len(wafer_rows), N + 2,
-        figsize=(6, 4),  # slightly wider
+        len(wafer_row_numbers), N + 2,
+        figsize=(2 * (N + 2), 2.5 * len(wafer_row_numbers)),
         dpi=300,
         gridspec_kw={'width_ratios': [1] + [1]*N + [0.1]},
         constrained_layout=True
     )
 
-    for i, row in enumerate(wafer_rows):
-        row_char = chr(65 + row)
-        row_df = df[df["die"].str.startswith(row_char)]
+    for i, row_number in enumerate(wafer_row_numbers):
+        # Filter dies like A1, B1, ..., G1
+        row_df = df[df["die"].str.endswith(str(row_number))].copy()
         valid_vals = row_df["Rmean"] / 1e3
-        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals) & (valid_vals < 5000)]
+        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals) & (valid_vals < 50000)]
 
         n_nan = len(row_df) - len(valid_vals)
         if n_nan > 0:
-            print(f"Row {row_char} has {n_nan} NaN values.")
+            print(f"Row {row_number} has {n_nan} NaN values.")
 
-        vmin, vmax = limit_dict.get(row_char, (valid_vals.min(), valid_vals.max()))
+        vmin, vmax = limit_dict.get(str(row_number), (valid_vals.min(), valid_vals.max()))
+        plot_histogram(axs[i, 0], valid_vals, str(row_number), vmin, vmax)
 
-        # Histogram
-        plot_histogram(axs[i, 0], valid_vals, row_char, vmin, vmax)
+        # Plot dies A1, B1, ..., G1
+        im_list = []
+        for j in range(N):
+            die_name = f"{chr(65 + j)}{row_number}"
+            die_df = df[df["die"] == die_name].copy()
+            ax = axs[i, 1 + j]
 
-        # Die row plots
-        _, im_list = plot_die_row(
-            axs[i, 1:], df, row + 1, annotate=False, vmin=vmin, vmax=vmax, cmap=cmap
-        )
-        for j, (ax, im) in enumerate(zip(axs[i, 1:], im_list)):
+            if die_df.empty:
+                ax.text(0.5, 0.5, "No data", ha="center", va="center", fontsize=8)
+                im_list.append(None)
+                continue
+
+            die_df["Rplot"] = die_df["Rmean"] / 1e3
+            Rgrid = np.full((8, 8), np.nan)
+            labels = np.full((8, 8), "", dtype=object)
+
+            for _, row in die_df.iterrows():
+                x, y = int(row["x_dev"]), int(row["y_dev"])
+                if 0 <= x < 8 and 0 <= y < 8:
+                    Rgrid[x, y] = row["Rplot"]
+                    labels[x, y] = row["device"]
+
+            im = ax.imshow(Rgrid.T, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
+            im_list.append(im)
+
+            # Add device labels
+            for x in range(8):
+                for y in range(8):
+                    label = labels[x, y]
+                    if label:
+                        ax.text(x, y, label, ha="center", va="center", fontsize=6, color="white")
+
+
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_title(f"{row_char}{j + 1}", fontsize=7, pad=1)
+            ax.set_title(die_name, fontsize=7)
             ax.set_aspect("equal")
-            for spine in ax.spines.values():
-                spine.set_visible(False)
 
-        # Colorbar next to last axis
+        # Colorbar
         axs[i, -1].set_xticks([])
         axs[i, -1].set_yticks([])
         axs[i, -1].set_frame_on(False)
-        cax = axs[i, -1]
-        cbar = fig.colorbar(im_list[0], cax=cax)
 
-        cbar.set_label("[kΩ]", fontsize=7)
-        cbar.ax.tick_params(labelsize=6)
-        cbar.set_ticks(np.linspace(vmin, vmax, 5))
-        cbar.ax.set_yticklabels([f"{int(t)}" for t in np.linspace(vmin, vmax, 5)])
-        if hasattr(cbar, "solids") and hasattr(cbar.solids, "set_rasterized"):
-            cbar.solids.set_rasterized(True)
-            cbar.solids.set_edgecolor("face")
+        if any(im is not None for im in im_list):
+            cax = axs[i, -1]
+            first_valid_im = next(im for im in im_list if im is not None)
+            cbar = fig.colorbar(first_valid_im, cax=cax)
+            cbar.set_label("[kΩ]", fontsize=7)
+            cbar.ax.tick_params(labelsize=6)
+            cbar.set_ticks(np.linspace(vmin, vmax, 5))
+            cbar.ax.set_yticklabels([f"{int(t)}" for t in np.linspace(vmin, vmax, 5)])
+            if hasattr(cbar, "solids") and hasattr(cbar.solids, "set_rasterized"):
+                cbar.solids.set_rasterized(True)
+                cbar.solids.set_edgecolor("face")
 
     axs[-1, 0].set_xlabel("Resistance (kΩ)", fontsize=8)
     fig.patch.set_visible(False)
@@ -87,14 +113,13 @@ def combined_histogram_and_die_maps(df, wafer_rows, limit_dict, N=7):
     plt.show()
 
 
-
 if __name__ == "__main__":
     df = load_autoprobe_data("autoprobe_parsed.mat")
-    wafer_rows = [0, 3, 5, 6]  # A, D, F, G
+    wafer_rows = ["1", "4", "6",  "7"]  # Now using die *suffixes*
     limit_dict = {
-        "A": [20, 100],
-        "D": [20, 100],
-        "F": [900, 1100],
-        "G": [20, 100],
+        "1": [20, 100],
+        "4": [20, 100],
+        "6": [900, 1100],
+        "7": [20, 100],
     }
     combined_histogram_and_die_maps(df, wafer_rows, limit_dict)

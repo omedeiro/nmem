@@ -38,8 +38,8 @@ def plot_die_resistance_map(
     Rmeas = np.full((8, 8), np.nan)
     for _, row in die_df.iterrows():
         x, y = int(row["x_dev"]), int(row["y_dev"])
-        y_plot = 7 - y  # flip vertical
-        Rmeas[y_plot, x] = row["Rmean"] if row["Rmean"] > 0 else np.nan
+        y_dev = 7 - y  # Invert y-axis for display
+        Rmeas[y_dev, x] = row["Rmean"] if row["Rmean"] > 0 else np.nan
 
     # Robust color limits using percentiles
     valid_vals = Rmeas[np.isfinite(Rmeas) & (Rmeas > 0)] / 1e3
