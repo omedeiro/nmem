@@ -1,10 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from nmem.analysis.autoprobe_analysis.utils import create_rmeas_matrix, get_log_norm_limits, annotate_matrix
+from nmem.analysis.autoprobe_analysis.utils import (
+    create_rmeas_matrix,
+    get_log_norm_limits,
+    annotate_matrix,
+)
 
 
-def plot_die_resistance_map(ax, df, die_name, cmap="turbo", logscale=True, annotate=False):
+# Helper function to set axis labels and titles
+def set_axis_labels(ax, xlabel, ylabel, title):
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True)
+
+
+# Helper function to apply log scale
+def apply_log_scale(ax, logscale, axis="y"):
+    if logscale:
+        if axis == "y":
+            ax.set_yscale("log")
+        elif axis == "x":
+            ax.set_xscale("log")
+
+
+def plot_die_resistance_map(
+    ax, df, die_name, cmap="turbo", logscale=True, annotate=False
+):
     die_df = df[df["die"] == die_name]
     if die_df.empty:
         raise ValueError(f"No data found for die '{die_name}'")
@@ -19,16 +42,20 @@ def plot_die_resistance_map(ax, df, die_name, cmap="turbo", logscale=True, annot
     if vmin is None:
         raise ValueError(f"Die {die_name} contains no valid (R > 0) data.")
 
-    im = ax.imshow(Rmeas, cmap=cmap, origin="upper",
-                   norm=LogNorm(vmin=vmin, vmax=vmax) if logscale else None)
+    im = ax.imshow(
+        Rmeas,
+        cmap=cmap,
+        origin="upper",
+        norm=LogNorm(vmin=vmin, vmax=vmax) if logscale else None,
+    )
 
     ax.set_xticks(np.arange(8))
     ax.set_yticks(np.arange(8))
     ax.set_xticklabels(list("ABCDEFGH"))
     ax.set_yticklabels(np.arange(1, 9))
-    ax.set_xlabel("Device Column")
-    ax.set_ylabel("Device Row")
-    ax.set_title(f"Resistance Map for Die {die_name}")
+    set_axis_labels(
+        ax, "Device Column", "Device Row", f"Resistance Map for Die {die_name}"
+    )
     ax.set_aspect("equal")
 
     if annotate:
@@ -37,7 +64,9 @@ def plot_die_resistance_map(ax, df, die_name, cmap="turbo", logscale=True, annot
     return ax
 
 
-def plot_resistance_map(ax, df, grid_size=56, cmap="turbo", logscale=True, annotate=False):
+def plot_resistance_map(
+    ax, df, grid_size=56, cmap="turbo", logscale=True, annotate=False
+):
     Rmeas = create_rmeas_matrix(df, "x_abs", "y_abs", "Rmean", (grid_size, grid_size))
     if np.any(Rmeas == 0):
         Rmeas[Rmeas == 0] = np.nanmax(Rmeas)
@@ -61,8 +90,8 @@ def plot_resistance_map(ax, df, grid_size=56, cmap="turbo", logscale=True, annot
     ax.set_title("Autoprobe Resistance Map")
 
     for line in np.linspace(0, grid_size, 8):
-        ax.axhline(line, color='k', lw=1.5)
-        ax.axvline(line, color='k', lw=1.5)
+        ax.axhline(line, color="k", lw=1.5)
+        ax.axvline(line, color="k", lw=1.5)
 
     if annotate:
         annotate_matrix(ax, Rmeas.T)
@@ -84,7 +113,9 @@ def plot_die_row(axes, df, row_number, cmap="turbo", logscale=True, annotate=Fal
 
     for ax, die_name in zip(axes, die_names):
         try:
-            plot_die_resistance_map(ax, df, die_name, cmap=cmap, logscale=logscale, annotate=annotate)
+            plot_die_resistance_map(
+                ax, df, die_name, cmap=cmap, logscale=logscale, annotate=annotate
+            )
         except Exception as e:
             ax.set_title(f"{die_name} (Error)")
             ax.axis("off")
@@ -92,15 +123,16 @@ def plot_die_row(axes, df, row_number, cmap="turbo", logscale=True, annotate=Fal
 
     return axes
 
-def scatter_die_row_resistance(ax, df, row_number, marker="o", cmap="turbo", logscale=True):
+
+def scatter_die_row_resistance(
+    ax, df, row_number, marker="o", cmap="turbo", logscale=True
+):
     """
     Plot a scatter of all Rmean values in a given wafer die row (top=1 to bottom=7).
     X-axis is the absolute device column position (0–55).
     """
     if not (1 <= row_number <= 7):
         raise ValueError("row_number must be between 1 and 7")
-
-    fig, ax = plt.subplots(figsize=(10, 4))
 
     colors = plt.get_cmap(cmap)
 
@@ -115,22 +147,26 @@ def scatter_die_row_resistance(ax, df, row_number, marker="o", cmap="turbo", log
         x_positions = die_df["x_abs"]
         resistances = die_df["Rmean"]
 
-        ax.scatter(x_positions, resistances, label=die_name, marker=marker,
-                   color=colors(i / 6))  # normalize i for colormap
+        ax.scatter(
+            x_positions, resistances, label=die_name, marker=marker, color=colors(i / 6)
+        )  # normalize i for colormap
 
-    ax.set_xlabel("Absolute Device X Position")
-    ax.set_ylabel("Resistance (Ω)")
-    ax.set_title(f"Resistance Scatter Across Die Row {row_number}")
+    set_axis_labels(
+        ax,
+        "Absolute Device X Position",
+        "Resistance (Ω)",
+        f"Resistance Scatter Across Die Row {row_number}",
+    )
+    apply_log_scale(ax, logscale)
     ax.legend(title="Die")
-    ax.grid(True)
     plot_quartile_lines(ax, resistances)
-    if logscale:
-        ax.set_yscale("log")
 
     return ax
 
 
-def scatter_die_resistance(ax, df, die_name, marker="o", color="tab:blue", logscale=True):
+def scatter_die_resistance(
+    ax, df, die_name, marker="o", color="tab:blue", logscale=True
+):
     """
     Plot a scatter of Rmean values for a single die.
     X-axis is the absolute device column position (x_abs).
@@ -139,30 +175,33 @@ def scatter_die_resistance(ax, df, die_name, marker="o", color="tab:blue", logsc
     if die_df.empty:
         raise ValueError(f"No data found for die '{die_name}'")
 
-
     x_positions = die_df["x_abs"]
     resistances = die_df["Rmean"]
 
-    ax.scatter(x_positions, resistances, label=die_name.upper(), marker=marker, color=color)
-
-    ax.set_xlabel("Absolute Device X Position")
-    ax.set_ylabel("Resistance (Ω)")
-    ax.set_title(f"Resistance Scatter for Die {die_name.upper()}")
-    ax.grid(True)
-
-    if logscale:
-        ax.set_yscale("log")
+    ax.scatter(
+        x_positions, resistances, label=die_name.upper(), marker=marker, color=color
+    )
+    set_axis_labels(
+        ax,
+        "Absolute Device X Position",
+        "Resistance (Ω)",
+        f"Resistance Scatter for Die {die_name.upper()}",
+    )
+    apply_log_scale(ax, logscale)
 
     return ax
 
 
 import numpy as np
 
-def plot_quartile_lines(ax, data, color="gray", linestyle="--", linewidth=1.5, alpha=0.8):
+
+def plot_quartile_lines(
+    ax, data, color="gray", linestyle="--", linewidth=1.5, alpha=0.8
+):
     """
     Compute and plot Q1 and Q3 horizontal lines on an existing axis.
     Adjust y-limits to [0.5 * Q1, 2 * Q3].
-    
+
     Parameters:
     - ax: matplotlib axis to draw on
     - data: array-like, should be resistance values (Rmean)
@@ -175,8 +214,22 @@ def plot_quartile_lines(ax, data, color="gray", linestyle="--", linewidth=1.5, a
     q1 = np.percentile(data, 25)
     q3 = np.percentile(data, 75)
 
-    ax.axhline(q1, color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha, label="Q1 (25%)")
-    ax.axhline(q3, color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha, label="Q3 (75%)")
+    ax.axhline(
+        q1,
+        color=color,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        alpha=alpha,
+        label="Q1 (25%)",
+    )
+    ax.axhline(
+        q3,
+        color=color,
+        linestyle=linestyle,
+        linewidth=linewidth,
+        alpha=alpha,
+        label="Q3 (75%)",
+    )
 
     ax.set_ylim(0.5 * q1, 2 * q3)
     return ax
