@@ -38,9 +38,21 @@ def main(data_path="autoprobe_parsed.mat"):
 def main2(data_path="autoprobe_parsed.mat"):
     df = load_autoprobe_data(data_path)
     N = 7
-    fig, axs = plt.subplots(4, N, figsize=(12, 8), constrained_layout=True)
 
     wafer_rows = [0, 3, 5, 6]  # A, D, F, G for example
+    limit_dict = {
+        "A": [20, 100],
+        # "B": [0, 100],
+        # "C": [0, 100],
+        "D": [20, 100],
+        # "E": [30, 160],
+        "F": [900, 1100],
+        "G": [20, 100],
+    }
+    plot_row_histograms(df, limit_dict, wafer_rows=wafer_rows)
+    
+    
+    fig, axs = plt.subplots(4, N, figsize=(7, 4), constrained_layout=True)
 
     for i, row in enumerate(wafer_rows):  # For each row of dies
         print(f"Row {row + 1}")
@@ -49,13 +61,18 @@ def main2(data_path="autoprobe_parsed.mat"):
         row_char = chr(65 + row)
         row_df = df[df["die"].str.startswith(row_char)]
         valid_vals = row_df["Rmean"] / 1e3
-        valid_vals = valid_vals[(valid_vals > 0) & (valid_vals < 10000)]
-        vmin, vmax = np.percentile(valid_vals, [1, 99])
-        print(f"{row_char}-row color scale: vmin={vmin:.2f}, vmax={vmax:.2f}")
+        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals)]
+        
+        # Get the min and max values for the color scale
+        if len(valid_vals) == 0:
+            print(f"Row {row + 1} contains no valid (R > 0) data.")
+            continue
+        vmin, vmax = limit_dict[row_char]
 
+        print(f"Row {row + 1} min: {valid_vals.min()}, max: {valid_vals.max()}")
         # Plot the row with fixed vmin/vmax
         _, im_list = plot_die_row(
-            axs[i, :], df, row + 1, annotate=True, vmin=vmin, vmax=vmax
+            axs[i, :], df, row + 1, annotate=False, vmin=vmin, vmax=vmax
         )
 
         for j, (ax, im) in enumerate(zip(axs[i, :], im_list)):
@@ -77,8 +94,68 @@ def main2(data_path="autoprobe_parsed.mat"):
             bbox_transform=ax_right.transAxes,
             borderpad=0,
         )
-        cbar = fig.colorbar(im_list[0], cax=cax, label="Resistance (kΩ)")
-        # cbar.ax.set_yticks(np.linspace(vmin, vmax, 5))
+        cbar = fig.colorbar(im_list[0], cax=cax, label="[kΩ]")
+        cax_lims = cbar.ax.get_ylim()
+        cbar.set_ticks(np.linspace(cax_lims[0], cax_lims[1], 5))
+        cbar.ax.set_yticklabels([f"{tick:.1f}" for tick in np.linspace(cax_lims[0], cax_lims[1], 5)])
+    plt.savefig("wafer_row_resistance_maps.pdf", dpi=300)
+    plt.show()
+
+
+def plot_row_histograms(df, limit_dict, wafer_rows=[0, 3, 5, 6]):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    plt.close('all')  # Reset state
+
+    fig, axs = plt.subplots(len(wafer_rows), 1, figsize=(3, 4), sharex=True)
+
+    for i, row in enumerate(wafer_rows):
+        row_char = chr(65 + row)
+        ax = axs[i]
+        row_df = df[df["die"].str.startswith(row_char)]
+        valid_vals = row_df["Rmean"] / 1e3
+        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals)]
+
+
+        if len(valid_vals) == 0:
+            ax.text(0.5, 0.5, f"No data for row {row_char}", ha="center", va="center")
+            continue
+
+        # After filtering
+        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals)]
+
+        # Optional: clip to match map scale
+        valid_vals = valid_vals[valid_vals < 5000]  # or whatever matches your map scale
+
+        # Log bins across selected range
+        log_bins = np.logspace(np.log10(valid_vals.min()), np.log10(valid_vals.max()), 200)
+
+        # Plot
+        counts, _, _ = ax.hist(valid_vals, bins=log_bins, color="gray", edgecolor="black", alpha=0.7)
+
+        # Log-spaced bins
+        log_bins = np.logspace(np.log10(valid_vals.min()), np.log10(valid_vals.max()), 200)
+        ax.hist(valid_vals, bins=log_bins, color="gray", edgecolor="black", alpha=0.7)
+
+        # vmin/vmax lines
+        if row_char in limit_dict:
+            vmin, vmax = limit_dict[row_char]
+            ax.axvline(vmin, color="blue", linestyle="--", label="vmin")
+            ax.axvline(vmax, color="red", linestyle="--", label="vmax")
+
+        ax.set_ylim(0, 100)
+        ax.set_xscale("log")
+        ax.set_ylabel(f"Row {row_char}")
+        ax.grid(True, linestyle=":", linewidth=0.5)
+
+        if i == 0:
+            ax.legend(loc="upper right", fontsize=8)
+    
+
+    axs[-1].set_xlabel("Resistance (kΩ)")
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.savefig("wafer_row_histograms.pdf", dpi=300)
     plt.show()
 
 
