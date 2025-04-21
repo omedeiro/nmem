@@ -52,8 +52,8 @@ def summarize_die_yield(df, wafer_rows, min_kohm=1, max_kohm=50000):
 # Example usage
 if __name__ == "__main__":
     df = load_autoprobe_data("autoprobe_parsed.mat")
-    wafer_rows = ["7"]
-    summary_df, row_stats_df = summarize_die_yield(df, wafer_rows, min_kohm=10, max_kohm=5000)
+    wafer_rows = ["1", "4", "6", "7"]
+    summary_df, row_stats_df = summarize_die_yield(df, wafer_rows, min_kohm=.1, max_kohm=500000)
 
-    print(summary_df.head())      # Die-level stats
+    print(summary_df)      # Die-level stats
     print(row_stats_df.head())    # Row-level summary
