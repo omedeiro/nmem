@@ -1601,13 +1601,13 @@ def plot_voltage_trace(
     ax: Axes, time: np.ndarray, voltage: np.ndarray, **kwargs
 ) -> Axes:
     ax.plot(time, voltage, **kwargs)
-    ax.set_xlim(time[0], time[-1])
+    # ax.set_xlim(time[0], time[-1])
     ax.yaxis.set_major_locator(MaxNLocator(4))
     ax.set_xticklabels([])
     ax.xaxis.set_major_locator(MultipleLocator(5))
     ax.xaxis.set_minor_locator(MultipleLocator(1))
     ax.tick_params(axis="x", direction="in", which="both")
-    ax.grid(axis="x", which="both")
+    # ax.grid(axis="x", which="both")
     return ax
 
 
