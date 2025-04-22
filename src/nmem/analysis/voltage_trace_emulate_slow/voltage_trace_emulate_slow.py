@@ -51,7 +51,24 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
 
     axs[2].set_xlim(0, 50)
-
+    axs[0].legend(
+        ["input"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
+    axs[1].legend(
+        ["enable"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
+    axs[2].legend(
+        ["output"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
     fig.supxlabel("Time [$\mu$s]")
