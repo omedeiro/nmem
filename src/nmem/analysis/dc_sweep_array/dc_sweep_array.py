@@ -2,8 +2,8 @@ import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib as mpl
-from nmem.analysis.analysis import set_plot_style
-
+from nmem.analysis.analysis import set_plot_style, import_directory
+import os
 set_plot_style()
 
 # Set global plot style for publication
@@ -21,7 +21,7 @@ set_plot_style()
 # )
 
 # Load the .mat file
-data = sio.loadmat("SPG806_C5_array_ic_vs_ih_data.mat")
+data = import_directory(os.getcwd())[0]
 ic_vs_ih = data["ic_vs_ih_data"]
 
 # Extract the fields
