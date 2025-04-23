@@ -17,7 +17,7 @@ W0R1_error = 0
 cmap = get_cmap("Reds")
 colors = cmap(np.linspace(0.5, 1.0, N))
 
-fig, ax = plt.subplots(figsize=(3.5, 3.5))  # Nature-style square plot
+fig, ax = plt.subplots(figsize=(6, 3)) 
 
 for i, data in enumerate(data_list):
     x = data["trace_chan"][0] * 1e6  # µs
@@ -73,4 +73,5 @@ ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
 plt.tight_layout()
+plt.savefig("probe_station_prbs.pdf", bbox_inches='tight')
 plt.show()
