@@ -300,7 +300,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         inner,
-        figsize=(6, 3),
+        figsize=(6, 2.5),
     )
 
     dict_list = import_directory(
