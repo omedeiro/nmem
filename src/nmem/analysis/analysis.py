@@ -1413,7 +1413,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
 
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    colors = CMAP3(np.linspace(0.1, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     write_temp_list = []
     enable_write_current_list = []
     for i, data_dict in enumerate(dict_list):
@@ -1435,7 +1435,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     norm = mcolors.Normalize(
         vmin=min(enable_write_current_list), vmax=max(enable_write_current_list)
     )
-    sm = plt.cm.ScalarMappable(cmap=CMAP3, norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
     cbar.set_label("Enable Write Current [$\mu$A]")
