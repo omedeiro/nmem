@@ -13,6 +13,7 @@ from nmem.analysis.analysis import (
 from nmem.analysis.read_current_sweep_write_current2.write_current_sweep import (
     add_colorbar,
 )
+
 set_plot_style()
 # font_path = r"C:\\Users\\ICE\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Inter-VariableFont_opsz,wght.ttf"
 # fm.fontManager.addfont(font_path)
@@ -66,6 +67,7 @@ if __name__ == "__main__":
             f"$I_{{EW}}$ = {290 + i * 10} [$\mu$A]\n$T_{{W}}$ = {enable_write_temp:.2f} [K]"
         )
         axs[i].set_box_aspect(1.0)
+        axs[i].xaxis.set_major_locator(plt.MultipleLocator(200))
     axs[0].set_ylabel("Bit Error Rate")
     # axs[2].legend(
     #     frameon=False,
@@ -77,6 +79,6 @@ if __name__ == "__main__":
     axpos = axs[2].get_position()
     cbar = add_colorbar(axs[2], dict_list, "enable_read_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
-    cbar.set_ticks([150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250])
+    cbar.set_ticks(plt.MaxNLocator(nbins=6))
 
     plt.savefig("read_current_sweep_three2.pdf", bbox_inches="tight")
