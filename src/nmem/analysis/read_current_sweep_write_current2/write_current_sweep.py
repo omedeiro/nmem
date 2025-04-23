@@ -7,7 +7,7 @@ from nmem.analysis.analysis import (
     plot_read_sweep_array,
     get_channel_temperature,
     get_enable_read_current,
-    CMAP3,
+    CMAP,
 )
 
 
@@ -27,10 +27,10 @@ def add_colorbar(
             # print(f"Enable Read Current: {enable_read_current}")
             # data_list += [enable_read_current]
             data_list = enable_read_current
-            label = "Enable Read Current [$\mu$A]"
+            label = "$I_{{ER}}$ [$\mu$A]"
 
     norm = mcolors.Normalize(vmin=min(data_list), vmax=max(data_list))
-    sm = plt.cm.ScalarMappable(cmap=CMAP3, norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
     sm.set_array([])
 
     if cax is not None:
