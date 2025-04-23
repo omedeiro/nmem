@@ -49,21 +49,22 @@ def set_plot_style() -> None:
             "figure.figsize": [width, height],
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
-            "font.size": 10,
+            "font.family": "Inter",
+            "font.size": 7,
+            "legend.fontsize": 6,
             "axes.linewidth": 0.5,
             "xtick.major.width": 0.5,
             "ytick.major.width": 0.5,
             "xtick.direction": "out",
             "ytick.direction": "out",
-            "font.family": "Inter",
             "lines.markersize": 3,
             "lines.linewidth": 1.2,
-            "legend.fontsize": 6,
             "legend.frameon": False,
             "xtick.major.size": 2,
             "ytick.major.size": 2,
         }
     )
+
 
 set_plot_style()
 COLORS = [
