@@ -99,9 +99,9 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
             "$I_{0,\mathrm{inv}}$",
             "$I_{1,\mathrm{inv}}$",
         ],
-        loc="lower left",
+        loc="upper right",
         frameon=True,
-        ncol=1,
+        ncol=2,
         facecolor="white",
         edgecolor="none",
     )
@@ -284,10 +284,10 @@ def import_write_sweep_formatted_markers(dict_list) -> list[dict]:
 
 if __name__ == "__main__":
     inner = [
-        ["A", "C"],
+        ["A", "B"],
     ]
     innerb = [
-        ["B", "D"],
+        ["C", "D"],
     ]
     innerc = [
         ["delay", "bergrid"],
@@ -299,8 +299,8 @@ if __name__ == "__main__":
     ]
 
     fig, axs = plt.subplot_mosaic(
-        outer_nested_mosaic,
-        figsize=(180 / 25.4, 180 / 25.4),
+        inner,
+        figsize=(6, 3),
     )
 
     dict_list = import_directory(
@@ -311,10 +311,10 @@ if __name__ == "__main__":
     )
 
     ax = axs["A"]
-    plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
+    plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True)
 
-    # ax = axs["B"]
-    # plot_enable_sweep_markers(ax, sort_dict_list)
+    ax = axs["B"]
+    plot_enable_sweep_markers(ax, sort_dict_list)
 
     # dict_list = import_write_sweep_formatted()
     # plot_write_sweep_formatted(axs["C"], dict_list)
@@ -331,7 +331,8 @@ if __name__ == "__main__":
 
     axpos = axs["A"].get_position()
     ax2pos = axs["B"].get_position()
-    axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
+    # axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
+    fig.subplots_adjust(wspace=0.7, hspace=0.5) 
     # ax3pos = axs["C"].get_position()
     # ax4pos = axs["D"].get_position()
     # axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
