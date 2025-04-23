@@ -1333,7 +1333,7 @@ def plot_read_sweep_switch_probability(
 
 
 def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
-    colors = CMAP3(np.linspace(0.1, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     for i, data_dict in enumerate(dict_list):
         plot_fill_between(ax, data_dict, colors[i])
     return ax
@@ -1348,7 +1348,7 @@ def plot_read_sweep_array(
     add_errorbar=False,
     **kwargs,
 ) -> Axes:
-    colors = CMAP3(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
     variable_list = []
     for i, data_dict in enumerate(dict_list):
         plot_read_sweep(
