@@ -66,7 +66,7 @@ def create_trace_hist_plot(
         ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
     )
 
-    plot_voltage_hist(ax_dict["C"], dict_list[3])
+    plot_voltage_hist(ax_dict["C"], dict_list[-1])
 
     ax_dict["A"].legend(loc="upper left")
     ax_dict["A"].set_ylabel("[mV]")
@@ -84,7 +84,7 @@ def create_trace_hist_plot(
 if __name__ == "__main__":
     dict_list = import_directory("data")
 
-    fig, ax_dict = plt.subplot_mosaic("AC;BC", figsize=(6, 3), constrained_layout=True)
+    fig, ax_dict = plt.subplot_mosaic("AC;BC", figsize=(6, 2.5), constrained_layout=True)
 
     ax2 = ax_dict["A"].twinx()
     ax3 = ax_dict["B"].twinx()
@@ -121,5 +121,5 @@ if __name__ == "__main__":
     ax_dict["B"].set_xlabel("Time [$\\mu$s]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
-
+    fig.subplots_adjust(wspace=0.5, hspace=0.5)
     plt.savefig("combined_delay_plotting.pdf", bbox_inches="tight")
