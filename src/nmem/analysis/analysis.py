@@ -1438,7 +1438,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    cbar.set_label("Enable Write Current [$\mu$A]")
+    cbar.set_label("$I_{{EW}}$ [$\mu$A]")
     return ax
 
 
