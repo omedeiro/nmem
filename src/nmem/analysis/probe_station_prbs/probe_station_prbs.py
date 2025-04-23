@@ -17,7 +17,7 @@ W0R1_error = 0
 cmap = get_cmap("Reds")
 colors = cmap(np.linspace(0.5, 1.0, N))
 
-fig, ax = plt.subplots(figsize=(6, 3)) 
+fig, ax = plt.subplots(figsize=(6, 2.5)) 
 
 for i, data in enumerate(data_list):
     x = data["trace_chan"][0] * 1e6  # µs
