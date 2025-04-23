@@ -71,7 +71,7 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
     )
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [$\mu$s]")
+    fig.supxlabel("Time [$\\mu$s]", y=-0.02)
     fig.subplots_adjust(hspace=0.0)
 
     return axs
@@ -80,7 +80,7 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
 if __name__ == "__main__":
     dict_list = import_directory("data")
 
-    fig, axs = plt.subplots(3, 1, figsize=(7, 3), sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(6, 3), sharex=True)
     plot_time_concatenated_traces(axs, dict_list[:5])
     plt.savefig("voltage_trace_emulate_slow.pdf", bbox_inches="tight")
     plt.show()
