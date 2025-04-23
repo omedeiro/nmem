@@ -51,7 +51,7 @@ col_linestyles = {
 }
 
 # Initialize plot
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(3, 3))
 
 x_intercepts = []
 y_intercepts = []
