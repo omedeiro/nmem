@@ -6,12 +6,15 @@ from nmem.analysis.analysis import (
     plot_full_grid,
     plot_grid,
     plot_row,
+    set_plot_style,
 )
+
+set_plot_style()
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
 
-    fig, axs = plt.subplots(5, 5, figsize=(180/25.4, 180/25.4), sharex=True, sharey=True)
+    fig, axs = plt.subplots(5, 5, figsize=(6, 6), sharex=True, sharey=True)
     plot_full_grid(axs, dict_list)
     plt.savefig("enable_current_relation_full_grid.pdf", bbox_inches="tight")
     plt.show()
