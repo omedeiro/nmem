@@ -8,10 +8,9 @@ from nmem.analysis.analysis import (
     CMAP,
     get_voltage_trace_data,
     plot_voltage_trace,
+    set_plot_style,
 )
-
-plt.rcParams["figure.figsize"] = [6, 4]
-plt.rcParams["font.size"] = 10
+set_plot_style()
 
 
 def extract_shifted_traces(
@@ -71,7 +70,7 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
     )
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [$\\mu$s]", y=-0.02)
+    fig.supxlabel("Time [µs]", y=-0.02)
     fig.subplots_adjust(hspace=0.0)
 
     return axs
