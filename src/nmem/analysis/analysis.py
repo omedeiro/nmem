@@ -49,9 +49,14 @@ def set_plot_style() -> None:
             "figure.figsize": [width, height],
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
-            "font.family": "Inter",
-            "font.size": 9,
-            "legend.fontsize": 8,
+            "font.family": "serif",
+            "mathtext.fontset": "cm",
+            'font.size': 9,
+            'axes.titlesize': 9,
+            'axes.labelsize': 9,
+            'xtick.labelsize': 8,
+            'ytick.labelsize': 8,
+            'legend.fontsize': 8,
             "axes.linewidth": 0.5,
             "xtick.major.width": 0.5,
             "ytick.major.width": 0.5,
@@ -1037,8 +1042,8 @@ def plot_critical_currents_from_dc_sweep(
         edgecolor="none",
     )
 
-    ax.set_xlabel("$I_{{EN}}$ [$\mu$A]")
-    ax.set_ylabel("$I_{{c}}$ [$\mu$A]", labelpad=-1)
+    ax.set_xlabel("$I_{{EN}}$ [µA]")
+    ax.set_ylabel("$I_{{c}}$ [µA]", labelpad=-1)
     ax.set_ylim([0, 400])
     ax.set_xlim([-500, 500])
 
@@ -1195,7 +1200,7 @@ def plot_enable_write_sweep_multiple(
         sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
         sm.set_array([])
         cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-        cbar.set_label("Write Current [$\mu$A]")
+        cbar.set_label("Write Current [µA]")
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
@@ -1214,7 +1219,7 @@ def plot_enable_sweep_single(
     ax.plot(
         enable_currents,
         bit_error_rate,
-        label=f"$I_{{W}}$ = {write_current:.1f}$\mu$A",
+        label=f"$I_{{W}}$ = {write_current:.1f}µA",
         **kwargs,
     )
     if add_errorbar:
@@ -1269,14 +1274,14 @@ def plot_read_sweep(
 
     if variable_name == "write_current":
         variable = get_write_current(data_dict)
-        label = f"{variable:.2f}$\mu$A"
+        label = f"{variable:.2f}µA"
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
         write_temp = get_channel_temperature(data_dict, "write")
         if write_temp is None:
-            label = f"{variable:.2f}$\mu$A"
+            label = f"{variable:.2f}µA"
         else:
-            label = f"{variable:.2f}$\mu$A, {write_temp:.2f}K"
+            label = f"{variable:.2f}µA, {write_temp:.2f}K"
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
         label = f"{variable:.2f} pts "
@@ -1286,7 +1291,7 @@ def plot_read_sweep(
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
         read_temp = get_channel_temperature(data_dict, "read")
-        label = f"{variable:.2f}$\mu$A, {read_temp:.2f}K"
+        label = f"{variable:.2f}µA, {read_temp:.2f}K"
     if variable_name == "enable_write_width":
         variable = get_enable_write_width(data_dict)
         label = f"{variable:.2f} pts"
@@ -1370,7 +1375,7 @@ def plot_read_sweep_array(
         sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
         sm.set_array([])
         cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-        cbar.set_label("Write Current [$\mu$A]")
+        cbar.set_label("Write Current [µA]")
 
     return ax
 
@@ -1386,7 +1391,7 @@ def plot_read_switch_probability_array(
                 ax,
                 data_dict,
                 color=colors[i],
-                label=f"{write_list[i]} $\mu$A",
+                label=f"{write_list[i]} µA",
                 **kwargs,
             )
         else:
@@ -1402,7 +1407,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
         ax.plot(
             read_currents,
             bit_error_rate,
-            label=f"+{i+1}$\mu$s",
+            label=f"+{i+1}µs",
             color=colors[i],
             marker=".",
             markeredgecolor="k",
@@ -1427,7 +1432,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
         ax.plot(
             y,
             ztotal,
-            label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} $\mu$A",
+            label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} µA",
             color=colors[dict_list.index(data_dict)],
             marker=".",
         )
@@ -1439,7 +1444,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
     sm.set_array([])
     cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    cbar.set_label("$I_{{EW}}$ [$\mu$A]")
+    cbar.set_label("$I_{{EW}}$ [µA]")
     return ax
 
 
@@ -1665,7 +1670,7 @@ def plot_voltage_trace_stack(
 
     fig = plt.gcf()
     fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [$\mu$s]")
+    fig.supxlabel("Time [µs]")
     fig.subplots_adjust(hspace=0.0)
 
     return axs
@@ -1808,22 +1813,22 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
             "/home/omedeiro/nmem/src/nmem/analysis/enable_current_relation_v2/data2/SPG806_20250107_nMem_measure_enable_response_D6_A4_A3_2025-01-07 15-34-05.mat"
         )
         y_step_size = y[1] - y[0]
-        print(x)
-        print(y)
-        axs[row, column].errorbar(
-            xfit,
-            yfit,
-            yerr=y_step_size * np.ones_like(yfit),
-            fmt="o",
-            color=colors[column],
-            marker=markers[row],
-            markeredgecolor="k",
-            markeredgewidth=0.1,
-            markersize=5,
-            alpha=0.5,
-            zorder=1,
-            label="_data",
-        )
+        # print(x)
+        # print(y)
+        # axs[row, column].errorbar(
+        #     xfit,
+        #     yfit,
+        #     yerr=y_step_size * np.ones_like(yfit),
+        #     fmt="o",
+        #     color=colors[column],
+        #     marker=markers[row],
+        #     markeredgecolor="k",
+        #     markeredgewidth=0.1,
+        #     markersize=5,
+        #     alpha=0.5,
+        #     zorder=1,
+        #     label="_data",
+        # )
 
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
 
@@ -1834,10 +1839,12 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
         )
         # plot_optimal_enable_currents(axs[row, column], data_dict)
         axs[row, column].legend(loc="upper right")
+        axs[row, column].xaxis.set_major_locator(MultipleLocator(500))
+        axs[row, column].xaxis.set_minor_locator(MultipleLocator(100))
         axs[row, column].set_xlim(0, 600)
         axs[row, column].set_ylim(0, 1500)
-    axs[-1, 0].set_xlabel("Enable Current ($\mu$A)")
-    axs[-1, 0].set_ylabel("Critical Current ($\mu$A)")
+    axs[-1, 0].set_xlabel("Enable Current [µA]")
+    axs[-1, 0].set_ylabel("Critical Current [µA]")
     return axs
 
 
@@ -1863,7 +1870,7 @@ def plot_row(axs, dict_list):
         )
         # plot_optimal_enable_currents(axs[column], data_dict)
 
-        axs[column].legend(loc="upper right")
+        axs[column].legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
         axs[column].set_xlim(0, 600)
         axs[column].set_ylim(0, 1500)
     return axs
@@ -1890,7 +1897,7 @@ def plot_column(axs, dict_list):
             markeredgewidth=0.1,
         )
         # plot_optimal_enable_currents(axs[row], data_dict)
-        axs[row].legend(loc="upper right")
+        axs[row].legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
         axs[row].set_xlim(0, 600)
         axs[row].set_ylim(0, 1500)
     return axs
@@ -1901,8 +1908,8 @@ def plot_full_grid(axs, dict_list):
     plot_row(axs[0, 0:4], dict_list)
     plot_column(axs[1:5, 4], dict_list)
     axs[0, 4].axis("off")
-    axs[4, 0].set_xlabel("Enable Current ($\mu$A)")
-    axs[4, 0].set_ylabel("Critical Current ($\mu$A)")
+    axs[4, 0].set_xlabel("Enable Current [µA]")
+    axs[4, 0].set_ylabel("Critical Current [µA]")
     return axs
 
 
@@ -1932,8 +1939,8 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
     ax.add_collection3d(poly, zs=zlist, zdir="y")
 
-    ax.set_xlabel("$I_{{EW}}$ ($\mu$A)", labelpad=10)
-    ax.set_ylabel("$I_W$ ($\mu$A)", labelpad=70)
+    ax.set_xlabel("$I_{{EW}}$ [µA]", labelpad=10)
+    ax.set_ylabel("$I_W$ [µA]", labelpad=70)
     ax.set_zlabel("BER", labelpad=10)
     ax.tick_params(axis="both", which="major", labelsize=12, pad=5)
 
