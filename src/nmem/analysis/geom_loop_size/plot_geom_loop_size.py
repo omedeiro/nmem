@@ -35,9 +35,9 @@ for i in range(N):
     ber_est = np.ravel(data[i]["ber_est"])
     err = np.sqrt(ber_est * (1 - ber_est) / NMEAS)
     # plt.errorbar(Vch, ber_est, yerr=err, fmt='o', color=cmap(i), label=f"_Loop Size {loop_sizes[i]:.1f} au")
-    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} $\mu$m")
+    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µA")
 ax.set_yscale("log")
-ax.set_xlabel("channel voltage (mV)")
+ax.set_xlabel("channel voltage [mV]")
 ax.set_ylabel("estimated BER")
 ax.legend(loc="lower left", labelspacing=0.1, handlelength=1.5, fontsize=7)
 
@@ -47,7 +47,7 @@ best_ber = [np.min(np.ravel(d["ber_est"])) for d in data]
 ax = axs[1]
 ax.plot(range(1, N + 1), best_ber, "-o")
 ax.set_yscale("log")
-ax.set_xlabel("loop size ($\mu$m)")
+ax.set_xlabel("loop size [µA]")
 ax.set_ylabel("minimum BER")
 ax.yaxis.set_major_locator(plt.LogLocator(base=10.0, numticks=10))
 ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))

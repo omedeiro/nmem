@@ -11,8 +11,9 @@ from nmem.analysis.analysis import (
     plot_fill_between_array,
     plot_read_sweep,
     plot_read_sweep_array,
+    set_plot_style,
 )
-
+set_plot_style()
 READ_XMIN = 400
 READ_XMAX = 1000
 IC0_C3 = 910
@@ -27,7 +28,7 @@ def plot_enable_write_sweep(ax: plt.Axes, dict_list: list[dict], **kwargs):
         )
         plot_fill_between(ax, data_dict, fill_color=colors[j])
 
-    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{read}}$ [µA]")
     ax.set_ylabel("BER")
     ax.xaxis.set_major_locator(plt.MaxNLocator(5))
     ax.set_xlim(READ_XMIN, READ_XMAX)
@@ -53,7 +54,7 @@ def plot_enable_write_temp(ax: plt.Axes, enable_write_currents, write_temperatur
             markerfacecolor=colors[idx],
             markeredgewidth=0.2,
         )
-    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{enable}}$ [µA]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
     return ax
@@ -63,7 +64,7 @@ def plot_enable_read_sweep(ax: plt.Axes, dict_list, **kwargs):
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "enable_read_current", **kwargs)
     plot_fill_between_array(ax, dict_list)
     ax.axvline(IC0_C3, color="black", linestyle="--")
-    ax.set_xlabel("$I_{\mathrm{read}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{read}}$ [µA]")
     ax.set_ylabel("BER")
     ax.set_xlim(READ_XMIN, READ_XMAX)
     return ax
@@ -91,7 +92,7 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
             markeredgewidth=0.2,
         )
 
-    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{enable}}$ [µA]")
     ax.set_ylabel("$T_{\mathrm{read}}$ [K]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
 
@@ -133,7 +134,7 @@ if __name__ == "__main__":
 
     # Plot
     fig, axs = plt.subplots(
-        2, 2, figsize=(8.3, 4), constrained_layout=True, width_ratios=[1, 0.25]
+        2, 2, figsize=(6, 3), constrained_layout=True, width_ratios=[1, 0.25]
     )
 
     ax: plt.Axes = axs[1, 0]

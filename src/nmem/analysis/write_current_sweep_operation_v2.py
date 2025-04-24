@@ -179,8 +179,8 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
     )
 
     # Axes labels with specific font sizes
-    ax.set_xlabel("Memory Retention Time (s)", fontsize=10)
-    ax.set_ylabel("Bit Error Rate (BER)", fontsize=10)
+    ax.set_xlabel("Memory retention time [s]")
+    ax.set_ylabel("BER")
 
     # Log scales with tick formatting
     ax.set_xscale("log")
@@ -208,6 +208,7 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
 
 
 def plot_ber_grid(ax: plt.Axes):
+    set_plot_style()
     ARRAY_SIZE = (4, 4)
     param_dict = initialize_dict(ARRAY_SIZE)
     xloc_list = []
@@ -229,7 +230,7 @@ def plot_ber_grid(ax: plt.Axes):
 
     ax.xaxis.set_label_position("bottom")
     ax.xaxis.set_ticks_position("bottom")
-    ax.set_xlabel("Column")
+    ax.set_xlabel("Column") 
     ax.set_ylabel("Row")
     cax = ax.inset_axes([1.10, 0, 0.1, 1])
     cbar = fig.colorbar(
@@ -375,4 +376,12 @@ if __name__ == "__main__":
     )
     plot_delay(ax, delay_dict)
     fig.savefig("retention_plot.pdf", bbox_inches="tight")
+    plt.show()
+
+
+    fig, ax = plt.subplots(
+        figsize=(4, 2), constrained_layout=True
+    )
+    plot_ber_grid(ax)
+    fig.savefig("bergrid.pdf", bbox_inches="tight")
     plt.show()

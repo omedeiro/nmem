@@ -85,7 +85,7 @@ for j in range(heater_currents.shape[1]):
         color=color,
         linestyle=linestyle,
         marker="o",  # Slightly larger marker
-        markersize=5,
+        markersize=2,
         linewidth=1.2,  # Main line width
         elinewidth=1.75,  # Thinner error bar lines
         capsize=2,  # No caps for error bars
@@ -130,8 +130,8 @@ ax.plot(
 )
 
 # Final touches
-ax.set_xlabel(r"$I_h$ (µA)")
-ax.set_ylabel(r"$I_c$ (µA)")
+ax.set_xlabel(r"$I_h$ [µA]")
+ax.set_ylabel(r"$I_c$ [µA]")
 # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
 ax.grid(True, which="both", linestyle="--", linewidth=0.5)
 ax.legend(ncol=2, frameon=False, loc="upper right")

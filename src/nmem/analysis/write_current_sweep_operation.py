@@ -79,7 +79,7 @@ if __name__ == "__main__":
     dict_list = dict_list[1:]
     dict_list = dict_list[::-1]
     plot_write_sweep(ax, dict_list)
-    ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
+    ax.set_xlabel("$I_{\mathrm{write}}$ [µA]")
     ax.set_ylabel("BER")
     ax.set_xlim(0, 300)
     data = []
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         color="red",
     )
     ax.set_xlabel("$T_{\mathrm{write}}$ [K]")
-    ax.set_ylabel("$I_{\mathrm{ch}}$ [$\mu$A]")
+    ax.set_ylabel("$I_{\mathrm{ch}}$ [µA]")
     ax.set_ylim(0, 300)
     ax.grid()
 

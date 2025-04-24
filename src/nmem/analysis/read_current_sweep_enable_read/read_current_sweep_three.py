@@ -40,13 +40,13 @@ if __name__ == "__main__":
         plot_fill_between_array(axs[i], dict_list[i])
         axs[i].set_xlim(400, 1000)
         axs[i].set_ylim(0, 1)
-        axs[i].set_xlabel("Read Current [µA]")
+        axs[i].set_xlabel("Read current [µA]")
         axs[i].set_title(
             f"$I_{{EW}}$ = {290 + i * 10} [µA]\n$T_{{W}}$ = {enable_write_temp:.2f} [K]"
         )
         axs[i].set_box_aspect(1.0)
         axs[i].xaxis.set_major_locator(plt.MultipleLocator(200))
-    axs[0].set_ylabel("Bit Error Rate")
+    axs[0].set_ylabel("BER")
     # axs[2].legend(
     #     frameon=False,
     #     loc="upper left",

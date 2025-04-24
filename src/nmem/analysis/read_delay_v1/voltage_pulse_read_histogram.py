@@ -33,7 +33,7 @@ def plot_read_delay(ax: Axes, dict_list: list[dict]) -> Axes:
         bers.append(get_bit_error_rate(dict_list[i]))
 
     ax.plot([1, 2, 3, 4], bers, label="bit_error_rate", marker="o", color="#345F90")
-    ax.set_xlabel("Delay [$\mu$s]")
+    ax.set_xlabel("Delay [µs]")
     ax.set_ylabel("BER")
 
     return ax
@@ -74,7 +74,7 @@ def create_trace_hist_plot(
     ax2.set_ylabel("[mV]")
     ax3.legend()
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\mu$s]")
+    ax_dict["B"].set_xlabel("Time [µs]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left")
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     ax2.set_ylabel("[mV]")
     ax3.legend(loc="upper right", handlelength=1.2)
     ax3.set_ylabel("[mV]")
-    ax_dict["B"].set_xlabel("Time [$\\mu$s]")
+    ax_dict["B"].set_xlabel("Time [µs]")
     ax_dict["B"].set_ylabel("[mV]")
     ax_dict["B"].legend(loc="upper left", handlelength=1.2)
     ax_dict["C"].set_xlabel("Voltage [mV]")

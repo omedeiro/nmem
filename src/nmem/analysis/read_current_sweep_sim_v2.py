@@ -55,13 +55,11 @@ if __name__ == "__main__":
     outer_nested_mosaic = [
         [inner],
         [innerb],
-        [inner2],
-        [inner3],
     ]
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
-        figsize=(180 / 25.4, 180 / 25.4),
-        height_ratios=[2, 0.5, 1, 1],
+        figsize=(6, 3),
+        height_ratios=[1, .25],
     )
 
     CASE = 16
@@ -97,32 +95,32 @@ if __name__ == "__main__":
     dict_list = [dict_list[i] for i in sorted_args]
     write_current_list = [write_current_list[i] for i in sorted_args]
 
-    plot_read_sweep_array(
-        axs["A"],
-        dict_list,
-        "bit_error_rate",
-        "write_current",
-        marker=".",
-        linestyle="-",
-        markersize=4,
-    )
-    axs["A"].set_xlim(650, 850)
-    axs["A"].set_ylabel("BER")
-    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
-    plot_read_switch_probability_array(
-        axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
-    )
-    axs["B"].set_xlim(650, 850)
-    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
-    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    # plot_read_sweep_array(
+    #     axs["A"],
+    #     dict_list,
+    #     "bit_error_rate",
+    #     "write_current",
+    #     marker=".",
+    #     linestyle="-",
+    #     markersize=4,
+    # )
+    # axs["A"].set_xlim(650, 850)
+    # axs["A"].set_ylabel("BER")
+    # axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    # plot_read_switch_probability_array(
+    #     axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
+    # )
+    # axs["B"].set_xlim(650, 850)
+    # # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
+    # axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    # axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
 
-    axs["C"].set_xlim(650, 850)
-    axs["D"].set_xlim(650, 850)
-    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
-    axs["C"].set_ylabel("BER")
-    axs["B"].set_ylabel("Switching Probability")
-    axs["D"].set_ylabel("Switching Probability")
+    # axs["C"].set_xlim(650, 850)
+    # axs["D"].set_xlim(650, 850)
+    # axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    # axs["C"].set_ylabel("BER")
+    # axs["B"].set_ylabel("Switching Probability")
+    # axs["D"].set_ylabel("Switching Probability")
 
     # fig, ax = plt.subplots(4, 1, figsize=(6, 3))
 
@@ -137,49 +135,56 @@ if __name__ == "__main__":
         ).parse()
         ltsp_data_dict = process_read_data(data)
         ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
-        plot_current_sweep_ber(
-            axs["C"],
-            ltsp_data_dict,
-            color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
-            marker=".",
-            linestyle="-",
-            markersize=5,
-        )
+        # plot_current_sweep_ber(
+        #     axs["C"],
+        #     ltsp_data_dict,
+        #     color=CMAP(ltsp_write_current / max_write_current),
+        #     label=f"{ltsp_write_current} $\mu$A",
+        #     marker=".",
+        #     linestyle="-",
+        #     markersize=5,
+        # )
 
-        plot_current_sweep_switching(
-            axs["D"],
-            ltsp_data_dict,
-            color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
-            marker=".",
-            markersize=5,
-        )
+        # plot_current_sweep_switching(
+        #     axs["D"],
+        #     ltsp_data_dict,
+        #     color=CMAP(ltsp_write_current / max_write_current),
+        #     label=f"{ltsp_write_current} $\mu$A",
+        #     marker=".",
+        #     markersize=5,
+        # )
 
-    axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["C"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
-    axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    # axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    # axs["B"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    # axs["C"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    # axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
 
     # axs["A"].legend(loc="upper left", bbox_to_anchor=(1.0, 1.05))
-    axs["B"].legend(
-        loc="upper right",
-        labelspacing=0.1,
-        fontsize=6,
-    )
+    # axs["B"].legend(
+    #     loc="upper right",
+    #     labelspacing=0.1,
+    #     fontsize=6,
+    # )
     # axs["C"].legend(
     #     loc="upper right",
     # )
-    axs["D"].legend(
-        loc="upper right",
-        labelspacing=0.1,
-        fontsize=6,
-    )
+    # axs["D"].legend(
+    #     loc="upper right",
+    #     labelspacing=0.1,
+    #     fontsize=6,
+    # )
 
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    axs["T1"].set_ylabel("")
+    axs["T2"].set_ylabel("")
+    axs["T3"].set_ylabel("")
+    axs["B1"].set_ylabel("")
+    axs["B2"].set_ylabel("")
+    axs["B3"].set_ylabel("")
+
+    fig.subplots_adjust(hspace=0.6, wspace=0.5)
     fig.patch.set_alpha(0)
 
-    ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
+    ax_legend = fig.add_axes([0.5, 0.95, 0.1, 0.01])
     ax_legend.axis("off")
     ax_legend.legend(
         selected_handles,
@@ -191,5 +196,5 @@ if __name__ == "__main__":
         handlelength=2.5,
         fontsize=8,
     )
-    plt.savefig("spice_comparison.pdf", bbox_inches="tight")
+    plt.savefig("spice_comparison_sim.pdf", bbox_inches="tight")
     plt.show()

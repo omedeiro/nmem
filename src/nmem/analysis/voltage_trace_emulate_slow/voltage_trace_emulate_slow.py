@@ -69,8 +69,8 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
         frameon=True,
     )
     fig = plt.gcf()
-    fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [µs]", y=-0.02)
+    fig.supylabel("Voltage [mV]", fontsize=9)
+    fig.supxlabel("Time [µs]", y=-0.02, fontsize=9)
     fig.subplots_adjust(hspace=0.0)
 
     return axs
