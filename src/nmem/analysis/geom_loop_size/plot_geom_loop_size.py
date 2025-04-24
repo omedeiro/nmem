@@ -39,7 +39,7 @@ for i in range(N):
 ax.set_yscale("log")
 ax.set_xlabel("channel voltage (mV)")
 ax.set_ylabel("estimated BER")
-ax.legend(loc="lower left")
+ax.legend(loc="lower left", labelspacing=0.1, handlelength=1.5, fontsize=7)
 
 # Second plot: best BER vs loop size
 best_ber = [np.min(np.ravel(d["ber_est"])) for d in data]
