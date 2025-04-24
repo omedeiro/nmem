@@ -21,13 +21,13 @@ def add_colorbar(
     for data_dict in data_dict_list:
         if cbar_label == "write_current":
             data_list += [d["write_current"] * 1e6 for d in data_dict]
-            label = "Write Current [$\mu$A]"
+            label = "Write Current [µA]"
         elif cbar_label == "enable_read_current":
             enable_read_current = [get_enable_read_current(d) for d in data_dict]
             # print(f"Enable Read Current: {enable_read_current}")
             # data_list += [enable_read_current]
             data_list = enable_read_current
-            label = "$I_{{ER}}$ [$\mu$A]"
+            label = "$I_{{ER}}$ [µA]"
 
     norm = mcolors.Normalize(vmin=min(data_list), vmax=max(data_list))
     sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
@@ -60,17 +60,17 @@ def plot_read_temp_sweep_C3(save=True):
             "write_current",
             marker=".",
         )
-        axs[i // 2, i % 2].set_xlabel("Read Current [$\mu$A]")
+        axs[i // 2, i % 2].set_xlabel("Read Current [µA]")
         axs[i // 2, i % 2].set_ylabel("Bit Error Rate")
         axs[i // 2, i % 2].set_title(
-            f"Enable Read Current: {enable_read_current} $\mu$A, T= {enable_temperature:.2f} K"
+            f"Enable Read Current: {enable_read_current} µA, T= {enable_temperature:.2f} K"
         )
 
     axs[0, 1].legend(
         frameon=False,
         bbox_to_anchor=(1.1, 1),
         loc="upper left",
-        title="Write Current [$\mu$A]",
+        title="Write Current [µA]",
     )
     fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
@@ -100,11 +100,11 @@ def plot_read_temp_sweep_C3_v2(save=True):
             "write_current",
             marker=".",
         )
-        axs[i].set_xlabel("Read Current [$\mu$A]")
+        axs[i].set_xlabel("Read Current [µA]")
         axs[i].set_ylabel("Bit Error Rate")
         axs[i].set_title(
-            f"Enable Read Current: {enable_read_current} $\mu$A\n"
-            f"T= {enable_temperature:.2f} K\n"
+            f"Enable Read Current: {enable_read_current} [µA]\n"
+            f"T= {enable_temperature:.2f} [K]\n"
         )
         axs[i].set_box_aspect(1.0)
         axs[i].set_xlim(600, 800)
@@ -112,10 +112,10 @@ def plot_read_temp_sweep_C3_v2(save=True):
     #     frameon=False,
     #     bbox_to_anchor=(1.1, 1.2),
     #     loc="upper left",
-    #     title="Write Current [$\mu$A]",
+    #     title="Write Current [µA]",
     # )
     axpos = axs[2].get_position()
-    cbar = add_colorbar(axs[2], dict_list, "Write current [$\mu$A]", cax=cax)
+    cbar = add_colorbar(axs[2], dict_list, "Write current [µA]", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     if save:
         plt.savefig("read_current_sweep_write_current_C3_v2.pdf", bbox_inches="tight")
@@ -126,13 +126,13 @@ def plot_read_sweep_import(data_dict: dict[str, list[float]]):
     plot_read_sweep_array(ax, data_dict, "bit_error_rate", "write_current")
     cell = data_dict[0]["cell"][0]
 
-    ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_xlabel("Read Current [µA]")
     ax.set_ylabel("Bit Error Rate")
     ax.legend(
         frameon=False,
         loc="upper left",
         bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
+        title="Write Current [µA]",
     )
     ax.set_title(f"Cell {cell}")
     return fig, ax
