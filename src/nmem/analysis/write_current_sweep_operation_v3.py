@@ -21,11 +21,13 @@ from nmem.analysis.analysis import (
     process_cell,
     convert_cell_to_coordinates,
     get_enable_current_sweep,
+    set_plot_style,
 )
 from nmem.measurement.cells import CELLS
 from matplotlib import cm
 from matplotlib import ticker
 
+set_plot_style()
 C0 = "#1b9e77"
 C1 = "#d95f02"
 RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
@@ -300,7 +302,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         inner,
-        figsize=(6, 2.5),
+        figsize=(6, 2),
     )
 
     dict_list = import_directory(
@@ -311,7 +313,9 @@ if __name__ == "__main__":
     )
 
     ax = axs["A"]
-    plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True)
+    plot_enable_sweep(
+        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True
+    )
 
     ax = axs["B"]
     plot_enable_sweep_markers(ax, sort_dict_list)
@@ -332,7 +336,7 @@ if __name__ == "__main__":
     axpos = axs["A"].get_position()
     ax2pos = axs["B"].get_position()
     # axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
-    fig.subplots_adjust(wspace=0.7, hspace=0.5) 
+    fig.subplots_adjust(wspace=0.7, hspace=0.5)
     # ax3pos = axs["C"].get_position()
     # ax4pos = axs["D"].get_position()
     # axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])

@@ -21,7 +21,9 @@ from nmem.analysis.analysis import (
     process_cell,
     convert_cell_to_coordinates,
     get_enable_current_sweep,
+    set_plot_style,
 )
+set_plot_style()
 from nmem.measurement.cells import CELLS
 from matplotlib import cm
 from matplotlib import ticker
@@ -149,33 +151,60 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     return ax
 
 
+import matplotlib.pyplot as plt
+from matplotlib.ticker import LogLocator, NullFormatter, FormatStrFormatter
+
 def plot_delay(ax: plt.Axes, data_dict: dict):
-    delay_list = data_dict.get("delay")
-    bit_error_rate = data_dict.get("bit_error_rate")
-    N = 200e3
+    delay_list = np.array(data_dict.get("delay"))
+    bit_error_rate = np.array(data_dict.get("bit_error_rate")).flatten()
+    N = 200e3  # Total trials for BER standard deviation
+
+    # Sort data for proper line plotting
     sort_index = np.argsort(delay_list)
-    delay_list = np.array(delay_list)[sort_index]
-    bit_error_rate = np.array(bit_error_rate)[sort_index]
-    bit_error_rate = np.array(bit_error_rate).flatten()
+    delay_list = delay_list[sort_index]
+    bit_error_rate = bit_error_rate[sort_index]
+
+    # Error bars calculation
     ber_std = np.sqrt(bit_error_rate * (1 - bit_error_rate) / N)
+
+    # Plotting with improved style
     ax.errorbar(
         delay_list,
         bit_error_rate,
         yerr=ber_std,
-        fmt="-",
-        marker=".",
+        fmt="-o",
         color="black",
+        elinewidth=1,
+        capsize=2,
     )
-    ax.set_ylabel("BER")
-    ax.set_xlabel("Memory Retention Time (s)")
 
+    # Axes labels with specific font sizes
+    ax.set_xlabel("Memory Retention Time (s)", fontsize=10)
+    ax.set_ylabel("Bit Error Rate (BER)", fontsize=10)
+
+    # Log scales with tick formatting
     ax.set_xscale("log")
-    ax.set_xbound(lower=1e-6)
-    ax.grid(True, which="both", linestyle="--")
-
     ax.set_yscale("log")
+    ax.set_xlim([1e-6, delay_list.max() * 1.1])
     ax.set_ylim([1e-4, 1e-3])
-    ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
+    # Major and minor ticks on log scale
+    ax.xaxis.set_major_locator(LogLocator(base=10.0, numticks=5))
+    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10)*0.1, numticks=10))
+    ax.xaxis.set_minor_formatter(NullFormatter())
+
+    ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=5))
+    ax.yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10)*0.1, numticks=10))
+    ax.yaxis.set_minor_formatter(NullFormatter())
+
+    # Gridlines
+    ax.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.7)
+    ax.grid(which='minor', linestyle=':', linewidth=0.4, alpha=0.5)
+
+    # Tick parameters
+    ax.tick_params(axis='both', which='major', labelsize=9)
+    ax.tick_params(axis='both', which='minor', labelsize=7)
+
 
 
 def plot_ber_grid(ax: plt.Axes):
@@ -339,3 +368,11 @@ if __name__ == "__main__":
     axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
     bergrid_pos = axs["bergrid"].get_position()
     fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
+
+
+    fig, ax = plt.subplots(
+        figsize=(4, 3), constrained_layout=True
+    )
+    plot_delay(ax, delay_dict)
+    fig.savefig("retention_plot.pdf", bbox_inches="tight")
+    plt.show()

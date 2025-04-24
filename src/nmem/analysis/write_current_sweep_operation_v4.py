@@ -22,10 +22,12 @@ from nmem.analysis.analysis import (
     process_cell,
     convert_cell_to_coordinates,
     get_enable_current_sweep,
+    set_plot_style,
 )
 from nmem.measurement.cells import CELLS
 from matplotlib import cm
 from matplotlib import ticker
+set_plot_style()
 
 C0 = "#1b9e77"
 C1 = "#d95f02"
@@ -301,7 +303,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         innerb,
-        figsize=(6, 2.5),
+        figsize=(6, 2),
     )
 
     dict_list = import_directory(
