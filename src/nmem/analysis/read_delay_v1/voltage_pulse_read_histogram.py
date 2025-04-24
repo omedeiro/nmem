@@ -93,7 +93,7 @@ if __name__ == "__main__":
         ax_dict["A"], dict_list[4], "trace_write_avg", color="#293689", label="Write"
     )
     plot_voltage_trace_averaged(
-        ax2, dict_list[4], "trace_ewrite_avg", color="#ff1423", label="Enable Write"
+        ax2, dict_list[4], "trace_ewrite_avg", color="#ff1423", label="Enable\nWrite"
     )
     plot_voltage_trace_averaged(
         ax_dict["B"], dict_list[4], "trace_read0_avg", color="#1966ff", label="Read 0"
@@ -107,19 +107,20 @@ if __name__ == "__main__":
         label="Read 1",
     )
     plot_voltage_trace_averaged(
-        ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable Read"
+        ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable\nRead"
     )
 
     plot_voltage_hist(ax_dict["C"], dict_list[3])
 
-    ax_dict["A"].legend(loc="upper left")
+    ax_dict["A"].legend(loc="upper left", handlelength=1.2)
     ax_dict["A"].set_ylabel("[mV]")
-    ax2.legend()
+    ax2.legend(loc="upper right", handlelength=1.2)
     ax2.set_ylabel("[mV]")
-    ax3.legend()
+    ax3.legend(loc="upper right", handlelength=1.2)
     ax3.set_ylabel("[mV]")
     ax_dict["B"].set_xlabel("Time [$\\mu$s]")
     ax_dict["B"].set_ylabel("[mV]")
-    ax_dict["B"].legend(loc="upper left")
+    ax_dict["B"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["C"].set_xlabel("Voltage [mV]")
     fig.subplots_adjust(wspace=0.5, hspace=0.5)
     plt.savefig("combined_delay_plotting.pdf", bbox_inches="tight")
