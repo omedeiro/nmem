@@ -32,9 +32,9 @@ for i, data in enumerate(data_list):
     errors = [bw != br for bw, br in zip(bit_write, bit_read)]
 
     # Add bit sequence text near the right edge of each trace
-    text_x = x_trimmed[-1] + 1  # Offset slightly to the right
+    text_x = x_trimmed[-1] + .5  # Offset slightly to the right
     text_y = y_trimmed[len(y_trimmed) // 2]  # Middle of the trace
-    ax.text(text_x, text_y, f"Write: {bit_write}", fontsize=6, va="center", ha="left")
+    ax.text(text_x, text_y, f"Write: {bit_write}", fontsize=8, va="center", ha="left")
 
     for j, error in enumerate(errors):
         if error:
@@ -55,11 +55,11 @@ for i, data in enumerate(data_list):
                 W0R1_error += 1
 
 total_error = W1R0_error + W0R1_error
-ax.set_title(
-    f"Total: {total_error}, W1R0: {W1R0_error}, W0R1: {W0R1_error}", fontsize=7
-)
-ax.set_xlabel("Time (µs)", fontsize=7)
-ax.set_ylabel("Voltage (mV)", fontsize=7)
+# ax.set_title(
+#     f"Total: {total_error}, W1R0: {W1R0_error}, W0R1: {W0R1_error}"
+# )
+ax.set_xlabel("Time [µs]")
+ax.set_ylabel("Voltage [mV]")
 
 ax.tick_params(direction="in", length=3, width=0.5)
 ax.spines["top"].set_visible(False)
