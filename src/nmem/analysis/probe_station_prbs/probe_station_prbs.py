@@ -58,8 +58,8 @@ total_error = W1R0_error + W0R1_error
 # ax.set_title(
 #     f"Total: {total_error}, W1R0: {W1R0_error}, W0R1: {W0R1_error}"
 # )
-ax.set_xlabel("Time [µs]")
-ax.set_ylabel("Voltage [mV]")
+ax.set_xlabel("$t$ [µs]")
+ax.set_ylabel("$V$ [mV]")
 
 ax.tick_params(direction="in", length=3, width=0.5)
 ax.spines["top"].set_visible(False)
