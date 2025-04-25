@@ -23,7 +23,6 @@ from nmem.analysis.analysis import (
     get_enable_current_sweep,
     set_plot_style,
 )
-set_plot_style()
 from nmem.measurement.cells import CELLS
 from matplotlib import cm
 from matplotlib import ticker
@@ -32,6 +31,7 @@ C0 = "#1b9e77"
 C1 = "#d95f02"
 RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
+set_plot_style()
 
 
 # range set 1 [::2]
@@ -179,7 +179,7 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
     )
 
     # Axes labels with specific font sizes
-    ax.set_xlabel("Memory retention time [s]")
+    ax.set_xlabel("$\Delta t$ [s]")
     ax.set_ylabel("BER")
 
     # Log scales with tick formatting
