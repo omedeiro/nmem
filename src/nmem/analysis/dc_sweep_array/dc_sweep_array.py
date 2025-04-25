@@ -55,7 +55,7 @@ fig, ax = plt.subplots(figsize=(3, 3))
 
 x_intercepts = []
 y_intercepts = []
-
+avg_error_list = []
 # Initialize a set to track rows already added to the legend
 rows_in_legend = set()
 
@@ -72,27 +72,36 @@ for j in range(heater_currents.shape[1]):
     linestyle = col_linestyles.get(col, "-")
 
     # Add to legend only if the row is not already included
-    label = f"Row {row}" if row not in rows_in_legend else None
+    label = f"{row}" if row not in rows_in_legend else None
     if label:
         rows_in_legend.add(row)
 
     # Plot with specific style
-    ax.errorbar(
+    # ax.errorbar(
+    #     ih,
+    #     ic,
+    #     yerr=err,
+    #     label=label,
+    #     color=color,
+    #     linestyle=linestyle,
+    #     marker="o",  # Slightly larger marker
+    #     markersize=2,
+    #     linewidth=1.2,  # Main line width
+    #     elinewidth=1.75,  # Thinner error bar lines
+    #     capsize=2,  # No caps for error bars
+    #     alpha=0.9,  # Slight transparency for overlap
+    # )
+    ax.plot(
         ih,
         ic,
-        yerr=err,
         label=label,
         color=color,
         linestyle=linestyle,
-        marker="o",  # Slightly larger marker
-        markersize=2,
-        linewidth=1.2,  # Main line width
-        elinewidth=1.75,  # Thinner error bar lines
-        capsize=2,  # No caps for error bars
-        alpha=0.9,  # Slight transparency for overlap
+        marker="none",
+        linewidth=1.5,  # Main line width
+        alpha=0.5,  # Slight transparency for overlap
     )
-
-
+    avg_error_list.append(np.mean(err))
     # Linear fit for intercepts (200-600 µA)
     valid_indices = (ih >= 200) & (ih <= 550)
     ih_filtered = ih[valid_indices]
@@ -126,11 +135,11 @@ ax.plot(
     color="black",
     linestyle="-",
     linewidth=2,
-    label="Average Fit",
+    label="Fit",
 )
-
+print(f"average error: {np.mean(avg_error_list)}")
 # Final touches
-ax.set_xlabel(r"$I_h$ [µA]")
+ax.set_xlabel(r"$I_{\text{enable}}$ [µA]")
 ax.set_ylabel(r"$I_c$ [µA]")
 # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
 ax.grid(True, which="both", linestyle="--", linewidth=0.5)
