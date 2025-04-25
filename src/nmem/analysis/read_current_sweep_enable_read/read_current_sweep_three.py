@@ -40,9 +40,9 @@ if __name__ == "__main__":
         plot_fill_between_array(axs[i], dict_list[i])
         axs[i].set_xlim(400, 1000)
         axs[i].set_ylim(0, 1)
-        axs[i].set_xlabel("Read current [µA]")
+        axs[i].set_xlabel("$I_{\mathrm{read}}$ [µA]")
         axs[i].set_title(
-            f"$I_{{EW}}$ = {290 + i * 10} [µA]\n$T_{{W}}$ = {enable_write_temp:.2f} [K]"
+            f"$I_{{EW}}$={290 + i * 10} [µA]\n$T_{{W}}$={enable_write_temp:.2f} [K]", fontsize=8
         )
         axs[i].set_box_aspect(1.0)
         axs[i].xaxis.set_major_locator(plt.MultipleLocator(200))
