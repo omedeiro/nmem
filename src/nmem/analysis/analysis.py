@@ -1690,25 +1690,25 @@ def plot_voltage_trace_averaged(
 
 def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     ax.hist(
-        data_dict["read_zero_top"][0, :],
+        data_dict["read_zero_top"][0, :]*1e3,
         log=True,
-        range=(0.2, 0.6),
+        range=(200,600),
         bins=100,
         label="Read 0",
         color="#1966ff",
         alpha=0.5,
     )
     ax.hist(
-        data_dict["read_one_top"][0, :],
+        data_dict["read_one_top"][0, :]*1e3,
         log=True,
-        range=(0.2, 0.6),
+        range=(200, 600),
         bins=100,
         label="Read 1",
         color="#ff1423",
         alpha=0.5,
     )
-    ax.set_xlabel("Voltage [V]")
-    ax.set_ylabel("Counts")
+    ax.set_xlabel("$V$ [mV]")
+    ax.set_ylabel("$N$")
     ax.legend()
     return ax
 
