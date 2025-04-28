@@ -310,6 +310,49 @@ def import_write_sweep_formatted_markers(dict_list) -> list[dict]:
         "data2": data2,
     }
     return data_dict
+from mpl_toolkits.mplot3d import Axes3D
+
+from mpl_toolkits.mplot3d import Axes3D
+
+def plot_ber_3d_bar(ber_array: np.ndarray) -> None:
+    fig = plt.figure(figsize=(5, 4))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # 4x4 grid of cell locations
+    x_data, y_data = np.meshgrid(np.arange(4), np.arange(4))
+    x_data = x_data.flatten()
+    y_data = y_data.flatten()
+    dz = ber_array.flatten()
+
+    # Mask to exclude the broken bit (high BER)
+    valid_mask = np.isfinite(dz) & (dz < 5.5e-2)
+
+    # Apply the mask to everything
+    x_data = x_data[valid_mask]
+    y_data = y_data[valid_mask]
+    dz = dz[valid_mask]
+
+    # All bars start at z=0
+    z_data = np.zeros_like(dz)
+
+    # Bar width and depth
+    dx = dy = 0.6 * np.ones_like(dz)
+
+    # Now all inputs are same length
+    ax.bar3d(x_data, y_data, z_data, dx, dy, dz,
+             shade=True, color="lightgray", edgecolor="black", linewidth=0.5)
+
+    ax.set_xlabel('Column')
+    ax.set_ylabel('Row')
+    ax.set_zlabel('BER')
+    ax.set_xticks(range(4))
+    ax.set_yticks(range(4))
+    ax.set_xlim(-0.5, 3.5)
+    ax.set_ylim(-0.5, 3.5)
+    ax.set_title("Bit Error Rate (BER) per Cell")
+
+    fig.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -372,7 +415,7 @@ if __name__ == "__main__":
 
 
     fig, ax = plt.subplots(
-        figsize=(4, 3), constrained_layout=True
+        figsize=(4, 2), constrained_layout=True
     )
     plot_delay(ax, delay_dict)
     fig.savefig("retention_plot.pdf", bbox_inches="tight")
@@ -385,3 +428,32 @@ if __name__ == "__main__":
     plot_ber_grid(ax)
     fig.savefig("bergrid.pdf", bbox_inches="tight")
     plt.show()
+
+
+
+    # Add this right after
+    param_dict = initialize_dict((4, 4))
+    xloc_list = []
+    yloc_list = []
+    for c in CELLS:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
+
+    ber_array = param_dict["bit_error_rate"]
+    valid_ber = ber_array[np.isfinite(ber_array) & (ber_array < 5.5e-2)]
+
+    average_ber = np.mean(valid_ber)
+    std_ber = np.std(valid_ber)
+    min_ber = np.min(valid_ber)
+    max_ber = np.max(valid_ber)
+    print(len(valid_ber))
+    print("=== Array BER Statistics ===")
+    print(f"Average BER: {average_ber:.2e}")
+    print(f"Std Dev BER: {std_ber:.2e}")
+    print(f"Min BER: {min_ber:.2e}")
+    print(f"Max BER: {max_ber:.2e}")
+    print("=============================")
+
+
+    # Plot the 3D bar chart
+    plot_ber_3d_bar(ber_array)
