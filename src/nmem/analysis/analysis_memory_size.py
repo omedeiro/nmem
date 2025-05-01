@@ -16,7 +16,7 @@ cap_colors = ["gray", "gray", "gray", "darkred", "royalblue"]
 
 tech_den = ["CMOS NAND Flash", "CMOS DRAM", "CMOS SRAM", "Josephson RAM", "This Work (SNM)"]
 den_vals = np.log10([96e9, 50e9, 8e9, 1e6, 2.6e6])
-den_labels = ["~96 Gbit/cm²", "~50 Gbit/cm²", "~8 Gbit/cm²", "1 Mbit/cm²", "2.6 Mbit/cm²"]
+den_labels = ["~96 Gb/cm²", "~50 Gb/cm²", "~8 Gb/cm²", "1 Mb/cm²", "2.6 Mb/cm²"]
 den_colors = ["gray", "gray", "gray", "darkred", "royalblue"]
 
 # ---------------------- Helper Functions ----------------------
