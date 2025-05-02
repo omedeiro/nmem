@@ -26,6 +26,39 @@ CRITICAL_TEMP = 12.3
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 
 
+
+def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
+    """
+    Apply a presentation-optimized Matplotlib style.
+
+    Parameters:
+        dpi (int): Figure DPI (for saved files).
+        font_size (int): Base font size for axes and labels.
+        grid_alpha (float): Grid line transparency.
+    """
+    plt.rcParams.update({
+        "figure.dpi": dpi,
+        "figure.figsize": (6, 4),
+        "axes.titlesize": font_size + 4,
+        "axes.labelsize": font_size + 2,
+        "xtick.labelsize": font_size,
+        "ytick.labelsize": font_size,
+        "legend.fontsize": font_size,
+        "font.size": font_size,
+        "axes.grid": True,
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.7,
+        "grid.alpha": grid_alpha,
+        "axes.edgecolor": "#333333",
+        "axes.linewidth": 1.2,
+        "lines.linewidth": 2.0,
+        "savefig.bbox": "tight",
+        "savefig.pad_inches": 0.2,
+        "xtick.major.size": 5,
+        "ytick.major.size": 5,
+    })
+
+
 def set_inter_font():
     if os.name == "nt":  # Windows
         font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
@@ -1707,8 +1740,8 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         color="#ff1423",
         alpha=0.5,
     )
-    ax.set_xlabel("$V$ [mV]")
-    ax.set_ylabel("$N$")
+    # ax.set_xlabel("$V$ [mV]")
+    # ax.set_ylabel("$N$")
     ax.legend()
     return ax
 
