@@ -36,8 +36,10 @@ def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
         font_size (int): Base font size for axes and labels.
         grid_alpha (float): Grid line transparency.
     """
+    set_inter_font()
     plt.rcParams.update({
         "figure.dpi": dpi,
+        "font.family": "Inter",
         "figure.figsize": (6, 4),
         "axes.titlesize": font_size + 4,
         "axes.labelsize": font_size + 2,
@@ -105,18 +107,18 @@ def set_plot_style() -> None:
 
 
 set_plot_style()
-COLORS = [
-    "#1b9e77",  # Teal green
-    "#d95f02",  # Burnt orange
-    "#7570b3",  # Muted blue-purple
-    "#e7298a",  # Reddish pink
-    "#66a61e",  # Olive green
-    "#e6ab02",  # Mustard yellow
-    "#a6761d",  # Brown
-    "#666666",  # Dark gray
-]
+# COLORS = [
+#     "#1b9e77",  # Teal green
+#     "#d95f02",  # Burnt orange
+#     "#7570b3",  # Muted blue-purple
+#     "#e7298a",  # Reddish pink
+#     "#66a61e",  # Olive green
+#     "#e6ab02",  # Mustard yellow
+#     "#a6761d",  # Brown
+#     "#666666",  # Dark gray
+# ]
 
-plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
+# plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
 C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
