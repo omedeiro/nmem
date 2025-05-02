@@ -2,16 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import ltspice
-from matplotlib.ticker import MaxNLocator, FuncFormatter
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.ticker import MaxNLocator
 from cycler import cycler
-from nmem.simulation.spice_circuits.plotting import apply_snm_style
 from nmem.analysis.analysis import set_pres_style
 
+# Apply consistent style
 set_pres_style()
-plt.rcParams.update({
-    "axes.prop_cycle": cycler(color=['#1f77b4', '#d62728'])
-})
+plt.rcParams.update({"axes.prop_cycle": cycler(color=["#1f77b4", "#d62728"])})
+
 
 # --- Load and extract ---
 def load_ltspice_data(raw_dir: str) -> dict:
@@ -30,7 +28,8 @@ def load_ltspice_data(raw_dir: str) -> dict:
         data_dict[fname] = ltsp
     return data_dict
 
-def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e6):
+
+def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e3):
     return {
         "time": ltsp.get_time() * time_scale,
         "left_current": ltsp.get_data("Ix(HL:drain)") * 1e6,
@@ -42,29 +41,92 @@ def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e6):
         "voltage": ltsp.get_data("V(out)") * voltage_scale,
     }
 
-def plot_trace_slice(ax, data_dict, start_time, end_time, invert_ic=False, add_inverted=False):
-    for key, ltsp in data_dict.items():
-        try:
-            amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
-        except ValueError:
-            continue
-        if not (35 <= amp_uA <= 45):
-            continue
-        data = extract_trace_data(ltsp, time_scale=1e9)
-        mask = (data["time"] >= start_time) & (data["time"] <= end_time)
-        if data["time"][mask][0] > 1600:
-            data["time"][mask] -= 1600
-        ax.plot(data["time"][mask], data["left_current"][mask], color="C0")
-        ax.plot(data["time"][mask], data["right_current"][mask], color="C1")
-        ichl = -data["ichl"][mask] if invert_ic else data["ichl"][mask]
-        ichr = -data["ichr"][mask] if invert_ic else data["ichr"][mask]
-        ax.plot(data["time"][mask], ichl, linestyle="--", color="C0", dashes=(1, 1))
-        ax.plot(data["time"][mask], ichr, linestyle="--", color="C1", dashes=(1, 1))
-        if add_inverted:
-            ax.plot(data["time"][mask], -ichl, linestyle="--", color="C0", dashes=(1, 1))
-            ax.plot(data["time"][mask], -ichr, linestyle="--", color="C1", dashes=(1, 1))
-        ax.yaxis.set_major_locator(MaxNLocator(5))
-        ax.set_ylim(-40, 70)
+def plot_full_waveform_with_biases(data, regions, output_dir):
+    time = data["time"]
+    left_current = data["left_current"]
+    right_current = data["right_current"]
+    ichl = data["ichl"]
+    ichr = data["ichr"]
+    input_bias = data["input_bias"]
+    enable_bias = data["enable_bias"]
+    voltage = data["voltage"]
+
+    xlim = (time[0], time[-1])
+    os.makedirs(output_dir, exist_ok=True)
+
+    # --- Base waveform with no highlight ---
+    fig, axs = plt.subplots(3, 1, figsize=(12, 6), dpi=300,
+                            sharex=True, gridspec_kw={'height_ratios': [1, 2, 1]})
+
+    # Input signals
+    axs[0].plot(time, input_bias, label="Input Bias", color="tab:green", linewidth=1.5)
+    axs[0].plot(time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5)
+    axs[0].set_ylabel("Input (uA)")
+    axs[0].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[0].grid(True, linestyle="--", linewidth=0.3)
+
+    # Device currents
+    axs[1].plot(time, left_current, label="Left Current", color="C0", linewidth=1.5)
+    axs[1].plot(time, right_current, label="Right Current", color="C1", linewidth=1.5)
+    axs[1].plot(time, ichl, linestyle="--", color="C0", alpha=0.5, linewidth=1.0)
+    axs[1].plot(time, ichr, linestyle="--", color="C1", alpha=0.5, linewidth=1.0)
+    axs[1].set_ylabel("Device Currents (uA)")
+    axs[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[1].grid(True, linestyle="--", linewidth=0.3)
+
+    # Output signal
+    axs[2].plot(time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5)
+    axs[2].set_xlabel("Time (ns)")
+    axs[2].set_ylabel("Voltage (mV)")
+    axs[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[2].grid(True, linestyle="--", linewidth=0.3)
+
+    for ax in axs:
+        ax.yaxis.set_major_locator(MaxNLocator(4))
+    axs[0].set_xlim(xlim)
+
+    plt.tight_layout(pad=1.5)
+    fig.savefig(os.path.join(output_dir, "waveform_0_with_bias.png"), transparent=True)
+    plt.close(fig)
+
+    # --- Highlighted waveform for each region ---
+    for label, (start, end) in regions.items():
+        fig, axs = plt.subplots(3, 1, figsize=(12, 6), dpi=300,
+                                sharex=True, gridspec_kw={'height_ratios': [1, 2, 1]})
+
+        axs[0].plot(time, input_bias, label="Input Bias", color="tab:green", linewidth=1.5)
+        axs[0].plot(time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5)
+        axs[0].axvspan(start, end, color="grey", alpha=0.25)
+        axs[0].set_ylabel("Input (uA)")
+        axs[0].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+        axs[0].grid(True, linestyle="--", linewidth=0.3)
+
+        axs[1].plot(time, left_current, label="Left Current", color="C0", linewidth=1.5)
+        axs[1].plot(time, right_current, label="Right Current", color="C1", linewidth=1.5)
+        axs[1].plot(time, ichl, linestyle="--", color="C0", alpha=0.5, linewidth=1.0)
+        axs[1].plot(time, ichr, linestyle="--", color="C1", alpha=0.5, linewidth=1.0)
+        axs[1].axvspan(start, end, color="grey", alpha=0.25)
+        axs[1].text((start + end) / 2, axs[1].get_ylim()[1]*0.8, label,
+                    ha='center', va='top', fontsize=6,
+                    bbox=dict(facecolor='white', edgecolor='black', boxstyle='round'))
+        axs[1].set_ylabel("Device Currents (uA)")
+        axs[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+        axs[1].grid(True, linestyle="--", linewidth=0.3)
+
+        axs[2].plot(time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5)
+        axs[2].axvspan(start, end, color="grey", alpha=0.25)
+        axs[2].set_xlabel("Time (ns)")
+        axs[2].set_ylabel("Voltage (uV)")
+        axs[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+        axs[2].grid(True, linestyle="--", linewidth=0.3)
+
+        for ax in axs:
+            ax.yaxis.set_major_locator(MaxNLocator(4))
+        axs[0].set_xlim(xlim)
+
+        plt.tight_layout(pad=1.5)
+        fig.savefig(os.path.join(output_dir, f"waveform_{label}_with_bias.png"), transparent=True)
+        plt.close(fig)
 
 # --- Main Execution ---
 if __name__ == "__main__":
@@ -81,54 +143,16 @@ if __name__ == "__main__":
         except ValueError:
             continue
 
-    time = data["time"]
-    left_current = data["left_current"]
-    right_current = data["right_current"]
-    ichl = data["ichl"]
-    ichr = data["ichr"]
-
     regions = {
-        "A": (20, 180), "B": (200, 400), "C": (480, 520), "D": (1220, 1400),
-        "E": (1620, 1780), "F": (1820, 1980), "G": (2600, 2800), "H": (2820, 3100)
+        "A": (20, 180),
+        "B": (200, 400),
+        "C": (480, 520),
+        "D": (1220, 1400),
+        "E": (1620, 1780),
+        "F": (1820, 1980),
+        "G": (2600, 2800),
+        "H": (2820, 3100),
     }
 
     output_dir = os.path.join(raw_dir, "full_waveform_steps")
-    os.makedirs(output_dir, exist_ok=True)
-
-    # --- Save base waveform with no highlight ---
-    fig, ax = plt.subplots(figsize=(12, 2.8), dpi=300)
-    ax.plot(time, left_current, label="Left Current", color="C0", linewidth=0.8)
-    ax.plot(time, right_current, label="Right Current", color="C1", linewidth=0.8)
-    ax.plot(time, ichl, linestyle="--", color="C0", alpha=0.5)
-    ax.plot(time, ichr, linestyle="--", color="C1", alpha=0.5)
-    ax.set_xlabel("Time (ns)")
-    ax.set_ylabel("Current (uA)")
-    ax.yaxis.set_major_locator(MaxNLocator(4))
-    ax.grid(True, linestyle="--", linewidth=0.3)
-    ax.legend(loc="upper right", fontsize=6)
-    xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    plt.tight_layout()
-    fig.savefig(os.path.join(output_dir, "waveform_base.png"), transparent=True)
-    plt.close(fig)
-
-    # --- Save each overlay frame ---
-    for label, (start, end) in regions.items():
-        fig, ax = plt.subplots(figsize=(12, 2.8), dpi=300)
-        ax.plot(time, left_current, label="Left Current", color="C0", linewidth=0.8)
-        ax.plot(time, right_current, label="Right Current", color="C1", linewidth=0.8)
-        ax.plot(time, ichl, linestyle="--", color="C0", alpha=0.5)
-        ax.plot(time, ichr, linestyle="--", color="C1", alpha=0.5)
-        ax.axvspan(start, end, color="grey", alpha=0.25)
-        ax.text((start + end) / 2, ax.get_ylim()[1]*0.8, label,
-                ha='center', va='top', fontsize=6,
-                bbox=dict(facecolor='white', edgecolor='black', boxstyle='round'))
-        ax.set_xlabel("Time (ns)")
-        ax.set_ylabel("Current (uA)")
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.yaxis.set_major_locator(MaxNLocator(4))
-        ax.grid(True, linestyle="--", linewidth=0.3)
-        ax.legend(loc="upper right", fontsize=6)
-        plt.tight_layout()
-        fig.savefig(os.path.join(output_dir, f"waveform_{label}.png"), transparent=True)
-        plt.close(fig)
+    plot_full_waveform_with_biases(data, regions, output_dir)
