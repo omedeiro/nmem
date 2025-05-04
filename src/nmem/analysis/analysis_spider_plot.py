@@ -50,8 +50,9 @@ def plot_radar(metrics, units, axis_min, axis_max, normalizers, datasets, labels
     ax.spines['polar'].set_visible(False)
 
     # Custom radial tick labels for each metric at cardinal directions
-    cardinal_angles = [0, np.pi / 2, np.pi, 3 * np.pi / 2]  # E, N, W, S
-    cardinal_axes = [0, 1, 2, 3]  # Metric indices
+    num_vars = len(metrics)  # 5 if you've added "Access Time"
+    cardinal_angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    cardinal_axes = [0, 1, 2, 3, 4]  # Metric indices
 
     for angle, i in zip(cardinal_angles, cardinal_axes):
         vmin, vmax = axis_min[i], axis_max[i]
@@ -89,16 +90,16 @@ normalize_log = lambda val, vmin, vmax: (np.log10(val) - np.log10(vmin)) / (np.l
 normalize_log_inverse = lambda val, vmin, vmax: (np.log10(vmax) - np.log10(val)) / (np.log10(vmax) - np.log10(vmin))
 
 # --- Metric definitions ---
-metrics = ['Density', 'Capacity', 'BER', 'Energy/op']
-units = ['Mb/cm²', 'bits', '', 'fJ']
-axis_min = [0.1, 0.1, 1e-6, 1e-18]
-axis_max = [3.0, 1e6, 1e-2, 1e-9]
-normalizers = [normalize_linear, normalize_log, normalize_log_inverse, normalize_inverse]
+metrics = ['Density', 'Capacity', 'BER', 'Access energy', 'Access time']
+units = ['Mb/cm²', 'bits', '', 'J/bit', 's']
+axis_min = [0.1, 0.1, 1e-6, 1e-16, 1e-12]
+axis_max = [10.0, 1e6, 1e-2, 1e-1, 1e-3]
+normalizers = [normalize_linear, normalize_log, normalize_log_inverse, normalize_log_inverse, normalize_log_inverse]
 
 # --- Data ---
-values_snm_new = [2.6, 64, 1e-5, 100e-15]
-values_snm_old = [2.0, 1, 1e-3, 1300e-15]
-values_sce = [1, 4e3, 1e-5, 50e-18]
+values_snm_new = [2.6, 64, 1e-5, 100e-13, 20e-9]
+values_snm_old = [2.0, 1, 1e-3, 1300e-13, 10e-9]
+values_sce = [1, 4e3, 1e-5, 50e-16, 10e-12]
 
 datasets = [values_snm_new, values_snm_old, values_sce]
 labels = ['SNM', 'SNM_old', 'SCE']
