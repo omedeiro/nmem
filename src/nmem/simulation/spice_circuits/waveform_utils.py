@@ -42,7 +42,7 @@ def generate_memory_protocol_sequence(
     enab_on[37:38] = False  # Disable word-line select for read operations
     enab_on[43:44] = False  # Disable word-line select for read operations
     enab_on[47:48] = False  # Disable word-line select for read operations
-    hold_width_enab = 20e-9
+    hold_width_enab = 100e-9
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
@@ -66,7 +66,7 @@ def generate_memory_protocol_sequence(
             t_vec, i_vec = flat_top_gaussian(
                 t_center, pulse_sigma, hold_width_read, amp, dt
             )
-            t_chan.extend(t_vec + 20e-9)
+            t_chan.extend(t_vec)
             i_chan.extend(i_vec)
         elif op == "null":
             amp = 0
@@ -90,7 +90,7 @@ def generate_memory_protocol_sequence(
             amp = 0
 
         if amp > 0 and enab_on[i]:
-            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold, amp, dt)
+            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_enab, amp, dt)
             t_enab.extend(t_vec + phase_offset)
             i_enab.extend(i_vec)
 
