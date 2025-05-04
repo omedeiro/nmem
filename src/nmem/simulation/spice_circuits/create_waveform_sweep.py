@@ -8,13 +8,8 @@ output_dir = "data/write_amp_sweep"
 os.makedirs(output_dir, exist_ok=True)
 
 # Sweep write amplitudes from 0 to 100 µA in 10 µA steps
-sweep_values = np.arange(50e-6, 110e-6, 50e-6)  # 0 to 100 µA
+sweep_values = np.arange(715e-6, 730e-6, 5e-6)  # 0 to 100 µA
 
-# Signal parameters
-t_center = 100e-9
-pulse_sigma = 10e-9
-hold_width = 20e-9
-dt = 0.1e-9
 
 # Store generated filenames
 pwl_files = []
@@ -30,10 +25,10 @@ def main():
                 hold_width_write=120e-9,
                 hold_width_read=300e-9,
                 hold_width_clear=5e-9,
-                write_amplitude=amp,
-                read_amplitude=720e-6,
-                enab_write_amplitude=485e-6,
-                enab_read_amplitude=315e-6,
+                write_amplitude=180e-6,
+                read_amplitude=amp,
+                enab_write_amplitude=465e-6,
+                enab_read_amplitude=300e-6,
                 clear_amplitude=700e-6,
                 dt=0.1e-9,
                 seed=42,
