@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import ltspice
+import logging
 from matplotlib.ticker import MaxNLocator
 from cycler import cycler
 from nmem.analysis.analysis import set_pres_style
@@ -10,9 +11,15 @@ from nmem.analysis.analysis import set_pres_style
 set_pres_style()
 plt.rcParams.update({"axes.prop_cycle": cycler(color=["#1f77b4", "#d62728"])})
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 # --- Load and extract ---
 def load_ltspice_data(raw_dir: str) -> dict:
+    """Load LTspice data from .raw files in the specified directory."""
     data_dict = {}
     for fname in os.listdir(raw_dir):
         if not fname.endswith(".raw") or fname.endswith(".op.raw"):
@@ -23,13 +30,15 @@ def load_ltspice_data(raw_dir: str) -> dict:
         try:
             _ = ltsp.get_time()
         except Exception as e:
-            print(f"Skipping {fname}: {type(e).__name__} — {e}")
+            logging.warning(f"Skipping {fname}: {type(e).__name__} — {e}")
             continue
         data_dict[fname] = ltsp
+    logging.info(f"Loaded {len(data_dict)} LTspice files from {raw_dir}")
     return data_dict
 
 
 def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e3):
+    """Extract relevant trace data from an LTspice object."""
     return {
         "time": ltsp.get_time() * time_scale,
         "left_current": ltsp.get_data("Ix(HL:drain)") * 1e6,
@@ -41,7 +50,9 @@ def extract_trace_data(ltsp, time_scale=1, voltage_scale=1e3):
         "voltage": ltsp.get_data("V(out)") * voltage_scale,
     }
 
-def plot_full_waveform_with_biases(data, regions, output_dir):
+
+def plot_waveform(data, regions, output_dir, label_prefix="waveform"):
+    """Plot the waveform with optional highlighted regions."""
     time = data["time"]
     left_current = data["left_current"]
     right_current = data["right_current"]
@@ -54,13 +65,21 @@ def plot_full_waveform_with_biases(data, regions, output_dir):
     xlim = (time[0], time[-1])
     os.makedirs(output_dir, exist_ok=True)
 
-    # --- Base waveform with no highlight ---
-    fig, axs = plt.subplots(3, 1, figsize=(12, 6), dpi=300,
-                            sharex=True, gridspec_kw={'height_ratios': [1, 2, 1]})
+    # Base waveform plot
+    fig, axs = plt.subplots(
+        3,
+        1,
+        figsize=(12, 6),
+        dpi=300,
+        sharex=True,
+        gridspec_kw={"height_ratios": [1, 2, 1]},
+    )
 
     # Input signals
     axs[0].plot(time, input_bias, label="Input Bias", color="tab:green", linewidth=1.5)
-    axs[0].plot(time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5)
+    axs[0].plot(
+        time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5
+    )
     axs[0].set_ylabel("Input (uA)")
     axs[0].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
     axs[0].grid(True, linestyle="--", linewidth=0.3)
@@ -75,7 +94,9 @@ def plot_full_waveform_with_biases(data, regions, output_dir):
     axs[1].grid(True, linestyle="--", linewidth=0.3)
 
     # Output signal
-    axs[2].plot(time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5)
+    axs[2].plot(
+        time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5
+    )
     axs[2].set_xlabel("Time (ns)")
     axs[2].set_ylabel("Voltage (mV)")
     axs[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
@@ -86,63 +107,14 @@ def plot_full_waveform_with_biases(data, regions, output_dir):
     axs[0].set_xlim(xlim)
 
     plt.tight_layout(pad=1.5)
-    fig.savefig(os.path.join(output_dir, "waveform_0_with_bias.png"), transparent=True)
+    plt.show()
+    # fig.savefig(os.path.join(output_dir, f"{label_prefix}_base.png"), transparent=True)
     plt.close(fig)
 
-    # --- Highlighted waveform for each region ---
-    for label, (start, end) in regions.items():
-        fig, axs = plt.subplots(3, 1, figsize=(12, 6), dpi=300,
-                                sharex=True, gridspec_kw={'height_ratios': [1, 2, 1]})
 
-        axs[0].plot(time, input_bias, label="Input Bias", color="tab:green", linewidth=1.5)
-        axs[0].plot(time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5)
-        axs[0].axvspan(start, end, color="grey", alpha=0.25)
-        axs[0].set_ylabel("Input (uA)")
-        axs[0].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
-        axs[0].grid(True, linestyle="--", linewidth=0.3)
-
-        axs[1].plot(time, left_current, label="Left Current", color="C0", linewidth=1.5)
-        axs[1].plot(time, right_current, label="Right Current", color="C1", linewidth=1.5)
-        axs[1].plot(time, ichl, linestyle="--", color="C0", alpha=0.5, linewidth=1.0)
-        axs[1].plot(time, ichr, linestyle="--", color="C1", alpha=0.5, linewidth=1.0)
-        axs[1].axvspan(start, end, color="grey", alpha=0.25)
-        axs[1].text((start + end) / 2, axs[1].get_ylim()[1]*0.8, label,
-                    ha='center', va='top', fontsize=6,
-                    bbox=dict(facecolor='white', edgecolor='black', boxstyle='round'))
-        axs[1].set_ylabel("Device Currents (uA)")
-        axs[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
-        axs[1].grid(True, linestyle="--", linewidth=0.3)
-
-        axs[2].plot(time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5)
-        axs[2].axvspan(start, end, color="grey", alpha=0.25)
-        axs[2].set_xlabel("Time (ns)")
-        axs[2].set_ylabel("Voltage (uV)")
-        axs[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
-        axs[2].grid(True, linestyle="--", linewidth=0.3)
-
-        for ax in axs:
-            ax.yaxis.set_major_locator(MaxNLocator(4))
-        axs[0].set_xlim(xlim)
-
-        plt.tight_layout(pad=1.5)
-        fig.savefig(os.path.join(output_dir, f"waveform_{label}_with_bias.png"), transparent=True)
-        plt.close(fig)
-
-# --- Main Execution ---
-if __name__ == "__main__":
+def main():
     raw_dir = "data/write_amp_sweep"
-    data_dict = load_ltspice_data(raw_dir)
-
-    # --- Pull one trace for full waveform view ---
-    for key, ltsp in data_dict.items():
-        try:
-            amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
-            if 35 <= amp_uA <= 45:
-                data = extract_trace_data(ltsp, time_scale=1e9)
-                break
-        except ValueError:
-            continue
-
+    output_dir = os.path.join(raw_dir, "plots")
     regions = {
         "A": (20, 180),
         "B": (200, 400),
@@ -154,5 +126,19 @@ if __name__ == "__main__":
         "H": (2820, 3100),
     }
 
-    output_dir = os.path.join(raw_dir, "full_waveform_steps")
-    plot_full_waveform_with_biases(data, regions, output_dir)
+    data_dict = load_ltspice_data(raw_dir)
+
+    for key, ltsp in data_dict.items():
+        try:
+            amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
+            if 605 <= amp_uA <= 795:
+                data = extract_trace_data(ltsp, time_scale=1e9)
+                plot_waveform(
+                    data, regions, output_dir, label_prefix=f"waveform_{amp_uA}"
+                )
+        except ValueError:
+            continue
+
+
+if __name__ == "__main__":
+    main()
