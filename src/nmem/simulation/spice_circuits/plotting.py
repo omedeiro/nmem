@@ -67,18 +67,18 @@ def apply_snm_style():
     })
 
 
-COLORS = [
-    "#1b9e77",  # Teal green
-    "#d95f02",  # Burnt orange
-    "#7570b3",  # Muted blue-purple
-    "#e7298a",  # Reddish pink
-    "#66a61e",  # Olive green
-    "#e6ab02",  # Mustard yellow
-    "#a6761d",  # Brown
-    "#666666",  # Dark gray
-]
+# COLORS = [
+#     "#1b9e77",  # Teal green
+#     "#d95f02",  # Burnt orange
+#     "#7570b3",  # Muted blue-purple
+#     "#e7298a",  # Reddish pink
+#     "#66a61e",  # Olive green
+#     "#e6ab02",  # Mustard yellow
+#     "#a6761d",  # Brown
+#     "#666666",  # Dark gray
+# ]
 
-plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
+# plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
 
 
 def plot_transient(
