@@ -1,4 +1,3 @@
-import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator

@@ -1,31 +1,29 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+
 from nmem.analysis.analysis import (
-    CRITICAL_TEMP,
-    calculate_critical_current_temp,
+    convert_cell_to_coordinates,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_channel_temperature,
     get_channel_temperature_sweep,
     get_critical_current_heater_off,
+    get_enable_current_sweep,
     get_enable_write_current,
     get_read_current,
     get_read_currents,
     get_write_current,
     import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_write_sweep,
-    plot_parameter_array,
     initialize_dict,
+    plot_enable_write_sweep_multiple,
+    plot_parameter_array,
+    plot_write_sweep,
     process_cell,
-    convert_cell_to_coordinates,
-    get_enable_current_sweep,
     set_plot_style,
 )
 from nmem.measurement.cells import CELLS
-from matplotlib import cm
-from matplotlib import ticker
 
 C0 = "#1b9e77"
 C1 = "#d95f02"
@@ -152,7 +150,8 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
 
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, NullFormatter, FormatStrFormatter
+from matplotlib.ticker import LogLocator, NullFormatter
+
 
 def plot_delay(ax: plt.Axes, data_dict: dict):
     delay_list = np.array(data_dict.get("delay"))
@@ -310,9 +309,7 @@ def import_write_sweep_formatted_markers(dict_list) -> list[dict]:
         "data2": data2,
     }
     return data_dict
-from mpl_toolkits.mplot3d import Axes3D
 
-from mpl_toolkits.mplot3d import Axes3D
 
 def plot_ber_3d_bar(ber_array: np.ndarray) -> None:
     fig = plt.figure(figsize=(5, 4))

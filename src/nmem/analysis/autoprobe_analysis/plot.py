@@ -1,12 +1,12 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import LogNorm
+
 from nmem.analysis.autoprobe_analysis.utils import (
+    annotate_matrix,
     create_rmeas_matrix,
     get_log_norm_limits,
-    annotate_matrix,
 )
-from matplotlib.colors import LogNorm
 
 
 # Helper function to set axis labels and titles
@@ -221,7 +221,6 @@ def scatter_die_resistance(
     return ax
 
 
-import numpy as np
 
 
 def plot_quartile_lines(

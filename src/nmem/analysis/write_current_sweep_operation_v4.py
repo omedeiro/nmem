@@ -1,32 +1,32 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+from matplotlib import ticker
+
 from nmem.analysis.analysis import (
     CMAP,
-    CRITICAL_TEMP,
-    calculate_critical_current_temp,
+    convert_cell_to_coordinates,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_channel_temperature,
     get_channel_temperature_sweep,
     get_critical_current_heater_off,
+    get_enable_current_sweep,
     get_enable_write_current,
     get_read_current,
     get_read_currents,
     get_write_current,
     import_directory,
-    plot_enable_write_sweep_multiple,
-    plot_write_sweep,
-    plot_parameter_array,
     initialize_dict,
+    plot_enable_write_sweep_multiple,
+    plot_parameter_array,
+    plot_write_sweep,
     process_cell,
-    convert_cell_to_coordinates,
-    get_enable_current_sweep,
     set_plot_style,
 )
 from nmem.measurement.cells import CELLS
-from matplotlib import cm
-from matplotlib import ticker
+
 set_plot_style()
 
 C0 = "#1b9e77"

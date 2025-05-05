@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-
 from nmem.analysis.analysis import (
     get_bit_error_rate,
     import_directory,
@@ -8,6 +7,7 @@ from nmem.analysis.analysis import (
     plot_voltage_trace_averaged,
     set_plot_style,
 )
+
 set_plot_style()
 # # plt.rcParams["figure.figsize"] = [7, 3.5]
 # plt.rcParams["font.size"] = 5

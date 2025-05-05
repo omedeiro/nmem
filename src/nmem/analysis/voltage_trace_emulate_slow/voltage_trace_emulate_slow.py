@@ -1,15 +1,17 @@
+from typing import List, Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
-import numpy as np
-from typing import List, Tuple
 from nmem.analysis.analysis import (
-    import_directory,
     CMAP,
     get_voltage_trace_data,
+    import_directory,
     plot_voltage_trace,
     set_plot_style,
 )
+
 set_plot_style()
 
 

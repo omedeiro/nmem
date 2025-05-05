@@ -1,9 +1,11 @@
 import argparse
 import os
 from datetime import datetime
+
 from nmem.simulation.pytdgl.devices.memory_cell import make_device
-from nmem.simulation.pytdgl.sim.util import run_simulation
 from nmem.simulation.pytdgl.sim.constants import XI
+from nmem.simulation.pytdgl.sim.util import run_simulation
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--current", type=float, default=1000, help="Source current in uA")
 parser.add_argument("--time", type=float, default=1000, help="Solve time in ps")

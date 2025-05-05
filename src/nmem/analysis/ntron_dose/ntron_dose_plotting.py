@@ -1,10 +1,11 @@
 import os
-import matplotlib.pyplot as plt
-from PIL import Image
-import matplotlib.gridspec as gridspec
-import numpy as np
 
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
 from nmem.analysis.analysis import set_plot_style
+from PIL import Image
+
 set_plot_style()  # Optional, comment out if unavailable
 
 def center_crop_zoom(img, zoom_factor=2):

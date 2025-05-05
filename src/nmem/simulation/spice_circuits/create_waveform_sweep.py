@@ -1,7 +1,11 @@
-import numpy as np
 import os
+
+import numpy as np
 import pandas as pd
-from nmem.simulation.spice_circuits.waveform_utils import generate_memory_protocol_sequence, save_pwl_file
+from nmem.simulation.spice_circuits.waveform_utils import (
+    generate_memory_protocol_sequence,
+    save_pwl_file,
+)
 
 # Recreate output directory after state reset
 output_dir = "data/write_amp_sweep"

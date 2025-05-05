@@ -1,8 +1,9 @@
+import os
+
+import imageio.v2 as imageio
 import ltspice
 import matplotlib.pyplot as plt
 import numpy as np
-import imageio.v2 as imageio
-import os
 from nmem.analysis.analysis import CMAP
 from nmem.simulation.spice_circuits.functions import (
     import_raw_dir,

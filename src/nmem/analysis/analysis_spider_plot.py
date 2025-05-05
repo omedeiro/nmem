@@ -1,5 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 # --- Radar Plot Function with scaled radial tick labels at cardinal directions ---
 def plot_radar(metrics, units, axis_min, axis_max, normalizers, datasets, labels, styles, filename):

@@ -1,13 +1,12 @@
-import os
 import glob
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+import os
+
 import h5py
-from tdgl import SolverOptions, solve, Device, Solution
-from tqdm import tqdm
 import imageio.v3 as iio
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import matplotlib.pyplot as plt
+import numpy as np
+from tdgl import Device, Solution, SolverOptions, solve
+from tqdm import tqdm
 
 
 def time_dependent_current(t: float, current: float = 1000) -> float:
@@ -63,8 +62,8 @@ def make_animation_from_solution(
     quantities=("order_parameter", "phase"),
     fps: int = 20,
 ):
-    from tdgl.visualization.animate import create_animation
     from IPython.display import HTML, display
+    from tdgl.visualization.animate import create_animation
 
     with h5py.File(solution.path, "r") as h5file:
         anim = create_animation(

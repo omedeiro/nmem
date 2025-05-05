@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 
-from nmem.analysis.autoprobe_analysis.data import load_autoprobe_data
-from nmem.analysis.autoprobe_analysis.plot import plot_die_row
 from nmem.analysis.analysis import set_plot_style
+from nmem.analysis.autoprobe_analysis.data import load_autoprobe_data
+
 set_plot_style()  # Optional
 
 # Custom colormap with NaNs as black (optional)

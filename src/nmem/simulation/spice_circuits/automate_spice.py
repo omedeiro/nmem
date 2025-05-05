@@ -1,9 +1,10 @@
-import subprocess
+import logging
 import os
+import subprocess
+
 import ltspice
 import numpy as np
 import pandas as pd
-import logging
 
 ltspice_path = r"C:\Users\omedeiro\AppData\Local\Programs\ADI\LTspice\LTspice.exe"
 template_netlist = "nmem_cell_read_v3.cir"

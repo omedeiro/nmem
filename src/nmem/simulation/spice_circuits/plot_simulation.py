@@ -1,10 +1,10 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import ltspice
 import logging
-from matplotlib.ticker import MaxNLocator
+import os
+
+import ltspice
+import matplotlib.pyplot as plt
 from cycler import cycler
+from matplotlib.ticker import MaxNLocator
 from nmem.analysis.analysis import set_pres_style
 
 # Apply consistent style

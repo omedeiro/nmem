@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Polygon
 from matplotlib.cm import get_cmap
+from matplotlib.patches import Polygon
 from nmem.analysis.analysis import import_directory, set_plot_style
 
 set_plot_style()

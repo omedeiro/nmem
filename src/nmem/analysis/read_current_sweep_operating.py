@@ -1,6 +1,5 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.analysis import (
     CELLS,
