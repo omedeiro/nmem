@@ -21,11 +21,11 @@ def main():
         t_chan, i_chan, t_enab, i_enab, ops, enab_on = (
             generate_memory_protocol_sequence(
                 cycle_time=1e-6,
-                pulse_sigma=15e-9,
+                pulse_sigma=35e-9,
                 hold_width_write=120e-9,
                 hold_width_read=300e-9,
                 hold_width_clear=5e-9,
-                write_amplitude=180e-6,
+                write_amplitude=80e-6,
                 read_amplitude=amp,
                 enab_write_amplitude=465e-6,
                 enab_read_amplitude=300e-6,
