@@ -7,11 +7,11 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_voltage_hist,
     plot_voltage_trace_averaged,
-    set_plot_style,
+    set_pres_style,
     set_inter_font,
 )
 set_inter_font()
-# set_plot_style()
+set_pres_style()
 plt.rcParams.update({
     "font.size": 14,
     "axes.titlesize": 16,
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     separation_sigma = np.abs(mu1 - mu0) / sigma_avg
 
     # ➕ Compute 3σ bound spacing
-    bound_diff_3sigma = (mu1 - 3*sigma1) - (mu0 + 3*sigma0)
+    bound_diff_3sigma = (mu1 - 4*sigma1) - (mu0 + 4*sigma0)
 
     print(f"μ0 = {mu0:.3f} mV, σ0 = {sigma0:.3f} mV")
     print(f"μ1 = {mu1:.3f} mV, σ1 = {sigma1:.3f} mV")
@@ -195,24 +195,24 @@ if __name__ == "__main__":
     print(f"3σ Bound Difference = {bound_diff_3sigma:.2f} mV")
 
     # Plot vertical lines at 3σ bounds
-    ax.axvline(mu0 + 3*sigma0, color="#1966ff", linestyle="--", label="μ₀ - 3σ₀")
-    ax.axvline(mu1 - 3*sigma1, color="#ff7f0e", linestyle="--", label="μ₁ + 3σ₁")
+    ax.axvline(mu0 + 4*sigma0, color="gray", linestyle="--", label="_μ₀ - 3σ₀")
+    ax.axvline(mu1 - 4*sigma1, color="gray", linestyle="--", label="_μ₁ + 3σ₁")
 
     # Annotate σ-separation and 3σ span
-    textstr = f"Separation = {separation_sigma:.2f} σ\n3σ bound diff = {bound_diff_3sigma:.1f} mV"
-    props = dict(boxstyle='round', facecolor='white', edgecolor='gray', alpha=0.85)
-    ax.text(
-        0.98, 0.95, textstr,
-        transform=ax.transAxes,
-        fontsize=12,
-        verticalalignment='top',
-        horizontalalignment='right',
-        bbox=props
-    )
+    # textstr = f"Separation = {separation_sigma:.2f} σ\n3σ bound diff = {bound_diff_3sigma:.1f} mV"
+    # props = dict(boxstyle='round', facecolor='white', edgecolor='gray', alpha=0.85)
+    # ax.text(
+    #     0.98, 0.95, textstr,
+    #     transform=ax.transAxes,
+    #     fontsize=12,
+    #     verticalalignment='top',
+    #     horizontalalignment='right',
+    #     bbox=props
+    # )
 
 
     ax.set_xlabel("Voltage [mV]")
     ax.set_ylabel("Counts")
-    ax.legend(loc="upper right", fontsize=10)
+    ax.legend(loc="upper right", fontsize=10, frameon=True)
 
     plt.savefig("delay_plotting_hist.png", bbox_inches="tight")
