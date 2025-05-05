@@ -1,23 +1,20 @@
+import os
 from typing import Literal
 
 import ltspice
+import matplotlib as mpl
+import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import matplotlib.font_manager as fm
-from nmem.simulation.spice_circuits.functions import (
-    get_step_parameter,
-    process_read_data,
-)
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from cycler import cycler
-import scipy.io as sio
 from nmem.analysis.analysis import (
+    filter_first,
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    filter_first,
+)
+from nmem.simulation.spice_circuits.functions import (
+    get_step_parameter,
+    process_read_data,
 )
 
 CMAP = plt.get_cmap("coolwarm")
@@ -67,18 +64,18 @@ def apply_snm_style():
     })
 
 
-COLORS = [
-    "#1b9e77",  # Teal green
-    "#d95f02",  # Burnt orange
-    "#7570b3",  # Muted blue-purple
-    "#e7298a",  # Reddish pink
-    "#66a61e",  # Olive green
-    "#e6ab02",  # Mustard yellow
-    "#a6761d",  # Brown
-    "#666666",  # Dark gray
-]
+# COLORS = [
+#     "#1b9e77",  # Teal green
+#     "#d95f02",  # Burnt orange
+#     "#7570b3",  # Muted blue-purple
+#     "#e7298a",  # Reddish pink
+#     "#66a61e",  # Olive green
+#     "#e6ab02",  # Mustard yellow
+#     "#a6761d",  # Brown
+#     "#666666",  # Dark gray
+# ]
 
-plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
+# plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
 
 
 def plot_transient(
@@ -276,7 +273,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         ax,
         data_dict,
         cases=[case],
-        signal_name=f"tran_left_branch_current",
+        signal_name="tran_left_branch_current",
         color="C0",
         label="Left Branch Current",
     )
@@ -284,7 +281,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         ax,
         data_dict,
         cases=[case],
-        signal_name=f"tran_right_branch_current",
+        signal_name="tran_right_branch_current",
         color="C1",
         label="Right Branch Current",
     )

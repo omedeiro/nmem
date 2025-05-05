@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Rectangle, Polygon
 from matplotlib.colors import to_rgb
+from matplotlib.patches import Polygon, Rectangle
+
 from nmem.analysis.analysis import set_inter_font, set_pres_style
 
 # Apply custom styles

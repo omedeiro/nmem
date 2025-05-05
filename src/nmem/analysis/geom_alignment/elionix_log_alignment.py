@@ -6,6 +6,7 @@ Created on Mon Mar 20 17:32:21 2023
 """
 import matplotlib.pyplot as plt
 import numpy as np
+
 logfile = "New schedule.log"
 
 

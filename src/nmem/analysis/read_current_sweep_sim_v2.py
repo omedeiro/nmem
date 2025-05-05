@@ -1,21 +1,18 @@
+import os
+
 import ltspice
 import numpy as np
-import os
 from matplotlib import pyplot as plt
+
 from nmem.analysis.analysis import (
-    import_directory,
-    plot_read_sweep_array,
-    plot_read_switch_probability_array,
     filter_first,
+    import_directory,
 )
 from nmem.simulation.spice_circuits.plotting import (
-    process_read_data,
-    create_plot,
     CMAP,
-    plot_current_sweep_ber,
-    plot_current_sweep_switching,
+    create_plot,
+    process_read_data,
 )
-
 
 if __name__ == "__main__":
 

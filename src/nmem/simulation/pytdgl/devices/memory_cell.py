@@ -1,8 +1,10 @@
-from tdgl import Polygon, Device, Layer
-from tdgl.geometry import box
-import qnngds.geometry as qg
 import numpy as np
-from nmem.simulation.pytdgl.sim.constants import XI, D, LONDONL, SIGMA, length_units
+import qnngds.geometry as qg
+from tdgl import Device, Layer, Polygon
+from tdgl.geometry import box
+
+from nmem.simulation.pytdgl.sim.constants import LONDONL, SIGMA, XI, D, length_units
+
 
 def make_device():
     layer = Layer(coherence_length=XI, london_lambda=LONDONL, thickness=D, conductivity=SIGMA, gamma=23.8)

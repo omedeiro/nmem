@@ -1,9 +1,9 @@
-import scipy.io as sio
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib as mpl
-from nmem.analysis.analysis import set_plot_style, import_directory
-import os
+from nmem.analysis.analysis import import_directory, set_plot_style
+
 set_plot_style()
 
 # Set global plot style for publication

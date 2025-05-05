@@ -2,24 +2,23 @@ import collections
 import os
 from typing import List, Literal, Tuple
 
+import matplotlib as mpl
 import matplotlib.font_manager as fm
 import numpy as np
 import scipy.io as sio
+from matplotlib import colors as mcolors
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.cm as cm
+
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
-from matplotlib import colors as mcolors
-from cycler import cycler
-import matplotlib as mpl
 
 SUBSTRATE_TEMP = 1.3
 CRITICAL_TEMP = 12.3

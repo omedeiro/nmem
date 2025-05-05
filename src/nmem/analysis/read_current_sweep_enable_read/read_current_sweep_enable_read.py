@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 from nmem.analysis.analysis import (
     CMAP,
     get_channel_temperature,
@@ -13,6 +12,7 @@ from nmem.analysis.analysis import (
     plot_read_sweep_array,
     set_plot_style,
 )
+
 set_plot_style()
 READ_XMIN = 400
 READ_XMAX = 1000

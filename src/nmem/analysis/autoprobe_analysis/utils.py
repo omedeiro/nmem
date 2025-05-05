@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib.colors import LogNorm
 
 
 def create_rmeas_matrix(df, x_col, y_col, value_col, shape):

@@ -1,10 +1,9 @@
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from matplotlib.cm import get_cmap
 from nmem.analysis.analysis import set_plot_style
-from matplotlib.ticker import LogFormatter
 
 set_plot_style()
 # Load all .mat files in the current directory

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from nmem.analysis.analysis import set_pres_style, set_inter_font
+
+from nmem.analysis.analysis import set_inter_font, set_pres_style
 
 set_inter_font()
 set_pres_style()

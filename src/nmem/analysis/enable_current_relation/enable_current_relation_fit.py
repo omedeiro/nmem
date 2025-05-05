@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-
 from nmem.analysis.analysis import (
     import_directory,
     plot_enable_current_relation,

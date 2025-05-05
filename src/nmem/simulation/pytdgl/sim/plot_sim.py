@@ -1,22 +1,20 @@
-import argparse
 import glob
 import os
-from pathlib import Path
-import numpy as np
-from tdgl.solution.solution import Solution
+
 import h5py
-from nmem.simulation.pytdgl.sim.util import (
-    get_current_through_path,
-    make_animation_from_solution,
-    find_latest_result_file,
-    make_field_animation,
-)
-from matplotlib import pyplot as plt
-from IPython.display import HTML, display
-import tdgl
-from tdgl.visualization.animate import create_animation
-import matplotlib.font_manager as fm
 import matplotlib as mpl
+import matplotlib.font_manager as fm
+import numpy as np
+import tdgl
+from IPython.display import HTML
+from matplotlib import pyplot as plt
+from tdgl.solution.solution import Solution
+from tdgl.visualization.animate import create_animation
+
+from nmem.simulation.pytdgl.sim.util import (
+    find_latest_result_file,
+    get_current_through_path,
+)
 
 
 def set_inter_font():

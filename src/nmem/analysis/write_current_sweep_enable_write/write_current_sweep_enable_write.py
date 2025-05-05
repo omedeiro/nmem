@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 from nmem.analysis.analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,

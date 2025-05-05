@@ -1,9 +1,10 @@
 import re
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
 # from nmem.analysis.analysis import set_plot_style
 
 # set_plot_style()  # Optional, comment out if unavailable

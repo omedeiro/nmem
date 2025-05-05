@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
 from nmem.analysis.analysis import (
     CMAP,
     CRITICAL_TEMP,
