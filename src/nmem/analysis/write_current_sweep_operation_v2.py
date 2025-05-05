@@ -426,7 +426,7 @@ if __name__ == "__main__":
         figsize=(4, 2), constrained_layout=True
     )
     plot_ber_grid(ax)
-    fig.savefig("bergrid.pdf", bbox_inches="tight")
+    fig.savefig("bergrid.png", bbox_inches="tight", dpi=600)
     plt.show()
 
 
