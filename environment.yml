@@ -27,4 +27,5 @@ dependencies:
     - matplotlib
     - ltspice
     - imageio
+    - mplsoccer
 
