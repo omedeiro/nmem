@@ -6,6 +6,7 @@ import qnngds.geometry as qg
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from nmem.analysis.analysis import set_plot_style
 from matplotlib import ticker as mticker
+
 set_plot_style()
 
 
@@ -71,6 +72,13 @@ def plot_field(
     if pin is not None:
         ax.plot(pin[:, 0], pin[:, 1], color="white", linewidth=1.2)
 
+    if title == "Temperature":
+        clabel = r"$T$ (K)"
+    elif title == "Suppression":
+        clabel = r"$\Delta(T)/\Delta(0)$"
+    else:
+        clabel = ""
+
     if colorbar:
         # Add inset colorbar matching height of axes
         cax = inset_axes(
@@ -83,11 +91,9 @@ def plot_field(
             borderpad=0,
         )
         cbar = ax.figure.colorbar(
-            mesh, cax=cax, label=title, ticks=np.linspace(vmin, vmax, 5)
+            mesh, cax=cax, label=clabel, ticks=np.linspace(vmin, vmax, 5)
         )
         cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2f"))
-
-        
 
     ax.set_xlabel("x (µm)")
     ax.set_ylabel("y (µm)")
@@ -111,16 +117,21 @@ if __name__ == "__main__":
     pout, pin = make_device()
 
     # Create side-by-side plot
-    fig, axs = plt.subplots(1, 2, figsize=(7, 4), sharex=True, sharey=True)
+    fig, ax = plt.subplots(figsize=(4, 4))
 
     # Plot raw temperature slice (no mask)
     X1, Y1, Z1 = interpolate_comsol_data(x1, y1, T1)
-    plot_field(axs[0], X1, Y1, Z1, cmap="plasma", title="Temperature", colorbar=True)
+    plot_field(ax, X1, Y1, Z1, cmap="plasma", title="Temperature", colorbar=True)
 
+    fig.patch.set_alpha(0.0)  # Set the figure background to transparent
+    plt.savefig("comsol_temp_raw.png", dpi=300, bbox_inches="tight", transparent=True)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(4, 4))
     # Plot masked suppression slice
     X2, Y2, Z2 = interpolate_comsol_data(x2, y2, T2)
     plot_field(
-        axs[1],
+        ax,
         X2,
         Y2,
         Z2,
@@ -133,4 +144,11 @@ if __name__ == "__main__":
 
     fig.subplots_adjust(wspace=0.4)
 
-    fig.savefig("comsol_temp.pdf", dpi=300)
+    fig.patch.set_alpha(0.0)  # Set the figure background to transparent
+    fig.savefig(
+        "comsol_temp_suppression.png",
+        dpi=300,
+        bbox_inches="tight",
+        transparent=True,
+    )
+    plt.show()
