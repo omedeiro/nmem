@@ -57,21 +57,23 @@ def plot_radar(metrics, units, axis_min, axis_max, normalizers, datasets, labels
     for angle, i in zip(cardinal_angles, cardinal_axes):
         vmin, vmax = axis_min[i], axis_max[i]
         fn = normalizers[i]
+        unit = units[i]
 
-        # Generate 5 raw tick values
+        # Generate raw values
         if fn in [normalize_log, normalize_log_inverse]:
             raw_vals = np.logspace(np.log10(vmin), np.log10(vmax), num=5)
         else:
             raw_vals = np.linspace(vmin, vmax, num=5)
 
-        for val in raw_vals:
-            r = normalize(val, vmin, vmax, fn)
-            if not np.isfinite(r) or r < 0 or r > 1:
-                continue
+        # Compute (val, radius) pairs and sort by radius
+        tick_pairs = [(val, normalize(val, vmin, vmax, fn)) for val in raw_vals]
+        tick_pairs = [(val, r) for val, r in tick_pairs if np.isfinite(r)]
+        tick_pairs.sort(key=lambda x: x[1])  # sort by radius
 
+        for val, r in tick_pairs[1:]:  # skip smallest radius tick (center-most)
             if val < 1e-3 or val > 1e3:
                 label = f"$10^{{{int(np.log10(val))}}}$"
-            elif units[i] == 'bits' and val >= 1000:
+            elif unit == 'bits' and val >= 1000:
                 label = f"{int(val / 1000)}k"
             else:
                 label = f"{val:g}"
