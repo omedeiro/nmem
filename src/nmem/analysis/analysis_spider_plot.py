@@ -43,36 +43,58 @@ def plot_radar(metrics, units, axis_min, axis_max, normalizers, datasets, labels
         ax.fill(angles, norm, alpha=style.get('alpha', 0.2), color=style.get('color'))
 
     ax.set_ylim(0, 1)
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(xtick_labels, fontsize=7)
-    ax.set_yticklabels([])
-    ax.grid(True, lw=0.5, ls='--', alpha=0.4)
-    ax.spines['polar'].set_visible(False)
+    from math import degrees
+
+    ax.set_xticks([])  # Remove default labels
+    label_radius = 1.15
+
+    for angle, label in zip(angles[:-1], xtick_labels):
+        angle_deg = degrees(angle)
+        if 90 < angle_deg < 270:
+            ha = 'right'
+        elif angle_deg == 90 or angle_deg == 270:
+            ha = 'center'
+        else:
+            ha = 'left'
+        ax.text(angle, label_radius, label, ha=ha, va='center', fontsize=7)
+        ax.set_yticklabels([])
+        ax.grid(True, lw=0.5, ls='--', alpha=0.4)
+        ax.spines['polar'].set_visible(False)
 
     # Custom radial tick labels for each metric at cardinal directions
     num_vars = len(metrics)  # 5 if you've added "Access Time"
     cardinal_angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     cardinal_axes = [0, 1, 2, 3, 4]  # Metric indices
 
+    # --- Custom radial ticks per metric ---
+    custom_ticks = {
+        'Density': [ 1, 5, 10],
+        'Capacity': [1e3, 1e4, 1e5, 1e6],
+        'BER': [1e-2, 1e-3, 1e-4, 1e-5],
+        'Access energy': [1e-15, 1e-13, 1e-11],
+        'Access time': [1e-12, 1e-10, 1e-8]
+    }
+
     for angle, i in zip(cardinal_angles, cardinal_axes):
         vmin, vmax = axis_min[i], axis_max[i]
         fn = normalizers[i]
         unit = units[i]
+        metric = metrics[i]
 
-        # Generate raw values
-        if fn in [normalize_log, normalize_log_inverse]:
-            raw_vals = np.logspace(np.log10(vmin), np.log10(vmax), num=5)
-        else:
-            raw_vals = np.linspace(vmin, vmax, num=5)
+        # Use predefined ticks if available
+        raw_vals = custom_ticks.get(metric, np.linspace(vmin, vmax, num=5))
 
-        # Compute (val, radius) pairs and sort by radius
+        # Normalize and sort
         tick_pairs = [(val, normalize(val, vmin, vmax, fn)) for val in raw_vals]
         tick_pairs = [(val, r) for val, r in tick_pairs if np.isfinite(r)]
-        tick_pairs.sort(key=lambda x: x[1])  # sort by radius
+        tick_pairs.sort(key=lambda x: x[1])
 
-        for val, r in tick_pairs[1:]:  # skip smallest radius tick (center-most)
-            if val < 1e-3 or val > 1e3:
-                label = f"$10^{{{int(np.log10(val))}}}$"
+        for val, r in tick_pairs[1:]:  # skip center-most tick
+            if not np.isfinite(val) or not np.isfinite(r):
+                continue
+            if val < 1e-2 or val > 1e3:
+                exp = int(np.floor(np.log10(val)))
+                label = f"$10^{{{exp}}}$"
             elif unit == 'bits' and val >= 1000:
                 label = f"{int(val / 1000)}k"
             else:
@@ -80,7 +102,7 @@ def plot_radar(metrics, units, axis_min, axis_max, normalizers, datasets, labels
 
             ax.text(angle, r, label, fontsize=6, ha='center', va='center', color='gray')
 
-    ax.legend(loc='upper right', bbox_to_anchor=(1.1, 1.1), fontsize=7, frameon=False)
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), fontsize=7, frameon=False, ncol=len(labels))
     plt.tight_layout()
     plt.savefig(filename, transparent=True)
     plt.show()
