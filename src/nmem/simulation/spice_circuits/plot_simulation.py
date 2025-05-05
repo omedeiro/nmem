@@ -16,7 +16,14 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-
+patterns = [
+    ["null", "null", "null", "write_0", "read", "null", "null", "null", "write_1", "read"],
+    ["null", "null", "write_0", "null", "read", "null", "null", "write_1", "null", "read"],
+    ["null", "write_0", "null", "null", "read", "null", "write_1", "null", "null", "read"],
+    ["null", "write_1", "enab", "read", "read", "write_0", "enab", "read", "read", "null"],
+    ["null", "write_0", "enab", "read", "read", "write_1", "enab", "read", "read", "null"],
+]
+patterns = [item for sublist in patterns for item in sublist]
 # --- Load and extract ---
 def load_ltspice_data(raw_dir: str) -> dict:
     """Load LTspice data from .raw files in the specified directory."""
@@ -62,7 +69,7 @@ def plot_waveform(data, regions, output_dir, label_prefix="waveform"):
     enable_bias = data["enable_bias"]
     voltage = data["voltage"]
 
-    xlim = (time[0], time[-1])
+    xlim = (0, 50)
     os.makedirs(output_dir, exist_ok=True)
 
     # Base waveform plot
@@ -80,35 +87,66 @@ def plot_waveform(data, regions, output_dir, label_prefix="waveform"):
     axs[0].plot(
         time, enable_bias, label="Enable Bias", color="tab:orange", linewidth=1.5
     )
-    axs[0].set_ylabel("Input (uA)")
-    axs[0].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[0].set_ylabel("Input (μA)")
+    axs[0].legend(loc="lower right", bbox_to_anchor=(1.01, 1), fontsize=12, ncol=2, frameon=False)
     axs[0].grid(True, linestyle="--", linewidth=0.3)
 
     # Device currents
     axs[1].plot(time, left_current, label="Left Current", color="C0", linewidth=1.5)
     axs[1].plot(time, right_current, label="Right Current", color="C1", linewidth=1.5)
-    axs[1].plot(time, ichl, linestyle="--", color="C0", alpha=0.5, linewidth=1.0)
-    axs[1].plot(time, ichr, linestyle="--", color="C1", alpha=0.5, linewidth=1.0)
-    axs[1].set_ylabel("Device Currents (uA)")
-    axs[1].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[1].plot(time, ichl, linestyle="--", color="C0", alpha=0.5, linewidth=1.0, label="Left Critical Current")
+    axs[1].plot(time, ichr, linestyle="--", color="C1", alpha=0.5, linewidth=1.0, label="Right Critical Current")
+    axs[1].set_ylabel("Device Currents (μA)")
+    axs[1].legend(loc="lower right", bbox_to_anchor=(1.01, 1), fontsize=12, ncol=4, frameon=False)
     axs[1].grid(True, linestyle="--", linewidth=0.3)
 
     # Output signal
     axs[2].plot(
         time, voltage, label="Output Voltage", color="tab:purple", linewidth=1.5
     )
-    axs[2].set_xlabel("Time (ns)")
+    axs[2].set_xlabel("Time (μs)")
     axs[2].set_ylabel("Voltage (mV)")
-    axs[2].legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8, frameon=False)
+    axs[2].legend(loc="lower right", bbox_to_anchor=(1.01, 1), fontsize=12, frameon=False)
     axs[2].grid(True, linestyle="--", linewidth=0.3)
 
     for ax in axs:
         ax.yaxis.set_major_locator(MaxNLocator(4))
     axs[0].set_xlim(xlim)
 
+
+    # Annotate pattern steps (W0 or W1)
+    step_duration_ns = 1
+    for i, entry in enumerate(patterns):
+        if "write_0" in entry:
+            label = "W0"
+        elif "write_1" in entry:
+            label = "W1"
+        elif "read" in entry:
+            label = "R"
+        else:
+            continue
+
+        step_time_ns = time[0] + i * step_duration_ns + step_duration_ns / 2
+
+        # Annotate above the middle subplot (device currents)
+        for ax in axs:
+            y_pos = ax.get_ylim()[1] * 0.5
+            ax.annotate(
+                label,
+                xy=(step_time_ns, y_pos),
+                xytext=(0, 5),
+                textcoords="offset points",
+                ha="center",
+                fontsize=12,
+                color="black",
+                weight="bold",
+                arrowprops=dict(arrowstyle="-", color="gray", lw=0.5),
+            )
+
+
     plt.tight_layout(pad=1.5)
     plt.show()
-    # fig.savefig(os.path.join(output_dir, f"{label_prefix}_base.png"), transparent=True)
+    fig.savefig(os.path.join(output_dir, f"{label_prefix}_base.png"), transparent=True)
     plt.close(fig)
 
 
@@ -132,7 +170,7 @@ def main():
         try:
             amp_uA = int(key.split("_")[-1].replace("u.raw", ""))
             if 605 <= amp_uA <= 795:
-                data = extract_trace_data(ltsp, time_scale=1e9)
+                data = extract_trace_data(ltsp, time_scale=1e6)
                 plot_waveform(
                     data, regions, output_dir, label_prefix=f"waveform_{amp_uA}"
                 )
