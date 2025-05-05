@@ -254,3 +254,21 @@ if __name__ == "__main__":
 
     # make_field_animation(sol, output_path=output_path, tag=tag)
 
+    fig, ax = plt.subplots(
+        figsize=(5, 4),
+        layout="constrained",
+        height_ratios=[1],
+        width_ratios=[1],
+        sharex=True,
+        sharey=True,
+        subplot_kw={"aspect": "equal"},
+    )
+    # --- Supercurrent ---
+    plot_supercurrent(ax, sol, 200, colorbar=True, vmin=sc_vmin, vmax=sc_vmax)
+    fig.patch.set_alpha(0.0)  # Set the figure background to transparent
+    plt.savefig(
+        "output/2025-04-12-17-30-15/nmem_tdgl_simulation_animation.pdf",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.show()
