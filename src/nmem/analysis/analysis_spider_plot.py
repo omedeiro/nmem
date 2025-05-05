@@ -121,16 +121,18 @@ axis_max = [10.0, 1e6, 1e-2, 1e-1, 1e-3]
 normalizers = [normalize_linear, normalize_log, normalize_log_inverse, normalize_log_inverse, normalize_log_inverse]
 
 # --- Data ---
+values_snm_projected = [5.0, 1e4, 1e-5, 1e-13, 1e-9]
 values_snm_new = [2.6, 64, 1e-5, 100e-13, 20e-9]
 values_snm_old = [2.0, 1, 1e-3, 1300e-13, 10e-9]
-values_sce = [1, 4e3, 1e-5, 50e-16, 10e-12]
+values_sce = [0.9, 4e3, 1e-5, 50e-16, 10e-12]
 
-datasets = [values_snm_new, values_snm_old, values_sce]
-labels = ['SNM', 'SNM_old', 'SCE']
+datasets = [values_snm_new, values_snm_old, values_sce, values_snm_projected]
+labels = ['SNM', 'SNM_old', 'SCE', 'SNM_projected']
 styles = [
     {'color': 'black', 'linewidth': 1.2},
     {'color': 'blue', 'linewidth': 1.2, 'linestyle': '--', 'alpha': 0.15},
-    {'color': 'red', 'linewidth': 1.2, 'linestyle': '--', 'alpha': 0.15}
+    {'color': 'red', 'linewidth': 1.2, 'linestyle': '--', 'alpha': 0.15},
+    {'color': 'green', 'linewidth': 1.2, 'linestyle': '--', 'alpha': 0.15},
 ]
 
 # --- Call the updated plot function ---
