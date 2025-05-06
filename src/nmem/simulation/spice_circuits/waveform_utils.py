@@ -19,8 +19,6 @@ def generate_memory_protocol_sequence(
     if seed is not None:
         np.random.seed(seed)
 
-
-
     patterns = [
         ["null", "null", "null", "write_0", "read", "null", "null", "null", "write_1", "read"],
         ["null", "null", "write_0", "null", "read", "null", "null", "write_1", "null", "read"],
@@ -28,6 +26,11 @@ def generate_memory_protocol_sequence(
         ["null", "write_1", "enab", "read", "read", "write_0", "enab", "read", "read", "null"],
         ["null", "write_0", "enab", "read", "read", "write_1", "enab", "read", "read", "null"],
     ]
+    # patterns = [
+    #     ["write_1", "write_1", "enab", "write_1", "write_0", "read", "read", "clear"],
+    #     ["write_0", "write_0", "null", "write_1", "write_0", "read", "read"],
+    # ]
+
 
     ops = []
     for pair in patterns:
@@ -43,6 +46,11 @@ def generate_memory_protocol_sequence(
     enab_on[43:44] = False  # Disable word-line select for read operations
     enab_on[47:48] = False  # Disable word-line select for read operations
     hold_width_enab = 100e-9
+    # enab_on[0:1] = False  # Disable word-line select for read operations
+    # enab_on[3:6] = False  # Disable word-line select for read operations
+    # enab_on[8:9] = False  # Disable word-line select for read operations
+    # enab_on[11:14] = False  # Disable word-line select for read operations
+    # hold_width_enab = 20e-9
     for i, op in enumerate(ops):
         t_center = i * cycle_time + cycle_time / 2
 
@@ -90,7 +98,9 @@ def generate_memory_protocol_sequence(
             amp = 0
 
         if amp > 0 and enab_on[i]:
-            t_vec, i_vec = flat_top_gaussian(t_center, pulse_sigma, hold_width_enab, amp, dt)
+            t_vec, i_vec = flat_top_gaussian(
+                t_center, pulse_sigma, hold_width_enab, amp, dt
+            )
             t_enab.extend(t_vec + phase_offset)
             i_enab.extend(i_vec)
 
