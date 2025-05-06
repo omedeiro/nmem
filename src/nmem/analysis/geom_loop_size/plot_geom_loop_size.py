@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+
 from nmem.analysis.analysis import set_plot_style
 
 set_plot_style()

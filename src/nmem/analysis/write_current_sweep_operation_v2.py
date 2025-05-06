@@ -21,7 +21,9 @@ from nmem.analysis.analysis import (
     plot_parameter_array,
     plot_write_sweep,
     process_cell,
+    set_inter_font,
     set_plot_style,
+    set_pres_style,
 )
 from nmem.measurement.cells import CELLS
 
@@ -29,8 +31,8 @@ C0 = "#1b9e77"
 C1 = "#d95f02"
 RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
-set_plot_style()
-
+set_pres_style()
+set_inter_font()
 
 # range set 1 [::2]
 def plot_enable_sweep(
@@ -232,6 +234,7 @@ def plot_ber_grid(ax: plt.Axes):
     ax.set_xlabel("Column") 
     ax.set_ylabel("Row")
     cax = ax.inset_axes([1.10, 0, 0.1, 1])
+    fig = plt.gcf()
     cbar = fig.colorbar(
         ax.get_children()[0], cax=cax, orientation="vertical", label="minimum BER"
     )
@@ -311,120 +314,140 @@ def import_write_sweep_formatted_markers(dict_list) -> list[dict]:
     return data_dict
 
 
-def plot_ber_3d_bar(ber_array: np.ndarray) -> None:
-    fig = plt.figure(figsize=(5, 4))
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import cm
+from matplotlib.colors import Normalize
+
+
+def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
+    fig = plt.figure(figsize=(7, 7))
     ax = fig.add_subplot(111, projection="3d")
 
-    # 4x4 grid of cell locations
+    # 4x4 grid
     x_data, y_data = np.meshgrid(np.arange(4), np.arange(4))
     x_data = x_data.flatten()
     y_data = y_data.flatten()
     dz = ber_array.flatten()
 
-    # Mask to exclude the broken bit (high BER)
+    # Mask invalid entries
     valid_mask = np.isfinite(dz) & (dz < 5.5e-2)
+    x_data, y_data, dz = x_data[valid_mask], y_data[valid_mask], dz[valid_mask]
 
-    # Apply the mask to everything
-    x_data = x_data[valid_mask]
-    y_data = y_data[valid_mask]
-    dz = dz[valid_mask]
+    # Compute error counts
+    error_counts = np.round(dz * total_trials).astype(int)
+    z_data = np.zeros_like(error_counts)
+    dx = dy = 0.6 * np.ones_like(error_counts)
 
-    # All bars start at z=0
-    z_data = np.zeros_like(dz)
+    # Normalize error counts for colormap
+    norm = Normalize(vmin=error_counts.min(), vmax=error_counts.max())
+    colors = cm.Blues(norm(error_counts))
 
-    # Bar width and depth
-    dx = dy = 0.6 * np.ones_like(dz)
+    # Plot 3D bars with color
+    ax.bar3d(x_data, y_data, z_data, dx, dy, error_counts,
+             shade=True, color=colors, edgecolor="black", linewidth=0.5)
 
-    # Now all inputs are same length
-    ax.bar3d(x_data, y_data, z_data, dx, dy, dz,
-             shade=True, color="lightgray", edgecolor="black", linewidth=0.5)
+    # Invert y-axis for logical row order
+    ax.invert_yaxis()
 
+    # Labels and ticks
     ax.set_xlabel('Column')
     ax.set_ylabel('Row')
-    ax.set_zlabel('BER')
+    ax.set_zlabel('Errors')
+    ax.set_title("Error Count per Cell")
     ax.set_xticks(range(4))
+    ax.set_xticklabels(['A', 'B', 'C', 'D'])
     ax.set_yticks(range(4))
+    ax.set_yticklabels(['1', '2', '3', '4'])
     ax.set_xlim(-0.5, 3.5)
     ax.set_ylim(-0.5, 3.5)
-    ax.set_title("Bit Error Rate (BER) per Cell")
+    ax.set_zlim(1, 500)
+    ax.view_init(elev=45, azim=220)
 
+    # Colorbar
+    mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
+    mappable.set_array([])
+    cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
+    cbar.set_label('Errors (per 200k)')
     fig.tight_layout()
+    fig.savefig("ber_3d_bar.png", dpi=300, bbox_inches="tight")
     plt.show()
+
 
 
 if __name__ == "__main__":
-    inner = [
-        ["A", "C"],
-    ]
-    innerb = [
-        ["B", "D"],
-    ]
-    innerc = [
-        ["delay", "bergrid"],
-    ]
-    outer_nested_mosaic = [
-        [inner],
-        [innerb],
-        [innerc],
-    ]
+    # inner = [
+    #     ["A", "C"],
+    # ]
+    # innerb = [
+    #     ["B", "D"],
+    # ]
+    # innerc = [
+    #     ["delay", "bergrid"],
+    # ]
+    # outer_nested_mosaic = [
+    #     [inner],
+    #     [innerb],
+    #     [innerc],
+    # ]
 
-    fig, axs = plt.subplot_mosaic(
-        outer_nested_mosaic,
-        figsize=(180 / 25.4, 180 / 25.4),
-    )
+    # fig, axs = plt.subplot_mosaic(
+    #     outer_nested_mosaic,
+    #     figsize=(180 / 25.4, 180 / 25.4),
+    # )
 
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    )
-    sort_dict_list = sorted(
-        dict_list, key=lambda x: x.get("write_current").flatten()[0]
-    )
+    # dict_list = import_directory(
+    #     os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
+    # )
+    # sort_dict_list = sorted(
+    #     dict_list, key=lambda x: x.get("write_current").flatten()[0]
+    # )
 
-    ax = axs["A"]
-    plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
+    # ax = axs["A"]
+    # plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
 
-    ax = axs["B"]
-    plot_enable_sweep_markers(ax, sort_dict_list)
+    # ax = axs["B"]
+    # plot_enable_sweep_markers(ax, sort_dict_list)
 
-    dict_list = import_write_sweep_formatted()
-    plot_write_sweep_formatted(axs["C"], dict_list)
+    # dict_list = import_write_sweep_formatted()
+    # plot_write_sweep_formatted(axs["C"], dict_list)
 
-    data_dict = import_write_sweep_formatted_markers(dict_list)
-    plot_write_sweep_formatted_markers(axs["D"], data_dict)
+    # data_dict = import_write_sweep_formatted_markers(dict_list)
+    # plot_write_sweep_formatted_markers(axs["D"], data_dict)
 
-    delay_dict = import_delay_dict()
+    # delay_dict = import_delay_dict()
 
-    plot_delay(axs["delay"], delay_dict)
+    # plot_delay(axs["delay"], delay_dict)
 
-    plot_ber_grid(axs["bergrid"])
-    fig.subplots_adjust(wspace=0.4, hspace=0.5)
+    # plot_ber_grid(axs["bergrid"])
+    # fig.subplots_adjust(wspace=0.4, hspace=0.5)
 
-    axpos = axs["A"].get_position()
-    ax2pos = axs["B"].get_position()
-    axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
-    ax3pos = axs["C"].get_position()
-    ax4pos = axs["D"].get_position()
-    axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
-    delay_pos = axs["delay"].get_position()
-    axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
-    bergrid_pos = axs["bergrid"].get_position()
-    fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
-
-
-    fig, ax = plt.subplots(
-        figsize=(4, 2), constrained_layout=True
-    )
-    plot_delay(ax, delay_dict)
-    fig.savefig("retention_plot.pdf", bbox_inches="tight")
-    plt.show()
+    # axpos = axs["A"].get_position()
+    # ax2pos = axs["B"].get_position()
+    # axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
+    # ax3pos = axs["C"].get_position()
+    # ax4pos = axs["D"].get_position()
+    # axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
+    # delay_pos = axs["delay"].get_position()
+    # axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
+    # bergrid_pos = axs["bergrid"].get_position()
+    # fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
 
 
-    fig, ax = plt.subplots(
-        figsize=(4, 2), constrained_layout=True
-    )
-    plot_ber_grid(ax)
-    fig.savefig("bergrid.png", bbox_inches="tight", dpi=600)
-    plt.show()
+    # fig, ax = plt.subplots(
+    #     figsize=(4, 2), constrained_layout=True
+    # )
+    # plot_delay(ax, delay_dict)
+    # fig.savefig("retention_plot.pdf", bbox_inches="tight")
+    # plt.show()
+
+
+    # fig, ax = plt.subplots(
+    #     figsize=(4, 2), constrained_layout=True
+    # )
+    # plot_ber_grid(ax)
+    # fig.savefig("bergrid.png", bbox_inches="tight", dpi=600)
+    # plt.show()
 
 
 

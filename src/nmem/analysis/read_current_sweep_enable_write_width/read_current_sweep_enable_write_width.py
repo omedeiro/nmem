@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import import_directory, plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [5, 3.5]

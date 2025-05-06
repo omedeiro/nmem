@@ -2,6 +2,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import import_directory, set_plot_style
 
 set_plot_style()

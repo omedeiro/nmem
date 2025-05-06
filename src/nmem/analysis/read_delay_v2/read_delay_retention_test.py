@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
+
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     get_bit_error_rate,

@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import (
     filter_first,
     import_directory,

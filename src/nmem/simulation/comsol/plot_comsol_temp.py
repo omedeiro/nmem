@@ -4,10 +4,9 @@ import qnngds.geometry as qg
 from matplotlib import ticker as mticker
 from matplotlib.path import Path
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from nmem.analysis.analysis import set_plot_style
-from matplotlib import ticker as mticker
-
 from scipy.interpolate import griddata
+
+from nmem.analysis.analysis import set_plot_style
 
 set_plot_style()
 

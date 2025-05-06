@@ -1,15 +1,16 @@
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 import numpy as np
+from matplotlib.axes import Axes
 
 from nmem.analysis.analysis import (
     get_bit_error_rate,
     import_directory,
     plot_voltage_hist,
     plot_voltage_trace_averaged,
-    set_pres_style,
     set_inter_font,
+    set_pres_style,
 )
+
 set_inter_font()
 set_pres_style()
 plt.rcParams.update({
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     dict_list = import_directory("data")
     data = dict_list[3]
 
-    fig, ax = plt.subplots(figsize=(4, 6), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(4, 4), constrained_layout=True)
 
     # Plot the histogram
     plot_voltage_hist(ax, data)
