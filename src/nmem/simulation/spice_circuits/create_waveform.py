@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from nmem.simulation.spice_circuits.waveform_utils import (
     generate_memory_protocol_sequence,
     save_pwl_file,

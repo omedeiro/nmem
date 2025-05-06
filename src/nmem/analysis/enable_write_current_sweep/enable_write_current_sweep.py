@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import (
     get_state_current_markers,
     get_write_current,

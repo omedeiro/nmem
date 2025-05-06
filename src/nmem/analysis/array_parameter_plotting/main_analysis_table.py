@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+
 from nmem.analysis.analysis import (
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,

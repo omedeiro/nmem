@@ -4,6 +4,7 @@ import imageio.v2 as imageio
 import ltspice
 import matplotlib.pyplot as plt
 import numpy as np
+
 from nmem.analysis.analysis import CMAP
 from nmem.simulation.spice_circuits.functions import (
     import_raw_dir,

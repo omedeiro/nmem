@@ -3,8 +3,9 @@ import os
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-from nmem.analysis.analysis import set_plot_style
 from PIL import Image
+
+from nmem.analysis.analysis import set_plot_style
 
 set_plot_style()  # Optional, comment out if unavailable
 

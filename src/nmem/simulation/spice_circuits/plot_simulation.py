@@ -5,6 +5,7 @@ import ltspice
 import matplotlib.pyplot as plt
 from cycler import cycler
 from matplotlib.ticker import MaxNLocator
+
 from nmem.analysis.analysis import set_pres_style
 
 # Apply consistent style

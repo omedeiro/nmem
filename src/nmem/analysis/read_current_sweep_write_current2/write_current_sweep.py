@@ -3,6 +3,7 @@ from typing import Literal
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+
 from nmem.analysis.analysis import (
     CMAP,
     get_channel_temperature,

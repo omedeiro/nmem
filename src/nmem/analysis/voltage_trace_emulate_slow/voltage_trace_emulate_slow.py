@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
+
 from nmem.analysis.analysis import (
     CMAP,
     get_voltage_trace_data,
