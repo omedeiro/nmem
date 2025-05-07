@@ -40,6 +40,8 @@ def parse_raw_file(raw_path):
     time = l.get_time()
     ir = l.get_data("Ix(HR:drain)")
     mask = (time >= 3.9e-6) & (time <= 4.1e-6)
+    # mask = (time >= 0.5e-6) & (time <= 0.6e-6)
+
     persistent_current = np.mean(ir[mask]) * 1e6  # µA
     logging.info(f"Extracted persistent current: {persistent_current:.2f} µA")
     return persistent_current
