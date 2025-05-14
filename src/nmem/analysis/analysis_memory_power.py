@@ -58,7 +58,7 @@ for i, (val, label, base_color) in enumerate(zip(energies_fj, labels, colors)):
     ax.add_patch(side)
 
     # Text annotation
-    ax.text(x, val + 30, f"{val} fJ", ha='center', va='bottom', fontsize=10)
+    ax.text(x, val + 60, f"{val} fJ", ha='center', va='bottom', fontsize=10)
 
 # ---------------------- Axes ----------------------
 ax.set_xlim(-0.5, len(labels) - 0.5)
@@ -68,7 +68,7 @@ ax.set_xticklabels(labels, rotation=20, ha='right')
 ax.set_ylabel("Energy per Operation [fJ]")
 ax.set_title("Measured Energy of SNM Pulses", weight='bold')
 ax.grid(True, axis='y', linestyle='--', linewidth=0.5)
-
+fig.patch.set_visible(False)
 plt.tight_layout()
 plt.savefig("snm_energy_extrudedbar_linear.png", dpi=600)
 plt.show()
