@@ -35,7 +35,7 @@ for i in range(N):
     ber_est = np.ravel(data[i]["ber_est"])
     err = np.sqrt(ber_est * (1 - ber_est) / NMEAS)
     # plt.errorbar(Vch, ber_est, yerr=err, fmt='o', color=cmap(i), label=f"_Loop Size {loop_sizes[i]:.1f} au")
-    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µA")
+    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µm")
 ax.set_yscale("log")
 ax.set_xlabel("channel voltage [mV]")
 ax.set_ylabel("estimated BER")
