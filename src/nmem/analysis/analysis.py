@@ -1,4 +1,5 @@
 import collections
+import collections.abc
 import os
 from typing import List, Literal, Tuple
 
@@ -13,6 +14,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+from typing import Any
 
 from nmem.calculations.calculations import (
     calculate_heater_power,
@@ -155,7 +157,7 @@ def filter_plateau(
     return xfit, yfit
 
 
-def filter_first(value) -> any:
+def filter_first(value) -> Any:
     if isinstance(value, collections.abc.Iterable) and not isinstance(
         value, (str, bytes)
     ):
@@ -600,8 +602,6 @@ def get_state_currents_measured(
     current_sweep: Literal["enable_write_current", "enable_read_current"],
 ) -> Tuple[np.ndarray, np.ndarray]:
     bit_error_rate = get_bit_error_rate(data_dict)
-    nominal_state_currents_list = []
-    nominal_read_temperature_list = []
     nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
         get_bit_error_rate_args(bit_error_rate)
     )
