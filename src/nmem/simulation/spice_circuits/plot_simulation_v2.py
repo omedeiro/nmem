@@ -217,6 +217,31 @@ def plot_full_waveform_with_biases(data, regions, output_dir, yaxis_limits):
             transparent=True,
         )
 
+        if label == "D":
+            fig, ax = plt.subplots(figsize=(3.0, 3.0), dpi=300)
+            ax.plot(time[mask], voltage[mask], label="Output Voltage", color="tab:purple", linewidth=1.5)
+            ax.set_xlabel("Time (ns)")
+            ax.set_ylabel("Voltage (mV)")
+            fig.savefig(
+                os.path.join(output_dir, f"waveform_{label}_voltage_zoom.png"),
+                transparent=True,
+            )
+
+        if label == "H":
+            fig, ax = plt.subplots(figsize=(3.0, 3.0), dpi=300)
+            ax.plot(time[mask], ichl[mask], label="Left Critical Current", color="C0", linewidth=1.5, alpha=0.5, linestyle="--")
+            ax.plot(time[mask], ichr[mask], label="Right Critical Current", color="C1", linewidth=1.5, alpha=0.5, linestyle="--")
+            ax.plot(time[mask], left_current[mask], label="Left Current", color="C0", linewidth=1.5)
+            ax.plot(time[mask], right_current[mask], label="Right Current", color="C1", linewidth=1.5)
+            ax.set_ylim(660, 680)
+            ax.set_xlim(2880, 2950)
+            # ax.set_xlabel("Time (ns)")
+            # ax.set_ylabel("Currents (μA)")
+            fig.savefig(
+                os.path.join(output_dir, f"waveform_{label}_ichl_ichr_zoom.png"),
+                transparent=True,
+            )
+        plt.show()
 
 # --- Main Execution ---
 if __name__ == "__main__":
@@ -236,7 +261,7 @@ if __name__ == "__main__":
     regions = {
         "A": (20, 180),
         "B": (200, 400),
-        "C": (480, 520),
+        "C": (400, 600),
         "D": (1220, 1400),
         "E": (1620, 1780),
         "F": (1820, 1980),
