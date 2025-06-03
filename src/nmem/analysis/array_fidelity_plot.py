@@ -415,11 +415,13 @@ def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) 
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
     fig.patch.set_visible(False)
-    plt.savefig(
-        "fidelity_clean_bar.pdf",
-        dpi=300,
-        bbox_inches="tight",
-    )
+    save_fig = False
+    if save_fig:
+        plt.savefig(
+            "fidelity_clean_bar.pdf",
+            dpi=300,
+            bbox_inches="tight",
+        )
     plt.tight_layout()
     plt.show()
 
@@ -487,83 +489,13 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     cbar.set_label("Errors (per 200k)")
     fig.tight_layout()
     fig.patch.set_visible(False)
-    fig.savefig("ber_3d_bar.pdf", dpi=300, bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        fig.savefig("ber_3d_bar.pdf", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 if __name__ == "__main__":
-    # inner = [
-    #     ["A", "C"],
-    # ]
-    # innerb = [
-    #     ["B", "D"],
-    # ]
-    # innerc = [
-    #     ["delay", "bergrid"],
-    # ]
-    # outer_nested_mosaic = [
-    #     [inner],
-    #     [innerb],
-    #     [innerc],
-    # ]
-
-    # fig, axs = plt.subplot_mosaic(
-    #     outer_nested_mosaic,
-    #     figsize=(180 / 25.4, 180 / 25.4),
-    # )
-
-    # dict_list = import_directory(
-    #     os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    # )
-    # sort_dict_list = sorted(
-    #     dict_list, key=lambda x: x.get("write_current").flatten()[0]
-    # )
-
-    # ax = axs["A"]
-    # plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
-
-    # ax = axs["B"]
-    # plot_enable_sweep_markers(ax, sort_dict_list)
-
-    # dict_list = import_write_sweep_formatted()
-    # plot_write_sweep_formatted(axs["C"], dict_list)
-
-    # data_dict = import_write_sweep_formatted_markers(dict_list)
-    # plot_write_sweep_formatted_markers(axs["D"], data_dict)
-
-    # delay_dict = import_delay_dict()
-
-    # plot_delay(axs["delay"], delay_dict)
-
-    # plot_ber_grid(axs["bergrid"])
-    # fig.subplots_adjust(wspace=0.4, hspace=0.5)
-
-    # axpos = axs["A"].get_position()
-    # ax2pos = axs["B"].get_position()
-    # axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
-    # ax3pos = axs["C"].get_position()
-    # ax4pos = axs["D"].get_position()
-    # axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
-    # delay_pos = axs["delay"].get_position()
-    # axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
-    # bergrid_pos = axs["bergrid"].get_position()
-    # fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
-
-    # fig, ax = plt.subplots(
-    #     figsize=(4, 2), constrained_layout=True
-    # )
-    # plot_delay(ax, delay_dict)
-    # fig.savefig("retention_plot.pdf", bbox_inches="tight")
-    # plt.show()
-
-    # fig, ax = plt.subplots(
-    #     figsize=(4, 2), constrained_layout=True
-    # )
-    # plot_ber_grid(ax)
-    # fig.savefig("bergrid.png", bbox_inches="tight", dpi=600)
-    # plt.show()
-
-    # Add this right after
     param_dict = initialize_dict((4, 4))
     xloc_list = []
     yloc_list = []
