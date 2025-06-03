@@ -342,4 +342,4 @@ if __name__ == "__main__":
     # delay_pos = axs["delay"].get_position()
     # axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
     # bergrid_pos = axs["bergrid"].get_position()
-    fig.savefig("write_current_sweep_operationv3.pdf", bbox_inches="tight")
+    # fig.savefig("write_current_sweep_operationv3.pdf", bbox_inches="tight")
