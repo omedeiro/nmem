@@ -98,6 +98,8 @@ draw_extruded_barh(
 )
 
 # Final layout
-plt.tight_layout(rect=[0, 0, 1, 0.95])
-plt.savefig("memory_scaling_comparison_3dextruded_lit_sorted.png", dpi=600)
+plt.tight_layout(rect=(0, 0, 1, 0.95))
+save_fig = False
+if save_fig:
+    plt.savefig("memory_scaling_comparison_3dextruded_lit_sorted.png", dpi=600)
 plt.show()
