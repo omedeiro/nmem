@@ -9,6 +9,7 @@ from nmem.analysis.analysis import (
     import_directory,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    set_pres_style,
 )
 from nmem.simulation.spice_circuits.plotting import (
     CMAP,
@@ -16,7 +17,7 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_switching,
     process_read_data,
 )
-
+set_pres_style()
 if __name__ == "__main__":
 
     # get raw files
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     ]
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
-        figsize=(6, 3),
+        figsize=(6, 4),
         height_ratios=[1, 1],
     )
 
@@ -201,5 +202,8 @@ if __name__ == "__main__":
     #     handlelength=2.5,
     #     fontsize=8,
     # )
+    fig.subplots_adjust(
+        hspace=0.6,
+    )
     plt.savefig("spice_comparison_result.pdf", bbox_inches="tight")
     plt.show()

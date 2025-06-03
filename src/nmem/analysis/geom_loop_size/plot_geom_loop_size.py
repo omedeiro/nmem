@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
+from matplotlib.ticker import LogLocator, MaxNLocator
 
 from nmem.analysis.analysis import set_plot_style
 
@@ -35,7 +36,7 @@ for i in range(N):
     ber_est = np.ravel(data[i]["ber_est"])
     err = np.sqrt(ber_est * (1 - ber_est) / NMEAS)
     # plt.errorbar(Vch, ber_est, yerr=err, fmt='o', color=cmap(i), label=f"_Loop Size {loop_sizes[i]:.1f} au")
-    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µA")
+    ax.plot(Vch, ber_est, label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µm")
 ax.set_yscale("log")
 ax.set_xlabel("channel voltage [mV]")
 ax.set_ylabel("estimated BER")
@@ -49,8 +50,8 @@ ax.plot(loop_sizes, best_ber, "-o")
 ax.set_yscale("log")
 ax.set_xlabel("loop size [µm]")
 ax.set_ylabel("minimum BER")
-ax.yaxis.set_major_locator(plt.LogLocator(base=10.0, numticks=10))
-ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.2)
 
 axs[2].axis("off")

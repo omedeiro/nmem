@@ -1729,8 +1729,9 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         range=(200,600),
         bins=100,
         label="Read 0",
-        color="#1966ff",
-        alpha=0.5,
+        color="#658DDC",
+        alpha=0.8,
+        zorder=-1,
     )
     ax.hist(
         data_dict["read_one_top"][0, :]*1e3,
@@ -1738,8 +1739,8 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         range=(200, 600),
         bins=100,
         label="Read 1",
-        color="#ff1423",
-        alpha=0.5,
+        color="#DF7E79",
+        alpha=0.8,
     )
     # ax.set_xlabel("$V$ [mV]")
     # ax.set_ylabel("$N$")

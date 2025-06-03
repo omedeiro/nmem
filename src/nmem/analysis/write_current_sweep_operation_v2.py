@@ -3,6 +3,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.stats import binom
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import cm
+from matplotlib.colors import Normalize
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
     get_bit_error_rate,
@@ -33,6 +41,7 @@ RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
 set_pres_style()
 set_inter_font()
+
 
 # range set 1 [::2]
 def plot_enable_sweep(
@@ -191,21 +200,24 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
 
     # Major and minor ticks on log scale
     ax.xaxis.set_major_locator(LogLocator(base=10.0, numticks=5))
-    ax.xaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10)*0.1, numticks=10))
+    ax.xaxis.set_minor_locator(
+        LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10)
+    )
     ax.xaxis.set_minor_formatter(NullFormatter())
 
     ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=5))
-    ax.yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10)*0.1, numticks=10))
+    ax.yaxis.set_minor_locator(
+        LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10)
+    )
     ax.yaxis.set_minor_formatter(NullFormatter())
 
     # Gridlines
-    ax.grid(which='major', linestyle='--', linewidth=0.5, alpha=0.7)
-    ax.grid(which='minor', linestyle=':', linewidth=0.4, alpha=0.5)
+    ax.grid(which="major", linestyle="--", linewidth=0.5, alpha=0.7)
+    ax.grid(which="minor", linestyle=":", linewidth=0.4, alpha=0.5)
 
     # Tick parameters
-    ax.tick_params(axis='both', which='major', labelsize=9)
-    ax.tick_params(axis='both', which='minor', labelsize=7)
-
+    ax.tick_params(axis="both", which="major", labelsize=9)
+    ax.tick_params(axis="both", which="minor", labelsize=7)
 
 
 def plot_ber_grid(ax: plt.Axes):
@@ -231,7 +243,7 @@ def plot_ber_grid(ax: plt.Axes):
 
     ax.xaxis.set_label_position("bottom")
     ax.xaxis.set_ticks_position("bottom")
-    ax.set_xlabel("Column") 
+    ax.set_xlabel("Column")
     ax.set_ylabel("Row")
     cax = ax.inset_axes([1.10, 0, 0.1, 1])
     fig = plt.gcf()
@@ -314,13 +326,106 @@ def import_write_sweep_formatted_markers(dict_list) -> list[dict]:
     return data_dict
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib import cm
-from matplotlib.colors import Normalize
+def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    # Prepare data
+    barray = ber_array.copy().T
+    ber_flat = barray.flatten()
+    valid_mask = np.isfinite(ber_flat)
+    ber_flat = ber_flat[valid_mask]
+    fidelity_flat = 1 - ber_flat
+
+    # Generate A1 to D4 labels
+    rows = ["A", "B", "C", "D"]
+    cols = range(1, 5)
+    all_labels = [f"{r}{c}" for r in rows for c in cols]
+    labels = np.array(all_labels)[valid_mask]
+
+    # Error bars from binomial standard deviation
+    errors = np.sqrt(ber_flat * (1 - ber_flat) / total_trials)
+    # Clean label values
+    display_values = [f"{f:.5f}" if f < 0.99999 else "≥0.99999" for f in fidelity_flat]
+
+    # Plotting
+    fig, ax = plt.subplots(figsize=(10, 3))
+    x = np.arange(len(fidelity_flat))
+    ax.bar(x, fidelity_flat, yerr=errors, capsize=3, color="#658DDC", edgecolor="black")
+
+    # Add value labels only if they fit in the visible range
+    for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
+        if val > 0.998:  # only plot label if within axis range
+            ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=8)
+        if val < 0.998:
+            ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=8)
+    # Formatting
+    ax.set_xticks(x)
+    ax.set_xlim(-1.5, len(x) + 0.5)
+    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_ylabel("Fidelity (1 - BER)")
+    ax.set_ylim(0.998, 1.0001)
+    ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    # Reference lines
+    ax.axhline(0.999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
+    ax.axhline(0.9999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
+    # Labels drawn on top with optional white background
+    # ax.text(
+    #     len(x) + 0.3,
+    #     0.99895,
+    #     "0.999",
+    #     va="top",
+    #     ha="right",
+    #     fontsize=10,
+    #     color="k",
+    #     zorder=4,
+    #     bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
+    # )
+    # ax.text(
+    #     len(x) + 0.3,
+    #     0.99985,
+    #     "0.9999",
+    #     va="top",
+    #     ha="right",
+    #     fontsize=10,
+    #     color="k",
+    #     zorder=4,
+    #     bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
+    # )
+    ax.axhline(
+        1-1.5e-3,
+        color="red",
+        linestyle="--",
+        linewidth=0.8,
+        zorder=3,
+    )
+    ax.text(
+        len(x) + 0.3,
+        1-1.5e-3,
+        "Previous Record",
+        va="top",
+        ha="right",
+        fontsize=14,
+        color="red",
+        zorder=4,
+        bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
+    )
+    ax.set_ylim(0.998, 1.0004)
+    ax.set_yticks([0.998, 0.999, 0.9999])
+    ax.set_yticklabels(["0.998", "0.999", "0.9999"])
+    fig.patch.set_visible(False)
+    plt.savefig(
+        "fidelity_clean_bar.pdf",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
+    barray = ber_array.copy()
     fig = plt.figure(figsize=(7, 7))
     ax = fig.add_subplot(111, projection="3d")
 
@@ -328,7 +433,7 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     x_data, y_data = np.meshgrid(np.arange(4), np.arange(4))
     x_data = x_data.flatten()
     y_data = y_data.flatten()
-    dz = ber_array.flatten()
+    dz = barray.flatten()
 
     # Mask invalid entries
     valid_mask = np.isfinite(dz) & (dz < 5.5e-2)
@@ -338,27 +443,38 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     error_counts = np.round(dz * total_trials).astype(int)
     z_data = np.zeros_like(error_counts)
     dx = dy = 0.6 * np.ones_like(error_counts)
-
+    print(error_counts)
     # Normalize error counts for colormap
     norm = Normalize(vmin=error_counts.min(), vmax=error_counts.max())
     colors = cm.Blues(norm(error_counts))
 
     # Plot 3D bars with color
-    ax.bar3d(x_data, y_data, z_data, dx, dy, error_counts,
-             shade=True, color=colors, edgecolor="black", linewidth=0.5)
+    ax.bar3d(
+        x_data,
+        y_data,
+        z_data,
+        dx,
+        dy,
+        error_counts,
+        shade=True,
+        color=colors,
+        edgecolor="black",
+        linewidth=0.5,
+        alpha=0.8,
+    )
 
     # Invert y-axis for logical row order
     ax.invert_yaxis()
 
     # Labels and ticks
-    ax.set_xlabel('Column')
-    ax.set_ylabel('Row')
-    ax.set_zlabel('Errors')
+    ax.set_xlabel("Column")
+    ax.set_ylabel("Row")
+    ax.set_zlabel("Errors")
     ax.set_title("Error Count per Cell")
-    ax.set_xticks(range(4))
-    ax.set_xticklabels(['A', 'B', 'C', 'D'])
-    ax.set_yticks(range(4))
-    ax.set_yticklabels(['1', '2', '3', '4'])
+    ax.set_xticks(np.arange(4) + 0.3)  # Offset tick locations
+    ax.set_xticklabels(["A", "B", "C", "D"])
+    ax.set_yticks(np.arange(4) + 0.3)  # Offset tick locations
+    ax.set_yticklabels(["1", "2", "3", "4"])
     ax.set_xlim(-0.5, 3.5)
     ax.set_ylim(-0.5, 3.5)
     ax.set_zlim(1, 500)
@@ -368,11 +484,11 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
     mappable.set_array([])
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
-    cbar.set_label('Errors (per 200k)')
+    cbar.set_label("Errors (per 200k)")
     fig.tight_layout()
-    fig.savefig("ber_3d_bar.png", dpi=300, bbox_inches="tight")
+    fig.patch.set_visible(False)
+    fig.savefig("ber_3d_bar.pdf", dpi=300, bbox_inches="tight")
     plt.show()
-
 
 
 if __name__ == "__main__":
@@ -433,7 +549,6 @@ if __name__ == "__main__":
     # bergrid_pos = axs["bergrid"].get_position()
     # fig.savefig("write_current_sweep_operationv2.pdf", bbox_inches="tight")
 
-
     # fig, ax = plt.subplots(
     #     figsize=(4, 2), constrained_layout=True
     # )
@@ -441,15 +556,12 @@ if __name__ == "__main__":
     # fig.savefig("retention_plot.pdf", bbox_inches="tight")
     # plt.show()
 
-
     # fig, ax = plt.subplots(
     #     figsize=(4, 2), constrained_layout=True
     # )
     # plot_ber_grid(ax)
     # fig.savefig("bergrid.png", bbox_inches="tight", dpi=600)
     # plt.show()
-
-
 
     # Add this right after
     param_dict = initialize_dict((4, 4))
@@ -474,6 +586,7 @@ if __name__ == "__main__":
     print(f"Max BER: {max_ber:.2e}")
     print("=============================")
 
-
     # Plot the 3D bar chart
     plot_ber_3d_bar(ber_array)
+
+    plot_fidelity_clean_bar(ber_array)
