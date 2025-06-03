@@ -35,7 +35,8 @@ def plot_radar(
     # Precompute angles and outer values to avoid recalculating them multiple times
     num_vars = len(metrics)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    angles += angles[:1]
+    angles = angles[2:] + angles[:2]  # Rotate left by 2 spokes
+    angles += angles[:1]  # Close the loop
 
     outer_vals = [
         axis_max[i] if fn in [normalize_linear, normalize_log] else axis_min[i]
@@ -54,7 +55,10 @@ def plot_radar(
 
     for norm, label, style in zip(normalized_datasets, labels, styles):
         ax.plot(angles, norm, **style, label=label)
-        ax.fill(angles, norm, alpha=style.get("alpha", 0.2), color=style.get("color"))
+        if label != "Advanced Process Node":
+            ax.fill(
+                angles, norm, alpha=style.get("alpha", 0.2), color=style.get("color")
+            )
 
     ax.set_ylim(0, 1)
     from math import degrees
@@ -83,9 +87,9 @@ def plot_radar(
 
     # --- Custom radial ticks per metric ---
     custom_ticks = {
-        "Density": [1, 5, 10],
-        "Capacity": [1e3, 1e4, 1e5, 1e6],
-        "BER": [1e-2, 1e-3, 1e-4, 1e-5],
+        "Density": [0.1, 1, 5, 10],
+        "Capacity": [1e2, 1e3, 1e4, 1e5, 1e6],
+        "BER": [1e-2, 1e-3, 1e-4, 1e-5, 1e-6],
         "Access energy": [1e-15, 1e-13, 1e-11],
         "Access time": [1e-12, 1e-10, 1e-8],
     }
@@ -141,9 +145,9 @@ normalize_log_inverse = lambda val, vmin, vmax: (np.log10(vmax) - np.log10(val))
 metrics = ["Density", "Capacity", "BER", "Access energy", "Access time"]
 units = ["Mb/cm²", "bits", "", "J/bit", "s"]
 axis_min = [0.1, 0.1, 1e-6, 1e-16, 1e-12]
-axis_max = [10.0, 1e6, 1e-2, 1e-1, 1e-3]
+axis_max = [10.0, 1e6, 1e-2, 1e-9, 1e-3]
 normalizers = [
-    normalize_linear,
+    normalize_log,
     normalize_log,
     normalize_log_inverse,
     normalize_log_inverse,
@@ -151,19 +155,26 @@ normalizers = [
 ]
 
 # --- Data ---
-values_snm_projected = [5.0, 1e4, 1e-5, 1e-13, 1e-9]
-values_snm_new = [2.6, 64, 1e-5, 100e-13, 20e-9]
-values_snm_old = [2.0, 1, 1e-3, 1300e-13, 10e-9]
-values_sce = [0.9, 4e3, 1e-5, 50e-16, 10e-12]
-
-datasets = [values_snm_new, values_snm_old, values_sce, values_snm_projected]
-labels = ["SNM", "SNM_old", "SCE", "SNM_projected"]
-styles = [
-    {"color": "black", "linewidth": 1.2},
-    {"color": "blue", "linewidth": 1.2, "linestyle": "--", "alpha": 0.15},
-    {"color": "red", "linewidth": 1.2, "linestyle": "--", "alpha": 0.15},
-    {"color": "green", "linewidth": 1.2, "linestyle": "--", "alpha": 0.15},
+values_snm_projected = [10.0, 1e4, 1e-6, 1e-15, 1e-9]
+values_snm_new = [2.6, 64, 1e-5, 1.3e-12, 20e-9]
+values_snm_old = [2, 1, 1e-3, 10e-15, 10e-9]
+jsram = [4, 1, 1, 50e-16, 1e-12]
+vt2ram = [
+    0.9,
+    72,
+    np.nan, 
+    
 ]
+
+datasets = [values_snm_new, values_snm_old, values_snm_projected]
+labels = ["This work", "Previous work", "Advanced Process Node", "JSRAM"]
+styles = [
+    {"color": "#BD342D", "linewidth": 2.0, "linestyle": "-"},
+    {"color": "#586563", "linewidth": 1.2, "linestyle": "--"},
+    {"color": "#658DDC", "linewidth": 1.2, "linestyle": "-."},
+    {"color": "black", "linewidth": 1.2, "linestyle": ":"},
+]
+
 
 # --- Call the updated plot function ---
 plot_radar(
@@ -175,5 +186,5 @@ plot_radar(
     datasets,
     labels,
     styles,
-    "radar_snm_cmos_normalized.pdf",
+    "radar_snm_cmos_normalized.png",
 )
