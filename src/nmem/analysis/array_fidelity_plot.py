@@ -1,44 +1,17 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import binom
-
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib import cm
-from matplotlib.colors import Normalize
 from nmem.analysis.analysis import (
     convert_cell_to_coordinates,
-    get_bit_error_rate,
-    get_bit_error_rate_args,
-    get_channel_temperature,
-    get_channel_temperature_sweep,
-    get_critical_current_heater_off,
-    get_enable_current_sweep,
-    get_enable_write_current,
-    get_read_current,
-    get_read_currents,
-    get_write_current,
-    import_directory,
     initialize_dict,
-    plot_enable_write_sweep_multiple,
-    plot_parameter_array,
-    plot_write_sweep,
-    process_cell,
-    set_inter_font,
-    set_plot_style,
-    set_pres_style,
     plot_ber_3d_bar,
     plot_fidelity_clean_bar,
+    process_cell,
+    set_inter_font,
+    set_pres_style,
 )
 from nmem.measurement.cells import CELLS
-import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, NullFormatter
-
 
 C0 = "#1b9e77"
 C1 = "#d95f02"

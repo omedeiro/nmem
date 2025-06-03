@@ -17,6 +17,7 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_switching,
     process_read_data,
 )
+
 set_pres_style()
 if __name__ == "__main__":
 

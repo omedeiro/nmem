@@ -1,23 +1,20 @@
 import collections
 import collections.abc
 import os
-from typing import List, Literal, Tuple
+from typing import Any, List, Literal, Tuple
 
 import matplotlib as mpl
 import matplotlib.font_manager as fm
 import numpy as np
 import scipy.io as sio
+from matplotlib import cm
 from matplotlib import colors as mcolors
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.colors import LogNorm
-from matplotlib.ticker import MaxNLocator, MultipleLocator
+from matplotlib.colors import LogNorm, Normalize
+from matplotlib.ticker import LogLocator, MaxNLocator, MultipleLocator, NullFormatter
 from mpl_toolkits.mplot3d import Axes3D
-from typing import Any
-from matplotlib import cm
-from matplotlib.colors import Normalize
-from matplotlib.ticker import LogLocator, NullFormatter
 
 from nmem.calculations.calculations import (
     calculate_heater_power,
