@@ -1,7 +1,6 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 from nmem.analysis.analysis import (
     CRITICAL_TEMP,
     RBCOLORS,
@@ -22,7 +21,7 @@ from nmem.analysis.analysis import (
 
 if __name__ == "__main__":
     dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
+        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
     )
 
     fig, axs = plt.subplot_mosaic(
@@ -30,9 +29,8 @@ if __name__ == "__main__":
     )
 
     ax = axs["A"]
-    ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
+    ax = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
     ax.set_ylabel("BER")
-    ax2.set_xlabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
 
     ax = axs["B"]
@@ -75,7 +73,7 @@ if __name__ == "__main__":
 
     ax = axs["C"]
     dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\write_current_sweep_enable_write\data"
+        os.path.join(os.path.dirname(__file__), "write_current_sweep_enable_write/data")
     )
     dict_list = dict_list[1:]
     dict_list = dict_list[::-1]
