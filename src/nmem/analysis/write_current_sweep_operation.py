@@ -134,5 +134,6 @@ if __name__ == "__main__":
     ax.set_ylabel("$I_{\mathrm{ch}}$ [µA]")
     ax.set_ylim(0, 300)
     ax.grid()
-
-    fig.savefig("write_current_sweep_operation.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        fig.savefig("write_current_sweep_operation.pdf", bbox_inches="tight")
