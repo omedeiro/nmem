@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 from nmem.analysis.analysis import (
     calculate_critical_current_temp,
     get_bit_error_rate,
@@ -12,8 +12,9 @@ from nmem.analysis.analysis import (
 
 if __name__ == "__main__":
     dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
+        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
     )
+
 
     fig, axs = plt.subplot_mosaic("A")
 
