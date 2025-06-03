@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import ticker
 
 from nmem.analysis.analysis import (
-    CMAP,
     convert_cell_to_coordinates,
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -28,11 +27,10 @@ from nmem.analysis.analysis import (
 from nmem.measurement.cells import CELLS
 
 set_plot_style()
-
 C0 = "#1b9e77"
 C1 = "#d95f02"
 RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
-
+CMAP2 = plt.get_cmap("viridis")
 
 
 # range set 1 [::2]
@@ -102,9 +100,9 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
             "$I_{0,\mathrm{inv}}$",
             "$I_{1,\mathrm{inv}}$",
         ],
-        loc="lower left",
+        loc="upper right",
         frameon=True,
-        ncol=1,
+        ncol=2,
         facecolor="white",
         edgecolor="none",
     )
@@ -121,7 +119,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
 def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
-    colors = CMAP(np.linspace(0, 1, 4))
+    colors = CMAP2(np.linspace(0, 1, 4))
     ax.plot(
         [d["write_current"] for d in data],
         [d["write_temp"] for d in data],
@@ -302,7 +300,7 @@ if __name__ == "__main__":
     ]
 
     fig, axs = plt.subplot_mosaic(
-        innerb,
+        inner,
         figsize=(6, 2),
     )
 
@@ -313,40 +311,15 @@ if __name__ == "__main__":
         dict_list, key=lambda x: x.get("write_current").flatten()[0]
     )
 
-    # ax = axs["A"]
-    # plot_enable_sweep(ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2))
-
-    # ax = axs["B"]
-    # plot_enable_sweep_markers(ax, sort_dict_list)
-
-    dict_list = import_write_sweep_formatted()
-    plot_write_sweep_formatted(axs["C"], dict_list)
-
-    data_dict = import_write_sweep_formatted_markers(dict_list)
-    plot_write_sweep_formatted_markers(axs["D"], data_dict)
-
-    # delay_dict = import_delay_dict()
-
-    # plot_delay(axs["delay"], delay_dict)
-
-    # plot_ber_grid(axs["bergrid"])
-    # fig.subplots_adjust(wspace=0.4, hspace=0.5)
-
-    # axpos = axs["A"].get_position()
-    # ax2pos = axs["B"].get_position()
-    # axs["B"].set_position([ax2pos.x0, ax2pos.y0, axpos.width, axpos.height])
-    # ax3pos = axs["C"].get_position()
-    # ax4pos = axs["D"].get_position()
-    # axs["D"].set_position([ax4pos.x0, ax4pos.y0, ax3pos.width, ax3pos.height])
-    # delay_pos = axs["delay"].get_position()
-    # axs["delay"].set_position([delay_pos.x0, delay_pos.y0, ax3pos.width, ax3pos.height])
-    # bergrid_pos = axs["bergrid"].get_position()
-    fig.subplots_adjust(
-        left=0.1,
-        right=0.9,
-        top=0.9,
-        bottom=0.1,
-        hspace=0.4,
-        wspace=0.7,
+    ax = axs["A"]
+    plot_enable_sweep(
+        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True
     )
-    fig.savefig("write_current_sweep_operationv4.pdf", bbox_inches="tight")
+
+    ax = axs["B"]
+    plot_enable_sweep_markers(ax, sort_dict_list)
+
+
+    axpos = axs["A"].get_position()
+    ax2pos = axs["B"].get_position()
+    fig.subplots_adjust(wspace=0.7, hspace=0.5)
