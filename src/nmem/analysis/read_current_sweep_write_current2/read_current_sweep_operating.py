@@ -30,11 +30,9 @@ def calculate_inductance_ratio(state0, state1, ic0):
 
 
 if __name__ == "__main__":
-    fig, axs = plt.subplot_mosaic("AB", figsize=(8.3, 4))
+    fig, axs = plt.subplot_mosaic("AB;CD", figsize=(8.3, 4))
 
-    dict_list = import_directory(
-        "read_current_sweep_write_current2/write_current_sweep_C3"
-    )
+    dict_list = import_directory("write_current_sweep_C3")
     plot_read_sweep_array(
         axs["A"],
         dict_list,

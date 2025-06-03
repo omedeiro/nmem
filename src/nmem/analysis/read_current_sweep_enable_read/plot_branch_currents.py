@@ -13,9 +13,7 @@ RETRAP = 0.7
 WIDTH = 1 / 3
 
 if __name__ == "__main__":
-    data_dict = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-    )[0]
+    data_dict = import_directory("data")[0]
     fig, ax = plt.subplots()
 
     critical_current_zero = get_critical_current_intercept(data_dict)*0.88
@@ -34,5 +32,7 @@ if __name__ == "__main__":
     ax.set_ylim(0, 2000)
     ax.plot([0], [critical_current_zero], marker="x", color="black", markersize=10)
     ax.plot([7], [800], marker="x", color="black", markersize=10)
-    plt.savefig("plot_branch_currents.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("plot_branch_currents.pdf", bbox_inches="tight")
     plt.show()

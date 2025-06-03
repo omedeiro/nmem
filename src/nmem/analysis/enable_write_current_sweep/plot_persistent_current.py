@@ -21,9 +21,7 @@ WIDTH = 0.3
 
 if __name__ == "__main__":
 
-    dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\enable_write_current_sweep\data"
-    )
+    dict_list = import_directory("data")
     data_dict = dict_list[0]
     power = calculate_power(data_dict)
     persistent_current = 75

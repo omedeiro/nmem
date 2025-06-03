@@ -83,9 +83,7 @@ if __name__ == "__main__":
     # ]
     # selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
 
-    dict_list = import_directory(
-        "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_write_current2/write_current_sweep_C3"
-    )
+    dict_list = import_directory("write_current_sweep_C3")
     dict_list = dict_list[::2]
     write_current_list = []
     for data_dict in dict_list:

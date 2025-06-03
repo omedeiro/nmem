@@ -56,9 +56,7 @@ def model_function(x0, x1, x2, x3, alpha, persistent):
 
 if __name__ == "__main__":
 
-    data = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_enable_read\data"
-    )
+    data = import_directory("data")
 
     ALPHA = 0.612
     WIDTH = 0.3

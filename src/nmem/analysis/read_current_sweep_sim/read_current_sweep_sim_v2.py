@@ -32,9 +32,7 @@ if __name__ == "__main__":
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
 
-    ltsp_data = ltspice.Ltspice(
-        "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_sim/nmem_cell_read_example_trace.raw"
-    ).parse()
+    ltsp_data = ltspice.Ltspice("nmem_cell_read_example_trace.raw").parse()
     ltsp_data_dict = process_read_data(ltsp_data)
 
     inner = [

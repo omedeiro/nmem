@@ -30,9 +30,7 @@ def calculate_inductance_ratio(state0, state1, ic0):
 
 
 if __name__ == "__main__":
-    dict_list = import_directory(
-        r"C:\Users\ICE\Documents\GitHub\nmem\src\nmem\analysis\read_current_sweep_write_current2\write_current_sweep_C3"
-    )
+    dict_list = import_directory("write_current_sweep_C3")
 
     ic_list = []
     write_current_list = []

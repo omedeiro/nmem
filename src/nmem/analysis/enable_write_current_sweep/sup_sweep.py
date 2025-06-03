@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 from nmem.analysis.analysis import import_directory, plot_read_sweep_array
-from nmem.analysis.write_current_sweep_operation_v2 import plot_enable_sweep
+from nmem.analysis.array_fidelity_plot import plot_enable_sweep
 
 
 def plot_write_current_sweep(
@@ -23,14 +23,11 @@ def plot_write_current_sweep(
 
 def main():
     fig, axs = plt.subplot_mosaic("BC", figsize=(180 / 25.4, 90 / 25.4))
-    write_current_sweep = import_directory(
-        "/home/omedeiro/nmem/src/nmem/analysis/read_current_sweep_write_current2/write_current_sweep_C3",
-    )
     # plot_write_current_sweep(axs["A"], write_current_sweep)
     # axs["n"].axes.set_visible(False)
     # # ax = axs["A"]
     dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
+        os.path.join(os.path.dirname(__file__), "data")
     )
     sort_dict_list = sorted(
         dict_list, key=lambda x: x.get("write_current").flatten()[0]
