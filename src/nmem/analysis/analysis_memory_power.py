@@ -58,7 +58,7 @@ for i, (val, label, base_color) in enumerate(zip(energies_fj, labels, colors)):
     ax.add_patch(side)
 
     # Text annotation
-    ax.text(x, val + 30, f"{val} fJ", ha='center', va='bottom', fontsize=10)
+    ax.text(x, val + 80, f"{val} fJ", ha='center', va='bottom', fontsize=10)
 
 # ---------------------- Axes ----------------------
 ax.set_xlim(-0.5, len(labels) - 0.5)
