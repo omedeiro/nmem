@@ -9,7 +9,7 @@ def plot_radar(
     def normalize(val, vmin, vmax, fn):
         try:
             return np.clip(fn(val, vmin, vmax), 0, 1)
-        except:
+        except Exception:
             return 0
 
     def normalize_all(data):
