@@ -1,4 +1,3 @@
-import glob
 import os
 
 import h5py
@@ -12,7 +11,6 @@ from tdgl.solution.solution import Solution
 from tdgl.visualization.animate import create_animation
 
 from nmem.simulation.pytdgl.sim.util import (
-    find_latest_result_file,
     get_current_through_path,
 )
 
@@ -67,13 +65,6 @@ def make_video_from_solution(
             return HTML(anim.to_html5_video())
 
 
-def find_latest_result_file(output_root: str = "output") -> str:
-    """Finds the most recently modified .h5 file in the output directory tree."""
-    files = glob.glob(f"{output_root}/**/*.h5", recursive=True)
-    if not files:
-        raise FileNotFoundError(f"No .h5 files found under {output_root}")
-    latest_file = max(files, key=os.path.getmtime)
-    return latest_file
 
 
 def plot_supercurrent(
