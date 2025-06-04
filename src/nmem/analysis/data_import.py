@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import scipy.io as sio
+import pandas as pd
 from nmem.analysis.core_analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -10,6 +11,66 @@ from nmem.analysis.core_analysis import (
     get_write_current,
     get_channel_temperature,
 )
+
+def load_autoprobe_data(filepath, grid_size=56):
+    """Load autoprobe data from a parsed .mat file and return as a DataFrame with bounds-checked coordinates."""
+    mat = sio.loadmat(filepath, struct_as_record=False, squeeze_me=True)
+    die_name = mat["die_name"].flatten()
+    device_name = mat["device_name"].flatten()
+    data = mat["data"]
+
+    Rmean = data.Rmean.flatten()
+    Rmse = data.Rmse.flatten()
+
+    records = []
+
+    for die, dev, rmean, rmse in zip(die_name, device_name, Rmean, Rmse):
+        try:
+            die_str = str(die)
+            dev_str = str(dev)
+
+            # Parse and flip die/device coordinates
+            x_die = ord(die_str[0].upper()) - ord("A")  # 'A' → 0
+            y_die = 6 - (int(die_str[1]) - 1)           # '1' → 5, '7' → 0
+
+            x_dev = ord(dev_str[0].upper()) - ord("A")  # 'A' → 0
+            y_dev = 7 - (int(dev_str[1]) - 1)           # '1' → 7 → 0
+
+            x_abs = x_die * 8 + x_dev
+            y_abs = y_die * 8 + y_dev
+
+            # Bounds and value checks
+            if not (0 <= x_abs < grid_size and 0 <= y_abs < grid_size):
+                raise ValueError(f"Out of bounds: ({x_abs}, {y_abs})")
+
+            if not np.isfinite(rmean) or rmean < 0:
+                continue  # skip bad resistance values
+            if rmse > 0.5:
+                rmean = np.nan  # set high Rmse to NaN
+
+            if y_die == 5:
+                squares = 50 * (x_dev + 1)
+            else:
+                squares = None
+            records.append({
+                "id": f"{die_str}_{dev_str}",
+                "die": die_str,
+                "device": dev_str,
+                "x_die": x_die,
+                "y_die": y_die,
+                "x_dev": x_dev,
+                "y_dev": y_dev,
+                "x_abs": x_abs,
+                "y_abs": y_abs,
+                "Rmean": rmean,
+                "Rmse": rmse,
+                "squares": squares,
+            })
+
+        except Exception as e:
+            print(f"Skipping malformed entry: die={die}, dev={dev}, error={e}")
+
+    return pd.DataFrame(records)
 
 
 
