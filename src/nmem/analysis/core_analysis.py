@@ -32,6 +32,32 @@ def build_array(
     zarray = z.reshape((ylength, xlength), order="F")
     return x, y, zarray
 
+def build_resistance_map(df, grid_size=56):
+    """Build a resistance map from a DataFrame with x_abs, y_abs, Rmean."""
+    Rmeas = np.full((grid_size, grid_size), np.nan)
+    for _, row in df.iterrows():
+        x, y = row["x_abs"], row["y_abs"]
+        if 0 <= x < grid_size and 0 <= y < grid_size:
+            val = row["Rmean"]
+            Rmeas[int(x), int(y)] = 0 if val < 0 else val
+    Rmeas[Rmeas == 0] = np.nanmax(Rmeas)
+    return Rmeas
+
+
+
+def normalize_row_by_squares(Rmeas, row_letter, length_um=300):
+    """Normalize resistance values in a row by number of squares."""
+    row_map = {k: i for i, k in enumerate("ABCDEFG")}
+    y_start = row_map[row_letter.upper()] * 8
+    length_nm = length_um * 1e3
+    Rmeas = Rmeas.copy()
+
+    for i in range(8):
+        width_nm = 50 * (i + 1)
+        num_squares = length_nm / width_nm
+        Rmeas[:, y_start + i] /= num_squares
+
+    return Rmeas
 
 def filter_plateau(
     xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
@@ -656,3 +682,29 @@ def filter_nan(x, y):
 
 
 
+def create_rmeas_matrix(df, x_col, y_col, value_col, shape):
+    """Create a 2D resistance matrix from DataFrame columns."""
+    Rmeas = np.full(shape, np.nan)
+    for _, row in df.iterrows():
+        x, y = int(row[x_col]), int(row[y_col])
+        val = row[value_col]
+        if 0 <= x < shape[1] and 0 <= y < shape[0]:
+            Rmeas[y, x] = np.nan if val < 0 else val
+    return Rmeas
+
+
+def get_log_norm_limits(R):
+    """Safely get vmin and vmax for LogNorm."""
+    values = R[~np.isnan(R) & (R > 0)]
+    if values.size == 0:
+        return None, None
+    return np.nanmin(values), np.nanmax(values)
+
+
+def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):
+    """Add text annotations to matrix cells."""
+    for y in range(R.shape[0]):
+        for x in range(R.shape[1]):
+            val = R[y, x]
+            if not np.isnan(val):
+                ax.text(x, y, fmt.format(val), ha="center", va="center", fontsize=6, color=color)
