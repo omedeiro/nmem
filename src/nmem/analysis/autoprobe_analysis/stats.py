@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from nmem.analysis.autoprobe_analysis.data import load_autoprobe_data
+from nmem.analysis.data_import import load_autoprobe_data
 
 
 def summarize_die_yield(df, wafer_rows, min_kohm=1, max_kohm=50000):
