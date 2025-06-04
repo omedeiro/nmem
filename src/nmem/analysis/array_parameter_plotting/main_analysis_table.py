@@ -67,4 +67,6 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
     df.style.format("{:.3f}")
 
-    df.to_csv("array_parameter_table.csv", float_format="%.3f")
+    save_csv = False
+    if save_csv:
+        df.to_csv("array_parameter_table.csv", float_format="%.3f")
