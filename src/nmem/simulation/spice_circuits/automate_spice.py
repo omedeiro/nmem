@@ -35,12 +35,11 @@ def run_ltspice(ltspice_path, netlist_path):
 
 def parse_raw_file(raw_path):
     """Parse the .raw file and extract persistent current."""
-    l = ltspice.Ltspice(raw_path)
-    l.parse()
-    time = l.get_time()
-    ir = l.get_data("Ix(HR:drain)")
+    ltsp = ltspice.Ltspice(raw_path)
+    ltsp.parse()
+    time = ltsp.get_time()
+    ir = ltsp.get_data("Ix(HR:drain)")
     mask = (time >= 3.9e-6) & (time <= 4.1e-6)
-    # mask = (time >= 0.5e-6) & (time <= 0.6e-6)
 
     persistent_current = np.mean(ir[mask]) * 1e6  # µA
     logging.info(f"Extracted persistent current: {persistent_current:.2f} µA")
