@@ -3,19 +3,18 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
-    import_directory,
+from nmem.analysis.plotting import (
     plot_enable_sweep,
     plot_enable_sweep_markers,
     set_plot_style,
 )
+from nmem.analysis.data_import import import_directory
 
 set_plot_style()
 C0 = "#1b9e77"
 C1 = "#d95f02"
 RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
-
 
 
 if __name__ == "__main__":
@@ -53,7 +52,6 @@ if __name__ == "__main__":
 
     ax = axs["B"]
     plot_enable_sweep_markers(ax, sort_dict_list)
-
 
     axpos = axs["A"].get_position()
     ax2pos = axs["B"].get_position()

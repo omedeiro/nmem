@@ -1,13 +1,14 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     convert_cell_to_coordinates,
     initialize_dict,
+    process_cell,
+)
+from nmem.analysis.plotting import (
     plot_ber_3d_bar,
     plot_fidelity_clean_bar,
-    process_cell,
     set_inter_font,
     set_pres_style,
 )
@@ -19,7 +20,6 @@ RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
 CMAP2 = plt.get_cmap("viridis")
 set_pres_style()
 set_inter_font()
-
 
 
 if __name__ == "__main__":

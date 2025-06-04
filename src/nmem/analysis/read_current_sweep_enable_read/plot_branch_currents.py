@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     get_critical_current_intercept,
-    import_directory,
-    plot_branch_currents,
 )
-
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_branch_currents
 CRITICAL_TEMP = 12.3
 ALPHA = 0.6
 RETRAP = 0.7
@@ -16,7 +15,7 @@ if __name__ == "__main__":
     data_dict = import_directory("data")[0]
     fig, ax = plt.subplots()
 
-    critical_current_zero = get_critical_current_intercept(data_dict)*0.88
+    critical_current_zero = get_critical_current_intercept(data_dict) * 0.88
     temps = np.linspace(0, CRITICAL_TEMP, 100)
 
     plot_branch_currents(ax, temps, CRITICAL_TEMP, RETRAP, WIDTH, critical_current_zero)

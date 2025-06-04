@@ -3,9 +3,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
-    RBCOLORS,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -16,9 +15,12 @@ from nmem.analysis.analysis import (
     get_read_current,
     get_read_currents,
     get_write_current,
-    import_directory,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
+    RBCOLORS,
 )
 
 if __name__ == "__main__":

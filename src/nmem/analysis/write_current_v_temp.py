@@ -1,14 +1,16 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from nmem.analysis.analysis import (
+
+from nmem.analysis.core_analysis import (
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_channel_temperature_sweep,
     get_write_current,
-    import_directory,
 )
+from nmem.analysis.data_import import import_directory
 
 if __name__ == "__main__":
     dict_list = import_directory(

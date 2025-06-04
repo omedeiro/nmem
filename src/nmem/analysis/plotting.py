@@ -14,7 +14,7 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
     build_array,
     calculate_branch_currents,
@@ -881,7 +881,6 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     plt.show()
 
 
-
 def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> None:
     import matplotlib.pyplot as plt
     import numpy as np
@@ -1096,7 +1095,7 @@ def plot_read_sweep_array(
 def plot_read_switch_probability_array(
     ax: Axes, dict_list: list[dict], write_list=None, **kwargs
 ) -> Axes:
-    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     print(f"len dict_list: {len(dict_list)}")
     for i, data_dict in enumerate(dict_list):
         if write_list is not None:

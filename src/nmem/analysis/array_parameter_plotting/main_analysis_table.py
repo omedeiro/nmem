@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
     calculate_channel_temperature,
@@ -45,7 +45,6 @@ if __name__ == "__main__":
             * 1e-6
             / (WIDTH_LEFT * THICKNESS + WIDTH_RIGHT * THICKNESS)
         ) * (1 - (SUBSTRATE_TEMP / CRITICAL_TEMP) ** 3) ** -2.1
-
 
         data.append(
             {

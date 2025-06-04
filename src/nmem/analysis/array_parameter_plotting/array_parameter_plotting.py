@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     convert_cell_to_coordinates,
     initialize_dict,
-    plot_parameter_array,
     process_cell,
 )
+from nmem.analysis.plotting import plot_parameter_array
 from nmem.measurement.cells import CELLS
 
 plt.rcParams["figure.figsize"] = [6, 6]
