@@ -7,77 +7,26 @@ import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     filter_first,
-    import_directory,
-    plot_read_sweep_array,
-    plot_read_switch_probability_array,
 )
 from nmem.simulation.spice_circuits.functions import (
     get_step_parameter,
     process_read_data,
 )
-
+from nmem.analysis.plotting import (
+    plot_read_sweep_array,
+    plot_read_switch_probability_array,
+    set_inter_font,
+    apply_snm_style,
+)
+from nmem.analysis.data_import import import_directory
 CMAP = plt.get_cmap("coolwarm")
 
 
 FILL_WIDTH = 5
 VOUT_YMAX = 40
 VOLTAGE_THRESHOLD = 2.0e-3
-
-
-def set_inter_font():
-    if os.name == "nt":  # Windows
-        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
-    elif os.name == "posix":
-        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
-    else:
-        font_path = None
-
-    if font_path and os.path.exists(font_path):
-        print(f"Font path: {font_path}")
-        fm.fontManager.addfont(font_path)
-        mpl.rcParams["font.family"] = "Inter"
-
-
-
-def apply_snm_style():
-    mpl.rcParams.update({
-        "figure.figsize": [3.5, 3.5],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-        "font.size": 7,
-        "axes.linewidth": 0.5,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-        "xtick.direction": "out",
-        "ytick.direction": "out",
-        "lines.markersize": 2,
-        "lines.linewidth": 1.5,
-        "legend.fontsize": 5,
-        "legend.frameon": False,
-        "xtick.major.size": 3,
-        "ytick.major.size": 3,
-        "xtick.minor.size": 2,
-        "ytick.minor.size": 2,
-        "xtick.minor.width": 0.4,
-        "ytick.minor.width": 0.4,
-    })
-
-
-# COLORS = [
-#     "#1b9e77",  # Teal green
-#     "#d95f02",  # Burnt orange
-#     "#7570b3",  # Muted blue-purple
-#     "#e7298a",  # Reddish pink
-#     "#66a61e",  # Olive green
-#     "#e6ab02",  # Mustard yellow
-#     "#a6761d",  # Brown
-#     "#666666",  # Dark gray
-# ]
-
-# plt.rcParams["axes.prop_cycle"] = cycler(color=COLORS)
-
 
 def plot_transient(
     ax: plt.Axes,
