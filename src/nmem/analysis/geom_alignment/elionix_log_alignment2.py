@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-# from nmem.analysis.analysis import set_plot_style
-
-# set_plot_style()  # Optional, comment out if unavailable
+from nmem.analysis.plotting import set_plot_style
+set_plot_style()
 
 # Load log
 log_path = Path("New schedule.log")
@@ -134,7 +133,9 @@ ax.legend()
 
 
 plt.tight_layout()
-plt.savefig("alignment_analysis.pdf", dpi=300)
+save = False
+if save:
+    plt.savefig("alignment_analysis.pdf", dpi=300)
 plt.show()
 
 # Display final table
@@ -155,5 +156,7 @@ plt.title("Histogram of Alignment Offsets")
 plt.legend()
 plt.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
 plt.tight_layout()
-plt.savefig("alignment_offsets_histogram.pdf", dpi=300)
+save_fig=False
+if save_fig:
+    plt.savefig("alignment_offsets_histogram.pdf", dpi=300)
 plt.show()
