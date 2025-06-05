@@ -3,12 +3,12 @@ import numpy as np
 from matplotlib.cm import get_cmap
 from matplotlib.patches import Polygon
 
-from nmem.analysis.analysis import import_directory, set_plot_style
-
+from nmem.analysis.plotting import set_plot_style
+from nmem.analysis.data_import import import_directory
 set_plot_style()
 
 # Load data
-data_list = import_directory(".")
+data_list = import_directory("data")
 N = len(data_list)
 trim = 4500
 W1R0_error = 0
@@ -67,5 +67,7 @@ ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
 plt.tight_layout()
-plt.savefig("probe_station_prbs.pdf", bbox_inches="tight")
+save_fig = False
+if save_fig:
+    plt.savefig("probe_station_prbs.pdf", bbox_inches="tight")
 plt.show()
