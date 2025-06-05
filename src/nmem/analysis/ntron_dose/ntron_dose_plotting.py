@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from nmem.analysis.analysis import set_plot_style
+from nmem.analysis.plotting import set_plot_style
 
-set_plot_style()  # Optional, comment out if unavailable
+set_plot_style() 
 
 def center_crop_zoom(img, zoom_factor=2):
     """Rotate by 90 degrees, then crop the center and zoom in by the given factor."""
@@ -51,7 +51,9 @@ for i, (dose, img) in enumerate(zip(doses, images)):
 
 fig.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, hspace=0.2, wspace=0.2)
 
-plt.savefig(output_file, bbox_inches="tight", transparent=False)
+save_fig = False
+if save_fig:
+    plt.savefig(output_file, bbox_inches="tight", transparent=False)
 
 plt.show()
 plt.close()
