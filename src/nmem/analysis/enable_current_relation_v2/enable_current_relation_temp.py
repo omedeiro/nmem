@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
-    CMAP,
+from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
     calculate_channel_temperature,
@@ -11,8 +10,9 @@ from nmem.analysis.analysis import (
     get_current_cell,
     get_fitting_points,
     get_max_enable_current,
-    import_directory,
 )
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import CMAP
 
 if __name__ == "__main__":
     dict_list = import_directory("data")
