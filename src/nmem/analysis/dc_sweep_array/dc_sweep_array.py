@@ -3,23 +3,11 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import import_directory, set_plot_style
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import set_plot_style
 
 set_plot_style()
 
-# Set global plot style for publication
-# mpl.rcParams.update(
-#     {
-#         "font.family": "serif",
-#         "font.size": 12,
-#         "axes.labelsize": 12,
-#         "axes.titlesize": 12,
-#         "legend.fontsize": 10,
-#         "xtick.direction": "in",
-#         "ytick.direction": "in",
-#         "axes.linewidth": 1,
-#     }
-# )
 
 # Load the .mat file
 data = import_directory(os.getcwd())[0]
@@ -77,21 +65,20 @@ for j in range(heater_currents.shape[1]):
     if label:
         rows_in_legend.add(row)
 
-    # Plot with specific style
-    # ax.errorbar(
-    #     ih,
-    #     ic,
-    #     yerr=err,
-    #     label=label,
-    #     color=color,
-    #     linestyle=linestyle,
-    #     marker="o",  # Slightly larger marker
-    #     markersize=2,
-    #     linewidth=1.2,  # Main line width
-    #     elinewidth=1.75,  # Thinner error bar lines
-    #     capsize=2,  # No caps for error bars
-    #     alpha=0.9,  # Slight transparency for overlap
-    # )
+    ax.errorbar(
+        ih,
+        ic,
+        yerr=err,
+        label=label,
+        color=color,
+        linestyle=linestyle,
+        marker="o",  # Slightly larger marker
+        markersize=2,
+        linewidth=1.2,  # Main line width
+        elinewidth=1.75,  # Thinner error bar lines
+        capsize=2,  # No caps for error bars
+        alpha=0.9,  # Slight transparency for overlap
+    )
     ax.plot(
         ih,
         ic,
@@ -148,5 +135,8 @@ ax.legend(ncol=2, frameon=False, loc="upper right")
 ax.set_ybound(lower=0)
 ax.set_xlim(0, 800)
 plt.tight_layout()
-plt.savefig("ic_vs_ih_array.pdf", dpi=300, bbox_inches="tight")
+save_fig = False
+if save_fig:
+    plt.savefig("ic_vs_ih_array.png", dpi=300, bbox_inches="tight")
+
 plt.show()
