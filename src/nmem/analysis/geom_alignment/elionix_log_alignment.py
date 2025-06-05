@@ -12,21 +12,7 @@ logfile = "New schedule.log"
 
 with open(logfile) as f:
     f = f.readlines()
-    
-# for line in f:
-#     if "mark0" in line:
-#         start = line.find("(")+1
-#         end = line.find("[")
-#         # print(line[start:end])
-#         x1 = float(line[start:line.find(',')])
-#         y1 = float(line[line.find(',')+1:line.find(')')])
-        
-#         x2 = float(line[line.find('(', line.find('(')+1)+1:line.find(',', line.find(',')+1)])
-#         y2 = float(line[line.find(',', line.find(',')+1)+2:-7])
 
-#         xdiff = (x1-x2)
-#         ydiff = (y1-y2)
-#         print([xdiff, ydiff])
         
 diff_list = []
 for line in f:
@@ -77,3 +63,4 @@ n, bins, patches = plt.hist(x=diff_list, bins=range(int(np.floor(min(diff_list))
 
 plt.ylabel('count')
 plt.xlabel('alignment difference [nm]')
+plt.show()
