@@ -98,5 +98,6 @@ fig = plot_wafer_maps(
     [plt.cm.Blues, plt.cm.Greens, plt.cm.inferno],
     grid_x, grid_y, RADIUS
 )
-
-fig.savefig("wafer_maps_before_after_delta.pdf", bbox_inches="tight", dpi=300)
+save_fig = False
+if save_fig:
+    fig.savefig("wafer_maps_before_after_delta.pdf", bbox_inches="tight", dpi=300)
