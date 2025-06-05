@@ -2,17 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
+    CRITICAL_TEMP,
     filter_nan,
-    import_directory,
-    plot_calculated_filled_region,
-    plot_calculated_state_currents,
 )
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_calculated_filled_region, plot_calculated_state_currents
 from nmem.measurement.functions import calculate_power
-
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
-
 
 ALPHA = 0.23
 RETRAP = 1
