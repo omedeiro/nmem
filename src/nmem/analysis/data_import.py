@@ -4,14 +4,17 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-from nmem.analysis.core_analysis import (
-    get_bit_error_rate,
-    get_bit_error_rate_args,
+from nmem.analysis.currents import (
     get_channel_temperature,
     get_enable_write_current,
     get_read_current,
     get_read_currents,
     get_write_current,
+)
+
+from nmem.analysis.bit_error import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
 )
 
 
