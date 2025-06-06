@@ -5,14 +5,15 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
 
-from nmem.analysis.analysis import (
-    CMAP,
+from nmem.analysis.core_analysis import (
     get_voltage_trace_data,
-    import_directory,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
+    CMAP,
     plot_voltage_trace,
     set_plot_style,
 )
-
 set_plot_style()
 
 
@@ -84,5 +85,7 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplots(3, 1, figsize=(6, 3), sharex=True)
     plot_time_concatenated_traces(axs, dict_list[:5])
-    plt.savefig("voltage_trace_emulate_slow.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("voltage_trace_emulate_slow.pdf", bbox_inches="tight")
     plt.show()
