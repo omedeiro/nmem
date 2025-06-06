@@ -10,8 +10,6 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
 
 
 def get_enable_write_width(data_dict: dict) -> float:
