@@ -10,7 +10,7 @@ from matplotlib import cm, ticker
 from matplotlib import font_manager as fm
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.colors import LogNorm, Normalize
+from matplotlib.colors import LogNorm, Normalize, to_rgb
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -105,6 +105,13 @@ def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
             "ytick.major.size": 5,
         }
     )
+
+def darken(color, factor=0.6):
+    return tuple(np.clip(factor * np.array(to_rgb(color)), 0, 1))
+
+
+def lighten(color, factor=1.1):
+    return tuple(np.clip(factor * np.array(to_rgb(color)), 0, 1))
 
 
 def set_inter_font():
