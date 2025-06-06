@@ -10,6 +10,7 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_calculated_filled_region
 
+
 def filter_nan(x, y):
     mask = np.isnan(y)
     x = x[~mask]

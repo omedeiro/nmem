@@ -1,7 +1,9 @@
+from typing import List
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
-from typing import List
+
 from nmem.analysis.data_import import (
     import_directory,
 )
@@ -10,6 +12,7 @@ from nmem.analysis.plotting import (
     plot_current_voltage_from_dc_sweep,
     set_plot_style,
 )
+
 set_plot_style()
 
 PROBE_STATION_TEMP = 3.5

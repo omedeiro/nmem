@@ -13,12 +13,11 @@ from nmem.analysis.core_analysis import (
     get_state_current_markers,
     get_write_current,
 )
-
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
+    RBCOLORS,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
-    RBCOLORS,
 )
 
 CRITICAL_CURRENT_ZERO = 1250

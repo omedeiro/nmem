@@ -6,6 +6,7 @@ from nmem.analysis.core_analysis import (
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_branch_currents
+
 CRITICAL_TEMP = 12.3
 ALPHA = 0.6
 RETRAP = 0.7

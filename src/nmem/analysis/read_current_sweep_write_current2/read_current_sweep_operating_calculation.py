@@ -3,8 +3,8 @@ import pandas as pd
 
 from nmem.analysis.core_analysis import (
     CELLS,
-    SUBSTRATE_TEMP,
     CRITICAL_TEMP,
+    SUBSTRATE_TEMP,
     calculate_channel_temperature,
     calculate_critical_current_temp,
     get_bit_error_rate,
@@ -13,7 +13,6 @@ from nmem.analysis.core_analysis import (
     get_write_current,
 )
 from nmem.analysis.data_import import import_directory
-
 
 IRM = 727
 IRHL_TR = 110

@@ -3,8 +3,9 @@ import numpy as np
 from matplotlib.cm import get_cmap
 from matplotlib.patches import Polygon
 
-from nmem.analysis.plotting import set_plot_style
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import set_plot_style
+
 set_plot_style()
 
 # Load data

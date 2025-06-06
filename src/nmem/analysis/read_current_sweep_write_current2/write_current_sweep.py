@@ -1,6 +1,4 @@
-from typing import Literal
 
-import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
@@ -8,12 +6,10 @@ from nmem.analysis.core_analysis import (
     get_channel_temperature,
     get_enable_read_current,
 )
-
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     add_colorbar,
     plot_read_sweep_array,
-    CMAP,
 )
 
 

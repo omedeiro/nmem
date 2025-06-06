@@ -7,10 +7,10 @@ from nmem.analysis.core_analysis import (
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
-    plot_voltage_trace_averaged,
     plot_voltage_hist,
-    set_pres_style,
+    plot_voltage_trace_averaged,
     set_inter_font,
+    set_pres_style,
 )
 
 set_pres_style()

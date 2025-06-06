@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 
 from nmem.analysis.plotting import set_plot_style
+
 set_plot_style()
 
 # Load log

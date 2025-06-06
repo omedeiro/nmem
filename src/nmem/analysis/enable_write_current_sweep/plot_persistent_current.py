@@ -7,7 +7,10 @@ from nmem.analysis.core_analysis import (
     filter_nan,
 )
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_calculated_filled_region, plot_calculated_state_currents
+from nmem.analysis.plotting import (
+    plot_calculated_filled_region,
+    plot_calculated_state_currents,
+)
 from nmem.measurement.functions import calculate_power
 
 ALPHA = 0.23

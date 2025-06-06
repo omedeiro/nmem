@@ -1,4 +1,3 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,11 +7,11 @@ from nmem.analysis.data_import import (
     import_write_sweep_formatted_markers,
 )
 from nmem.analysis.plotting import (
-    set_plot_style,
     plot_write_sweep_formatted,
     plot_write_sweep_formatted_markers,
+    set_plot_style,
 )
-from nmem.analysis.data_import import import_directory
+
 set_plot_style()
 
 C0 = "#1b9e77"

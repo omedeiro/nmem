@@ -14,6 +14,7 @@ from nmem.analysis.plotting import (
     plot_voltage_trace,
     set_plot_style,
 )
+
 set_plot_style()
 
 

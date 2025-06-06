@@ -7,10 +7,10 @@ from nmem.analysis.core_analysis import (
     get_write_current,
 )
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (    
-    plot_read_sweep,
-    plot_fill_between,
+from nmem.analysis.plotting import (
     CMAP,
+    plot_fill_between,
+    plot_read_sweep,
 )
 
 if __name__ == "__main__":

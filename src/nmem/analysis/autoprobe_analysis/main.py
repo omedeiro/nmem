@@ -1,8 +1,6 @@
-import matplotlib.pyplot as plt
-import numpy as np
 
-from nmem.analysis.plotting import set_plot_style, plot_combined_histogram_and_die_maps
 from nmem.analysis.data_import import load_autoprobe_data
+from nmem.analysis.plotting import plot_combined_histogram_and_die_maps, set_plot_style
 
 set_plot_style()
 

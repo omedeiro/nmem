@@ -1,10 +1,8 @@
 import collections
 import collections.abc
-import os
 from typing import Any, Literal, Tuple
 
 import numpy as np
-import scipy.io as sio
 
 from nmem.calculations.calculations import (
     calculate_heater_power,

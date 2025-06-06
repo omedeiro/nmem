@@ -16,11 +16,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
+    annotate_matrix,
     build_array,
     calculate_branch_currents,
     calculate_channel_temperature,
     calculate_state_currents,
     convert_cell_to_coordinates,
+    create_rmeas_matrix,
     filter_plateau,
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -34,6 +36,7 @@ from nmem.analysis.core_analysis import (
     get_enable_write_current,
     get_enable_write_width,
     get_fitting_points,
+    get_log_norm_limits,
     get_optimal_enable_read_current,
     get_optimal_enable_write_current,
     get_read_currents,
@@ -50,9 +53,6 @@ from nmem.analysis.core_analysis import (
     polygon_nominal,
     polygon_under_graph,
     process_cell,
-    create_rmeas_matrix,
-    get_log_norm_limits,
-    annotate_matrix
 )
 from nmem.measurement.cells import CELLS
 
@@ -1277,7 +1277,7 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
                     Rgrid[x, y] = row["Rplot"]
                     labels[x, y] = row["device"]
 
-            im = ax.imshow(Rgrid.T, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
+            im = ax.imshow(Rgrid.T, origin="lower", cmap=CMAP, vmin=vmin, vmax=vmax)
             im_list.append(im)
 
             # # Add device labels

@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
-    plot_full_grid,
-    set_plot_style,
     plot_column,
-    plot_row,
+    plot_full_grid,
     plot_grid,
+    plot_row,
+    set_plot_style,
 )
 
 set_plot_style()

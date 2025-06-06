@@ -1,14 +1,13 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     plot_enable_sweep,
     plot_enable_sweep_markers,
     set_plot_style,
 )
-from nmem.analysis.data_import import import_directory
 
 set_plot_style()
 C0 = "#1b9e77"

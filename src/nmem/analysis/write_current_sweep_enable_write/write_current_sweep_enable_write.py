@@ -4,13 +4,12 @@ import numpy as np
 from nmem.analysis.core_analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
+    get_channel_temperature,
     get_enable_write_current,
     get_read_currents,
-    get_channel_temperature
 )
-from nmem.analysis.plotting import plot_write_sweep
 from nmem.analysis.data_import import import_directory
-
+from nmem.analysis.plotting import plot_write_sweep
 
 if __name__ == "__main__":
     dict_list = import_directory("data")

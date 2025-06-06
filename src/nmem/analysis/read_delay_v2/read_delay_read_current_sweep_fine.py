@@ -5,6 +5,7 @@ from nmem.analysis.plotting import (
     plot_read_delay,
     set_plot_style,
 )
+
 set_plot_style()
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]

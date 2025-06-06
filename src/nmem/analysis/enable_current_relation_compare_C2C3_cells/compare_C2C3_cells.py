@@ -7,7 +7,6 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     plot_fitting,
-    plot_channel_temperature,
 )
 
 if __name__ == "__main__":

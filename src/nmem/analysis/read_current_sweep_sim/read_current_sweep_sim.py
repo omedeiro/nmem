@@ -13,9 +13,9 @@ from nmem.simulation.spice_circuits.plotting import (
     create_plot,
     plot_current_sweep_ber,
     plot_current_sweep_switching,
-    process_read_data,
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    process_read_data,
 )
 
 if __name__ == "__main__":

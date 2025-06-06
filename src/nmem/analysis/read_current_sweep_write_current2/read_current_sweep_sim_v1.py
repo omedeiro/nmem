@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 from nmem.analysis.core_analysis import (
     filter_first,
-
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (

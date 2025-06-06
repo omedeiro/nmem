@@ -1,12 +1,11 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
 from matplotlib.ticker import LogLocator, MaxNLocator
 
-from nmem.analysis.plotting import set_plot_style
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import set_plot_style
+
 set_plot_style()
 
 loop_sizes = np.arange(1.7, 5.2, 0.5)

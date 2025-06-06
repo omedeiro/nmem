@@ -8,12 +8,12 @@ from nmem.analysis.core_analysis import (
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
+    CMAP,
     plot_enable_read_sweep,
     plot_enable_read_temp,
     plot_enable_write_sweep,
     plot_enable_write_temp,
     set_plot_style,
-    CMAP,
 )
 
 set_plot_style()

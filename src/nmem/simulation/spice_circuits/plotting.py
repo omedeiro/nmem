@@ -2,24 +2,22 @@ import os
 from typing import Literal
 
 import ltspice
-import matplotlib as mpl
-import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.core_analysis import (
     filter_first,
 )
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
+    plot_read_sweep_array,
+    plot_read_switch_probability_array,
+)
 from nmem.simulation.spice_circuits.functions import (
     get_step_parameter,
     process_read_data,
 )
-from nmem.analysis.plotting import (
-    plot_read_sweep_array,
-    plot_read_switch_probability_array,
-    set_inter_font,
-)
-from nmem.analysis.data_import import import_directory
+
 CMAP = plt.get_cmap("coolwarm")
 
 

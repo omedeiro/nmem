@@ -1,4 +1,3 @@
-import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,9 +17,9 @@ from nmem.analysis.core_analysis import (
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
+    RBCOLORS,
     plot_enable_write_sweep_multiple,
     plot_write_sweep,
-    RBCOLORS,
 )
 
 if __name__ == "__main__":

@@ -1,16 +1,19 @@
 import os
+
 import numpy as np
-import scipy.io as sio
 import pandas as pd
+import scipy.io as sio
+
 from nmem.analysis.core_analysis import (
     get_bit_error_rate,
     get_bit_error_rate_args,
-    get_read_currents,
+    get_channel_temperature,
     get_enable_write_current,
     get_read_current,
+    get_read_currents,
     get_write_current,
-    get_channel_temperature,
 )
+
 
 def load_autoprobe_data(filepath, grid_size=56):
     """Load autoprobe data from a parsed .mat file and return as a DataFrame with bounds-checked coordinates."""
