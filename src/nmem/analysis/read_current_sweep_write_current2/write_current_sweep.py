@@ -4,44 +4,17 @@ import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
-    CMAP,
+from nmem.analysis.core_analysis import (
     get_channel_temperature,
     get_enable_read_current,
-    import_directory,
-    plot_read_sweep_array,
 )
 
-
-def add_colorbar(
-    ax: plt.Axes,
-    data_dict_list: list[dict],
-    cbar_label: Literal["write_current", "enable_read_current"],
-    cax=None,
-):
-    data_list = []
-    for data_dict in data_dict_list:
-        if cbar_label == "write_current":
-            data_list += [d["write_current"] * 1e6 for d in data_dict]
-            label = "Write Current [µA]"
-        elif cbar_label == "enable_read_current":
-            enable_read_current = [get_enable_read_current(d) for d in data_dict]
-            # print(f"Enable Read Current: {enable_read_current}")
-            # data_list += [enable_read_current]
-            data_list = enable_read_current
-            label = "$I_{{ER}}$ [µA]"
-
-    norm = mcolors.Normalize(vmin=min(data_list), vmax=max(data_list))
-    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-    sm.set_array([])
-
-    if cax is not None:
-        cbar = plt.colorbar(sm, cax=cax)
-    else:
-        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-
-    cbar.set_label(label)
-    return cbar
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
+    add_colorbar,
+    plot_read_sweep_array,
+    CMAP,
+)
 
 
 def plot_read_temp_sweep_C3(save=True):
@@ -80,7 +53,7 @@ def plot_read_temp_sweep_C3(save=True):
         plt.savefig("read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
 
 
-def plot_read_temp_sweep_C3_v2(save=True):
+def plot_read_temp_sweep_C3_v2(save=False):
     fig = plt.figure(figsize=(180 / 25.4, 90 / 25.4))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
 
@@ -117,7 +90,7 @@ def plot_read_temp_sweep_C3_v2(save=True):
     #     title="Write Current [µA]",
     # )
     axpos = axs[2].get_position()
-    cbar = add_colorbar(axs[2], dict_list, "Write current [µA]", cax=cax)
+    cbar = add_colorbar(axs[2], dict_list, "write_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     if save:
         plt.savefig("read_current_sweep_write_current_C3_v2.pdf", bbox_inches="tight")

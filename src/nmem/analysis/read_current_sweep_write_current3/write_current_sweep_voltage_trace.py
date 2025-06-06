@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.data_import import (
     import_directory,
+)
+from nmem.analysis.plotting import (
     plot_bit_error_rate,
     plot_voltage_trace_stack,
 )

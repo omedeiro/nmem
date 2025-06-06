@@ -4,10 +4,10 @@ import ltspice
 import numpy as np
 from matplotlib import pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     filter_first,
-    import_directory,
 )
+from nmem.analysis.data_import import import_directory
 from nmem.simulation.spice_circuits.plotting import (
     CMAP,
     create_plot,
@@ -191,5 +191,7 @@ if __name__ == "__main__":
         handlelength=2.5,
         fontsize=8,
     )
-    plt.savefig("spice_comparison_sim.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("spice_comparison_sim.pdf", bbox_inches="tight")
     plt.show()

@@ -1,7 +1,8 @@
 
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import import_directory, plot_read_sweep_array
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_read_sweep_array
 
 plt.rcParams["figure.figsize"] = [5, 3.5]
 plt.rcParams["font.size"] = 14
@@ -20,3 +21,4 @@ if __name__ == "__main__":
         title="Write Width",
     )
     plt.show()
+    

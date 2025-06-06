@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import import_directory, plot_read_delay
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
+    plot_read_delay,
+    set_plot_style,
+)
+set_plot_style()
 
 plt.rcParams["figure.figsize"] = [3.5, 3.5]
 plt.rcParams["font.size"] = 12

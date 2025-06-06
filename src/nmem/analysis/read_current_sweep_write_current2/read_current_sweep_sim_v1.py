@@ -4,9 +4,12 @@ import ltspice
 import numpy as np
 from matplotlib import pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     filter_first,
-    import_directory,
+
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
     plot_read_sweep_array,
     plot_read_switch_probability_array,
     set_pres_style,
@@ -204,5 +207,7 @@ if __name__ == "__main__":
     fig.subplots_adjust(
         hspace=0.6,
     )
-    plt.savefig("spice_comparison_result.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("spice_comparison_result.pdf", bbox_inches="tight")
     plt.show()

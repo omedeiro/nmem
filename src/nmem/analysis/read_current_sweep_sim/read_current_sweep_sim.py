@@ -4,18 +4,18 @@ import ltspice
 import numpy as np
 from matplotlib import pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     filter_first,
-    import_directory,
-    plot_read_sweep_array,
-    plot_read_switch_probability_array,
 )
+from nmem.analysis.data_import import import_directory
 from nmem.simulation.spice_circuits.plotting import (
     CMAP,
     create_plot,
     plot_current_sweep_ber,
     plot_current_sweep_switching,
     process_read_data,
+    plot_read_sweep_array,
+    plot_read_switch_probability_array,
 )
 
 if __name__ == "__main__":
@@ -192,5 +192,7 @@ if __name__ == "__main__":
         handlelength=2.5,
         fontsize=8,
     )
-    plt.savefig("spice_comparison.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("spice_comparison.pdf", bbox_inches="tight")
     plt.show()

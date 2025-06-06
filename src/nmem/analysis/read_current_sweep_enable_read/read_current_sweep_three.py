@@ -1,15 +1,15 @@
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     get_channel_temperature,
-    import_directory,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
+    add_colorbar,
     plot_fill_between_array,
     plot_read_sweep_array,
     set_plot_style,
-)
-from nmem.analysis.read_current_sweep_write_current2.write_current_sweep import (
-    add_colorbar,
 )
 
 set_plot_style()
@@ -57,4 +57,6 @@ if __name__ == "__main__":
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     cbar.set_ticks(plt.MaxNLocator(nbins=6))
 
-    plt.savefig("read_current_sweep_three2.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("read_current_sweep_three2.pdf", bbox_inches="tight")

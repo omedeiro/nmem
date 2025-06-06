@@ -2,19 +2,19 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     convert_cell_to_coordinates,
     get_bit_error_rate,
-    import_directory,
     initialize_dict,
-    plot_parameter_array,
     process_cell,
 )
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_parameter_array
 from nmem.measurement.cells import CELLS
 
 if __name__ == "__main__":
+    # dict_list = import_directory("data2")
     dict_list = import_directory("data3")
-    # dict_list.extend(import_directory("data3"))
     delay_list = []
     bit_error_rate_list = []
     for data_dict in dict_list:
@@ -77,6 +77,7 @@ if __name__ == "__main__":
     )
     # cbar.set_ticks([1e-5, 1e-4, 1e-3, 1e-2])
 
-    
-    plt.savefig("read_delay_retention_test.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("read_delay_retention_test.pdf", bbox_inches="tight")
     plt.show()

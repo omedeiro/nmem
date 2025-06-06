@@ -1,14 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
-    CMAP,
+from nmem.analysis.core_analysis import (
     get_channel_temperature,
     get_enable_write_current,
     get_write_current,
-    import_directory,
-    plot_fill_between,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (    
     plot_read_sweep,
+    plot_fill_between,
+    CMAP,
 )
 
 if __name__ == "__main__":
@@ -80,5 +82,7 @@ if __name__ == "__main__":
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(.2))
-    plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("read_current_sweep_enable_write2.pdf", bbox_inches="tight")
     plt.show()

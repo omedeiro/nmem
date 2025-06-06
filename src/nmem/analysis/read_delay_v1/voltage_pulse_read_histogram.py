@@ -2,42 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     get_bit_error_rate,
-    import_directory,
-    plot_voltage_hist,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
     plot_voltage_trace_averaged,
-    set_inter_font,
+    plot_voltage_hist,
     set_pres_style,
+    set_inter_font,
 )
 
 set_pres_style()
 set_inter_font()
-
-# plt.rcParams.update({
-#     "font.size": 14,
-#     "axes.titlesize": 16,
-#     "axes.labelsize": 14,
-#     "xtick.labelsize": 12,
-#     "ytick.labelsize": 12,
-#     "figure.titlesize": 18,
-# })
-# # plt.rcParams["figure.figsize"] = [7, 3.5]
-# plt.rcParams["font.size"] = 5
-# plt.rcParams["axes.linewidth"] = 0.5
-# plt.rcParams["xtick.major.width"] = 0.5
-# plt.rcParams["ytick.major.width"] = 0.5
-# # plt.rcParams["xtick.direction"] = "in"
-# # plt.rcParams["ytick.direction"] = "in"
-# # plt.rcParams["font.family"] = "Inter"
-# # plt.rcParams["lines.markersize"] = 2
-# plt.rcParams["lines.linewidth"] = 0.5
-# plt.rcParams["legend.fontsize"] = 5
-# plt.rcParams["legend.frameon"] = False
-
-
-# plt.rcParams["xtick.major.size"] = 1
-# plt.rcParams["ytick.major.size"] = 1
 
 
 def plot_read_delay(ax: Axes, dict_list: list[dict]) -> Axes:
@@ -163,7 +140,9 @@ if __name__ == "__main__":
     # ax.set_ylabel("Counts")
     fig.patch.set_visible(False)
     # fig.subplots_adjust(wspace=0.5, hspace=0.5)
-    plt.savefig("voltage_trace_out.png", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("voltage_trace_out.png", bbox_inches="tight")
 
 
 # if __name__ == "__main__":

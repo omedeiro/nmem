@@ -1,19 +1,20 @@
 import numpy as np
 import pandas as pd
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     CELLS,
+    SUBSTRATE_TEMP,
+    CRITICAL_TEMP,
     calculate_channel_temperature,
     calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_read_currents,
     get_write_current,
-    import_directory,
 )
+from nmem.analysis.data_import import import_directory
 
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
+
 IRM = 727
 IRHL_TR = 110
 CRITICAL_CURRENT_ZERO = 1250
@@ -90,7 +91,6 @@ if __name__ == "__main__":
             ip = write_current
         if ip > IRHL_TR/2:
             ip = IRHL_TR/2
-        print(f"write_current: {write_current}, persistent current: {ip}")
         persistent_current.append(ip)
     pd = pd.DataFrame(
         {
@@ -108,5 +108,10 @@ if __name__ == "__main__":
         }
     )
     
-    pd.to_csv("read_current_sweep_operating.csv")
+    save_csv = False
+    if save_csv:
+        pd.to_csv("read_current_sweep_operating.csv", float_format="%.3f")
+    else:
+        print(pd)
+        
 

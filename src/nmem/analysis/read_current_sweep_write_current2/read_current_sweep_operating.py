@@ -1,12 +1,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     CELLS,
     CRITICAL_TEMP,
-    RBCOLORS,
     SUBSTRATE_TEMP,
-    WIDTH,
     calculate_channel_temperature,
     calculate_critical_current_temp,
     get_bit_error_rate,
@@ -14,15 +12,19 @@ from nmem.analysis.analysis import (
     get_read_currents,
     get_state_current_markers,
     get_write_current,
-    import_directory,
+)
+
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
     plot_read_sweep_array,
     plot_read_switch_probability_array,
+    RBCOLORS,
 )
 
 CRITICAL_CURRENT_ZERO = 1250
 IRM = 727.5
 IRHL_TR = 105
-
+WIDTH = 1/3
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)
@@ -175,5 +177,7 @@ if __name__ == "__main__":
     ax2.set_zorder(0)
     ax2.fill_between(write_current_array, np.zeros_like(write_current_array), persistent_current, color="black", alpha=0.1)
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
-    plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
+    save_fig = False
+    if save_fig:
+        plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()
