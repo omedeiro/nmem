@@ -15,7 +15,6 @@ from nmem.analysis.plotting import (
 
 set_plot_style()
 
-PROBE_STATION_TEMP = 3.5
 def plot_combined_figure(axs: List[Axes], dict_list: list, save: bool = False) -> List[Axes]:
     axs[0].set_axis_off()
     plot_current_voltage_from_dc_sweep(axs[1], dict_list)
