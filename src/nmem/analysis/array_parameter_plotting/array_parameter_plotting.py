@@ -1,22 +1,22 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from nmem.analysis.core_analysis import (
-    convert_cell_to_coordinates,
     initialize_dict,
     process_cell,
 )
+from nmem.analysis.utils import convert_cell_to_coordinates
 from nmem.analysis.plotting import plot_parameter_array
 from nmem.measurement.cells import CELLS
 
-plt.rcParams["figure.figsize"] = [6, 6]
-plt.rcParams["font.size"] = 10
 
-
-if __name__ == "__main__":
+def main(array_size=(4, 4)):
+    """
+    Process cell data and plot parameter arrays for the given array size.
+    """
     xloc_list = []
     yloc_list = []
-    ARRAY_SIZE = (4, 4)
-    param_dict = initialize_dict(ARRAY_SIZE)
+    param_dict = initialize_dict(array_size)
     yintercept_list = []
     slope_list = []
     for c in CELLS:
@@ -32,3 +32,8 @@ if __name__ == "__main__":
     plot_parameter_array(
         ax, xloc_list, yloc_list, param_dict["write_current"], "Write Current [$\mu$A]"
     )
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
