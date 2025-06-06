@@ -18,7 +18,6 @@ from nmem.analysis.plotting import (
     plot_read_sweep_array,
     plot_read_switch_probability_array,
     set_inter_font,
-    apply_snm_style,
 )
 from nmem.analysis.data_import import import_directory
 CMAP = plt.get_cmap("coolwarm")
