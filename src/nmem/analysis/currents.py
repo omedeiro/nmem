@@ -6,7 +6,7 @@ from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
 )
-from nmem.analysis.core_analysis import (
+from nmem.analysis.constants import (
     CRITICAL_TEMP,
     SUBSTRATE_TEMP,
 )

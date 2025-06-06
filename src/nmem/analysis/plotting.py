@@ -54,18 +54,18 @@ from nmem.analysis.utils import (
     get_current_cell,
 )
 from nmem.measurement.cells import CELLS
-
+from nmem.analysis.constants import (
+    CRITICAL_TEMP,
+    READ_XMIN,
+    READ_XMAX,
+    IC0_C3,
+)
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
 CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
 CMAP3 = plt.get_cmap("plasma").reversed()
-
-READ_XMIN = 400
-READ_XMAX = 1000
-IC0_C3 = 910
-
 
 
 def polygon_under_graph(x, y, y2=0.0):

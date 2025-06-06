@@ -4,7 +4,7 @@ from matplotlib.patches import Polygon, Rectangle
 from matplotlib.axes import Axes
 from matplotlib import cm
 from matplotlib.colors import Normalize
-from nmem.analysis.plotting import darken, lighten, set_inter_font, set_pres_style
+from nmem.analysis.styles import darken, lighten, set_inter_font, set_pres_style
 
 
 def plot_energy_extruded_bar(
