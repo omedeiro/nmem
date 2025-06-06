@@ -1,0 +1,42 @@
+\begin{circuitikz}[scale=0.7, transform shape, american voltages]
+    % Voltage sources
+    \draw(0,2) to[V, l_=$V_{ch}$] (0,0);
+    \draw(0,0) node[ground]{};
+
+    \draw(0,2)-- (2,2);
+
+
+    \draw(2,2) to[resistor, l=$33.66\,\Omega$] (5,2);
+    \draw(2,2) to[resistor, l_=$33.66\,\Omega$] (3.5,-1);
+    \draw(3.5,-1) to[resistor, l_=$33.66\,\Omega$] (5,2);
+
+    \draw(3.5, -1) to[R, l=$\SI{50}{\ohm}$] (3.5, -3);
+    \draw(3.5,-3) node[ground]{};
+
+    \draw(5,2) to[generic, l=$-20\,\text{dB}$] (7.5,2);
+    \draw(7.5,2) to[generic, l=$-10\,\text{dB}$] (10,2);
+
+
+    \draw(10,2) to[resistor, l=$33.66\,\Omega$] (13,2);
+    \draw(10,2) to[resistor, l_=$33.66\,\Omega$] (11.5,-1);
+    \draw(11.5,-1) to[resistor, l_=$33.66\,\Omega$] (13,2);
+
+
+    \draw(13,2) to[generic, l=$-20\text{dB}$] (15,2);
+    \draw(17,2) node[plain mono amp] (opamp){LNA}
+    (opamp.up) ++ (0, .5) node[above] {\SI{15}{\volt}}-- (opamp.up)
+    (opamp.down) node[ground] {};
+    \draw(15,2)-- (opamp.in);
+
+
+
+    \draw(11.5, -1) to[R, color=white, n=S1] (11.5, -3);
+    \nanowire{S1}{0}
+    % \draw(11.5, -1) to[R, color=white, n=S2] (11.5,-3);
+    % \htron{S2}{0}
+
+    \draw(11.5,-3) node[ground]{};
+
+\end{circuitikz}
+
+

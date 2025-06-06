@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
+from nmem.analysis.core_analysis import (
     build_array,
     get_fitting_points,
-    import_directory,
-    plot_channel_temperature,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import (
     plot_fitting,
 )
 
@@ -53,15 +54,8 @@ if __name__ == "__main__":
     # axs[0].plot(xfit, yfit, label="C2", linestyle="-")
 
 
-    save = True
+    save = False
     if save:
         plt.savefig("enable_current_relation_compare_C2C3.png", dpi=300, bbox_inches="tight")
     plt.show()
 
-
-
-    fig, ax = plt.subplots()
-    plot_channel_temperature(ax, data_dict)
-    plot_channel_temperature(ax, data_dict2)
-
-    plt.show()

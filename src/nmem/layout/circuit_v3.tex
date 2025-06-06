@@ -1,0 +1,77 @@
+
+\begin{circuitikz}[scale=0.7, transform shape, american voltages]
+
+    \draw(0,2) to[V, l_=$V_{ch}$] (0,0);
+    \draw(0,0) node[ground]{};
+
+    \draw(3,2) node[genericsplitter] (split1){$\SI {-3}{\deci \bel}$};
+    \draw(0,2)-- (split1.in);
+    \draw(split1.out1) --++ (0.5,0) to[R, l=$\SI{50}{\ohm}$] ++ (0,-2) node[ground]{};
+
+
+    \draw(split1.out2) to[generic, l=$-20\,\text{dB}$] ++ (2,0)
+    to[generic, l=$-10\,\text{dB}$] ++ (2,0) coordinate (A2);
+
+    \draw(10,2) node[genericsplitter] (split2){$\SI {-3}{\deci \bel}$};
+    \draw(A2)-- ($(split2.in)+(-0.5,0)$)-- (split2.in);
+    \draw(split2.out1) --++ (0.5,0) --++ (0,-2) coordinate (A3);
+
+    \draw(A3) --++ (1, 0) to[generic, color=white, n=S1] ++ (0,-2) coordinate (H1);
+    \htron{S1}{0};
+    \draw(A3) ++ (-1, -2) coordinate (H2) to[generic, color=white, n=S2] ++ (0,2)-- (A3);
+    \htron{S2}{0};
+
+    \draw(H1)-- (H2);
+    \draw($(H1)!0.5!(H2)$) node[ground]{};
+
+    \draw(split2.out2) to[generic, l=$-20\text{dB}$] ++ (2,0) coordinate (A3);
+    \draw(15,2) node[plain mono amp] (opamp){LNA}
+    (opamp.up) ++ (0, .5) node[above] {+\SI{15}{\volt}}-- (opamp.up)
+    (opamp.down) node[ground]{};
+    \draw(A3)-- (opamp.in);
+
+    % \draw(15,-2) node[nmem] (mem) {Memory};
+
+\end{circuitikz}
+
+
+% % Plain Nanowire
+% \newcommand{\nanowire}[1]
+% {
+% \coordinate(a) at (#1.w);
+% \coordinate(b) at ($(#1.w)!.5!(#1)$);
+% \coordinate(c) at ($(b)!1.1!(#1.nw)$);
+% \coordinate(e) at ($(#1)!.5!(#1.e)$);
+% \coordinate(d) at ($(e)!1.1!(#1.ne)$);
+% \coordinate(f) at (#1.e);
+% \draw[thick] (a)-- (b)-- (c)-- (d)-- (e)-- (f);
+% }
+
+
+% % hTron
+% \newcommand{\htron}[1]
+% {
+% \coordinate(a) at ($(#1)!1.1!(#1.w)$);
+% \coordinate(b) at ($(#1.w)!.4!(#1)$);
+% \coordinate(c) at ($(b)!.9!(#1.nw)$);
+% \coordinate(e) at ($(#1)!.6!(#1.e)$);
+% \coordinate(d) at ($(e)!.9!(#1.ne)$);
+% \coordinate(f) at ($(#1)!1.1!(#1.e)$);
+% \draw[thick] (a)-- (b)-- (c)-- (d)-- (e)-- (f);
+% \coordinate(i) at ($(#1.w)!1.5!(#1.nw)$);
+% \coordinate(j) at ($(#1.e)!1.5!(#1.ne)$);
+% \coordinate(k) at ($(#1.w)!2!(#1.nw)$);
+% \coordinate(l) at ($(#1.e)!2!(#1.ne)$);
+
+% \coordinate(m) at ($(k)!0.2!(l)$);
+% \coordinate(n) at ($(k)!0.4!(l)$);
+% \coordinate(o) at ($(k)!0.6!(l)$);
+% \coordinate(p) at ($(k)!0.8!(l)$);
+
+% \coordinate(q) at ($(i)!0.2!(j)$);
+% \coordinate(r) at ($(i)!0.4!(j)$);
+% \coordinate(s) at ($(i)!0.6!(j)$);
+% \coordinate(t) at ($(i)!0.8!(j)$);
+
+% \draw[thick] (k)-- (m)-- (q)-- (r)-- (n)-- (o)-- (s)-- (t)-- (p)-- (l);
+% }

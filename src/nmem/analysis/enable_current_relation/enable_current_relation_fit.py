@@ -1,9 +1,7 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.analysis import (
-    import_directory,
-    plot_enable_current_relation,
-)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_enable_current_relation
 
 plt.rcParams["figure.figsize"] = [5.7, 5]
 plt.rcParams["font.size"] = 16

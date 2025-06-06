@@ -1,0 +1,15 @@
+
+\begin{circuitikz}
+    \draw(0,0) to[spring] ++ (2,0) to[nanowire] ++ (2,0) to[R] ++ (2,0);
+\end{circuitikz}
+
+\ctikzsubcircuitactivate{htron}
+\begin{tikzpicture}
+    \draw (0,0) \htron{one}{};
+\end{tikzpicture}
+
+
+\ctikzsubcircuitactivate{nmem}
+\begin{tikzpicture}
+    \draw (0,0) \nmem{one}{};
+\end{tikzpicture}
