@@ -20,14 +20,11 @@ from nmem.analysis.bit_error import (
     get_total_switches_norm,
 )
 from nmem.analysis.core_analysis import (
-    CRITICAL_TEMP,
     get_enable_write_width,
     get_fitting_points,
     get_read_width,
     get_voltage_trace_data,
     get_write_width,
-    initialize_dict,
-    process_cell,
 )
 from nmem.analysis.currents import (
     calculate_branch_currents,
@@ -54,7 +51,6 @@ from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
     create_rmeas_matrix,
-    filter_plateau,
     get_current_cell,
 )
 from nmem.measurement.cells import CELLS
@@ -70,93 +66,6 @@ READ_XMIN = 400
 READ_XMAX = 1000
 IC0_C3 = 910
 
-
-def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
-    """
-    Apply a presentation-optimized Matplotlib style.
-
-    Parameters:
-        dpi (int): Figure DPI (for saved files).
-        font_size (int): Base font size for axes and labels.
-        grid_alpha (float): Grid line transparency.
-    """
-    set_inter_font()
-    plt.rcParams.update(
-        {
-            "figure.dpi": dpi,
-            "font.family": "Inter",
-            "figure.figsize": (6, 4),
-            "axes.titlesize": font_size + 4,
-            "axes.labelsize": font_size + 2,
-            "xtick.labelsize": font_size,
-            "ytick.labelsize": font_size,
-            "legend.fontsize": font_size,
-            "font.size": font_size,
-            "axes.grid": True,
-            "grid.linestyle": "--",
-            "grid.linewidth": 0.7,
-            "grid.alpha": grid_alpha,
-            "axes.edgecolor": "#333333",
-            "axes.linewidth": 1.2,
-            "lines.linewidth": 2.0,
-            "savefig.bbox": "tight",
-            "savefig.pad_inches": 0.2,
-            "xtick.major.size": 5,
-            "ytick.major.size": 5,
-        }
-    )
-
-def darken(color, factor=0.6):
-    return tuple(np.clip(factor * np.array(to_rgb(color)), 0, 1))
-
-
-def lighten(color, factor=1.1):
-    return tuple(np.clip(factor * np.array(to_rgb(color)), 0, 1))
-
-
-def set_inter_font():
-    if os.name == "nt":  # Windows
-        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
-    elif os.name == "posix":
-        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
-    else:
-        font_path = None
-
-    if font_path and os.path.exists(font_path):
-        fm.fontManager.addfont(font_path)
-        mpl.rcParams["font.family"] = "Inter"
-
-
-def set_plot_style() -> None:
-    set_inter_font()
-    golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
-    width = 3.5  # Example width in inches (single-column for Nature)
-    height = width / golden_ratio
-    plt.rcParams.update(
-        {
-            "figure.figsize": [width, height],
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-            "font.family": "serif",
-            "mathtext.fontset": "cm",
-            "font.size": 9,
-            "axes.titlesize": 9,
-            "axes.labelsize": 9,
-            "xtick.labelsize": 8,
-            "ytick.labelsize": 8,
-            "legend.fontsize": 8,
-            "axes.linewidth": 0.5,
-            "xtick.major.width": 0.5,
-            "ytick.major.width": 0.5,
-            "xtick.direction": "out",
-            "ytick.direction": "out",
-            "lines.markersize": 3,
-            "lines.linewidth": 1.2,
-            "legend.frameon": False,
-            "xtick.major.size": 2,
-            "ytick.major.size": 2,
-        }
-    )
 
 
 def polygon_under_graph(x, y, y2=0.0):
@@ -178,14 +87,6 @@ def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
     y[y < 0.5] = 0.5
     return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
-
-def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):
-    """Add text annotations to matrix cells."""
-    for y in range(R.shape[0]):
-        for x in range(R.shape[1]):
-            val = R[y, x]
-            if not np.isnan(val):
-                ax.text(x, y, fmt.format(val), ha="center", va="center", fontsize=6, color=color)
 
 
 def get_log_norm_limits(R):
@@ -458,40 +359,6 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
     ax.set_ylim([1e-4, 1e-3])
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
 
-
-def plot_ber_grid(ax: plt.Axes):
-    ARRAY_SIZE = (4, 4)
-    param_dict = initialize_dict(ARRAY_SIZE)
-    xloc_list = []
-    yloc_list = []
-    for c in CELLS:
-        xloc, yloc = convert_cell_to_coordinates(c)
-        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
-        xloc_list.append(xloc)
-        yloc_list.append(yloc)
-
-    plot_parameter_array(
-        ax,
-        xloc_list,
-        yloc_list,
-        param_dict["bit_error_rate"],
-        log=True,
-        cmap=plt.get_cmap("Blues").reversed(),
-    )
-
-    ax.xaxis.set_label_position("bottom")
-    ax.xaxis.set_ticks_position("bottom")
-    ax.set_xlabel("Column")
-    ax.set_ylabel("Row")
-    cax = ax.inset_axes([1.10, 0, 0.1, 1])
-    fig = ax.get_figure()
-    cbar = fig.colorbar(
-        ax.get_children()[0], cax=cax, orientation="vertical", label="minimum BER"
-    )
-
-    return ax
-
-
 def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
     bit_error_rate = get_bit_error_rate(data_dict)
     berargs = get_bit_error_rate_args(bit_error_rate)
@@ -710,21 +577,6 @@ def plot_calculated_state_currents(
     return ax
 
 
-def plot_cell_parameter(ax: Axes, param: str) -> Axes:
-    param_array = np.array([CELLS[cell][param] for cell in CELLS]).reshape(4, 4)
-    plot_parameter_array(
-        ax,
-        np.arange(4),
-        np.arange(4),
-        param_array * 1e6,
-        f"Cell {param}",
-        log=False,
-        norm=False,
-        reverse=False,
-    )
-    return ax
-
-
 def plot_critical_currents_from_trace(ax: Axes, dict_list: list) -> Axes:
     critical_currents, critical_currents_std = get_critical_currents_from_trace(
         dict_list
@@ -877,37 +729,6 @@ def plot_message(ax: Axes, message: str) -> Axes:
 
     return ax
 
-
-def plot_parameter_array(
-    ax: Axes,
-    xloc: np.ndarray,
-    yloc: np.ndarray,
-    parameter_array: np.ndarray,
-    title: str = None,
-    log: bool = False,
-    reverse: bool = False,
-    cmap: plt.cm = None,
-) -> Axes:
-    if cmap is None:
-        cmap = plt.get_cmap("viridis")
-    if reverse:
-        cmap = cmap.reversed()
-
-    if log:
-        ax.matshow(
-            parameter_array,
-            cmap=cmap,
-            norm=LogNorm(vmin=np.min(parameter_array), vmax=np.max(parameter_array)),
-        )
-    else:
-        ax.matshow(parameter_array, cmap=cmap)
-
-    if title:
-        ax.set_title(title)
-    ax.set_xticks(range(4), ["A", "B", "C", "D"])
-    ax.set_yticks(range(4), ["1", "2", "3", "4"])
-    ax.tick_params(axis="both", length=0)
-    return ax
 
 
 def plot_enable_write_sweep_multiple(
@@ -1134,92 +955,6 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     if vmin and vmax:
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
-
-def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7):
-    fig, axs = plt.subplots(
-        len(wafer_row_numbers), N + 2,
-        figsize=(5, 4),
-        dpi=300,
-        gridspec_kw={'width_ratios': [1] + [1]*N + [0.1]},
-        constrained_layout=True
-    )
-
-    for i, row_number in enumerate(wafer_row_numbers):
-        # Filter dies like A1, B1, ..., G1
-        row_df = df[df["die"].str.endswith(str(row_number))].copy()
-        valid_vals = row_df["Rmean"] / 1e3
-        valid_vals = valid_vals[(valid_vals > 0) & np.isfinite(valid_vals) & (valid_vals < 50000)]
-
-        n_nan = len(row_df) - len(valid_vals)
-        if n_nan > 0:
-            print(f"Row {row_number} has {n_nan} NaN values.")
-
-        vmin, vmax = limit_dict.get(str(row_number), (valid_vals.min(), valid_vals.max()))
-        plot_histogram(axs[i, 0], valid_vals, str(row_number), vmin, vmax)
-
-        # Plot dies A1, B1, ..., G1
-        im_list = []
-        for j in range(N):
-            die_name = f"{chr(65 + j)}{row_number}"
-            die_df = df[df["die"] == die_name].copy()
-            ax = axs[i, 1 + j]
-
-            if die_df.empty:
-                ax.text(0.5, 0.5, "No data", ha="center", va="center", fontsize=8)
-                im_list.append(None)
-                continue
-
-            die_df["Rplot"] = die_df["Rmean"] / 1e3
-            Rgrid = np.full((8, 8), np.nan)
-            labels = np.full((8, 8), "", dtype=object)
-
-            for _, row in die_df.iterrows():
-                x, y = int(row["x_dev"]), int(row["y_dev"])
-                if 0 <= x < 8 and 0 <= y < 8:
-                    Rgrid[x, y] = row["Rplot"]
-                    labels[x, y] = row["device"]
-
-            im = ax.imshow(Rgrid.T, origin="lower", cmap=CMAP, vmin=vmin, vmax=vmax)
-            im_list.append(im)
-
-            # # Add device labels
-            # for x in range(8):
-            #     for y in range(8):
-            #         label = labels[x, y]
-            #         if label:
-            #             ax.text(x, y, label, ha="center", va="center", fontsize=6, color="white")
-
-
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_title(die_name, fontsize=7)
-            ax.set_aspect("equal")
-
-        # Colorbar
-        axs[i, -1].set_xticks([])
-        axs[i, -1].set_yticks([])
-        axs[i, -1].set_frame_on(False)
-
-        if any(im is not None for im in im_list):
-            cax = axs[i, -1]
-            first_valid_im = next(im for im in im_list if im is not None)
-            cbar = fig.colorbar(first_valid_im, cax=cax)
-            cbar.set_label("[kΩ]", fontsize=7)
-            cbar.ax.tick_params(labelsize=6)
-            cbar.set_ticks(np.linspace(vmin, vmax, 5))
-            cbar.ax.set_yticklabels([f"{int(t)}" for t in np.linspace(vmin, vmax, 5)])
-            if hasattr(cbar, "solids") and hasattr(cbar.solids, "set_rasterized"):
-                cbar.solids.set_rasterized(True)
-                cbar.solids.set_edgecolor("face")
-
-    axs[-1, 0].set_xlabel("Resistance (kΩ)", fontsize=8)
-
-    axs[2, 0].set_xlim(500, 1500)
-    fig.patch.set_visible(False)
-    save_fig = False
-    if save_fig:
-        fig.savefig("combined_wafer_map_and_histograms.pdf", bbox_inches="tight", dpi=300)
-    plt.show()
 
 
 
@@ -1796,129 +1531,8 @@ def apply_log_scale(ax, logscale, axis="y"):
 
 
 
-def plot_die_resistance_map(
-    ax, df, die_name, cmap="turbo", logscale=True, annotate=False, vmin=None, vmax=None
-):
-    die_df = df[df["die"] == die_name]
-    if die_df.empty:
-        raise ValueError(f"No data found for die '{die_name}'")
-
-    Rmeas = np.full((8, 8), np.nan)
-    for _, row in die_df.iterrows():
-        x, y = int(row["x_dev"]), int(row["y_dev"])
-        y_dev = 7 - y  # Invert y-axis for display
-        Rmeas[y_dev, x] = row["Rmean"] if row["Rmean"] > 0 else np.nan
-
-    # Robust color limits using percentiles
-    valid_vals = Rmeas[np.isfinite(Rmeas) & (Rmeas > 0)] / 1e3
-
-    if valid_vals.size == 0:
-        raise ValueError(f"Die {die_name} contains no valid (R > 0) data.")
 
 
-    im = ax.imshow(
-        Rmeas / 1e3,
-        cmap=cmap,
-        origin="upper",
-        vmin=vmin,
-        vmax=vmax,
-    )
-
-    if annotate:
-        for y in range(8):
-            for x in range(8):
-                val = Rmeas[y, x]
-                if np.isfinite(val):
-                    ax.text(
-                        x,
-                        y,
-                        f"{val:.0f}",
-                        ha="center",
-                        va="center",
-                        fontsize=6,
-                        color="white",
-                    )
-
-    ax.set_xticks([])
-    ax.set_yticks([])
-    return ax, im
-
-    # ax.set_xticks(np.arange(8))
-    # ax.set_yticks(np.arange(8))
-    # ax.set_xticklabels(list("ABCDEFGH"))
-    # ax.set_yticklabels(np.arange(1, 9))
-    # set_axis_labels(
-    #     ax, "Device Column", "Device Row", f"Resistance Map for Die {die_name}"
-    # )
-    # ax.set_aspect("equal")
-
-    # if annotate:
-    #     annotate_matrix(ax, Rmeas)
-
-    # return ax, im
-
-
-def plot_resistance_map(
-    ax, df, grid_size=56, cmap="turbo", logscale=True, annotate=False
-):
-    Rmeas = create_rmeas_matrix(df, "x_abs", "y_abs", "Rmean", (grid_size, grid_size))
-    if np.any(Rmeas == 0):
-        Rmeas[Rmeas == 0] = np.nanmax(Rmeas)
-
-    vmin, vmax = get_log_norm_limits(Rmeas)
-    im = ax.imshow(
-        Rmeas,
-        origin="lower",
-        extent=[0, grid_size, 0, grid_size],
-        cmap=cmap,
-        norm=LogNorm(vmin=vmin, vmax=vmax) if logscale else None,
-    )
-
-    ax.set_xticks(np.linspace(3.5, 52.5, 7))
-    ax.set_yticks(np.linspace(3.5, 52.5, 7))
-    ax.set_xticklabels(list("ABCDEFG"))
-    ax.set_yticklabels([str(i) for i in range(7, 0, -1)])
-    ax.set_xlim(-0.5, grid_size - 0.5)
-    ax.set_ylim(-0.5, grid_size - 0.5)
-    ax.set_aspect("equal")
-    ax.set_title("Autoprobe Resistance Map")
-
-    for line in np.linspace(0, grid_size, 8):
-        ax.axhline(line, color="k", lw=1.5)
-        ax.axvline(line, color="k", lw=1.5)
-
-    if annotate:
-        annotate_matrix(ax, Rmeas.T)
-
-    plt.colorbar(im, ax=ax, label="Resistance (Ω)")
-    return ax
-
-
-def plot_die_row(
-    axes, df, row_number, cmap="turbo", annotate=False, vmin=None, vmax=None
-):
-    """
-    Plot all dies in a given wafer row.
-    row_number: 1 (top) to 7 (bottom)
-    columns: 'A' (left) to 'G' (right)
-    """
-    if not (1 <= row_number <= 7):
-        raise ValueError("row_number must be between 1 and 7")
-
-    die_names = [f"{col}{row_number}" for col in "ABCDEFG"]
-    im_list = []
-    for ax, die_name in zip(axes, die_names):
-        try:
-            ax, im = plot_die_resistance_map(
-                ax, df, die_name, cmap=cmap, annotate=annotate, vmin=vmin, vmax=vmax
-            )
-            im_list.append(im)
-        except Exception as e:
-            ax.set_title(f"{die_name} (Error)")
-            ax.axis("off")
-            print(f"Skipping {die_name}: {e}")
-
-    return axes, im_list
 
 
 def scatter_die_row_resistance(
