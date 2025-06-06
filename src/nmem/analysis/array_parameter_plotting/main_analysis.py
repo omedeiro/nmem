@@ -1,16 +1,28 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.core_analysis import (
-    convert_cell_to_coordinates,
     initialize_dict,
     process_cell,
 )
+from nmem.analysis.utils import convert_cell_to_coordinates
 from nmem.analysis.plotting import plot_parameter_array
 from nmem.measurement.cells import CELLS
 
-if __name__ == "__main__":
-    ARRAY_SIZE = (4, 4)
-    param_dict = initialize_dict(ARRAY_SIZE)
+
+def main(array_size=(4, 4), save=False, save_path="main_analysis.pdf"):
+    """
+    Generate and plot parameter arrays for the memory cell array.
+
+    Parameters
+    ----------
+    array_size : tuple
+        Size of the array (default (4, 4)).
+    save : bool
+        If True, save the figure to save_path.
+    save_path : str
+        Path to save the figure if save is True.
+    """
+    param_dict = initialize_dict(array_size)
     xloc_list = []
     yloc_list = []
     for c in CELLS:
@@ -21,18 +33,9 @@ if __name__ == "__main__":
 
     fig, axs = plt.subplot_mosaic(
         [
-            [
-                "bit_error",
-                "write",
-                "read",
-            ],
-            [
-                "bit_error",
-                "enable_write",
-                "enable_read",
-            ],
+            ["bit_error", "write", "read"],
+            ["bit_error", "enable_write", "enable_read"],
         ],
-        # per_subplot_kw={"bit_error": {"projection": "3d"}},
     )
     plot_parameter_array(
         axs["bit_error"],
@@ -81,7 +84,10 @@ if __name__ == "__main__":
     axs["enable_read"].set_title("Enable Read Current (uA)")
 
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
-    fig.patch.set_visible(False)
-    save = False
     if save:
-        plt.savefig("main_analysis.pdf", bbox_inches="tight")
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
