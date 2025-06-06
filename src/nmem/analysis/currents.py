@@ -1,7 +1,18 @@
+from typing import Literal, Tuple
+
 import numpy as np
-from typing import Tuple, Literal
-from nmem.analysis.utils import filter_first
+
+from nmem.analysis.bit_error import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
+)
+from nmem.analysis.core_analysis import (
+    CRITICAL_TEMP,
+    SUBSTRATE_TEMP,
+)
+from nmem.analysis.utils import filter_first, get_current_cell
 from nmem.measurement.cells import CELLS
+
 
 def calculate_channel_temperature(
     critical_temperature: float,
@@ -112,13 +123,6 @@ def calculate_state_currents(
     return fa, fb, fc, fd
 
 
-def get_current_cell(data_dict: dict) -> str:
-    cell = filter_first(data_dict.get("cell"))
-    if cell is None:
-        cell = filter_first(data_dict.get("sample_name"))[-2:]
-    return cell
-
-
 def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
     cell = get_current_cell(data_dict)
     switching_current_heater_off = CELLS[cell]["max_critical_current"] * 1e6
@@ -207,6 +211,7 @@ def get_critical_currents_from_trace(dict_list: list) -> Tuple[np.ndarray, np.nd
     critical_currents_std = np.array(critical_currents_std)
     return critical_currents, critical_currents_std
 
+
 def get_max_enable_current(data_dict: dict) -> float:
     cell = get_current_cell(data_dict)
     return CELLS[cell]["x_intercept"]
@@ -254,6 +259,7 @@ def get_read_current(data_dict: dict) -> float:
     if data_dict.get("read_current").shape[1] == 1:
         return filter_first(data_dict.get("read_current")) * 1e6
 
+
 def get_state_current_markers_list(
     dict_list: list[dict],
     current_sweep: Literal["read_current", "enable_write_current"],
@@ -286,8 +292,6 @@ def get_state_current_markers(
     return state_current_markers
 
 
-
-
 def get_state_currents_measured_array(
     dict_list: list[dict], current_sweep: str
 ) -> np.ndarray:
@@ -298,7 +302,6 @@ def get_state_currents_measured_array(
         temps.append(temp)
         state_currents.append(state_current)
     return np.array(temps), np.array(state_currents)
-
 
 
 def get_state_currents_array(dict_list: list[dict]) -> np.ndarray:
@@ -345,4 +348,3 @@ def get_state_currents_measured(
         ]
     )
     return temp, state_currents
-

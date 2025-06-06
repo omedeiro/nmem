@@ -1,15 +1,13 @@
-import collections
-import collections.abc
-from typing import Any, Literal, Tuple
+from typing import Literal, Tuple
 
 import numpy as np
 
+from nmem.analysis.utils import (
+    filter_first,
+)
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
-)
-from nmem.analysis.utils import (
-    filter_first,
 )
 
 SUBSTRATE_TEMP = 1.3

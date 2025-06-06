@@ -1,6 +1,11 @@
-import numpy as np
 import collections.abc
-from typing import Tuple, Any, Literal
+from typing import Any, Literal, Tuple
+
+import numpy as np
+
+from nmem.analysis.bit_error import (
+    get_total_switches_norm,
+)
 
 
 def filter_plateau(
@@ -37,6 +42,13 @@ def convert_cell_to_coordinates(cell: str) -> tuple:
     row_number = int(cell[1:]) - 1
     column_number = ord(column_letter) - ord("A")
     return column_number, row_number
+
+
+def get_current_cell(data_dict: dict) -> str:
+    cell = filter_first(data_dict.get("cell"))
+    if cell is None:
+        cell = filter_first(data_dict.get("sample_name"))[-2:]
+    return cell
 
 
 def build_array(

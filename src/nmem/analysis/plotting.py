@@ -14,37 +14,48 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
-from nmem.analysis.core_analysis import (
-    CRITICAL_TEMP,
+from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
+    get_total_switches_norm,
+)
+from nmem.analysis.core_analysis import (
+    CRITICAL_TEMP,
+    get_enable_write_width,
+    get_fitting_points,
+    get_read_width,
+    get_voltage_trace_data,
+    get_write_width,
+    initialize_dict,
+    process_cell,
+)
+from nmem.analysis.currents import (
+    calculate_branch_currents,
+    calculate_channel_temperature,
+    calculate_state_currents,
     get_channel_temperature,
     get_channel_temperature_sweep,
     get_critical_current_heater_off,
     get_critical_currents_from_trace,
-    get_current_cell,
     get_enable_current_sweep,
     get_enable_read_current,
     get_enable_write_current,
-    get_enable_write_width,
-    get_fitting_points,
-    get_log_norm_limits,
     get_optimal_enable_read_current,
     get_optimal_enable_write_current,
     get_read_currents,
-    get_read_width,
     get_state_current_markers,
     get_state_currents_measured,
-    get_text_from_bit_v3,
-    get_total_switches_norm,
-    get_voltage_trace_data,
     get_write_current,
-    get_write_width,
-    initialize_dict,
-    polygon_inverting,
-    polygon_nominal,
-    polygon_under_graph,
-    process_cell,
+)
+from nmem.analysis.text_mapping import (
+    get_text_from_bit,
+)
+from nmem.analysis.utils import (
+    build_array,
+    convert_cell_to_coordinates,
+    create_rmeas_matrix,
+    filter_plateau,
+    get_current_cell,
 )
 from nmem.measurement.cells import CELLS
 
@@ -854,7 +865,7 @@ def plot_measured_state_current_list(ax: Axes, dict_list: list[dict]) -> Axes:
 def plot_message(ax: Axes, message: str) -> Axes:
     axheight = ax.get_ylim()[1]
     for i, bit in enumerate(message):
-        text = get_text_from_bit_v3(bit)
+        text = get_text_from_bit(bit, 3)
         ax.text(i + 0.5, axheight * 0.85, text, ha="center", va="center")
 
     return ax
