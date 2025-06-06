@@ -16,14 +16,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.analysis.core_analysis import (
     CRITICAL_TEMP,
-    annotate_matrix,
-    build_array,
-    calculate_branch_currents,
-    calculate_channel_temperature,
-    calculate_state_currents,
-    convert_cell_to_coordinates,
-    create_rmeas_matrix,
-    filter_plateau,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_channel_temperature,
@@ -147,6 +139,44 @@ def set_plot_style() -> None:
             "ytick.major.size": 2,
         }
     )
+
+
+def polygon_under_graph(x, y, y2=0.0):
+    """
+    Construct the vertex list which defines the polygon filling the space under
+    the (x, y) line graph. This assumes x is in ascending order.
+    """
+    return [(x[0], y2), *zip(x, y), (x[-1], y2)]
+
+
+def polygon_nominal(x: np.ndarray, y: np.ndarray) -> list:
+    y = np.copy(y)
+    y[y > 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+
+
+def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
+    y = np.copy(y)
+    y[y < 0.5] = 0.5
+    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
+
+
+def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):
+    """Add text annotations to matrix cells."""
+    for y in range(R.shape[0]):
+        for x in range(R.shape[1]):
+            val = R[y, x]
+            if not np.isnan(val):
+                ax.text(x, y, fmt.format(val), ha="center", va="center", fontsize=6, color=color)
+
+
+def get_log_norm_limits(R):
+    """Safely get vmin and vmax for LogNorm."""
+    values = R[~np.isnan(R) & (R > 0)]
+    if values.size == 0:
+        return None, None
+    return np.nanmin(values), np.nanmax(values)
+
 
 
 def plot_enable_sweep(

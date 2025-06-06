@@ -1,0 +1,94 @@
+import numpy as np
+import collections.abc
+from typing import Tuple, Any, Literal
+
+
+def filter_plateau(
+    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    xfit = np.where(yfit < plateau_height, xfit, np.nan)
+    yfit = np.where(yfit < plateau_height, yfit, np.nan)
+
+    # Remove nans
+    xfit = xfit[~np.isnan(xfit)]
+    yfit = yfit[~np.isnan(yfit)]
+
+    return xfit, yfit
+
+
+def filter_first(value) -> Any:
+    if isinstance(value, collections.abc.Iterable) and not isinstance(
+        value, (str, bytes)
+    ):
+        return np.asarray(value).flatten()[0]
+    return value
+
+
+def filter_nan(x, y):
+    mask = np.isnan(y)
+    x = x[~mask]
+    y = y[~mask]
+    return x, y
+
+
+def convert_cell_to_coordinates(cell: str) -> tuple:
+    """Converts a cell name like 'A1' to coordinates (x, y)."""
+    column_letter = cell[0]
+    row_number = int(cell[1:]) - 1
+    column_number = ord(column_letter) - ord("A")
+    return column_number, row_number
+
+
+def build_array(
+    data_dict: dict, parameter_z: Literal["total_switches_norm"]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if data_dict.get("total_switches_norm") is None:
+        data_dict["total_switches_norm"] = get_total_switches_norm(data_dict)
+    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
+    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
+    z: np.ndarray = data_dict.get(parameter_z)
+
+    xlength: int = filter_first(data_dict.get("sweep_x_len", len(x)))
+    ylength: int = filter_first(data_dict.get("sweep_y_len", len(y)))
+
+    # X, Y reversed in reshape
+    zarray = z.reshape((ylength, xlength), order="F")
+    return x, y, zarray
+
+
+def build_resistance_map(df, grid_size=56):
+    """Build a resistance map from a DataFrame with x_abs, y_abs, Rmean."""
+    Rmeas = np.full((grid_size, grid_size), np.nan)
+    for _, row in df.iterrows():
+        x, y = row["x_abs"], row["y_abs"]
+        if 0 <= x < grid_size and 0 <= y < grid_size:
+            val = row["Rmean"]
+            Rmeas[int(x), int(y)] = 0 if val < 0 else val
+    Rmeas[Rmeas == 0] = np.nanmax(Rmeas)
+    return Rmeas
+
+
+def normalize_row_by_squares(Rmeas, row_letter, length_um=300):
+    """Normalize resistance values in a row by number of squares."""
+    row_map = {k: i for i, k in enumerate("ABCDEFG")}
+    y_start = row_map[row_letter.upper()] * 8
+    length_nm = length_um * 1e3
+    Rmeas = Rmeas.copy()
+
+    for i in range(8):
+        width_nm = 50 * (i + 1)
+        num_squares = length_nm / width_nm
+        Rmeas[:, y_start + i] /= num_squares
+
+    return Rmeas
+
+
+def create_rmeas_matrix(df, x_col, y_col, value_col, shape):
+    """Create a 2D resistance matrix from DataFrame columns."""
+    Rmeas = np.full(shape, np.nan)
+    for _, row in df.iterrows():
+        x, y = int(row[x_col]), int(row[y_col])
+        val = row[value_col]
+        if 0 <= x < shape[1] and 0 <= y < shape[0]:
+            Rmeas[y, x] = np.nan if val < 0 else val
+    return Rmeas
