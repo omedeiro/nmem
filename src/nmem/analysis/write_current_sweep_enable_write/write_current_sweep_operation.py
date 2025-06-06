@@ -24,9 +24,8 @@ from nmem.analysis.plotting import (
 )
 
 if __name__ == "__main__":
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    )
+    dict_list = import_directory("../enable_write_current_sweep/data")
+    
 
     fig, axs = plt.subplot_mosaic(
         "AB;CD", figsize=(8.3, 4), width_ratios=[1, 0.25], constrained_layout=True
@@ -76,9 +75,8 @@ if __name__ == "__main__":
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
 
     ax = axs["C"]
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "write_current_sweep_enable_write/data")
-    )
+    dict_list = import_directory("data")
+    
     dict_list = dict_list[1:]
     dict_list = dict_list[::-1]
     plot_write_sweep(ax, dict_list)

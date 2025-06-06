@@ -38,9 +38,7 @@ if __name__ == "__main__":
         figsize=(6, 2),
     )
 
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    )
+    dict_list = import_directory("data")
     sort_dict_list = sorted(
         dict_list, key=lambda x: x.get("write_current").flatten()[0]
     )

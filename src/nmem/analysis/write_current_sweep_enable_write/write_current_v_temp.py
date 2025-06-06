@@ -13,9 +13,8 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.data_import import import_directory
 
 if __name__ == "__main__":
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    )
+    dict_list = import_directory("../enable_write_current_sweep/data")
+    
 
 
     fig, axs = plt.subplot_mosaic("A")

@@ -3,15 +3,16 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nmem.analysis.analysis import (
-    import_directory,
+from nmem.analysis.data_import import (
     import_write_sweep_formatted,
     import_write_sweep_formatted_markers,
+)
+from nmem.analysis.plotting import (
+    set_plot_style,
     plot_write_sweep_formatted,
     plot_write_sweep_formatted_markers,
-    set_plot_style,
 )
-
+from nmem.analysis.data_import import import_directory
 set_plot_style()
 
 C0 = "#1b9e77"
@@ -40,13 +41,6 @@ if __name__ == "__main__":
     fig, axs = plt.subplot_mosaic(
         innerb,
         figsize=(6, 2),
-    )
-
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "enable_write_current_sweep/data")
-    )
-    sort_dict_list = sorted(
-        dict_list, key=lambda x: x.get("write_current").flatten()[0]
     )
 
     dict_list = import_write_sweep_formatted()
