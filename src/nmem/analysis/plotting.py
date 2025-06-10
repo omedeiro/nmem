@@ -52,6 +52,7 @@ from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     create_rmeas_matrix,
     get_current_cell,
+    filter_plateau
 )
 from nmem.measurement.cells import CELLS
 from nmem.analysis.constants import (
