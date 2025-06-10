@@ -59,6 +59,7 @@ from nmem.analysis.constants import (
     READ_XMIN,
     READ_XMAX,
     IC0_C3,
+    PROBE_STATION_TEMP,
 )
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
@@ -1316,6 +1317,29 @@ def plot_current_voltage_from_dc_sweep(
 
     return ax
 
+def plot_combined_dc_figure(axs: List[Axes], dict_list: list) -> List[Axes]:
+    """
+    Plot combined IV and critical current figures on provided axes.
+    """
+    axs[0].set_axis_off()
+    plot_current_voltage_from_dc_sweep(axs[1], dict_list)
+    plot_critical_currents_from_dc_sweep(
+        axs[2], dict_list, substrate_temp=PROBE_STATION_TEMP
+    )
+    axs[1].legend(
+        loc="lower right",
+        fontsize=5,
+        frameon=False,
+        handlelength=1,
+        handleheight=1,
+        borderpad=0.1,
+        labelspacing=0.2,
+    )
+    axs[1].set_box_aspect(1.0)
+    axs[2].set_box_aspect(1.0)
+    axs[2].set_xlim(-500, 500)
+    axs[2].xaxis.set_major_locator(MultipleLocator(250))
+    return axs
 
 def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
     cell = get_current_cell(data_dict)

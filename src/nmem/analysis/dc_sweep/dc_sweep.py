@@ -8,36 +8,12 @@ from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     plot_critical_currents_from_dc_sweep,
     plot_current_voltage_from_dc_sweep,
+    plot_combined_dc_figure
 )
 from nmem.analysis.styles import set_plot_style
 from nmem.analysis.constants import PROBE_STATION_TEMP
 
 set_plot_style()
-
-
-def plot_combined_figure(axs: List[Axes], dict_list: list) -> List[Axes]:
-    """
-    Plot combined IV and critical current figures on provided axes.
-    """
-    axs[0].set_axis_off()
-    plot_current_voltage_from_dc_sweep(axs[1], dict_list)
-    plot_critical_currents_from_dc_sweep(
-        axs[2], dict_list, substrate_temp=PROBE_STATION_TEMP
-    )
-    axs[1].legend(
-        loc="lower right",
-        fontsize=5,
-        frameon=False,
-        handlelength=1,
-        handleheight=1,
-        borderpad=0.1,
-        labelspacing=0.2,
-    )
-    axs[1].set_box_aspect(1.0)
-    axs[2].set_box_aspect(1.0)
-    axs[2].set_xlim(-500, 500)
-    axs[2].xaxis.set_major_locator(MultipleLocator(250))
-    return axs
 
 
 def run_all_dc_sweep_plots(
@@ -54,7 +30,7 @@ def run_all_dc_sweep_plots(
     fig2, ax2 = plt.subplots()
     plot_current_voltage_from_dc_sweep(ax2, data_list)
     fig3, axs = plt.subplots(1, 3, figsize=(7, 4))
-    plot_combined_figure(axs, data_list)
+    plot_combined_dc_figure(axs, data_list)
     if save_combined:
         plt.subplots_adjust(wspace=0.4)
         fig3.savefig(combined_path, bbox_inches="tight")
