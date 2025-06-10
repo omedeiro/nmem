@@ -123,6 +123,18 @@ def calculate_state_currents(
     return fa, fb, fc, fd
 
 
+def extract_ic_vs_ih_data(data):
+    """
+    Extracts and returns heater currents, average current, std, and cell names from the data dict.
+    """
+    ic_vs_ih = data["ic_vs_ih_data"]
+    heater_currents = ic_vs_ih["heater_currents"][0, 0]
+    avg_current = ic_vs_ih["avg_current"][0, 0]
+    ystd = ic_vs_ih["ystd"][0, 0]
+    cell_names = ic_vs_ih["cell_names"][0, 0]
+    return heater_currents, avg_current, ystd, cell_names
+
+
 def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
     cell = get_current_cell(data_dict)
     switching_current_heater_off = CELLS[cell]["max_critical_current"] * 1e6
