@@ -1,9 +1,11 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib.colors import to_rgb
-from matplotlib import font_manager as fm
 import os
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import font_manager as fm
+from matplotlib.colors import to_rgb
+
 
 def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
     """

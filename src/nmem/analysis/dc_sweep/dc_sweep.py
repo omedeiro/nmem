@@ -1,17 +1,13 @@
-from typing import List
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.ticker import MultipleLocator
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
+    plot_combined_dc_figure,
     plot_critical_currents_from_dc_sweep,
     plot_current_voltage_from_dc_sweep,
-    plot_combined_dc_figure
 )
 from nmem.analysis.styles import set_plot_style
-from nmem.analysis.constants import PROBE_STATION_TEMP
 
 set_plot_style()
 

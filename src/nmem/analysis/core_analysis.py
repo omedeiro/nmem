@@ -11,7 +11,6 @@ from nmem.calculations.calculations import (
 )
 
 
-
 def get_enable_write_width(data_dict: dict) -> float:
     return filter_first(data_dict.get("enable_write_width"))
 

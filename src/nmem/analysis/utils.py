@@ -1,7 +1,8 @@
 import collections.abc
 from typing import Any, Literal, Tuple
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 from nmem.analysis.bit_error import (
     get_total_switches_norm,

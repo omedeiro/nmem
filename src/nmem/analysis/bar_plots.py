@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Polygon, Rectangle
-from matplotlib.axes import Axes
 from matplotlib import cm
+from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
+from matplotlib.patches import Polygon, Rectangle
+
 from nmem.analysis.styles import darken, lighten, set_inter_font, set_pres_style
 
 

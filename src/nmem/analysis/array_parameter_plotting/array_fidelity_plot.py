@@ -1,6 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
 
+from nmem.analysis.bar_plots import (
+    plot_ber_3d_bar,
+    plot_fidelity_clean_bar,
+)
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
@@ -8,10 +11,6 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.plotting import (
     set_inter_font,
     set_pres_style,
-)
-from nmem.analysis.bar_plots import (
-    plot_ber_3d_bar,
-    plot_fidelity_clean_bar,
 )
 from nmem.analysis.utils import convert_cell_to_coordinates
 from nmem.measurement.cells import CELLS

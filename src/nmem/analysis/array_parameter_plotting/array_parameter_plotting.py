@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
-from nmem.analysis.utils import convert_cell_to_coordinates
 from nmem.analysis.plotting import plot_parameter_array
+from nmem.analysis.utils import convert_cell_to_coordinates
 from nmem.measurement.cells import CELLS
 
 

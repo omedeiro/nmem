@@ -1,17 +1,18 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
+
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
+from nmem.analysis.plotting import CMAP, get_log_norm_limits, plot_histogram
 from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     create_rmeas_matrix,
 )
 from nmem.measurement.cells import CELLS
-from nmem.analysis.plotting import CMAP, plot_histogram, get_log_norm_limits
 
 
 def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):

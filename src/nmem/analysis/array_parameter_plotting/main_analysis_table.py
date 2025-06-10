@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from nmem.analysis.core_analysis import (
@@ -6,8 +5,8 @@ from nmem.analysis.core_analysis import (
     SUBSTRATE_TEMP,
 )
 from nmem.analysis.currents import (
-    calculate_critical_current_zero,
     calculate_channel_temperature,
+    calculate_critical_current_zero,
 )
 from nmem.measurement.cells import CELLS
 

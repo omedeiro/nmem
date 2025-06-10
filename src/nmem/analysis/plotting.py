@@ -1,16 +1,12 @@
-import os
 from typing import List, Literal
 
-import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
-from matplotlib import cm, ticker
-from matplotlib import font_manager as fm
+from matplotlib import ticker
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.colors import LogNorm, Normalize, to_rgb
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -18,6 +14,13 @@ from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_total_switches_norm,
+)
+from nmem.analysis.constants import (
+    CRITICAL_TEMP,
+    IC0_C3,
+    PROBE_STATION_TEMP,
+    READ_XMAX,
+    READ_XMIN,
 )
 from nmem.analysis.core_analysis import (
     get_enable_write_width,
@@ -50,18 +53,10 @@ from nmem.analysis.text_mapping import (
 from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
-    create_rmeas_matrix,
+    filter_plateau,
     get_current_cell,
-    filter_plateau
 )
-from nmem.measurement.cells import CELLS
-from nmem.analysis.constants import (
-    CRITICAL_TEMP,
-    READ_XMIN,
-    READ_XMAX,
-    IC0_C3,
-    PROBE_STATION_TEMP,
-)
+
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
 C1 = "#d95f02"
