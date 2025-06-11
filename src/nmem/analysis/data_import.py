@@ -272,3 +272,16 @@ def import_elionix_log(log_path):
     dy_nm = delta_table["dy_nm"].to_numpy()
     return df_z, df_rot_valid, dx_nm, dy_nm, delta_table
 
+
+def import_geom_loop_size_data(data_dir="data"):
+    """
+    Imports and processes loop size data for geometry analysis.
+    Returns:
+        data: list of dicts from import_directory
+        loop_sizes: np.array of loop sizes
+    """
+    from nmem.analysis.data_import import import_directory
+
+    loop_sizes = np.arange(1.7, 5.2, 0.5)
+    data = import_directory(data_dir)
+    return data, loop_sizes

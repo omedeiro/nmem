@@ -131,3 +131,30 @@ def analyze_alignment_stats(df_z, df_rot_valid, dx_nm, dy_nm):
         df_rot_valid["rotation_mrad"].std(),
     )
     return z_mean, z_std, r_mean, r_std
+
+
+def analyze_geom_loop_size(data, loop_sizes, nmeas=1000):
+    """
+    Analyzes geometry loop size data.
+    Returns:
+        vch_list: list of Vch arrays
+        ber_est_list: list of BER arrays
+        err_list: list of error arrays
+        best_ber: list of minimum BER for each loop size
+    """
+    import numpy as np
+
+    vch_list = []
+    ber_est_list = []
+    err_list = []
+    best_ber = []
+    for i, d in enumerate(data):
+        Vch = np.ravel(d["Vch"]) * 1e3
+        ber_est = np.ravel(d["ber_est"])
+        err = np.sqrt(ber_est * (1 - ber_est) / nmeas)
+        vch_list.append(Vch)
+        ber_est_list.append(ber_est)
+        err_list.append(err)
+        best_ber.append(np.min(ber_est))
+    return vch_list, ber_est_list, err_list, best_ber
+
