@@ -1,6 +1,7 @@
 from typing import List, Literal
 
 import matplotlib.colors as mcolors
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
@@ -2234,5 +2235,37 @@ def plot_read_current_sweep_enable_read(
     plot_enable_write_temp(ax, enable_write_currents, write_temperatures)
     if save:
         fig.savefig(output_path, bbox_inches="tight")
+    plt.show()
+
+
+def plot_read_current_sweep_three(
+    dict_list, save_fig=False, output_path="read_current_sweep_three2.pdf"
+):
+    fig = plt.figure(figsize=(6, 3))
+    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
+    axs = [fig.add_subplot(gs[i]) for i in range(3)]
+    cax = fig.add_subplot(gs[3])  # dedicated colorbar axis
+    for i in range(3):
+        plot_read_sweep_array(
+            axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
+        )
+        enable_write_temp = get_channel_temperature(dict_list[i][0], "write")
+        plot_fill_between_array(axs[i], dict_list[i])
+        axs[i].set_xlim(400, 1000)
+        axs[i].set_ylim(0, 1)
+        axs[i].set_xlabel("$I_{\\mathrm{read}}$ [µA]")
+        axs[i].set_title(
+            f"$I_{{EW}}$={290 + i * 10} [µA]\n$T_{{W}}$={enable_write_temp:.2f} [K]",
+            fontsize=8,
+        )
+        axs[i].set_box_aspect(1.0)
+        axs[i].xaxis.set_major_locator(plt.MultipleLocator(200))
+    axs[0].set_ylabel("BER")
+    axpos = axs[2].get_position()
+    cbar = add_colorbar(axs[2], dict_list, "enable_read_current", cax=cax)
+    cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
+    cbar.set_ticks(plt.MaxNLocator(nbins=6))
+    if save_fig:
+        plt.savefig(output_path, bbox_inches="tight")
     plt.show()
 

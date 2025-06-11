@@ -5,7 +5,6 @@ from nmem.analysis.plotting import (
 )
 
 
-
 def main():
     dict_list, data_list, data_list2 = import_read_current_sweep_data()
     plot_read_current_sweep_enable_read(dict_list, data_list, data_list2)
