@@ -1,6 +1,7 @@
 from typing import Literal, Tuple
 
 import numpy as np
+from scipy.interpolate import griddata
 
 from nmem.analysis.utils import (
     filter_first,
@@ -158,3 +159,39 @@ def analyze_geom_loop_size(data, loop_sizes, nmeas=1000):
         best_ber.append(np.min(ber_est))
     return vch_list, ber_est_list, err_list, best_ber
 
+def interpolate_map(data_map, radius, grid_x, grid_y, boundary_pts):
+    x_vals = data_map.columns.astype(float)
+    y_vals = data_map.index.astype(float)
+    xy = np.array([(x, y) for y in y_vals for x in x_vals])
+    z = data_map.values.flatten()
+    mask = ~np.isnan(z)
+    xy, z = xy[mask], z[mask]
+
+    bx, by, bz = boundary_pts
+    aug_xy = np.column_stack([np.concatenate([xy[:, 0], bx]),
+                              np.concatenate([xy[:, 1], by])])
+    aug_z = np.concatenate([z, bz])
+
+    grid_z = griddata(aug_xy, aug_z, (grid_x, grid_y), method='cubic')
+    distance = np.sqrt(grid_x**2 + grid_y**2)
+    grid_z[distance > radius] = np.nan
+    return grid_z, xy, z
+
+
+def analyze_prbs_errors(data_list, trim=4500):
+    W1R0_error = 0
+    W0R1_error = 0
+    error_locs = []
+    for i, data in enumerate(data_list):
+        bit_write = "".join(data["bit_string"].flatten())
+        bit_read = "".join(data["byte_meas"].flatten())
+        errors = [bw != br for bw, br in zip(bit_write, bit_read)]
+        for j, error in enumerate(errors):
+            if error:
+                if bit_write[j] == "1":
+                    W1R0_error += 1
+                elif bit_write[j] == "0":
+                    W0R1_error += 1
+                error_locs.append((i, j, bit_write[j], bit_read[j]))
+    total_error = W1R0_error + W0R1_error
+    return total_error, W1R0_error, W0R1_error, error_locs

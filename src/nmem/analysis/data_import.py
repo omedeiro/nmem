@@ -285,3 +285,16 @@ def import_geom_loop_size_data(data_dir="data"):
     loop_sizes = np.arange(1.7, 5.2, 0.5)
     data = import_directory(data_dir)
     return data, loop_sizes
+
+
+def load_and_clean_thickness(path):
+    df = pd.read_csv(path)
+    df['d(nm)'] = df['d(nm)'].astype(str).str.extract(r'([-+]?\d*\.\d+|\d+)').astype(float)
+    grouped = df.groupby(['Y', 'X'])['d(nm)'].mean().reset_index()
+    map_df = grouped.pivot(index='Y', columns='X', values='d(nm)')
+    return map_df.drop(index='Y', errors='ignore').drop(columns='X', errors='ignore')
+
+
+
+
+
