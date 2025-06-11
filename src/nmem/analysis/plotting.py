@@ -685,6 +685,47 @@ def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes
     return ax
 
 
+def plot_c2c3_comparison(ax, xfit, yfit, split_idx, label_c2="C2", label_c3="C3"):
+    """
+    Plot C2 and C3 comparison on a single axis.
+    """
+    ax.plot(xfit, yfit, label=label_c2, linestyle="-")
+    plot_fitting(
+        ax, xfit[split_idx + 1 :], yfit[split_idx + 1 :], label=label_c3, linestyle="-"
+    )
+    ax.set_ylim([0, 1000])
+    ax.set_xlim([0, 500])
+    ax.set_xlabel("Enable Current ($\mu$A)")
+    ax.set_ylabel("Critical Current ($\mu$A)")
+    ax.legend()
+    return ax
+
+
+def plot_c2c3_subplots(axs, xfit, yfit, split_idx, label_c2="C2", label_c3="C3"):
+    """
+    Plot C2 and C3 comparison on two subplots.
+    """
+    plot_fitting(
+        axs[0],
+        xfit[split_idx + 1 :],
+        yfit[split_idx + 1 :],
+        label=label_c3,
+        linestyle="-",
+    )
+    axs[0].plot(xfit, yfit, label=label_c2, linestyle="-")
+    axs[0].set_ylim([0, 1000])
+    axs[0].set_xlim([0, 500])
+    axs[0].set_xlabel("Enable Current ($\mu$A)")
+    axs[0].set_ylabel("Critical Current ($\mu$A)")
+    plot_fitting(
+        axs[1], xfit[:split_idx], yfit[:split_idx], label=label_c3, linestyle="-"
+    )
+    axs[1].plot(xfit, yfit, label=label_c2, linestyle="-")
+    axs[1].set_ylim([0, 1000])
+    axs[1].set_xlim([0, 500])
+    axs[1].set_xlabel("Enable Current ($\mu$A)")
+    return axs
+
 def plot_linear_fit(
     ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text: bool = False
 ) -> Axes:
@@ -761,6 +802,43 @@ def plot_enable_write_sweep_multiple(
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
+
+def plot_enable_current_vs_temp(
+    data, save_fig=False, output_path="enable_current_vs_temp.png"
+):
+    """
+    Plots enable current vs. critical current and channel temperature for all cells.
+    Returns (fig, axs, axs2).
+    """
+    colors = CMAP(np.linspace(0.1, 1, 4))
+    markers = ["o", "s", "D", "^"]
+    fig, axs = plt.subplots(
+        1, 1, figsize=(120 / 25.4, 90 / 25.4), sharex=True, sharey=True
+    )
+    axs2 = axs.twinx()
+    for d in data:
+        axs.plot(
+            d["xfit"],
+            d["yfit"],
+            label=f"Cell {d['cell']}",
+            color=colors[d["column"]],
+            marker=markers[d["row"]],
+        )
+        axs2.plot(
+            d["enable_currents"], d["channel_temperature"], color="grey", marker="o"
+        )
+    axs2.set_ybound(lower=0)
+    axs.legend(loc="upper right")
+    axs.set_xlim(0, 600)
+    axs.set_ylim(0, 1000)
+    axs.set_xlabel("Enable Current ($\mu$A)")
+    axs.set_ylabel("Critical Current ($\mu$A)")
+    axs2.set_ylabel("Channel Temperature (K)")
+    plt.tight_layout()
+    if save_fig:
+        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    return fig, axs, axs2
+
 
 
 def plot_enable_sweep_single(

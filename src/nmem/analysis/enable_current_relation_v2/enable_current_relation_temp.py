@@ -2,60 +2,67 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.core_analysis import (
-    CRITICAL_TEMP,
-    SUBSTRATE_TEMP,
-    calculate_channel_temperature,
+    get_fitting_points,
+)
+from nmem.analysis.data_import import import_directory
+from nmem.analysis.plotting import plot_enable_current_vs_temp
+from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     filter_plateau,
     get_current_cell,
-    get_fitting_points,
+)
+from nmem.analysis.currents import (
+    calculate_channel_temperature,
     get_max_enable_current,
 )
-from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import CMAP
+from nmem.analysis.constants import CRITICAL_TEMP, SUBSTRATE_TEMP
 
-if __name__ == "__main__":
-    dict_list = import_directory("data")
 
-    colors = CMAP(np.linspace(0.1, 1, 4))
-    markers = ["o", "s", "D", "^"]
-
-    fig, axs = plt.subplots(
-        1, 1, figsize=(120 / 25.4, 90 / 25.4), sharex=True, sharey=True
-    )
-    axs2 = axs.twinx()
-
+def process_enable_current_data(dict_list):
+    """
+    Extracts and returns all arrays needed for plotting from the data list.
+    Returns a list of dicts with cell, column, row, enable_currents, switching_current, ztotal, xfit, yfit, max_enable_current, channel_temperature.
+    """
+    processed = []
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
-
         column, row = convert_cell_to_coordinates(cell)
         enable_currents = data_dict["x"][0]
         switching_current = data_dict["y"][0]
         ztotal = data_dict["ztotal"]
         xfit, yfit = get_fitting_points(enable_currents, switching_current, ztotal)
-        axs.plot(
-            xfit, yfit, label=f"Cell {cell}", color=colors[column], marker=markers[row]
-        )
-
-        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-
-        # plot_linear_fit(
-        #     axs,
-        #     xfit,
-        #     yfit,
-        # )
-        # plot_optimal_enable_currents(axs, data_dict)
-
+        xfit_plateau, yfit_plateau = filter_plateau(xfit, yfit, yfit[0] * 0.75)
         max_enable_current = get_max_enable_current(data_dict)
         channel_temperature = calculate_channel_temperature(
             CRITICAL_TEMP, SUBSTRATE_TEMP, enable_currents, max_enable_current
         )
-        axs2.plot(enable_currents, channel_temperature, color="grey", marker="o")
-        axs2.set_ybound(lower=0)
-        axs.legend(loc="upper right")
-        axs.set_xlim(0, 600)
-        axs.set_ylim(0, 1000)
-    axs.set_xlabel("Enable Current ($\mu$A)")
-    axs.set_ylabel("Critical Current ($\mu$A)")
-    axs2.set_ylabel("Channel Temperature (K)")
+        processed.append(
+            {
+                "cell": cell,
+                "column": column,
+                "row": row,
+                "enable_currents": enable_currents,
+                "switching_current": switching_current,
+                "ztotal": ztotal,
+                "xfit": xfit,
+                "yfit": yfit,
+                "xfit_plateau": xfit_plateau,
+                "yfit_plateau": yfit_plateau,
+                "max_enable_current": max_enable_current,
+                "channel_temperature": channel_temperature,
+            }
+        )
+    return processed
+
+def main(data_dir="data", save_fig=False, output_path="enable_current_vs_temp.png"):
+    """
+    Main function to process data and plot enable current vs. temperature.
+    """
+    dict_list = import_directory(data_dir)
+    data = process_enable_current_data(dict_list)
+    fig, axs, axs2 = plot_enable_current_vs_temp(data, save_fig, output_path)
     plt.show()
+
+
+if __name__ == "__main__":
+    main()
