@@ -11,7 +11,6 @@ from nmem.analysis.plotting import (
 from nmem.analysis.utils import build_array
 
 
-
 def main(
     data_dir="data",
     save_fig=False,

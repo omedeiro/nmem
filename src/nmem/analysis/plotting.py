@@ -16,11 +16,14 @@ from nmem.analysis.bit_error import (
     get_total_switches_norm,
 )
 from nmem.analysis.constants import (
+    ALPHA,
     CRITICAL_TEMP,
     IC0_C3,
     PROBE_STATION_TEMP,
     READ_XMAX,
     READ_XMIN,
+    RETRAP,
+    WIDTH,
 )
 from nmem.analysis.core_analysis import (
     get_enable_write_width,
@@ -53,8 +56,12 @@ from nmem.analysis.text_mapping import (
 from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
+    filter_nan,
     filter_plateau,
     get_current_cell,
+)
+from nmem.measurement.functions import (
+    calculate_power,
 )
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
@@ -93,7 +100,19 @@ def get_log_norm_limits(R):
         return None, None
     return np.nanmin(values), np.nanmax(values)
 
+def plot_write_current_sweep(
+    ax: plt.Axes, dict_list: list[dict[str, list[float]]]
+) -> plt.Axes:
+    plot_read_sweep_array(
+        ax, dict_list, "bit_error_rate", "write_current", add_errorbar=False
+    )
+    ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_ylabel("Bit Error Rate")
+    # ax.legend(
+    #     frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left", title="Write Current"
+    # )
 
+    return ax
 
 def plot_enable_sweep(
     ax: plt.Axes,
@@ -161,6 +180,53 @@ def plot_enable_write_temp(
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
     return ax
+
+def plot_enable_write_sweep2(
+    dict_list, save_fig=False, output_path="enable_write_sweep.pdf"
+):
+    """
+    Plots the enable write sweep for multiple datasets.
+    Returns (fig, ax).
+    """
+    fig, ax = plt.subplots()
+    ax = plot_enable_write_sweep_multiple(ax, dict_list)
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+    ax.set_ylabel("BER")
+    if save_fig:
+        fig.savefig(output_path, bbox_inches="tight")
+    return fig, ax
+
+
+def plot_state_current_markers2(dict_list):
+    """
+    Plots state current markers for each dataset.
+    Returns (fig, ax).
+    """
+    colors = {
+        0: "red",
+        1: "red",
+        2: "blue",
+        3: "blue",
+    }
+    fig, ax = plt.subplots()
+    for data_dict in dict_list:
+        state_current_markers = get_state_current_markers(
+            data_dict, "enable_write_current"
+        )
+        write_current = get_write_current(data_dict)
+        for i, state_current in enumerate(state_current_markers[0, :]):
+            if state_current > 0:
+                ax.plot(
+                    write_current,
+                    state_current,
+                    "o",
+                    label=f"{write_current} $\\mu$A",
+                    markerfacecolor=colors[i],
+                    markeredgecolor="none",
+                )
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+    return fig, ax
 
 
 def plot_enable_read_sweep(ax: plt.Axes, dict_list, **kwargs):
@@ -254,6 +320,32 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
         edgecolor="none",
     )
 
+
+
+def plot_write_current_enable_sweep_margin(
+    dict_list,
+    inner,
+    save_fig=False,
+    output_path="write_current_enable_sweep_margin.pdf",
+):
+    """
+    Plots the write current enable sweep margin using a subplot mosaic.
+    Returns (fig, axs).
+    """
+    fig, axs = plt.subplot_mosaic(inner, figsize=(6, 2))
+    sort_dict_list = sorted(
+        dict_list, key=lambda x: x.get("write_current").flatten()[0]
+    )
+    ax = axs["A"]
+    plot_enable_sweep(
+        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True
+    )
+    ax = axs["B"]
+    plot_enable_sweep_markers(ax, sort_dict_list)
+    fig.subplots_adjust(wspace=0.7, hspace=0.5)
+    if save_fig:
+        fig.savefig(output_path, bbox_inches="tight")
+    return fig, axs
 
 
 def add_colorbar(
@@ -767,6 +859,19 @@ def plot_message(ax: Axes, message: str) -> Axes:
 
     return ax
 
+def plot_enable_write_sweep_fine(
+    data_list2, save_fig=False, output_path="enable_write_sweep_fine.pdf"
+):
+    """
+    Plots the fine enable write sweep for the provided data list.
+    Returns (fig, ax).
+    """
+    fig, ax = plt.subplots(figsize=(6, 4))
+    plot_enable_write_sweep_multiple(ax, data_list2)
+    ax.set_xlim([260, 310])
+    if save_fig:
+        fig.savefig(output_path, bbox_inches="tight")
+    return fig, ax
 
 
 def plot_enable_write_sweep_multiple(
@@ -977,6 +1082,54 @@ def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
     for i, data_dict in enumerate(dict_list):
         plot_fill_between(ax, data_dict, colors[i])
     return ax
+
+
+def plot_persistent_current(
+    data_dict, persistent_current=75, critical_current_zero=1250
+):
+    """
+    Plots calculated and measured persistent current curves for a given data_dict.
+    Returns (fig, ax).
+    """
+    power = calculate_power(data_dict)
+    fig, ax = plt.subplots()
+    temperatures = np.linspace(0, CRITICAL_TEMP, 100)
+    plot_calculated_state_currents(
+        ax,
+        temperatures,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        persistent_current,
+        critical_current_zero,
+    )
+    plot_calculated_filled_region(
+        ax,
+        temperatures,
+        data_dict,
+        persistent_current,
+        CRITICAL_TEMP,
+        RETRAP,
+        WIDTH,
+        ALPHA,
+        critical_current_zero,
+    )
+    return fig, ax
+
+
+def plot_measured_state_currents(ax, mat_files, colors):
+    """
+    Plots measured state currents from a list of .mat files on the given axis.
+    """
+    for data_dict in mat_files:
+        temp = data_dict["measured_temperature"].flatten()
+        state_currents = data_dict["measured_state_currents"]
+        for i in range(4):
+            x, y = filter_nan(temp, state_currents[:, i])
+            ax.plot(x, y, "-o", color=colors[i], label=f"State {i}")
+    return ax
+
 
 
 def plot_read_sweep_array(

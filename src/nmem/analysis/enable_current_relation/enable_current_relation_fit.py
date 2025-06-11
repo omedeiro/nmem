@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_enable_current_relation
 
-
 if __name__ == "__main__":
     dict_list = import_directory("data")
     fig, ax = plt.subplots()

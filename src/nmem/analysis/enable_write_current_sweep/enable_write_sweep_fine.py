@@ -1,15 +1,17 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_write_sweep_multiple
+from nmem.analysis.plotting import plot_enable_write_sweep_fine
+
+
+def main(data_dir="data2", save_fig=False, output_path="enable_write_sweep_fine.pdf"):
+    """
+    Main function to plot fine enable write sweep.
+    """
+    data_list2 = import_directory(data_dir)
+    plot_enable_write_sweep_fine(data_list2, save_fig=save_fig, output_path=output_path)
+    plt.show()
+
 
 if __name__ == "__main__":
-    data_list2 = import_directory("data2")
-
-    fig, ax = plt.subplots(figsize=(6, 4))
-    plot_enable_write_sweep_multiple(ax, data_list2)
-    ax.set_xlim([260, 310])
-    save_fig = False
-    if save_fig:
-        plt.savefig("enable_write_sweep_fine.pdf", bbox_inches="tight")
-    plt.show()
+    main()

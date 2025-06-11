@@ -22,7 +22,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 from tqdm import tqdm
 
-from nmem.analysis.core_analysis import build_array, filter_first
+from nmem.analysis.utils import build_array, filter_first
 from nmem.calculations.calculations import (
     calculate_critical_current,
     calculate_heater_power,

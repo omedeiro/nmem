@@ -3,29 +3,14 @@ import os
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_sweep, plot_read_sweep_array
+from nmem.analysis.plotting import plot_enable_sweep
 
 
-def plot_write_current_sweep(
-    ax: plt.Axes, dict_list: list[dict[str, list[float]]]
-) -> plt.Axes:
-    plot_read_sweep_array(
-        ax, dict_list, "bit_error_rate", "write_current", add_errorbar=False
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    # ax.legend(
-    #     frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left", title="Write Current"
-    # )
 
-    return ax
 
 
 def main():
     fig, axs = plt.subplot_mosaic("BC", figsize=(180 / 25.4, 90 / 25.4))
-    # plot_write_current_sweep(axs["A"], write_current_sweep)
-    # axs["n"].axes.set_visible(False)
-    # # ax = axs["A"]
     dict_list = import_directory(
         os.path.join(os.path.dirname(__file__), "data")
     )

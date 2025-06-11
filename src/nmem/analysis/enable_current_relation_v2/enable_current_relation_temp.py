@@ -1,8 +1,12 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
+from nmem.analysis.constants import CRITICAL_TEMP, SUBSTRATE_TEMP
 from nmem.analysis.core_analysis import (
     get_fitting_points,
+)
+from nmem.analysis.currents import (
+    calculate_channel_temperature,
+    get_max_enable_current,
 )
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_enable_current_vs_temp
@@ -11,11 +15,6 @@ from nmem.analysis.utils import (
     filter_plateau,
     get_current_cell,
 )
-from nmem.analysis.currents import (
-    calculate_channel_temperature,
-    get_max_enable_current,
-)
-from nmem.analysis.constants import CRITICAL_TEMP, SUBSTRATE_TEMP
 
 
 def process_enable_current_data(dict_list):
