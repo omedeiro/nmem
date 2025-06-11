@@ -1,9 +1,5 @@
 import matplotlib.pyplot as plt
 
-from nmem.analysis.currents import (
-    get_state_current_markers,
-    get_write_current,
-)
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_enable_write_sweep2, plot_state_current_markers2
 

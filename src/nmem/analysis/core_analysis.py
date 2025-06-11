@@ -118,3 +118,16 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
             cell["enable_read_current"] * 1e6 / param_dict["x_intercept"][y, x]
         )
     return param_dict
+
+
+def analyze_alignment_stats(df_z, df_rot_valid, dx_nm, dy_nm):
+    """
+    Compute statistics for z height and rotation.
+    Returns: z_mean, z_std, r_mean, r_std
+    """
+    z_mean, z_std = df_z["z_height_mm"].mean(), df_z["z_height_mm"].std()
+    r_mean, r_std = (
+        df_rot_valid["rotation_mrad"].mean(),
+        df_rot_valid["rotation_mrad"].std(),
+    )
+    return z_mean, z_std, r_mean, r_std

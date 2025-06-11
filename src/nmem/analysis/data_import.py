@@ -179,3 +179,96 @@ def get_file_names(file_path: str) -> list:
     files = os.listdir(file_path)
     files = [file for file in files if file.endswith(".mat")]
     return files
+
+
+
+def import_elionix_log(log_path):
+    """
+    Import and parse the Elionix log file, returning parsed dataframes and arrays for analysis.
+    Returns:
+        df_z: DataFrame of z heights
+        df_rot_valid: DataFrame of valid rotations
+        dx_nm, dy_nm: np.arrays of alignment deltas
+        delta_table: DataFrame of all inter-pass deltas
+    """
+    import re
+
+    import pandas as pd
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        log_text = f.read()
+        lines = log_text.splitlines()
+    # Patterns
+    device_header_re = re.compile(r"\d+\s+(WSP_[A-Za-z0-9_]+)")
+    z_try_re = re.compile(r"z try:\s+(\d+)")
+    xy_try_re = re.compile(r"xy try:\s+(\d+)")
+    z_height_re = re.compile(r"z:\s+([\d.]+)\s+\[mm\]")
+    rotation_re = re.compile(r"rotation:\s+([\d.]+)\s+\[mrad\]")
+    car_block_pattern = re.compile(
+        r"^\s*\d+\s+(?P<car_file>\w+\.car).*?(?=^\s*\d+\s+\w+\.car|\Z)",
+        re.DOTALL | re.MULTILINE,
+    )
+    # Extract z height, retry count, rotation
+    data = []
+    rotations = []
+    current_device = None
+    current_entry = {}
+    for line in lines:
+        line = line.strip()
+        if match := device_header_re.match(line):
+            if current_entry:
+                data.append(current_entry)
+            current_device = match.group(1)
+            current_entry = {
+                "device": current_device,
+                "xy_try": None,
+                "z_try": None,
+                "z_height_mm": None,
+            }
+        elif match := xy_try_re.search(line):
+            current_entry["xy_try"] = int(match.group(1))
+        elif match := z_try_re.search(line):
+            current_entry["z_try"] = int(match.group(1))
+        elif match := z_height_re.search(line):
+            current_entry["z_height_mm"] = float(match.group(1))
+        elif match := rotation_re.search(line):
+            if current_device:
+                rotations.append(
+                    {"device": current_device, "rotation_mrad": float(match.group(1))}
+                )
+    if current_entry:
+        data.append(current_entry)
+    df_z = pd.DataFrame(data).dropna(subset=["z_height_mm"])
+    df_rot = pd.DataFrame(rotations)
+    df_rot_valid = df_rot[df_rot["rotation_mrad"] >= 1.0]
+    # Inter-pass alignment deltas
+    inter_pass_deltas = []
+    for match in car_block_pattern.finditer(log_text):
+        car_file = match.group("car_file")
+        block_text = match.group(0)
+        search_matches = re.findall(
+            r"alignment search (\d)-([A-Z])[\s\S]*?searched position:\s+([\d.]+)\s+([\d.]+)",
+            block_text,
+        )
+        mark_dict = {}
+        for pass_id, mark_id, x_str, y_str in search_matches:
+            key = mark_id.upper()
+            mark_dict.setdefault(key, {})[pass_id] = (float(x_str), float(y_str))
+        for mark_id, passes in mark_dict.items():
+            if "1" in passes and "2" in passes:
+                (x1, y1), (x2, y2) = passes["1"], passes["2"]
+                dx_nm = (x2 - x1) * 1e6
+                dy_nm = (y2 - y1) * 1e6
+                inter_pass_deltas.append(
+                    {
+                        "car_file": car_file,
+                        "mark_id": mark_id,
+                        "dx_nm": round(dx_nm, 2),
+                        "dy_nm": round(dy_nm, 2),
+                    }
+                )
+    delta_table = pd.DataFrame(inter_pass_deltas)
+    dx_nm = delta_table["dx_nm"].to_numpy()
+    dy_nm = delta_table["dy_nm"].to_numpy()
+    return df_z, df_rot_valid, dx_nm, dy_nm, delta_table
+

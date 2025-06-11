@@ -327,3 +327,53 @@ def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) 
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
 
     return ax
+
+
+
+def plot_alignment_histogram(
+    diff_list, binwidth=1, save_fig=False, output_path="alignment_histogram.pdf"
+):
+    """
+    Plots a histogram of alignment differences.
+    """
+    n, bins, patches = plt.hist(
+        x=diff_list,
+        bins=range(
+            int(np.floor(min(diff_list))),
+            int(np.ceil(max(diff_list))) + binwidth,
+            binwidth,
+        ),
+        edgecolor="black",
+        color="#0504aa",
+        alpha=0.5,
+    )
+    plt.ylabel("count")
+    plt.xlabel("alignment difference [nm]")
+    if save_fig:
+        plt.savefig(output_path, bbox_inches="tight")
+    plt.show()
+    return n, bins, patches
+
+def plot_alignment_offset_hist(
+    dx_nm, dy_nm, save_fig=False, output_path="alignment_offsets_histogram.pdf"
+):
+    """
+    Plots histograms of alignment offsets for ΔX and ΔY.
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+    plt.hist(
+        dx_nm, bins=20, edgecolor="black", color="#1f77b4", alpha=0.7, label="ΔX [nm]"
+    )
+    plt.hist(
+        dy_nm, bins=20, edgecolor="black", color="#ff7f0e", alpha=0.7, label="ΔY [nm]"
+    )
+    plt.xlabel("Alignment Offset [nm]")
+    plt.ylabel("Count")
+    plt.title("Histogram of Alignment Offsets")
+    plt.legend()
+    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    plt.tight_layout()
+    if save_fig:
+        plt.savefig(output_path, dpi=300)
+    plt.show()
+    return fig, ax

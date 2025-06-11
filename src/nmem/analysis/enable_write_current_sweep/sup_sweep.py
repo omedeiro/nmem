@@ -6,9 +6,6 @@ from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_enable_sweep
 
 
-
-
-
 def main():
     fig, axs = plt.subplot_mosaic("BC", figsize=(180 / 25.4, 90 / 25.4))
     dict_list = import_directory(

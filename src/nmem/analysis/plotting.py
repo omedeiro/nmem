@@ -2019,3 +2019,92 @@ def plot_ic_vs_ih_array(
     if save_fig:
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
     return fig, ax
+
+
+def plot_alignment_stats(
+    df_z,
+    df_rot_valid,
+    dx_nm,
+    dy_nm,
+    z_mean,
+    z_std,
+    r_mean,
+    r_std,
+    save=False,
+    output_path="alignment_analysis.pdf",
+):
+    """
+    Plots histograms and KDE for alignment statistics.
+    """
+    import seaborn as sns
+
+    fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
+    # Z height
+    axs[0].hist(df_z["z_height_mm"], bins=20, edgecolor="black", color="#1f77b4")
+    axs[0].set_xlabel("Z Height [mm]")
+    axs[0].set_ylabel("Count")
+    axs[0].text(
+        0.97,
+        0.97,
+        f"$\\mu$ = {z_mean:.4f} mm\n$\\sigma$ = {z_std:.4f} mm",
+        transform=axs[0].transAxes,
+        fontsize=10,
+        va="top",
+        ha="right",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
+        ),
+    )
+    axs[0].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    # Rotation
+    axs[1].hist(
+        df_rot_valid["rotation_mrad"], bins=20, edgecolor="black", color="#1f77b4"
+    )
+    axs[1].set_xlabel("Rotation [mrad]")
+    axs[1].set_ylabel("Count")
+    axs[1].text(
+        0.97,
+        0.97,
+        f"$\\mu$ = {r_mean:.2f} mrad\n$\\sigma$ = {r_std:.2f} mrad",
+        transform=axs[1].transAxes,
+        fontsize=10,
+        va="top",
+        ha="right",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
+        ),
+    )
+    axs[1].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    # Alignment offsets
+    ax = axs[2]
+    sns.kdeplot(
+        x=dx_nm,
+        y=dy_nm,
+        fill=True,
+        cmap="crest",
+        bw_adjust=0.7,
+        levels=10,
+        thresh=0.05,
+        ax=ax,
+    )
+    ax.scatter(
+        dx_nm,
+        dy_nm,
+        color="#333333",
+        s=15,
+        marker="o",
+        label="Alignment Marks",
+        alpha=0.8,
+    )
+    ax.axhline(0, color="black", linestyle="--", linewidth=1)
+    ax.axvline(0, color="black", linestyle="--", linewidth=1)
+    ax.set_xlabel("ΔX [nm]")
+    ax.set_ylabel("ΔY [nm]")
+    ax.axis("equal")
+    ax.legend()
+    plt.tight_layout()
+    if save:
+        plt.savefig(output_path, dpi=300)
+    plt.show()
+    return fig, axs
+
