@@ -298,3 +298,24 @@ def load_and_clean_thickness(path):
 
 
 
+
+def import_read_current_sweep_data():
+    """
+    Import all relevant data lists for the read current sweep enable read analysis.
+    Returns:
+        dict_list: list of dicts for enable read (choose one for plotting)
+        data_list: list of dicts for enable write
+        data_list2: selected subset of data_list for plotting
+    """
+    data = import_directory("data")
+    enable_read_290_list = import_directory("data_290uA")
+    enable_read_300_list = import_directory("data_300uA")
+    enable_read_310_list = import_directory("data_310uA")
+    enable_read_310_C4_list = import_directory("data_310uA_C4")
+    data_inverse = import_directory("data_inverse")
+    dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
+    dict_list = dict_list[2]  # Use 310uA by default
+    data_list = import_directory("../read_current_sweep_enable_write/data")
+    data_list2 = [data_list[0], data_list[3], data_list[-6], data_list[-1]]
+    return dict_list, data_list, data_list2
+

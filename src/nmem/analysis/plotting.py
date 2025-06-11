@@ -2192,3 +2192,47 @@ def plot_state_current_fit(ax, x_list, y_list, x_list_full, model, colors):
     ax.grid()
     ax.set_ybound(lower=0)
     ax.set_xbound(lower=0)
+
+
+def plot_read_current_sweep_enable_read(
+    dict_list,
+    data_list,
+    data_list2,
+    save=False,
+    output_path="read_current_sweep_enable_read.pdf",
+):
+    """
+    Plot the read and write current/temperature sweeps.
+    """
+    colors = CMAP(np.linspace(0, 1, len(data_list2)))
+    # Preprocess
+    read_temperatures = []
+    enable_read_currents = []
+    for data_dict in dict_list:
+        read_temperature = get_channel_temperature(data_dict, "read")
+        enable_read_current = get_enable_read_current(data_dict)
+        read_temperatures.append(read_temperature)
+        enable_read_currents.append(enable_read_current)
+    enable_write_currents = []
+    write_temperatures = []
+    for i, data_dict in enumerate(data_list):
+        enable_write_current = get_enable_write_current(data_dict)
+        write_temperature = get_channel_temperature(data_dict, "write")
+        enable_write_currents.append(enable_write_current)
+        write_temperatures.append(write_temperature)
+    # Plot
+    fig, axs = plt.subplots(
+        2, 2, figsize=(6, 3), constrained_layout=True, width_ratios=[1, 0.25]
+    )
+    ax: plt.Axes = axs[1, 0]
+    plot_enable_read_sweep(ax, dict_list[::-1], marker=".")
+    ax: plt.Axes = axs[1, 1]
+    plot_enable_read_temp(ax, enable_read_currents, read_temperatures)
+    ax = axs[0, 0]
+    plot_enable_write_sweep(ax, data_list2, marker=".")
+    ax = axs[0, 1]
+    plot_enable_write_temp(ax, enable_write_currents, write_temperatures)
+    if save:
+        fig.savefig(output_path, bbox_inches="tight")
+    plt.show()
+
