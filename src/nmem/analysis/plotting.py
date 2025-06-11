@@ -2181,3 +2181,14 @@ def plot_probe_station_prbs(
     plt.show()
     return fig, ax
 
+
+def plot_state_current_fit(ax, x_list, y_list, x_list_full, model, colors):
+    for i in range(4):
+        ax.plot(x_list[i], y_list[i], "-o", color=colors[i], label=f"State {i}")
+        ax.plot(x_list_full, model[i], "--", color=colors[i])
+    ax.legend()
+    ax.set_xlabel("Temperature [K]")
+    ax.set_ylabel("Current [$\\mu$A]")
+    ax.grid()
+    ax.set_ybound(lower=0)
+    ax.set_xbound(lower=0)

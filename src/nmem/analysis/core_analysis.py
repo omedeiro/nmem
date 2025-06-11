@@ -2,7 +2,10 @@ from typing import Literal, Tuple
 
 import numpy as np
 from scipy.interpolate import griddata
+from scipy.optimize import least_squares
 
+from nmem.analysis.constants import CRITICAL_TEMP
+from nmem.analysis.currents import calculate_state_currents
 from nmem.analysis.utils import (
     filter_first,
 )
@@ -195,3 +198,82 @@ def analyze_prbs_errors(data_list, trim=4500):
                 error_locs.append((i, j, bit_write[j], bit_read[j]))
     total_error = W1R0_error + W0R1_error
     return total_error, W1R0_error, W0R1_error, error_locs
+
+
+def fit_state_currents(
+    x_list,
+    y_list,
+    initial_guess,
+    width,
+    critical_current_zero,
+    bounds=([0, -100], [1, 100]),
+):
+
+    def model_function(x0, x1, x2, x3, alpha, persistent):
+        retrap = 1
+        i0, _, _, _ = calculate_state_currents(
+            x0, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, i1, _, _ = calculate_state_currents(
+            x1, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, _, i2, _ = calculate_state_currents(
+            x2, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, _, _, i3 = calculate_state_currents(
+            x3, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        model = [i0, i1, i2, i3]
+        return model
+
+    def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3):
+        alpha, persistent = p
+        model = model_function(x0, x1, x2, x3, alpha, persistent)
+        residuals = np.concatenate(
+            [
+                y0 - model[0],
+                y1 - model[1],
+                y2 - model[2],
+                y3 - model[3],
+            ]
+        )
+        return residuals
+
+    fit = least_squares(
+        residuals,
+        initial_guess,
+        args=(
+            x_list[0],
+            y_list[0],
+            x_list[1],
+            y_list[1],
+            x_list[2],
+            y_list[2],
+            x_list[3],
+            y_list[3],
+        ),
+        bounds=bounds,
+    )
+    return fit
+
+
+
+def prepare_state_current_data(data_dict):
+    from nmem.analysis.utils import filter_nan
+
+    temp = data_dict["measured_temperature"].flatten()
+    state_currents = data_dict["measured_state_currents"]
+    x_list = []
+    y_list = []
+    for i in range(4):
+        x = temp
+        y = state_currents[:, i]
+        x, y = filter_nan(x, y)
+        if len(x) > 0:
+            x_list.append(x)
+            y_list.append(y)
+        else:
+            x_list.append(None)
+            y_list.append(None)
+    return x_list, y_list
+

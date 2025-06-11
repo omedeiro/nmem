@@ -3,6 +3,7 @@ from typing import Any, Literal, Tuple
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 
 from nmem.analysis.bit_error import (
     get_total_switches_norm,
@@ -178,3 +179,4 @@ def center_crop_zoom(img, zoom_factor=2):
     cropped = rotated.crop((left, top, right, bottom))
     zoomed = cropped.resize((w, h), Image.LANCZOS)
     return zoomed
+
