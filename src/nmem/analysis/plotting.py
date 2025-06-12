@@ -1638,59 +1638,49 @@ def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
     )
     return ax
 
+def plot_cell_data(ax, data_dict, colors, markers):
+    """
+    Helper function to plot a single cell's data.
+    """
+    cell = get_current_cell(data_dict)
+    column, row = convert_cell_to_coordinates(cell)
+    x = data_dict["x"][0]
+    y = data_dict["y"][0]
+    ztotal = data_dict["ztotal"]
+    xfit, yfit = get_fitting_points(x, y, ztotal)
+
+    ax.plot(
+        xfit,
+        yfit,
+        label=f"{cell}",
+        color=colors[column],
+        marker=markers[row],
+        markeredgecolor="k",
+        markeredgewidth=0.1,
+    )
+    ax.legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
+    ax.set_xlim(0, 600)
+    ax.set_ylim(0, 1500)
+
+    return ax
+
 
 def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
+    
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
-
         column, row = convert_cell_to_coordinates(cell)
-        x = data_dict["x"][0]
-        y = data_dict["y"][0]
-        ztotal = data_dict["ztotal"]
-        xfit, yfit = get_fitting_points(x, y, ztotal)
-        axs[row, column].plot(
-            xfit,
-            yfit,
-            label=f"{cell}",
-            color=colors[column],
-            marker=markers[row],
-        )
-        dd = sio.loadmat(
-            "/home/omedeiro/nmem/src/nmem/analysis/enable_current_relation_v2/data2/SPG806_20250107_nMem_measure_enable_response_D6_A4_A3_2025-01-07 15-34-05.mat"
-        )
-        y_step_size = y[1] - y[0]
-        # print(x)
-        # print(y)
-        # axs[row, column].errorbar(
-        #     xfit,
-        #     yfit,
-        #     yerr=y_step_size * np.ones_like(yfit),
-        #     fmt="o",
-        #     color=colors[column],
-        #     marker=markers[row],
-        #     markeredgecolor="k",
-        #     markeredgewidth=0.1,
-        #     markersize=5,
-        #     alpha=0.5,
-        #     zorder=1,
-        #     label="_data",
-        # )
+        ax = axs[row, column]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
 
         xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+        plot_linear_fit(ax, xfit, yfit)
 
-        plot_linear_fit(
-            axs[row, column],
-            xfit,
-            yfit,
-        )
-        # plot_optimal_enable_currents(axs[row, column], data_dict)
-        axs[row, column].legend(loc="upper right")
-        axs[row, column].xaxis.set_major_locator(MultipleLocator(500))
-        axs[row, column].xaxis.set_minor_locator(MultipleLocator(100))
-        axs[row, column].set_xlim(0, 600)
-        axs[row, column].set_ylim(0, 1500)
+        ax.xaxis.set_major_locator(MultipleLocator(500))
+        ax.xaxis.set_minor_locator(MultipleLocator(100))
+
     axs[-1, 0].set_xlabel("Enable Current [µA]")
     axs[-1, 0].set_ylabel("Critical Current [µA]")
     return axs
@@ -1699,59 +1689,24 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
 def plot_row(axs, dict_list):
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
+    
     for data_dict in dict_list:
-        cell = get_current_cell(data_dict)
-        column, row = convert_cell_to_coordinates(cell)
-        x = data_dict["x"][0]
-        y = data_dict["y"][0]
-        ztotal = data_dict["ztotal"]
-        xfit, yfit = get_fitting_points(x, y, ztotal)
+        column, row = convert_cell_to_coordinates(get_current_cell(data_dict))
+        ax = axs[column]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
 
-        axs[column].plot(
-            xfit,
-            yfit,
-            label=f"{cell}",
-            color=colors[column],
-            marker=markers[row],
-            markeredgecolor="k",
-            markeredgewidth=0.1,
-        )
-        # plot_optimal_enable_currents(axs[column], data_dict)
-
-        axs[column].legend(
-            loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5
-        )
-        axs[column].set_xlim(0, 600)
-        axs[column].set_ylim(0, 1500)
     return axs
 
 
 def plot_column(axs, dict_list):
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
+    
     for data_dict in dict_list:
-        cell = get_current_cell(data_dict)
-        column, row = convert_cell_to_coordinates(cell)
-        x = data_dict["x"][0]
-        y = data_dict["y"][0]
-        ztotal = data_dict["ztotal"]
-        xfit, yfit = get_fitting_points(x, y, ztotal)
+        row = convert_cell_to_coordinates(get_current_cell(data_dict))[1]
+        ax = axs[row]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
 
-        axs[row].plot(
-            xfit,
-            yfit,
-            label=f"{cell}",
-            color=colors[column],
-            marker=markers[row],
-            markeredgecolor="k",
-            markeredgewidth=0.1,
-        )
-        # plot_optimal_enable_currents(axs[row], data_dict)
-        axs[row].legend(
-            loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5
-        )
-        axs[row].set_xlim(0, 600)
-        axs[row].set_ylim(0, 1500)
     return axs
 
 
@@ -1763,6 +1718,7 @@ def plot_full_grid(axs, dict_list):
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
     return axs
+
 
 
 def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
