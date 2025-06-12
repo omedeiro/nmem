@@ -1,16 +1,9 @@
-import os
 from typing import Literal
 
-import ltspice
 import matplotlib.pyplot as plt
-import numpy as np
 
-from nmem.analysis.core_analysis import (
-    filter_first,
-)
 from nmem.simulation.spice_circuits.functions import (
     get_step_parameter,
-    process_read_data,
 )
 
 CMAP = plt.get_cmap("coolwarm")

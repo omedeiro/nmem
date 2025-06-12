@@ -390,3 +390,38 @@ def import_read_current_sweep_sim_data(
     dict_list = [dict_list[i] for i in sorted_args2]
     write_current_list2 = [write_current_list2[i] for i in sorted_args2]
     return files, ltsp_data_dict, dict_list, write_current_list2
+
+
+def load_current_sweep_data():
+    # get raw files
+    files = os.listdir("data")
+    files = [f for f in files if f.endswith(".raw")]
+    # Sort files by write current
+    write_current_list = []
+    for file in files:
+        data = ltspice.Ltspice(f"data/{file}").parse()
+        ltsp_data_dict = process_read_data(data)
+        write_current = ltsp_data_dict[0]["write_current"][0]
+        write_current_list.append(write_current * 1e6)
+
+    sorted_args = np.argsort(write_current_list)
+    files = [files[i] for i in sorted_args]
+
+    ltsp_data = ltspice.Ltspice("nmem_cell_read_example_trace.raw").parse()
+    ltsp_data_dict = process_read_data(ltsp_data)
+
+    dict_list = import_directory(
+        "../read_current_sweep_write_current2/write_current_sweep_C3"
+    )
+    dict_list = dict_list[::2]
+    write_current_list = []
+    for data_dict in dict_list:
+        write_current = filter_first(data_dict["write_current"])
+        write_current_list.append(write_current * 1e6)
+
+    sorted_args = np.argsort(write_current_list)
+    dict_list = [dict_list[i] for i in sorted_args]
+    write_current_list = [write_current_list[i] for i in sorted_args]
+
+    return files, ltsp_data_dict, dict_list, write_current_list
+

@@ -1,6 +1,5 @@
 from typing import List, Literal
 
-import ltspice
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -12,7 +11,7 @@ from matplotlib.collections import PolyCollection
 from matplotlib.patches import Polygon
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
+import ltspice
 from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -27,6 +26,13 @@ from nmem.analysis.constants import (
     READ_XMIN,
     RETRAP,
     WIDTH,
+)
+from nmem.simulation.spice_circuits.functions import process_read_data
+from nmem.simulation.spice_circuits.plotting import (
+    CMAP,
+    create_plot,
+    plot_current_sweep_ber,
+    plot_current_sweep_switching,
 )
 from nmem.analysis.core_analysis import (
     get_enable_write_width,
@@ -66,7 +72,6 @@ from nmem.analysis.utils import (
 from nmem.measurement.functions import (
     calculate_power,
 )
-from nmem.simulation.spice_circuits.plotting import create_plot
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
@@ -96,13 +101,13 @@ def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
     return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
-
 def get_log_norm_limits(R):
     """Safely get vmin and vmax for LogNorm."""
     values = R[~np.isnan(R) & (R > 0)]
     if values.size == 0:
         return None, None
     return np.nanmin(values), np.nanmax(values)
+
 
 def plot_write_current_sweep(
     ax: plt.Axes, dict_list: list[dict[str, list[float]]]
@@ -117,6 +122,7 @@ def plot_write_current_sweep(
     # )
 
     return ax
+
 
 def plot_enable_sweep(
     ax: plt.Axes,
@@ -184,6 +190,7 @@ def plot_enable_write_temp(
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
     return ax
+
 
 def plot_enable_write_sweep2(
     dict_list, save_fig=False, output_path="enable_write_sweep.pdf"
@@ -271,6 +278,7 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
     ax.set_ylabel("$T_{\mathrm{read}}$ [K]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
 
+
 def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
     ax.set_ylim([8.3, 9.7])
@@ -323,7 +331,6 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
         facecolor="white",
         edgecolor="none",
     )
-
 
 
 def plot_write_current_enable_sweep_margin(
@@ -381,6 +388,7 @@ def add_colorbar(
 
     cbar.set_label(label)
     return cbar
+
 
 def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     plot_write_sweep(ax, dict_list)
@@ -451,6 +459,7 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
     ax.set_yscale("log")
     ax.set_ylim([1e-4, 1e-3])
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
 
 def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
     bit_error_rate = get_bit_error_rate(data_dict)
@@ -822,6 +831,7 @@ def plot_c2c3_subplots(axs, xfit, yfit, split_idx, label_c2="C2", label_c3="C3")
     axs[1].set_xlabel("Enable Current ($\mu$A)")
     return axs
 
+
 def plot_linear_fit(
     ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text: bool = False
 ) -> Axes:
@@ -862,6 +872,7 @@ def plot_message(ax: Axes, message: str) -> Axes:
         ax.text(i + 0.5, axheight * 0.85, text, ha="center", va="center")
 
     return ax
+
 
 def plot_enable_write_sweep_fine(
     data_list2, save_fig=False, output_path="enable_write_sweep_fine.pdf"
@@ -912,6 +923,7 @@ def plot_enable_write_sweep_multiple(
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     return ax
 
+
 def plot_enable_current_vs_temp(
     data, save_fig=False, output_path="enable_current_vs_temp.png"
 ):
@@ -947,7 +959,6 @@ def plot_enable_current_vs_temp(
     if save_fig:
         fig.savefig(output_path, dpi=300, bbox_inches="tight")
     return fig, axs, axs2
-
 
 
 def plot_enable_sweep_single(
@@ -1135,7 +1146,6 @@ def plot_measured_state_currents(ax, mat_files, colors):
     return ax
 
 
-
 def plot_read_sweep_array(
     ax: Axes,
     dict_list: list[dict],
@@ -1170,9 +1180,17 @@ def plot_read_sweep_array(
 
     return ax
 
+
 def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     if len(vals) == 0:
-        ax.text(0.5, 0.5, f"No data\nfor row {row_char}", ha="center", va="center", fontsize=8)
+        ax.text(
+            0.5,
+            0.5,
+            f"No data\nfor row {row_char}",
+            ha="center",
+            va="center",
+            fontsize=8,
+        )
         ax.set_axis_off()
         return
     vals = vals[~np.isnan(vals)]
@@ -1183,11 +1201,10 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     ax.set_ylim(0, 100)
     ax.grid(True, linestyle=":", linewidth=0.5)
     ax.set_ylabel(f"{row_char}", rotation=0, ha="right", va="center", fontsize=9)
-    ax.tick_params(axis='both', which='both', labelsize=6)
+    ax.tick_params(axis="both", which="both", labelsize=6)
     if vmin and vmax:
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
-
 
 
 def plot_read_switch_probability_array(
@@ -1548,6 +1565,7 @@ def plot_current_voltage_from_dc_sweep(
 
     return ax
 
+
 def plot_combined_dc_figure(axs: List[Axes], dict_list: list) -> List[Axes]:
     """
     Plot combined IV and critical current figures on provided axes.
@@ -1571,6 +1589,7 @@ def plot_combined_dc_figure(axs: List[Axes], dict_list: list) -> List[Axes]:
     axs[2].set_xlim(-500, 500)
     axs[2].xaxis.set_major_locator(MultipleLocator(250))
     return axs
+
 
 def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
     cell = get_current_cell(data_dict)
@@ -1766,7 +1785,6 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-
 # Helper function to set axis labels and titles
 def set_axis_labels(ax, xlabel, ylabel, title):
     ax.set_xlabel(xlabel)
@@ -1782,12 +1800,6 @@ def apply_log_scale(ax, logscale, axis="y"):
             ax.set_yscale("log")
         elif axis == "x":
             ax.set_xscale("log")
-
-
-
-
-
-
 
 
 def scatter_die_row_resistance(
@@ -1856,8 +1868,6 @@ def scatter_die_resistance(
     apply_log_scale(ax, logscale)
 
     return ax
-
-
 
 
 def plot_quartile_lines(
@@ -2113,23 +2123,32 @@ def plot_alignment_stats(
     return fig, axs
 
 
-
-
 def plot_wafer_maps(maps, titles, cmaps, grid_x, grid_y, radius, annotate_points=False):
     fig, axes = plt.subplots(1, 3, figsize=(7, 3.5), dpi=300)  # 7.2" ≈ 2-column width
     for ax, title, (grid_z, pts, vals), cmap in zip(axes, titles, maps, cmaps):
-        circle = plt.Circle((0, 0), radius, color='k', lw=0.5, fill=False)
+        circle = plt.Circle((0, 0), radius, color="k", lw=0.5, fill=False)
         contour = ax.contourf(grid_x, grid_y, grid_z, levels=30, cmap=cmap)
         # ax.scatter(pts[:, 0], pts[:, 1], c='k', s=8, zorder=10)
         if annotate_points:
             for (x, y), v in zip(pts, vals):
-                ax.text(x, y, f"{v:.1f}", ha='center', va='center', fontsize=5, color='white', zorder=11)
+                ax.text(
+                    x,
+                    y,
+                    f"{v:.1f}",
+                    ha="center",
+                    va="center",
+                    fontsize=5,
+                    color="white",
+                    zorder=11,
+                )
         ax.add_artist(circle)
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_title(title)
         ax.set_xlabel("X (mm)")
         ax.set_ylabel("Y (mm)")
-        cbar = fig.colorbar(contour, ax=ax, orientation='vertical', fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(
+            contour, ax=ax, orientation="vertical", fraction=0.046, pad=0.04
+        )
         cbar.ax.tick_params(labelsize=8)
         cbar.set_label("Thickness (nm)", fontsize=9)
     plt.tight_layout()
@@ -2272,7 +2291,6 @@ def plot_read_current_sweep_three(
     plt.show()
 
 
-
 def plot_read_current_sweep_enable_write(
     data_list,
     data_list2,
@@ -2329,9 +2347,10 @@ def plot_read_current_sweep_enable_write(
     plt.show()
 
 
-
 def plot_simulation_results(axs, ltsp_data_dict, case=16):
     """Plot simulation results for a given case on provided axes."""
+    from nmem.simulation.spice_circuits.plotting import create_plot
+
     create_plot(axs, ltsp_data_dict, cases=[case])
     handles, labels = axs["T0"].get_legend_handles_labels()
     selected_labels = [
@@ -2350,7 +2369,6 @@ def plot_simulation_results(axs, ltsp_data_dict, case=16):
     return selected_handles, selected_labels2
 
 
-
 def plot_read_current_sweep_sim(
     files,
     ltsp_data_dict,
@@ -2359,6 +2377,8 @@ def plot_read_current_sweep_sim(
     save_fig=False,
     output_path="spice_comparison_sim.pdf",
 ):
+    from nmem.simulation.spice_circuits.plotting import create_plot
+
     inner = [
         ["T0", "T1", "T2", "T3"],
     ]
@@ -2398,7 +2418,6 @@ def plot_read_current_sweep_sim(
     for i, file in enumerate(files_sel):
         data = ltspice.Ltspice(f"data/{file}").parse()
         ltsp_data_dict = process_read_data(data)
-        ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
     axs["T1"].set_ylabel("")
     axs["T2"].set_ylabel("")
     axs["T3"].set_ylabel("")
@@ -2421,4 +2440,140 @@ def plot_read_current_sweep_sim(
     )
     if save_fig:
         plt.savefig(output_path, bbox_inches="tight")
+    plt.show()
+
+
+def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_list):
+    inner = [
+        ["T0", "T1", "T2", "T3"],
+    ]
+    innerb = [
+        ["B0", "B1", "B2", "B3"],
+    ]
+    inner2 = [
+        ["A", "B"],
+    ]
+    inner3 = [
+        ["C", "D"],
+    ]
+    outer_nested_mosaic = [
+        [inner],
+        [innerb],
+        [inner2],
+        [inner3],
+    ]
+    fig, axs = plt.subplot_mosaic(
+        outer_nested_mosaic,
+        figsize=(180 / 25.4, 180 / 25.4),
+        height_ratios=[2, 0.5, 1, 1],
+    )
+
+    CASE = 16
+    create_plot(axs, ltsp_data_dict, cases=[CASE])
+    case_current = ltsp_data_dict[CASE]["read_current"][CASE]
+
+    handles, labels = axs["T0"].get_legend_handles_labels()
+    # Select specific items
+    selected_labels = [
+        "Left Branch Current",
+        "Right Branch Current",
+        "Left Critical Current",
+        "Right Critical Current",
+    ]
+    selected_labels2 = [
+        "$i_{\mathrm{H_L}}$",
+        "$i_{\mathrm{H_R}}$",
+        "$I_{\mathrm{c,H_L}}$",
+        "$I_{\mathrm{c,H_R}}$",
+    ]
+    selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
+
+    plot_read_sweep_array(
+        axs["A"],
+        dict_list,
+        "bit_error_rate",
+        "write_current",
+        marker=".",
+        linestyle="-",
+        markersize=4,
+    )
+    axs["A"].set_xlim(650, 850)
+    axs["A"].set_ylabel("BER")
+    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    plot_read_switch_probability_array(
+        axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
+    )
+    axs["B"].set_xlim(650, 850)
+    # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
+    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+
+    axs["C"].set_xlim(650, 850)
+    axs["D"].set_xlim(650, 850)
+    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["C"].set_ylabel("BER")
+    axs["B"].set_ylabel("Switching Probability")
+    axs["D"].set_ylabel("Switching Probability")
+
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    col_set = [colors[i] for i in [0, 2, -1]]
+    files_sel = [files[i] for i in [0, 2, -1]]
+    max_write_current = 300
+    for i, file in enumerate(files_sel):
+        data = ltspice.Ltspice(f"data/{file}").parse()
+        ltsp_data_dict = process_read_data(data)
+        ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
+        plot_current_sweep_ber(
+            axs["C"],
+            ltsp_data_dict,
+            color=CMAP(ltsp_write_current / max_write_current),
+            label=f"{ltsp_write_current} $\mu$A",
+            marker=".",
+            linestyle="-",
+            markersize=5,
+        )
+
+        plot_current_sweep_switching(
+            axs["D"],
+            ltsp_data_dict,
+            color=CMAP(ltsp_write_current / max_write_current),
+            label=f"{ltsp_write_current} $\mu$A",
+            marker=".",
+            markersize=5,
+        )
+
+    axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    axs["B"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    axs["C"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+    axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
+
+    axs["B"].legend(
+        loc="upper right",
+        labelspacing=0.1,
+        fontsize=6,
+    )
+    axs["D"].legend(
+        loc="upper right",
+        labelspacing=0.1,
+        fontsize=6,
+    )
+
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.patch.set_alpha(0)
+
+    ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
+    ax_legend.axis("off")
+    ax_legend.legend(
+        selected_handles,
+        selected_labels2,
+        loc="center",
+        ncol=4,
+        bbox_to_anchor=(0.0, 1.0),
+        frameon=False,
+        handlelength=2.5,
+        fontsize=8,
+    )
+    save_fig = False
+    if save_fig:
+        plt.savefig("spice_comparison.pdf", bbox_inches="tight")
     plt.show()
