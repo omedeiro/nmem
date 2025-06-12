@@ -1,5 +1,6 @@
 from typing import List, Literal
 
+import ltspice
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -65,6 +66,7 @@ from nmem.analysis.utils import (
 from nmem.measurement.functions import (
     calculate_power,
 )
+from nmem.simulation.spice_circuits.plotting import create_plot
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
@@ -2269,3 +2271,154 @@ def plot_read_current_sweep_three(
         plt.savefig(output_path, bbox_inches="tight")
     plt.show()
 
+
+
+def plot_read_current_sweep_enable_write(
+    data_list,
+    data_list2,
+    colors,
+    save_fig=False,
+    output_path="read_current_sweep_enable_write2.pdf",
+):
+    fig, axs = plt.subplots(
+        1, 2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, 0.25]
+    )
+    # Left plot: BER vs. enable_write_current
+    ax = axs[0]
+    for j, data_dict in enumerate(data_list2):
+        plot_read_sweep(
+            ax, data_dict, "bit_error_rate", "enable_write_current", color=colors[j]
+        )
+        plot_fill_between(ax, data_dict, fill_color=colors[j])
+        enable_write_current = get_enable_write_current(data_dict)
+    ax.set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]")
+    ax.set_ylabel("BER")
+    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.set_xlim(400, 1000)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(100))
+    # Right plot: T_write vs. enable_write_current
+    ax = axs[1]
+    enable_write_currents = []
+    write_temperatures = []
+    for j, data_dict in enumerate(data_list):
+        write_current = get_write_current(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
+        write_temperature = get_channel_temperature(data_dict, "write")
+        enable_write_currents.append(enable_write_current)
+        write_temperatures.append(write_temperature)
+    ax.plot(
+        enable_write_currents,
+        write_temperatures,
+        marker="o",
+        color="black",
+    )
+    for i, idx in enumerate([0, 3, -6, -1]):
+        ax.plot(
+            enable_write_currents[idx],
+            write_temperatures[idx],
+            marker="o",
+            markersize=6,
+            markeredgecolor="none",
+            markerfacecolor=colors[i],
+        )
+    ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+    ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
+    if save_fig:
+        plt.savefig(output_path, bbox_inches="tight")
+    plt.show()
+
+
+
+def plot_simulation_results(axs, ltsp_data_dict, case=16):
+    """Plot simulation results for a given case on provided axes."""
+    create_plot(axs, ltsp_data_dict, cases=[case])
+    handles, labels = axs["T0"].get_legend_handles_labels()
+    selected_labels = [
+        "Left Branch Current",
+        "Right Branch Current",
+        "Left Critical Current",
+        "Right Critical Current",
+    ]
+    selected_labels2 = [
+        "$i_{\\mathrm{H_L}}$",
+        "$i_{\\mathrm{H_R}}$",
+        "$I_{\\mathrm{c,H_L}}$",
+        "$I_{\\mathrm{c,H_R}}$",
+    ]
+    selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
+    return selected_handles, selected_labels2
+
+
+
+def plot_read_current_sweep_sim(
+    files,
+    ltsp_data_dict,
+    dict_list,
+    write_current_list2,
+    save_fig=False,
+    output_path="spice_comparison_sim.pdf",
+):
+    inner = [
+        ["T0", "T1", "T2", "T3"],
+    ]
+    innerb = [
+        ["B0", "B1", "B2", "B3"],
+    ]
+    outer_nested_mosaic = [
+        [inner],
+        [innerb],
+    ]
+    fig, axs = plt.subplot_mosaic(
+        outer_nested_mosaic,
+        figsize=(6, 3),
+        height_ratios=[1, 0.25],
+    )
+    CASE = 16
+    create_plot(axs, ltsp_data_dict, cases=[CASE])
+    case_current = ltsp_data_dict[CASE]["read_current"][CASE]
+    handles, labels = axs["T0"].get_legend_handles_labels()
+    selected_labels = [
+        "Left Branch Current",
+        "Right Branch Current",
+        "Left Critical Current",
+        "Right Critical Current",
+    ]
+    selected_labels2 = [
+        "$i_{\\mathrm{H_L}}$",
+        "$i_{\\mathrm{H_R}}$",
+        "$I_{\\mathrm{c,H_L}}$",
+        "$I_{\\mathrm{c,H_R}}$",
+    ]
+    selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
+    colors = CMAP(np.linspace(0, 1, len(dict_list)))
+    col_set = [colors[i] for i in [0, 2, -1]]
+    files_sel = [files[i] for i in [0, 2, -1]]
+    max_write_current = 300
+    for i, file in enumerate(files_sel):
+        data = ltspice.Ltspice(f"data/{file}").parse()
+        ltsp_data_dict = process_read_data(data)
+        ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
+    axs["T1"].set_ylabel("")
+    axs["T2"].set_ylabel("")
+    axs["T3"].set_ylabel("")
+    axs["B1"].set_ylabel("")
+    axs["B2"].set_ylabel("")
+    axs["B3"].set_ylabel("")
+    fig.subplots_adjust(hspace=0.6, wspace=0.5)
+    fig.patch.set_alpha(0)
+    ax_legend = fig.add_axes([0.5, 0.95, 0.1, 0.01])
+    ax_legend.axis("off")
+    ax_legend.legend(
+        selected_handles,
+        selected_labels2,
+        loc="center",
+        ncol=4,
+        bbox_to_anchor=(0.0, 1.0),
+        frameon=False,
+        handlelength=2.5,
+        fontsize=8,
+    )
+    if save_fig:
+        plt.savefig(output_path, bbox_inches="tight")
+    plt.show()
