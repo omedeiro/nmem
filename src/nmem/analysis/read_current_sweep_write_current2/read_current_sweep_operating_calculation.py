@@ -1,5 +1,3 @@
-import numpy as np
-import pandas as pd
 
 from nmem.analysis.core_analysis import calculate_operating_table
 from nmem.analysis.data_import import (

@@ -5,21 +5,27 @@ import pandas as pd
 from scipy.interpolate import griddata
 from scipy.optimize import least_squares
 
-from nmem.analysis.constants import CRITICAL_TEMP, IRHL_TR, IRM, SUBSTRATE_TEMP, CRITICAL_CURRENT_ZERO, WIDTH
-from nmem.analysis.currents import calculate_state_currents
+from nmem.analysis.constants import (
+    CRITICAL_CURRENT_ZERO,
+    CRITICAL_TEMP,
+    IRHL_TR,
+    IRM,
+    SUBSTRATE_TEMP,
+    WIDTH,
+)
+from nmem.analysis.currents import (
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
+    calculate_state_currents,
+)
 from nmem.analysis.utils import (
     filter_first,
 )
-from nmem.measurement.cells import CELLS
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
-
-from nmem.analysis.currents import (
-    calculate_channel_temperature,
-    calculate_critical_current_temp,
-)
+from nmem.measurement.cells import CELLS
 
 
 def calculate_inductance_ratio(state0, state1, ic0):

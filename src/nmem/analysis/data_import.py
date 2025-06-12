@@ -9,6 +9,7 @@ from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
 )
+from nmem.analysis.constants import IRM
 from nmem.analysis.currents import (
     get_channel_temperature,
     get_enable_write_current,
@@ -19,8 +20,6 @@ from nmem.analysis.currents import (
 from nmem.analysis.plotting import CMAP
 from nmem.analysis.utils import filter_first
 from nmem.simulation.spice_circuits.functions import process_read_data
-
-from nmem.analysis.constants import IRM
 
 
 def load_autoprobe_data(filepath, grid_size=56):

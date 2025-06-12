@@ -1,17 +1,17 @@
 from typing import List, Literal
 
+import ltspice
 import matplotlib.colors as mcolors
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.io as sio
 from matplotlib import ticker
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.patches import Polygon
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-import ltspice
+
 from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -19,25 +19,17 @@ from nmem.analysis.bit_error import (
 )
 from nmem.analysis.constants import (
     ALPHA,
-    SUBSTRATE_TEMP,
+    CRITICAL_CURRENT_ZERO,
     CRITICAL_TEMP,
     IC0_C3,
+    IRHL_TR,
+    IRM,
     PROBE_STATION_TEMP,
-    CRITICAL_CURRENT_ZERO,
     READ_XMAX,
     READ_XMIN,
     RETRAP,
+    SUBSTRATE_TEMP,
     WIDTH,
-    IRM,
-    IRHL_TR,
-
-)
-from nmem.simulation.spice_circuits.functions import process_read_data
-from nmem.simulation.spice_circuits.plotting import (
-    CMAP,
-    create_plot,
-    plot_current_sweep_ber,
-    plot_current_sweep_switching,
 )
 from nmem.analysis.core_analysis import (
     get_enable_write_width,
@@ -49,6 +41,7 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.currents import (
     calculate_branch_currents,
     calculate_channel_temperature,
+    calculate_critical_current_temp,
     calculate_state_currents,
     get_channel_temperature,
     get_channel_temperature_sweep,
@@ -63,7 +56,6 @@ from nmem.analysis.currents import (
     get_state_current_markers,
     get_state_currents_measured,
     get_write_current,
-    calculate_critical_current_temp,
 )
 from nmem.analysis.text_mapping import (
     get_text_from_bit,
@@ -75,19 +67,20 @@ from nmem.analysis.utils import (
     filter_plateau,
     get_current_cell,
 )
-from nmem.measurement.functions import (
-    calculate_power,
-)
 from nmem.measurement.cells import (
     CELLS,
 )
+from nmem.measurement.functions import (
+    calculate_power,
+)
+from nmem.simulation.spice_circuits.functions import process_read_data
+from nmem.simulation.spice_circuits.plotting import (
+    CMAP,
+    create_plot,
+    plot_current_sweep_ber,
+    plot_current_sweep_switching,
+)
 
-RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
-C0 = "#1b9e77"
-C1 = "#d95f02"
-CMAP = plt.get_cmap("coolwarm")
-CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
-CMAP3 = plt.get_cmap("plasma").reversed()
 
 
 def polygon_under_graph(x, y, y2=0.0):
@@ -1190,7 +1183,6 @@ def plot_read_sweep_array(
     return ax
 
 
-
 def plot_read_sweep_write_current(data_list, save_path=None):
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
@@ -1205,7 +1197,6 @@ def plot_read_sweep_write_current(data_list, save_path=None):
     if save_path:
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
     plt.show()
-
 
 
 def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
@@ -1638,6 +1629,7 @@ def plot_optimal_enable_currents(ax: Axes, data_dict: dict) -> Axes:
     )
     return ax
 
+
 def plot_cell_data(ax, data_dict, colors, markers):
     """
     Helper function to plot a single cell's data.
@@ -1668,7 +1660,7 @@ def plot_cell_data(ax, data_dict, colors, markers):
 def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
-    
+
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
         column, row = convert_cell_to_coordinates(cell)
@@ -1689,7 +1681,7 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
 def plot_row(axs, dict_list):
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
-    
+
     for data_dict in dict_list:
         column, row = convert_cell_to_coordinates(get_current_cell(data_dict))
         ax = axs[column]
@@ -1701,7 +1693,7 @@ def plot_row(axs, dict_list):
 def plot_column(axs, dict_list):
     colors = CMAP3(np.linspace(0.1, 1, 4))
     markers = ["o", "s", "D", "^"]
-    
+
     for data_dict in dict_list:
         row = convert_cell_to_coordinates(get_current_cell(data_dict))[1]
         ax = axs[row]
@@ -1718,7 +1710,6 @@ def plot_full_grid(axs, dict_list):
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
     return axs
-
 
 
 def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
@@ -2562,7 +2553,6 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     plt.show()
 
 
-
 def plot_read_current_operating(dict_list):
     """Plot all figures using the provided data dictionary list."""
     fig, axs = plt.subplot_mosaic("AB;CD", figsize=(8.3, 4))
@@ -2673,7 +2663,6 @@ def plot_read_current_operating(dict_list):
 
     retrap2 = (ic2 - critical_current_right) / critical_current_left
 
-
     ax = axs["D"]
     ax.plot(
         write_current_list,
@@ -2706,4 +2695,3 @@ def plot_read_current_operating(dict_list):
     if save_fig:
         plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()
-
