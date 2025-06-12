@@ -82,8 +82,30 @@ def load_autoprobe_data(filepath, grid_size=56):
     return pd.DataFrame(records)
 
 
-
-
+def import_read_current_sweep_operating_data(directory):
+    dict_list = import_directory(directory)
+    ic_list = [IRM]
+    write_current_list = [0]
+    ic_list2 = [IRM]
+    write_current_list2 = [0]
+    for data_dict in dict_list:
+        write_current = get_write_current(data_dict)
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        read_currents = get_read_currents(data_dict)
+        if not np.isnan(berargs[0]) and write_current < 100:
+            ic_list.append(read_currents[berargs[0]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[2]) and write_current > 100:
+            ic_list.append(read_currents[berargs[3]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[1]):
+            ic_list2.append(read_currents[berargs[1]])
+            write_current_list2.append(write_current)
+        if not np.isnan(berargs[3]):
+            ic_list2.append(read_currents[berargs[2]])
+            write_current_list2.append(write_current)
+    return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
 def import_write_sweep_formatted() -> list[dict]:
     dict_list = import_directory(
         os.path.join(os.path.dirname(__file__), "write_current_sweep_enable_write/data")
@@ -424,4 +446,29 @@ def load_current_sweep_data():
     write_current_list = [write_current_list[i] for i in sorted_args]
 
     return files, ltsp_data_dict, dict_list, write_current_list
+
+def import_operating_data(directory):
+    dict_list = import_directory(directory)
+    ic_list = []
+    write_current_list = []
+    ic_list2 = []
+    write_current_list2 = []
+    for data_dict in dict_list:
+        write_current = get_write_current(data_dict)
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        read_currents = get_read_currents(data_dict)
+        if not np.isnan(berargs[0]) and write_current < 100:
+            ic_list.append(read_currents[berargs[0]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[2]) and write_current > 100:
+            ic_list.append(read_currents[berargs[3]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[1]):
+            ic_list2.append(read_currents[berargs[1]])
+            write_current_list2.append(write_current)
+        if not np.isnan(berargs[3]):
+            ic_list2.append(read_currents[berargs[2]])
+            write_current_list2.append(write_current)
+    return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
 

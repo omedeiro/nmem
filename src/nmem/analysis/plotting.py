@@ -19,13 +19,18 @@ from nmem.analysis.bit_error import (
 )
 from nmem.analysis.constants import (
     ALPHA,
+    SUBSTRATE_TEMP,
     CRITICAL_TEMP,
     IC0_C3,
     PROBE_STATION_TEMP,
+    CRITICAL_CURRENT_ZERO,
     READ_XMAX,
     READ_XMIN,
     RETRAP,
     WIDTH,
+    IRM,
+    IRHL_TR,
+
 )
 from nmem.simulation.spice_circuits.functions import process_read_data
 from nmem.simulation.spice_circuits.plotting import (
@@ -58,6 +63,7 @@ from nmem.analysis.currents import (
     get_state_current_markers,
     get_state_currents_measured,
     get_write_current,
+    calculate_critical_current_temp,
 )
 from nmem.analysis.text_mapping import (
     get_text_from_bit,
@@ -71,6 +77,9 @@ from nmem.analysis.utils import (
 )
 from nmem.measurement.functions import (
     calculate_power,
+)
+from nmem.measurement.cells import (
+    CELLS,
 )
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
@@ -1179,6 +1188,24 @@ def plot_read_sweep_array(
         cbar.set_label("Write Current [µA]")
 
     return ax
+
+
+
+def plot_read_sweep_write_current(data_list, save_path=None):
+    fig, ax = plt.subplots()
+    plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
+    ax.set_xlabel("Read Current [$\mu$A]")
+    ax.set_ylabel("Bit Error Rate")
+    ax.legend(
+        frameon=False,
+        loc="upper left",
+        bbox_to_anchor=(1, 1),
+        title="Write Current [$\mu$A]",
+    )
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+    plt.show()
+
 
 
 def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
@@ -2577,3 +2604,150 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     if save_fig:
         plt.savefig("spice_comparison.pdf", bbox_inches="tight")
     plt.show()
+
+
+
+def plot_read_current_operating(dict_list):
+    """Plot all figures using the provided data dictionary list."""
+    fig, axs = plt.subplot_mosaic("AB;CD", figsize=(8.3, 4))
+
+    plot_read_sweep_array(
+        axs["A"],
+        dict_list,
+        "bit_error_rate",
+        "write_current",
+    )
+    axs["A"].set_xlim(650, 850)
+
+    plot_read_switch_probability_array(axs["B"], dict_list)
+    axs["B"].set_xlim(650, 850)
+    axs["A"].set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
+    axs["A"].set_ylabel("BER")
+
+    ax = axs["C"]
+    for data_dict in dict_list:
+        state_current_markers = get_state_current_markers(data_dict, "read_current")
+        write_current = get_write_current(data_dict)
+        for i, state_current in enumerate(state_current_markers[0, :]):
+            if state_current > 0:
+                ax.plot(
+                    write_current,
+                    state_current,
+                    "o",
+                    label=f"{write_current} $\\mu$A",
+                    markerfacecolor=RBCOLORS[i],
+                    markeredgecolor="none",
+                    markersize=4,
+                )
+    ax.set_xlim(0, write_current)
+    ax.set_ylabel("$I_{\\mathrm{state}}$ [$\\mu$A]")
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+
+    ic_list = [IRM]
+    write_current_list = [0]
+    ic_list2 = [IRM]
+    write_current_list2 = [0]
+    for data_dict in dict_list:
+        write_current = get_write_current(data_dict)
+
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        read_currents = get_read_currents(data_dict)
+        if not np.isnan(berargs[0]) and write_current < 100:
+            ic_list.append(read_currents[berargs[0]])
+            write_current_list.append(write_current)
+        if not np.isnan(berargs[2]) and write_current > 100:
+            ic_list.append(read_currents[berargs[3]])
+            write_current_list.append(write_current)
+
+        if not np.isnan(berargs[1]):
+            ic_list2.append(read_currents[berargs[1]])
+            write_current_list2.append(write_current)
+        if not np.isnan(berargs[3]):
+            ic_list2.append(read_currents[berargs[2]])
+            write_current_list2.append(write_current)
+
+    ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
+    ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
+    ax.set_xlim(0, 300)
+    ax.set_ylabel("$I_{\\mathrm{read}}$ [$\\mu$A]")
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.axhline(IRM, color="black", linestyle="--", linewidth=0.5)
+    persistent_current = []
+    upper = []
+    lower = []
+    for i, write_current in enumerate(write_current_list):
+        if write_current > IRHL_TR / 2:
+            ip = np.abs(write_current - IRHL_TR)
+        else:
+            ip = write_current
+        if ip > IRHL_TR:
+            ip = IRHL_TR
+    write_current_array = np.linspace(
+        write_current_list[0], write_current_list[-1], 1000
+    )
+    persistent_current = np.where(
+        write_current_array > IRHL_TR / 2,
+        np.abs(write_current_array - IRHL_TR),
+        write_current_array,
+    )
+    persistent_current = np.where(
+        persistent_current > IRHL_TR, IRHL_TR, persistent_current
+    )
+    upper = IRM + persistent_current / 2
+    lower = IRM - persistent_current / 2
+    ax.fill_between(write_current_array, lower, upper, color="black", alpha=0.1)
+    ic = np.array(ic_list)
+    ic2 = np.array(ic_list2)
+
+    read_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_read_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+
+    delta_read_current = np.subtract(ic2, ic)
+
+    critical_current_channel = calculate_critical_current_temp(
+        read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
+    )
+    critical_current_left = critical_current_channel * WIDTH
+    critical_current_right = critical_current_channel * (1 - WIDTH)
+
+    retrap2 = (ic2 - critical_current_right) / critical_current_left
+
+
+    ax = axs["D"]
+    ax.plot(
+        write_current_list,
+        np.abs(delta_read_current),
+        "-o",
+        color="black",
+        markersize=3.5,
+    )
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.set_ylabel("$|\\Delta I_{\\mathrm{read}}|$ [$\\mu$A]")
+    ax.set_xlim(0, 300)
+    ax.set_ylim(0, 110)
+    ax.patch.set_alpha(0)
+    ax.set_zorder(1)
+
+    ax2 = ax.twinx()
+    ax2.plot(write_current_array, persistent_current, "-", color="grey", zorder=-1)
+    ax2.set_ylabel("$I_{\\mathrm{persistent}}$ [$\\mu$A]")
+    ax2.set_ylim(0, 110)
+    ax2.set_zorder(0)
+    ax2.fill_between(
+        write_current_array,
+        np.zeros_like(write_current_array),
+        persistent_current,
+        color="black",
+        alpha=0.1,
+    )
+    fig.subplots_adjust(wspace=0.33, hspace=0.4)
+    save_fig = False
+    if save_fig:
+        plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
+    plt.show()
+

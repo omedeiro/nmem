@@ -1,18 +1,89 @@
 from typing import Literal, Tuple
 
 import numpy as np
+import pandas as pd
 from scipy.interpolate import griddata
 from scipy.optimize import least_squares
 
-from nmem.analysis.constants import CRITICAL_TEMP
+from nmem.analysis.constants import CRITICAL_TEMP, IRHL_TR, IRM, SUBSTRATE_TEMP, CRITICAL_CURRENT_ZERO, WIDTH
 from nmem.analysis.currents import calculate_state_currents
 from nmem.analysis.utils import (
     filter_first,
 )
+from nmem.measurement.cells import CELLS
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
+
+from nmem.analysis.currents import (
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
+)
+
+
+def calculate_inductance_ratio(state0, state1, ic0):
+    alpha = (ic0 - state1) / (state0 - state1)
+    # alpha_test = 1 - ((critical_current_right - persistent_current_est) / ic)
+    # alpha_test2 = (critical_current_left - persistent_current_est) / ic2
+
+    return alpha
+
+
+def calculate_operating_table(
+    dict_list, ic_list, write_current_list, ic_list2, write_current_list2
+):
+    ic = np.array(ic_list)
+    ic2 = np.array(ic_list2)
+    write_current_array = np.array(write_current_list)
+    data_dict = dict_list[-1] if dict_list else {}
+    read_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_read_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+    write_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_write_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+    critical_current_channel = calculate_critical_current_temp(
+        read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
+    )
+    critical_current_left = critical_current_channel * WIDTH
+    critical_current_right = critical_current_channel * (1 - WIDTH)
+    read_current_difference = ic2 - ic
+    read1_dist = np.abs(ic - IRM)
+    read2_dist = np.abs(ic2 - IRM)
+    persistent_current = []
+    for i, write_current in enumerate(write_current_list):
+        if write_current > IRHL_TR / 2:
+            ip = np.abs(write_current - IRHL_TR) / 2
+        else:
+            ip = write_current
+        if ip > IRHL_TR / 2:
+            ip = IRHL_TR / 2
+        persistent_current.append(ip)
+    df = pd.DataFrame(
+        {
+            "Write Current": write_current_list,
+            "Read Current": ic_list,
+            "Read Current 2": ic_list2,
+            "Channel Critical Current": critical_current_channel
+            * np.ones_like(ic_list),
+            "Channel Critical Current Left": critical_current_left
+            * np.ones_like(ic_list),
+            "Channel Critical Current Right": critical_current_right
+            * np.ones_like(ic_list),
+            "Persistent Current": persistent_current,
+            "Read Current Difference": read_current_difference,
+            "Read Current 1 Distance": read1_dist,
+            "Read Current 2 Distance": read2_dist,
+        }
+    )
+    return df
 
 
 def get_enable_write_width(data_dict: dict) -> float:
@@ -162,6 +233,7 @@ def analyze_geom_loop_size(data, loop_sizes, nmeas=1000):
         best_ber.append(np.min(ber_est))
     return vch_list, ber_est_list, err_list, best_ber
 
+
 def interpolate_map(data_map, radius, grid_x, grid_y, boundary_pts):
     x_vals = data_map.columns.astype(float)
     y_vals = data_map.index.astype(float)
@@ -171,11 +243,12 @@ def interpolate_map(data_map, radius, grid_x, grid_y, boundary_pts):
     xy, z = xy[mask], z[mask]
 
     bx, by, bz = boundary_pts
-    aug_xy = np.column_stack([np.concatenate([xy[:, 0], bx]),
-                              np.concatenate([xy[:, 1], by])])
+    aug_xy = np.column_stack(
+        [np.concatenate([xy[:, 0], bx]), np.concatenate([xy[:, 1], by])]
+    )
     aug_z = np.concatenate([z, bz])
 
-    grid_z = griddata(aug_xy, aug_z, (grid_x, grid_y), method='cubic')
+    grid_z = griddata(aug_xy, aug_z, (grid_x, grid_y), method="cubic")
     distance = np.sqrt(grid_x**2 + grid_y**2)
     grid_z[distance > radius] = np.nan
     return grid_z, xy, z
@@ -257,7 +330,6 @@ def fit_state_currents(
     return fit
 
 
-
 def prepare_state_current_data(data_dict):
     from nmem.analysis.utils import filter_nan
 
@@ -276,4 +348,3 @@ def prepare_state_current_data(data_dict):
             x_list.append(None)
             y_list.append(None)
     return x_list, y_list
-
