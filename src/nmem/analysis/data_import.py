@@ -20,6 +20,8 @@ from nmem.analysis.plotting import CMAP
 from nmem.analysis.utils import filter_first
 from nmem.simulation.spice_circuits.functions import process_read_data
 
+from nmem.analysis.constants import IRM
+
 
 def load_autoprobe_data(filepath, grid_size=56):
     """Load autoprobe data from a parsed .mat file and return as a DataFrame with bounds-checked coordinates."""
@@ -40,10 +42,10 @@ def load_autoprobe_data(filepath, grid_size=56):
 
             # Parse and flip die/device coordinates
             x_die = ord(die_str[0].upper()) - ord("A")  # 'A' → 0
-            y_die = 6 - (int(die_str[1]) - 1)           # '1' → 5, '7' → 0
+            y_die = 6 - (int(die_str[1]) - 1)  # '1' → 5, '7' → 0
 
             x_dev = ord(dev_str[0].upper()) - ord("A")  # 'A' → 0
-            y_dev = 7 - (int(dev_str[1]) - 1)           # '1' → 7 → 0
+            y_dev = 7 - (int(dev_str[1]) - 1)  # '1' → 7 → 0
 
             x_abs = x_die * 8 + x_dev
             y_abs = y_die * 8 + y_dev
@@ -61,20 +63,22 @@ def load_autoprobe_data(filepath, grid_size=56):
                 squares = 50 * (x_dev + 1)
             else:
                 squares = None
-            records.append({
-                "id": f"{die_str}_{dev_str}",
-                "die": die_str,
-                "device": dev_str,
-                "x_die": x_die,
-                "y_die": y_die,
-                "x_dev": x_dev,
-                "y_dev": y_dev,
-                "x_abs": x_abs,
-                "y_abs": y_abs,
-                "Rmean": rmean,
-                "Rmse": rmse,
-                "squares": squares,
-            })
+            records.append(
+                {
+                    "id": f"{die_str}_{dev_str}",
+                    "die": die_str,
+                    "device": dev_str,
+                    "x_die": x_die,
+                    "y_die": y_die,
+                    "x_dev": x_dev,
+                    "y_dev": y_dev,
+                    "x_abs": x_abs,
+                    "y_abs": y_abs,
+                    "Rmean": rmean,
+                    "Rmse": rmse,
+                    "squares": squares,
+                }
+            )
 
         except Exception as e:
             print(f"Skipping malformed entry: die={die}, dev={dev}, error={e}")
@@ -106,6 +110,8 @@ def import_read_current_sweep_operating_data(directory):
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
     return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
+
+
 def import_write_sweep_formatted() -> list[dict]:
     dict_list = import_directory(
         os.path.join(os.path.dirname(__file__), "write_current_sweep_enable_write/data")
@@ -200,12 +206,10 @@ def save_directory_list(file_path: str, file_list: list[str]) -> None:
     return
 
 
-
 def get_file_names(file_path: str) -> list:
     files = os.listdir(file_path)
     files = [file for file in files if file.endswith(".mat")]
     return files
-
 
 
 def import_elionix_log(log_path):
@@ -315,14 +319,12 @@ def import_geom_loop_size_data(data_dir="data"):
 
 def load_and_clean_thickness(path):
     df = pd.read_csv(path)
-    df['d(nm)'] = df['d(nm)'].astype(str).str.extract(r'([-+]?\d*\.\d+|\d+)').astype(float)
-    grouped = df.groupby(['Y', 'X'])['d(nm)'].mean().reset_index()
-    map_df = grouped.pivot(index='Y', columns='X', values='d(nm)')
-    return map_df.drop(index='Y', errors='ignore').drop(columns='X', errors='ignore')
-
-
-
-
+    df["d(nm)"] = (
+        df["d(nm)"].astype(str).str.extract(r"([-+]?\d*\.\d+|\d+)").astype(float)
+    )
+    grouped = df.groupby(["Y", "X"])["d(nm)"].mean().reset_index()
+    map_df = grouped.pivot(index="Y", columns="X", values="d(nm)")
+    return map_df.drop(index="Y", errors="ignore").drop(columns="X", errors="ignore")
 
 
 def import_read_current_sweep_data():
@@ -357,6 +359,7 @@ def import_read_current_sweep_three_data():
     enable_read_310_list = import_directory("data_310uA")
     return [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
+
 def import_read_current_sweep_enable_write_data():
     """
     Import all relevant data lists for the read current sweep enable write analysis.
@@ -369,6 +372,7 @@ def import_read_current_sweep_enable_write_data():
     data_list2 = [data_list[0], data_list[3], data_list[-6]]
     colors = CMAP(np.linspace(0, 1, 4))
     return data_list, data_list2, colors
+
 
 def import_simulation_data(data_dir="data"):
     """Import and sort .raw simulation files by write current."""
@@ -447,6 +451,7 @@ def load_current_sweep_data():
 
     return files, ltsp_data_dict, dict_list, write_current_list
 
+
 def import_operating_data(directory):
     dict_list = import_directory(directory)
     ic_list = []
@@ -471,4 +476,3 @@ def import_operating_data(directory):
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
     return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
-
