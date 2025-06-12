@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
@@ -8,7 +7,7 @@ plt.rcParams["figure.figsize"] = [6, 4]
 plt.rcParams["font.size"] = 14
 
 
-if __name__ == "__main__":
+def main():
     fig, ax = plt.subplots()
     dict_list = import_directory("data3")
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current")
@@ -20,5 +19,9 @@ if __name__ == "__main__":
         frameon=False,
         loc="upper left",
         bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
+        title="Write Current [$\\mu$A]",
     )
+
+
+if __name__ == "__main__":
+    main()

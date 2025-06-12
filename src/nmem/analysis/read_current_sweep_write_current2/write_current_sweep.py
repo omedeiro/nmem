@@ -2,7 +2,7 @@
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
-from nmem.analysis.core_analysis import (
+from nmem.analysis.currents import (
     get_channel_temperature,
     get_enable_read_current,
 )

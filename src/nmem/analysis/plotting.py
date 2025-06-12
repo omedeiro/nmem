@@ -75,12 +75,16 @@ from nmem.measurement.functions import (
 )
 from nmem.simulation.spice_circuits.functions import process_read_data
 from nmem.simulation.spice_circuits.plotting import (
-    CMAP,
     create_plot,
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
 
+from nmem.analysis.styles import (
+    CMAP,
+    CMAP2,
+    RBCOLORS,
+)
 
 
 def polygon_under_graph(x, y, y2=0.0):

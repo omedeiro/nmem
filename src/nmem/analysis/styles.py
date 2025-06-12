@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import font_manager as fm
 from matplotlib.colors import to_rgb
+from matplotlib import colors as mcolors
 
+RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+C0 = "#1b9e77"
+C1 = "#d95f02"
+CMAP = plt.get_cmap("coolwarm")
+CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
+CMAP3 = plt.get_cmap("plasma").reversed()
 
 def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
     """
