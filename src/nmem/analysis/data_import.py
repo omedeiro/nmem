@@ -475,3 +475,17 @@ def import_operating_data(directory):
             ic_list2.append(read_currents[berargs[2]])
             write_current_list2.append(write_current)
     return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
+
+
+def import_delay_data(data_dir="data3"):
+    """Import and preprocess data for retention test plots."""
+    dict_list = import_directory(data_dir)
+    delay_list = []
+    bit_error_rate_list = []
+    for data_dict in dict_list:
+        delay = data_dict.get("delay").flatten()[0] * 1e-3
+        bit_error_rate = get_bit_error_rate(data_dict)
+        delay_list.append(delay)
+        bit_error_rate_list.append(bit_error_rate)
+    fidelity = 1 - np.array(bit_error_rate_list)
+    return np.array(delay_list), np.array(bit_error_rate_list), fidelity

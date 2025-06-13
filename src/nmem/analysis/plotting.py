@@ -83,6 +83,7 @@ from nmem.simulation.spice_circuits.plotting import (
 from nmem.analysis.styles import (
     CMAP,
     CMAP2,
+    CMAP3,
     RBCOLORS,
 )
 
@@ -2699,3 +2700,26 @@ def plot_read_current_operating(dict_list):
     if save_fig:
         plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
     plt.show()
+
+
+
+def plot_retention(delay_list, bit_error_rate_list):
+    """Plot BER vs retention time."""
+    fig, axs = plt.subplot_mosaic("A;B", figsize=(3.5, 3.5), constrained_layout=True)
+    ax = axs["A"]
+    ax.set_aspect("equal")
+    sort_index = np.argsort(delay_list)
+    delay_list = delay_list[sort_index]
+    bit_error_rate_list = bit_error_rate_list[sort_index]
+    ax.plot(delay_list, bit_error_rate_list, marker="o", color="black")
+    ax.set_ylabel("BER")
+    ax.set_xlabel("Memory Retention Time (s)")
+    ax.set_xscale("log")
+    ax.set_xbound(lower=1e-6)
+    ax.xaxis.set_label_position("top")
+    ax.xaxis.set_ticks_position("top")
+    ax.grid(True, which="both", linestyle="--")
+    ax.set_yscale("log")
+    ax.set_ylim([1e-4, 1e-3])
+    ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+    return fig, axs

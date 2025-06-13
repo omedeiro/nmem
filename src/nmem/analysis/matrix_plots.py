@@ -327,3 +327,30 @@ def plot_die_resistance_map(
     #     annotate_matrix(ax, Rmeas)
 
     # return ax, im
+
+
+def plot_ber_array(ax):
+    """Plot BER array map."""
+    ARRAY_SIZE = (4, 4)
+    param_dict = initialize_dict(ARRAY_SIZE)
+    xloc_list = []
+    yloc_list = []
+    for c in CELLS:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
+        xloc_list.append(xloc)
+        yloc_list.append(yloc)
+    plot_parameter_array(
+        ax,
+        xloc_list,
+        yloc_list,
+        param_dict["bit_error_rate"],
+        log=True,
+        cmap=plt.get_cmap("Blues").reversed(),
+    )
+    cax = ax.inset_axes([1.10, 0, 0.1, 1])
+    cbar = ax.figure.colorbar(
+        ax.get_children()[0], cax=cax, orientation="vertical", label="minimum BER"
+    )
+    # cbar.set_ticks([1e-5, 1e-4, 1e-3, 1e-2])
+
