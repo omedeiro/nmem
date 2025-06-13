@@ -3,10 +3,6 @@ import matplotlib.pyplot as plt
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import plot_read_sweep_array
 
-plt.rcParams["figure.figsize"] = [5, 3.5]
-plt.rcParams["font.size"] = 14
-
-
 def main():
     dict_list = import_directory("data")
     fig, ax = plt.subplots()

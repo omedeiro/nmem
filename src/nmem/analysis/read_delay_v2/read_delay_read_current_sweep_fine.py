@@ -3,16 +3,11 @@ import matplotlib.pyplot as plt
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     plot_read_delay,
-    set_plot_style,
 )
 
-set_plot_style()
-
-plt.rcParams["figure.figsize"] = [3.5, 3.5]
-plt.rcParams["font.size"] = 12
 
 
-if __name__ == "__main__":
+def main():
     dict_list = import_directory("data")
 
     fig, ax = plt.subplots()
@@ -28,3 +23,7 @@ if __name__ == "__main__":
         title="Read Delay",
     )
     plt.show()
+
+
+if __name__ == "__main__":
+    main()

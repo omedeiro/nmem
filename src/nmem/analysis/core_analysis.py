@@ -354,3 +354,29 @@ def prepare_state_current_data(data_dict):
             x_list.append(None)
             y_list.append(None)
     return x_list, y_list
+
+
+
+def compute_sigma_separation(data: dict, show_print=True) -> float:
+    """Compute the peak separation between read0 and read1 histograms in units of σ."""
+    v_read0 = np.array(data["read_zero_top"])
+    v_read1 = np.array(data["read_one_top"])
+
+    # Remove NaNs or invalid data
+    v_read0 = v_read0[np.isfinite(v_read0)]
+    v_read1 = v_read1[np.isfinite(v_read1)]
+
+    mu0 = np.mean(v_read0)
+    mu1 = np.mean(v_read1)
+    sigma0 = np.std(v_read0)
+    sigma1 = np.std(v_read1)
+
+    sigma_avg = 0.5 * (sigma0 + sigma1)
+    separation_sigma = mu0 + sigma0 * 3 - (mu1 - 3 * sigma1)
+
+    if show_print:
+        print(f"μ0 = {mu0:.3f} mV, σ0 = {sigma0:.3f} mV")
+        print(f"μ1 = {mu1:.3f} mV, σ1 = {sigma1:.3f} mV")
+        print(f"Separation = {separation_sigma:.2f} σ")
+
+    return separation_sigma
