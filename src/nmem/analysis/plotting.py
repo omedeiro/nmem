@@ -32,6 +32,7 @@ from nmem.analysis.constants import (
     WIDTH,
 )
 from nmem.analysis.core_analysis import (
+    compute_sigma_separation,
     get_enable_write_width,
     get_fitting_points,
     get_read_width,
@@ -57,6 +58,12 @@ from nmem.analysis.currents import (
     get_state_currents_measured,
     get_write_current,
 )
+from nmem.analysis.styles import (
+    CMAP,
+    CMAP2,
+    CMAP3,
+    RBCOLORS,
+)
 from nmem.analysis.text_mapping import (
     get_text_from_bit,
 )
@@ -64,7 +71,6 @@ from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
     filter_nan,
-    filter_plateau,
     get_current_cell,
 )
 from nmem.measurement.cells import (
@@ -78,13 +84,6 @@ from nmem.simulation.spice_circuits.plotting import (
     create_plot,
     plot_current_sweep_ber,
     plot_current_sweep_switching,
-)
-
-from nmem.analysis.styles import (
-    CMAP,
-    CMAP2,
-    CMAP3,
-    RBCOLORS,
 )
 
 
@@ -1672,8 +1671,8 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
         ax = axs[row, column]
         ax = plot_cell_data(ax, data_dict, colors, markers)
 
-        xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-        plot_linear_fit(ax, xfit, yfit)
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+        # plot_linear_fit(ax, xfit, yfit)
 
         ax.xaxis.set_major_locator(MultipleLocator(500))
         ax.xaxis.set_minor_locator(MultipleLocator(100))
@@ -2723,3 +2722,48 @@ def plot_retention(delay_list, bit_error_rate_list):
     ax.set_ylim([1e-4, 1e-3])
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
     return fig, axs
+
+
+
+def plot_voltage_pulse_avg(dict_list):
+    """Plot voltage pulse traces and histograms."""
+    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=(6, 5), constrained_layout=True)
+    ax2 = ax_dict["A"].twinx()
+    ax3 = ax_dict["B"].twinx()
+
+    plot_voltage_trace_averaged(
+        ax_dict["A"], dict_list[4], "trace_write_avg", color="#293689", label="Write"
+    )
+    plot_voltage_trace_averaged(
+        ax2, dict_list[4], "trace_ewrite_avg", color="#ff1423", label="Enable\nWrite"
+    )
+    plot_voltage_trace_averaged(
+        ax_dict["B"], dict_list[4], "trace_read0_avg", color="#1966ff", label="Read 0"
+    )
+    plot_voltage_trace_averaged(
+        ax_dict["B"],
+        dict_list[4],
+        "trace_read1_avg",
+        color="#ff7f0e",
+        linestyle="--",
+        label="Read 1",
+    )
+    plot_voltage_trace_averaged(
+        ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable\nRead"
+    )
+
+    sigma_sep = compute_sigma_separation(dict_list[3], show_print=True)
+    ax_dict["A"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["A"].set_ylabel("Voltage [mV]")
+    ax2.legend(loc="upper right", handlelength=1.2)
+    ax2.set_ylabel("Voltage [mV]")
+    ax3.legend(loc="upper right", handlelength=1.2)
+    ax3.set_ylabel("Voltage [mV]")
+    ax_dict["B"].set_xlabel("time [µs]")
+    ax_dict["B"].set_ylabel("Voltage [mV]")
+    ax_dict["B"].legend(loc="upper left", handlelength=1.2)
+    save_fig = False
+    if save_fig:
+        plt.savefig("voltage_trace_out.png", bbox_inches="tight")
+    plt.show()
+

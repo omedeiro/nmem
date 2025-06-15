@@ -1,6 +1,4 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import numpy as np
 
 from nmem.analysis.data_import import import_delay_data
 from nmem.analysis.matrix_plots import plot_ber_array

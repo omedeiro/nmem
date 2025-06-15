@@ -6,7 +6,6 @@ from nmem.analysis.plotting import (
 )
 
 
-
 def main():
     dict_list = import_directory("data")
 

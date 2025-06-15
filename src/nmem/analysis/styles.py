@@ -3,9 +3,9 @@ import os
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors as mcolors
 from matplotlib import font_manager as fm
 from matplotlib.colors import to_rgb
-from matplotlib import colors as mcolors
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
 C0 = "#1b9e77"
