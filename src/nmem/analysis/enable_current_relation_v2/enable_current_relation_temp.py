@@ -9,7 +9,7 @@ from nmem.analysis.currents import (
     get_max_enable_current,
 )
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_current_vs_temp
+from nmem.analysis.sweep_plots import plot_enable_current_vs_temp
 from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     filter_plateau,

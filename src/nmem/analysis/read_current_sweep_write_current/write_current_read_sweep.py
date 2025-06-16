@@ -1,6 +1,6 @@
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (
+from nmem.analysis.sweep_plots import (
     plot_read_sweep_write_current,
 )
 

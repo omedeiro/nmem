@@ -1,21 +1,19 @@
 import matplotlib.pyplot as plt
-import numpy as np
 
 from nmem.analysis.core_analysis import (
     extract_temp_current_data,
     process_write_temp_arrays,
 )
-
-from nmem.analysis.data_import import import_directory, load_and_process_write_sweep_data
-from nmem.analysis.plotting import (
-    plot_enable_write_sweep,
-    plot_write_temp_vs_current,
-    plot_write_sweep_ber,
-    plot_temp_vs_current,
+from nmem.analysis.data_import import (
+    import_directory,
+    load_and_process_write_sweep_data,
 )
-
-
-
+from nmem.analysis.sweep_plots import (
+    plot_enable_write_sweep,
+    plot_temp_vs_current,
+    plot_write_sweep_ber,
+    plot_write_temp_vs_current,
+)
 
 
 def main(

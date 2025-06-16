@@ -377,3 +377,144 @@ def plot_alignment_offset_hist(
         plt.savefig(output_path, dpi=300)
     plt.show()
     return fig, ax
+
+
+def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
+    ax.hist(
+        data_dict["read_zero_top"][0, :] * 1e3,
+        log=True,
+        range=(200, 600),
+        bins=100,
+        label="Read 0",
+        color="#658DDC",
+        alpha=0.8,
+        zorder=-1,
+    )
+    ax.hist(
+        data_dict["read_one_top"][0, :] * 1e3,
+        log=True,
+        range=(200, 600),
+        bins=100,
+        label="Read 1",
+        color="#DF7E79",
+        alpha=0.8,
+    )
+    ax.legend()
+    return ax
+
+
+
+def plot_alignment_stats(
+    df_z,
+    df_rot_valid,
+    dx_nm,
+    dy_nm,
+    z_mean,
+    z_std,
+    r_mean,
+    r_std,
+    save=False,
+    output_path="alignment_analysis.pdf",
+):
+    """
+    Plots histograms and KDE for alignment statistics.
+    """
+    import seaborn as sns
+
+    fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
+    # Z height
+    axs[0].hist(df_z["z_height_mm"], bins=20, edgecolor="black", color="#1f77b4")
+    axs[0].set_xlabel("Z Height [mm]")
+    axs[0].set_ylabel("Count")
+    axs[0].text(
+        0.97,
+        0.97,
+        f"$\\mu$ = {z_mean:.4f} mm\n$\\sigma$ = {z_std:.4f} mm",
+        transform=axs[0].transAxes,
+        fontsize=10,
+        va="top",
+        ha="right",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
+        ),
+    )
+    axs[0].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    # Rotation
+    axs[1].hist(
+        df_rot_valid["rotation_mrad"], bins=20, edgecolor="black", color="#1f77b4"
+    )
+    axs[1].set_xlabel("Rotation [mrad]")
+    axs[1].set_ylabel("Count")
+    axs[1].text(
+        0.97,
+        0.97,
+        f"$\\mu$ = {r_mean:.2f} mrad\n$\\sigma$ = {r_std:.2f} mrad",
+        transform=axs[1].transAxes,
+        fontsize=10,
+        va="top",
+        ha="right",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
+        ),
+    )
+    axs[1].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    # Alignment offsets
+    ax = axs[2]
+    sns.kdeplot(
+        x=dx_nm,
+        y=dy_nm,
+        fill=True,
+        cmap="crest",
+        bw_adjust=0.7,
+        levels=10,
+        thresh=0.05,
+        ax=ax,
+    )
+    ax.scatter(
+        dx_nm,
+        dy_nm,
+        color="#333333",
+        s=15,
+        marker="o",
+        label="Alignment Marks",
+        alpha=0.8,
+    )
+    ax.axhline(0, color="black", linestyle="--", linewidth=1)
+    ax.axvline(0, color="black", linestyle="--", linewidth=1)
+    ax.set_xlabel("ΔX [nm]")
+    ax.set_ylabel("ΔY [nm]")
+    ax.axis("equal")
+    ax.legend()
+    plt.tight_layout()
+    if save:
+        plt.savefig(output_path, dpi=300)
+    plt.show()
+    return fig, axs
+
+
+
+def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
+    if len(vals) == 0:
+        ax.text(
+            0.5,
+            0.5,
+            f"No data\nfor row {row_char}",
+            ha="center",
+            va="center",
+            fontsize=8,
+        )
+        ax.set_axis_off()
+        return
+    vals = vals[~np.isnan(vals)]
+    log_bins = np.logspace(np.log10(vals.min()), np.log10(vals.max()), 100)
+    ax.hist(vals, bins=log_bins, color="#888", edgecolor="black", alpha=0.8)
+    ax.set_xscale("log")
+    ax.set_xlim(10, 5000)
+    ax.set_ylim(0, 100)
+    ax.grid(True, linestyle=":", linewidth=0.5)
+    ax.set_ylabel(f"{row_char}", rotation=0, ha="right", va="center", fontsize=9)
+    ax.tick_params(axis="both", which="both", labelsize=6)
+    if vmin and vmax:
+        ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
+        ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
+

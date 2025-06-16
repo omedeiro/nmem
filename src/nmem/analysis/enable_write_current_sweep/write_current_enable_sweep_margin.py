@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_write_current_enable_sweep_margin
+from nmem.analysis.sweep_plots import plot_write_current_enable_sweep_margin
 
 
 def main(

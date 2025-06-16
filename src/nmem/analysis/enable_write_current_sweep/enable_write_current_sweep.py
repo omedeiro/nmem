@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_write_sweep2, plot_state_current_markers2
+from nmem.analysis.sweep_plots import plot_enable_write_sweep2, plot_state_current_markers2
 
 
 def main(

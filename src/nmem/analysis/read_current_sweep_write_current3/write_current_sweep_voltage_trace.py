@@ -5,11 +5,11 @@ from nmem.analysis.data_import import (
 )
 from nmem.analysis.plotting import (
     plot_bit_error_rate,
+)
+from nmem.analysis.trace_plots import (
     plot_voltage_trace_stack,
 )
-
-TRACE_INDEX = 10
-
+from nmem.analysis.constants import TRACE_INDEX
 
 def main():
     dict_list = import_directory("data")

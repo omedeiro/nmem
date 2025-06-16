@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_delay_data
 from nmem.analysis.matrix_plots import plot_ber_array
-from nmem.analysis.plotting import plot_retention
+from nmem.analysis.sweep_plots import plot_retention
 
 
 def main():

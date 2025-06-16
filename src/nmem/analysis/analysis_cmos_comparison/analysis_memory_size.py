@@ -14,7 +14,7 @@ from nmem.analysis.analysis_cmos_comparison.memory_data import (
 from nmem.analysis.bar_plots import (
     draw_extruded_barh,
 )
-from nmem.analysis.plotting import set_inter_font, set_pres_style
+from nmem.analysis.styles import set_inter_font, set_pres_style
 
 set_inter_font()
 set_pres_style()

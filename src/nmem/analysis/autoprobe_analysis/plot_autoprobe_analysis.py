@@ -1,8 +1,8 @@
 from nmem.analysis.data_import import load_autoprobe_data
-from nmem.analysis.plotting import plot_combined_histogram_and_die_maps, set_plot_style
+from nmem.analysis.matrix_plots import plot_combined_histogram_and_die_maps
 from nmem.analysis.utils import summarize_die_yield
 
-set_plot_style()
+
 
 
 def main():

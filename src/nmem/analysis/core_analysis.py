@@ -5,6 +5,10 @@ import pandas as pd
 from scipy.interpolate import griddata
 from scipy.optimize import least_squares
 
+from nmem.analysis.bit_error import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
+)
 from nmem.analysis.constants import (
     CRITICAL_CURRENT_ZERO,
     CRITICAL_TEMP,
@@ -17,13 +21,13 @@ from nmem.analysis.currents import (
     calculate_channel_temperature,
     calculate_critical_current_temp,
     calculate_state_currents,
-    get_read_current,
-    get_read_currents,
-    get_write_current,
-    get_enable_write_current,
     get_channel_temperature,
     get_channel_temperature_sweep,
     get_critical_current_heater_off,
+    get_enable_write_current,
+    get_read_current,
+    get_read_currents,
+    get_write_current,
 )
 from nmem.analysis.utils import (
     filter_first,
@@ -33,10 +37,7 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
-from nmem.analysis.bit_error import (
-    get_bit_error_rate,
-    get_bit_error_rate_args,
-)
+
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)

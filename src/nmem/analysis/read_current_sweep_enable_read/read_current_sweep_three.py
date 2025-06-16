@@ -1,5 +1,5 @@
 from nmem.analysis.data_import import import_read_current_sweep_three_data
-from nmem.analysis.plotting import plot_read_current_sweep_three
+from nmem.analysis.sweep_plots import plot_read_current_sweep_three
 
 
 def main():

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_write_sweep_fine
+from nmem.analysis.sweep_plots import plot_enable_write_sweep_fine
 
 
 def main(data_dir="data2", save_fig=False, output_path="enable_write_sweep_fine.pdf"):

@@ -354,3 +354,34 @@ def plot_ber_array(ax):
     )
     # cbar.set_ticks([1e-5, 1e-4, 1e-3, 1e-2])
 
+
+def plot_wafer_maps(maps, titles, cmaps, grid_x, grid_y, radius, annotate_points=False):
+    fig, axes = plt.subplots(1, 3, figsize=(7, 3.5), dpi=300)  # 7.2" ≈ 2-column width
+    for ax, title, (grid_z, pts, vals), cmap in zip(axes, titles, maps, cmaps):
+        circle = plt.Circle((0, 0), radius, color="k", lw=0.5, fill=False)
+        contour = ax.contourf(grid_x, grid_y, grid_z, levels=30, cmap=cmap)
+        # ax.scatter(pts[:, 0], pts[:, 1], c='k', s=8, zorder=10)
+        if annotate_points:
+            for (x, y), v in zip(pts, vals):
+                ax.text(
+                    x,
+                    y,
+                    f"{v:.1f}",
+                    ha="center",
+                    va="center",
+                    fontsize=5,
+                    color="white",
+                    zorder=11,
+                )
+        ax.add_artist(circle)
+        ax.set_aspect("equal")
+        ax.set_title(title)
+        ax.set_xlabel("X (mm)")
+        ax.set_ylabel("Y (mm)")
+        cbar = fig.colorbar(
+            contour, ax=ax, orientation="vertical", fraction=0.046, pad=0.04
+        )
+        cbar.ax.tick_params(labelsize=8)
+        cbar.set_label("Thickness (nm)", fontsize=9)
+    plt.tight_layout()
+    return fig

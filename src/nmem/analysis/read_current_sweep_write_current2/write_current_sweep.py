@@ -9,9 +9,8 @@ from nmem.analysis.currents import (
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.plotting import (
     add_colorbar,
-    plot_read_sweep_array,
 )
-
+from nmem.analysis.sweep_plots import plot_read_sweep_array
 
 def plot_read_temp_sweep_C3(save=True):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))

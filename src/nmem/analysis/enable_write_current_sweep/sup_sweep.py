@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_sweep
+from nmem.analysis.sweep_plots import plot_enable_sweep
 
 
 def main():

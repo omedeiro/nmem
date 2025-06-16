@@ -4,7 +4,7 @@ import numpy as np
 from nmem.analysis.constants import WAFER_RADIUS
 from nmem.analysis.core_analysis import interpolate_map
 from nmem.analysis.data_import import load_and_clean_thickness
-from nmem.analysis.plotting import plot_wafer_maps
+from nmem.analysis.matrix_plots import plot_wafer_maps
 from nmem.analysis.utils import generate_boundary_points
 
 GRID_RES = 400j

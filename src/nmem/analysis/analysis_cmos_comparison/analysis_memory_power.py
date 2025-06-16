@@ -6,7 +6,7 @@ from nmem.analysis.analysis_cmos_comparison.memory_data import (
     energies_labels,
 )
 from nmem.analysis.bar_plots import plot_energy_extruded_bar
-from nmem.analysis.plotting import set_inter_font, set_pres_style
+from nmem.analysis.styles import set_inter_font, set_pres_style
 
 set_inter_font()
 set_pres_style()

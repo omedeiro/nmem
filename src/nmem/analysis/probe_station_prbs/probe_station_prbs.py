@@ -1,7 +1,7 @@
 
 from nmem.analysis.core_analysis import analyze_prbs_errors
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_probe_station_prbs
+from nmem.analysis.trace_plots import plot_probe_station_prbs
 
 
 def main(

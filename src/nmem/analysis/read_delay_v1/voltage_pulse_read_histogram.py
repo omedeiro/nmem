@@ -1,6 +1,6 @@
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (
+from nmem.analysis.trace_plots import (
     plot_voltage_pulse_avg,
 )
 

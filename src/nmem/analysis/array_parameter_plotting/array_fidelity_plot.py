@@ -8,7 +8,7 @@ from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
-from nmem.analysis.plotting import (
+from nmem.analysis.styles import (
     set_inter_font,
     set_pres_style,
 )
