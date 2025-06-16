@@ -380,3 +380,24 @@ def compute_sigma_separation(data: dict, show_print=True) -> float:
         print(f"Separation = {separation_sigma:.2f} σ")
 
     return separation_sigma
+
+
+
+def extract_shifted_traces(
+    data_dict: dict, trace_index: int = 0, time_shift: float = 0.0
+) -> Tuple:
+    chan_in_x, chan_in_y = get_voltage_trace_data(
+        data_dict, "trace_chan_in", trace_index
+    )
+    chan_out_x, chan_out_y = get_voltage_trace_data(
+        data_dict, "trace_chan_out", trace_index
+    )
+    enab_in_x, enab_in_y = get_voltage_trace_data(data_dict, "trace_enab", trace_index)
+
+    # Shift all x values
+    chan_in_x = chan_in_x + time_shift
+    chan_out_x = chan_out_x + time_shift
+    enab_in_x = enab_in_x + time_shift
+
+    return chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y
+

@@ -38,6 +38,7 @@ from nmem.analysis.core_analysis import (
     get_read_width,
     get_voltage_trace_data,
     get_write_width,
+    extract_shifted_traces,
 )
 from nmem.analysis.currents import (
     calculate_branch_currents,
@@ -2766,4 +2767,50 @@ def plot_voltage_pulse_avg(dict_list):
     if save_fig:
         plt.savefig("voltage_trace_out.png", bbox_inches="tight")
     plt.show()
+
+
+
+
+def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> List[Axes]:
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    colors = np.flipud(colors)
+
+    for idx, data_dict in enumerate(dict_list):
+        shift = 10 * idx  # Shift time window by 10 µs per dataset
+        chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y = (
+            extract_shifted_traces(data_dict, time_shift=shift)
+        )
+
+        plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color=colors[0])
+        plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color=colors[1])
+        plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color=colors[-1])
+
+    axs[2].xaxis.set_major_locator(MultipleLocator(10))
+    axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
+
+    axs[2].set_xlim(0, 50)
+    axs[0].legend(
+        ["input"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
+    axs[1].legend(
+        ["enable"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
+    axs[2].legend(
+        ["output"],
+        loc="upper right",
+        fontsize=8,
+        frameon=True,
+    )
+    fig = plt.gcf()
+    fig.supylabel("Voltage [mV]", fontsize=9)
+    fig.supxlabel("Time [µs]", y=-0.02, fontsize=9)
+    fig.subplots_adjust(hspace=0.0)
+
+    return axs
 
