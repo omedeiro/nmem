@@ -489,3 +489,11 @@ def import_delay_data(data_dir="data3"):
         bit_error_rate_list.append(bit_error_rate)
     fidelity = 1 - np.array(bit_error_rate_list)
     return np.array(delay_list), np.array(bit_error_rate_list), fidelity
+
+
+def load_and_process_write_sweep_data(path):
+    dict_list = import_directory(path)
+    dict_list = dict_list[1:][::-1]
+    return dict_list
+
+

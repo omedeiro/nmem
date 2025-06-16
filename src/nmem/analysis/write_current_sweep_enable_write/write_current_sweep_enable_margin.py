@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -9,46 +8,21 @@ from nmem.analysis.data_import import (
 from nmem.analysis.plotting import (
     plot_write_sweep_formatted,
     plot_write_sweep_formatted_markers,
-    set_plot_style,
 )
 
-set_plot_style()
 
-C0 = "#1b9e77"
-C1 = "#d95f02"
-RBCOLORS = plt.get_cmap("coolwarm")(np.linspace(0, 1, 4))
-
-
-
-
-if __name__ == "__main__":
-    inner = [
-        ["A", "B"],
-    ]
+def main():
     innerb = [
         ["C", "D"],
     ]
-    innerc = [
-        ["delay", "bergrid"],
-    ]
-    outer_nested_mosaic = [
-        [inner],
-        [innerb],
-        [innerc],
-    ]
-
     fig, axs = plt.subplot_mosaic(
         innerb,
         figsize=(6, 2),
     )
-
     dict_list = import_write_sweep_formatted()
     plot_write_sweep_formatted(axs["C"], dict_list)
-
     data_dict = import_write_sweep_formatted_markers(dict_list)
     plot_write_sweep_formatted_markers(axs["D"], data_dict)
-
-
     fig.subplots_adjust(
         left=0.1,
         right=0.9,
@@ -57,3 +31,7 @@ if __name__ == "__main__":
         hspace=0.4,
         wspace=0.7,
     )
+
+
+if __name__ == "__main__":
+    main()

@@ -17,6 +17,13 @@ from nmem.analysis.currents import (
     calculate_channel_temperature,
     calculate_critical_current_temp,
     calculate_state_currents,
+    get_read_current,
+    get_read_currents,
+    get_write_current,
+    get_enable_write_current,
+    get_channel_temperature,
+    get_channel_temperature_sweep,
+    get_critical_current_heater_off,
 )
 from nmem.analysis.utils import (
     filter_first,
@@ -26,7 +33,10 @@ from nmem.calculations.calculations import (
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
-
+from nmem.analysis.bit_error import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
+)
 
 def calculate_inductance_ratio(state0, state1, ic0):
     alpha = (ic0 - state1) / (state0 - state1)
@@ -400,4 +410,46 @@ def extract_shifted_traces(
     enab_in_x = enab_in_x + time_shift
 
     return chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y
+
+
+
+def extract_temp_current_data(dict_list):
+    data = []
+    data2 = []
+    for data_dict in dict_list:
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        write_currents = get_read_currents(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
+        read_current = get_read_current(data_dict)
+        for i, arg in enumerate(berargs):
+            if arg is not np.nan:
+                entry = {
+                    "write_current": write_currents[arg],
+                    "write_temp": get_channel_temperature(data_dict, "write"),
+                    "read_current": read_current,
+                    "enable_write_current": enable_write_current,
+                }
+                if i == 0:
+                    data.append(entry)
+                if i == 2:
+                    data2.append(entry)
+    return data, data2
+
+
+def process_write_temp_arrays(dict_list):
+    write_temp_array = np.empty((len(dict_list), 4))
+    write_current_array = np.empty((len(dict_list), 1))
+    critical_current_zero = None
+    for j, data_dict in enumerate(dict_list):
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        write_current = get_write_current(data_dict)
+        write_temps = get_channel_temperature_sweep(data_dict)
+        write_current_array[j] = write_current
+        critical_current_zero = get_critical_current_heater_off(data_dict)
+        for i, arg in enumerate(berargs):
+            if arg is not np.nan:
+                write_temp_array[j, i] = write_temps[arg]
+    return write_current_array, write_temp_array, critical_current_zero
 

@@ -2814,3 +2814,64 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
 
     return axs
 
+
+
+def plot_write_sweep_ber(ax, dict_list):
+    plot_write_sweep(ax, dict_list)
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [µA]")
+    ax.set_ylabel("BER")
+    ax.set_xlim(0, 300)
+    return ax
+
+
+    
+def plot_temp_vs_current(ax, data, data2):
+    ax.plot(
+        [d["write_temp"] for d in data],
+        [d["write_current"] for d in data],
+        "o",
+        color="blue",
+    )
+    ax.plot(
+        [d["write_temp"] for d in data2],
+        [d["write_current"] for d in data2],
+        "o",
+        color="red",
+    )
+    ax.set_xlabel("$T_{\\mathrm{write}}$ [K]")
+    ax.set_ylabel("$I_{\\mathrm{ch}}$ [µA]")
+    ax.set_ylim(0, 300)
+    ax.grid()
+    return ax
+
+
+def plot_enable_write_sweep(ax, dict_list):
+    ax = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
+    ax.set_ylabel("BER")
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+    return ax
+
+
+def plot_write_temp_vs_current(ax, write_current_array, write_temp_array, critical_current_zero):
+    ax2 = ax.twinx()
+    for i in range(4):
+        ax.plot(
+            write_current_array,
+            write_temp_array[:, i],
+            linestyle="--",
+            marker="o",
+            color=RBCOLORS[i],
+        )
+    limits = ax.get_ylim()
+    ic_limits = calculate_critical_current_temp(
+        np.array(limits), CRITICAL_TEMP, critical_current_zero
+    )
+    ax2.set_ylim([ic_limits[0], ic_limits[1]])
+    ax2.set_ylabel("$I_{\\mathrm{CH}}$ [$\\mu$A]")
+    ax.set_xlim(0, 100)
+    ax.xaxis.set_major_locator(plt.MultipleLocator(20))
+    ax.grid()
+    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
+    return ax, ax2
+
