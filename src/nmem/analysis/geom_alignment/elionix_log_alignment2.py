@@ -2,12 +2,10 @@
 
 from nmem.analysis.bar_plots import (
     plot_alignment_offset_hist,
+    plot_alignment_stats,
 )
 from nmem.analysis.core_analysis import analyze_alignment_stats
 from nmem.analysis.data_import import import_elionix_log
-from nmem.analysis.bar_plots import (
-    plot_alignment_stats,
-)
 
 
 def main(

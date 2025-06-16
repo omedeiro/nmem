@@ -3,8 +3,6 @@ from nmem.analysis.matrix_plots import plot_combined_histogram_and_die_maps
 from nmem.analysis.utils import summarize_die_yield
 
 
-
-
 def main():
     df = load_autoprobe_data("autoprobe_parsed.mat")
     wafer_rows = ["1", "4", "6", "7"]

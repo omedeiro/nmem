@@ -33,13 +33,11 @@ from nmem.analysis.currents import (
     get_optimal_enable_read_current,
     get_optimal_enable_write_current,
     get_read_currents,
-    get_state_current_markers,
     get_state_currents_measured,
     get_write_current,
 )
 from nmem.analysis.styles import (
     CMAP,
-    CMAP2,
     CMAP3,
 )
 from nmem.analysis.text_mapping import (

@@ -26,7 +26,6 @@ from nmem.analysis.constants import (
     WIDTH,
 )
 from nmem.analysis.core_analysis import (
-    get_enable_write_current,
     get_enable_write_width,
     get_read_width,
     get_write_width,
@@ -244,11 +243,11 @@ def plot_ic_vs_ih_array(
     return fig, ax
 
 
-def plot_enable_write_sweep(ax, dict_list):
-    ax = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax.set_ylabel("BER")
-    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-    return ax
+# def plot_enable_write_sweep(ax, dict_list):
+#     ax = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
+#     ax.set_ylabel("BER")
+#     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+#     return ax
 
 
 def plot_write_current_sweep(

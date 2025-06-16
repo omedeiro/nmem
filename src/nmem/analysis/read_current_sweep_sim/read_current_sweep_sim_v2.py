@@ -15,8 +15,9 @@ from nmem.analysis.plotting import (
     CMAP,
     plot_simulation_results,
 )
-from nmem.simulation.spice_circuits.functions import process_read_data
 from nmem.analysis.sweep_plots import plot_read_current_sweep_sim
+from nmem.simulation.spice_circuits.functions import process_read_data
+
 
 def main():
     files, ltsp_data_dict, dict_list, write_current_list2 = (

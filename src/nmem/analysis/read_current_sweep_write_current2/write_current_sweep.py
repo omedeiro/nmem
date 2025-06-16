@@ -12,6 +12,7 @@ from nmem.analysis.plotting import (
 )
 from nmem.analysis.sweep_plots import plot_read_sweep_array
 
+
 def plot_read_temp_sweep_C3(save=True):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
     dict_list = [

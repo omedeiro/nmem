@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+from nmem.analysis.constants import TRACE_INDEX
 from nmem.analysis.data_import import (
     import_directory,
 )
@@ -9,7 +10,7 @@ from nmem.analysis.plotting import (
 from nmem.analysis.trace_plots import (
     plot_voltage_trace_stack,
 )
-from nmem.analysis.constants import TRACE_INDEX
+
 
 def main():
     dict_list = import_directory("data")
