@@ -520,7 +520,7 @@ def plot_read_sweep(
     write_temp = None
     label = None
     read_currents = get_read_currents(data_dict)
-
+    print(read_currents)
     if value_name == "bit_error_rate":
         value = get_bit_error_rate(data_dict)
     if value_name == "write_0_read_1":

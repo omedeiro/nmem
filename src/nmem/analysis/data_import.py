@@ -112,9 +112,7 @@ def import_read_current_sweep_operating_data(directory):
 
 
 def import_write_sweep_formatted() -> list[dict]:
-    dict_list = import_directory(
-        os.path.join(os.path.dirname(__file__), "write_current_sweep_enable_write/data")
-    )
+    dict_list = import_directory("../data/ber_sweep_write_current/enable_write")
     dict_list = dict_list[1:]
     dict_list = dict_list[::-1]
     dict_list = sorted(
