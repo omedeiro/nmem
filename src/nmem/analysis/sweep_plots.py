@@ -19,6 +19,7 @@ from nmem.analysis.plotting import (
 from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
+    get_total_switches_norm,
 )
 from nmem.analysis.constants import (
     CRITICAL_CURRENT_ZERO,
@@ -1646,3 +1647,48 @@ def plot_full_grid(axs, dict_list):
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
     return axs
+
+
+
+def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
+    bit_error_rate = get_bit_error_rate(data_dict)
+    berargs = get_bit_error_rate_args(bit_error_rate)
+
+    read_current = get_read_currents(data_dict)
+    for arg in berargs:
+        if arg is not np.nan:
+            ax.plot(
+                read_current[arg],
+                bit_error_rate[arg],
+                marker="o",
+                color=color,
+            )
+            ax.axvline(read_current[arg], color=color, linestyle="--")
+    return ax
+
+
+def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
+    bit_error_rate = get_bit_error_rate(data_dict)
+    total_switches_norm = get_total_switches_norm(data_dict)
+    measurement_param = data_dict.get("y")[0][:, 1] * 1e6
+
+    ax.plot(
+        measurement_param,
+        bit_error_rate,
+        color="#08519C",
+        label="Bit Error Rate",
+        marker=".",
+    )
+    ax.plot(
+        measurement_param,
+        total_switches_norm,
+        color="grey",
+        label="_Total Switches",
+        linestyle="--",
+        linewidth=1,
+    )
+    ax.legend()
+    ax.set_yticks([0, 0.5, 1])
+    ax.set_ylim([0, 1])
+    ax.set_ylabel("Normalized\nBit Error Rate")
+    return ax
