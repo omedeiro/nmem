@@ -119,8 +119,6 @@ def add_colorbar(
     return cbar
 
 
-
-
 def plot_branch_currents(
     ax: Axes,
     T: np.ndarray,

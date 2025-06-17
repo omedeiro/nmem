@@ -20,7 +20,9 @@ from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_total_switches_norm,
+    calculate_ber_errorbar,
 )
+
 from nmem.analysis.constants import (
     CRITICAL_CURRENT_ZERO,
     CRITICAL_TEMP,
@@ -72,6 +74,8 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
+
+
 
 
 def plot_critical_currents_from_dc_sweep(
@@ -490,18 +494,10 @@ def plot_enable_sweep_single(
         **kwargs,
     )
     if add_errorbar:
-        # ax.errorbar(
-        #     enable_currents,
-        #     bit_error_rate,
-        #     yerr=np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
-        #     **kwargs,
-        # )
         ax.fill_between(
             enable_currents,
-            bit_error_rate
-            - np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
-            bit_error_rate
-            + np.sqrt(bit_error_rate * (1 - bit_error_rate) / len(bit_error_rate)),
+            bit_error_rate - calculate_ber_errorbar(bit_error_rate),
+            bit_error_rate + calculate_ber_errorbar(bit_error_rate),
             alpha=0.1,
             color=kwargs.get("color"),
         )
@@ -570,16 +566,10 @@ def plot_read_sweep(
         **kwargs,
     )
     if add_errorbar:
-        # ax.errorbar(
-        #     read_currents,
-        #     value,
-        #     yerr=np.sqrt(value * (1 - value) / len(value)),
-        #     **kwargs,
-        # )
         ax.fill_between(
             read_currents,
-            value - np.sqrt(value * (1 - value) / len(value)),
-            value + np.sqrt(value * (1 - value) / len(value)),
+            value - calculate_ber_errorbar(value),
+            value + calculate_ber_errorbar(value),
             alpha=0.1,
             color=kwargs.get("color"),
         )
@@ -1499,7 +1489,7 @@ def plot_delay(ax: plt.Axes, data_dict: dict):
     delay_list = np.array(delay_list)[sort_index]
     bit_error_rate = np.array(bit_error_rate)[sort_index]
     bit_error_rate = np.array(bit_error_rate).flatten()
-    ber_std = np.sqrt(bit_error_rate * (1 - bit_error_rate) / N)
+    ber_std = calculate_ber_errorbar(bit_error_rate, N)
     ax.errorbar(
         delay_list,
         bit_error_rate,
@@ -1647,7 +1637,6 @@ def plot_full_grid(axs, dict_list):
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
     return axs
-
 
 
 def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:

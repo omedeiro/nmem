@@ -8,6 +8,14 @@ def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
     ber = (w1r0 + w0r1) / 2
     return ber
 
+def calculate_ber_errorbar(ber, N=None):
+    """
+    Calculate the standard error for bit error rate (BER).
+    If N is not provided, use len(ber) if ber is an array, else 1.
+    """
+    if N is None:
+        N = len(ber) if hasattr(ber, "__len__") and not isinstance(ber, float) else 1
+    return np.sqrt(ber * (1 - ber) / N)
 
 
 def get_total_switches_norm(data_dict: dict) -> np.ndarray:
