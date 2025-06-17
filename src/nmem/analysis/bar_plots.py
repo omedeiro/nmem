@@ -298,15 +298,12 @@ def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) 
     ber_flat = ber_flat[valid_mask]
     fidelity_flat = 1 - ber_flat
 
-    # Generate A1 to D4 labels
-    rows = ["A", "B", "C", "D"]
-    cols = range(1, 5)
-    all_labels = [f"{r}{c}" for r in rows for c in cols]
+    # Use centralized label function
+    all_labels = get_cell_labels()
     labels = np.array(all_labels)[valid_mask]
 
     # Error bars from binomial standard deviation
     errors = np.sqrt(ber_flat * (1 - ber_flat) / total_trials)
-    # Clean label values
     display_values = [f"{f:.5f}" if f < 0.99999 else "≥0.99999" for f in fidelity_flat]
 
     # Plotting
@@ -631,3 +628,15 @@ def plot_general_histogram(
     if grid:
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     return n, bins_out, patches
+
+
+def get_cell_labels(rows=None, cols=None):
+    """
+    Generate cell labels like A1, B1, ..., D4 by default.
+    Optionally specify rows and cols for custom grids.
+    """
+    if rows is None:
+        rows = ["A", "B", "C", "D"]
+    if cols is None:
+        cols = range(1, 5)
+    return [f"{r}{c}" for r in rows for c in cols]
