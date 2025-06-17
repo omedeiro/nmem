@@ -5,14 +5,14 @@ from nmem.analysis.analysis_cmos_comparison.memory_data import (
     energies_fj,
     energies_labels,
 )
-from nmem.analysis.bar_plots import plot_energy_extruded_bar
+from nmem.analysis.bar_plots import plot_extruded_bar
 from nmem.analysis.styles import set_inter_font, set_pres_style
 
 set_inter_font()
 set_pres_style()
 
 
-plot_energy_extruded_bar(
+plot_extruded_bar(
     energies_labels, energies_fj, colors
 )
 plt.show()

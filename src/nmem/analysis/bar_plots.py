@@ -93,9 +93,9 @@ def draw_extruded_bar_faces(
         )
 
 
-def plot_energy_extruded_bar(
+def plot_extruded_bar(
     labels,
-    energies_fj,
+    values,
     colors,
     bar_width=0.6,
     depth=50,
@@ -115,7 +115,7 @@ def plot_energy_extruded_bar(
     ----------
     labels : list of str
         Bar labels.
-    energies_fj : list of float
+    values : list of float
         Bar heights (energy values).
     colors : list of str
         Bar colors.
@@ -144,7 +144,7 @@ def plot_energy_extruded_bar(
     else:
         fig = ax.figure
 
-    for i, (val, label, base_color) in enumerate(zip(energies_fj, labels, colors)):
+    for i, (val, label, base_color) in enumerate(zip(values, labels, colors)):
         x = bar_positions[i]
         draw_extruded_bar_faces(
             ax,
@@ -183,12 +183,12 @@ def plot_energy_extruded_bar(
 
 
 def draw_extruded_barh(
-    ax, y_labels, values, colors, labels, xlabel, xticks, xticklabels
+    ax, y_labels, values, colors, bar_labels, xlabel, xticks, xticklabels
 ):
     bar_height = 0.6
     depth = 0.15
 
-    for i, (val, label, base_color) in enumerate(zip(values, labels, colors)):
+    for i, (val, label, base_color) in enumerate(zip(values, bar_labels, colors)):
         y = i
         draw_extruded_bar_faces(
             ax,
