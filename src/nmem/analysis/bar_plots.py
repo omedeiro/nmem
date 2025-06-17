@@ -8,6 +8,91 @@ from matplotlib.patches import Polygon, Rectangle
 from nmem.analysis.styles import darken, lighten, set_inter_font, set_pres_style
 
 
+def draw_extruded_bar_faces(
+    ax, x, y, width, height, depth, orientation="v", base_color="#1f77b4", **kwargs
+):
+    """Draw 3D extruded bar on ax."""
+    top_color = lighten(base_color)
+    side_color = darken(base_color)
+
+    if orientation == "v":
+        # Vertical bar: front, top, side
+        ax.add_patch(
+            Rectangle(
+                (x - width / 2, 0),
+                width,
+                height,
+                facecolor=base_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+        ax.add_patch(
+            Polygon(
+                [
+                    (x - width / 2, height),
+                    (x - width / 2 + depth / 1000, height + depth),
+                    (x + width / 2 + depth / 1000, height + depth),
+                    (x + width / 2, height),
+                ],
+                facecolor=top_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+        ax.add_patch(
+            Polygon(
+                [
+                    (x + width / 2, 0),
+                    (x + width / 2, height),
+                    (x + width / 2 + depth / 1000, height + depth),
+                    (x + width / 2 + depth / 1000, 0 + depth),
+                ],
+                facecolor=side_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+    elif orientation == "h":
+        # Horizontal bar: front, top, side
+        ax.add_patch(
+            Rectangle(
+                (0, y - width / 2),
+                height,
+                width,
+                facecolor=base_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+        ax.add_patch(
+            Polygon(
+                [
+                    (0, y + width / 2),
+                    (depth, y + width / 2 + depth),
+                    (height + depth, y + width / 2 + depth),
+                    (height, y + width / 2),
+                ],
+                facecolor=top_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+        ax.add_patch(
+            Polygon(
+                [
+                    (height, y - width / 2),
+                    (height, y + width / 2),
+                    (height + depth, y + width / 2 + depth),
+                    (height + depth, y - width / 2 + depth),
+                ],
+                facecolor=side_color,
+                edgecolor="none",
+                **kwargs,
+            )
+        )
+
+
 def plot_energy_extruded_bar(
     labels,
     energies_fj,
@@ -21,7 +106,7 @@ def plot_energy_extruded_bar(
     annotation_offset=80,
     ylim=(0, 1500),
     save_path=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plot an extruded bar chart for energy per operation.
@@ -61,48 +146,26 @@ def plot_energy_extruded_bar(
 
     for i, (val, label, base_color) in enumerate(zip(energies_fj, labels, colors)):
         x = bar_positions[i]
-        front_color = base_color
-        top_color = lighten(base_color)
-        side_color = darken(base_color)
-
-        # Front face
-        rect = Rectangle(
-            (x - bar_width / 2, 0), bar_width, val, facecolor=front_color, edgecolor="none", **kwargs
+        draw_extruded_bar_faces(
+            ax,
+            x,
+            y=0,  # y is not used for vertical bars
+            width=bar_width,
+            height=val,
+            depth=depth,
+            orientation="v",
+            base_color=base_color,
+            **kwargs,
         )
-        ax.add_patch(rect)
-
-        # Top face
-        top = Polygon(
-            [
-                (x - bar_width / 2, val),
-                (x - bar_width / 2 + depth / 1000, val + depth),
-                (x + bar_width / 2 + depth / 1000, val + depth),
-                (x + bar_width / 2, val),
-            ],
-            closed=True,
-            facecolor=top_color,
-            edgecolor="none",
-            **kwargs
-        )
-        ax.add_patch(top)
-
-        # Side face
-        side = Polygon(
-            [
-                (x + bar_width / 2, 0),
-                (x + bar_width / 2, val),
-                (x + bar_width / 2 + depth / 1000, val + depth),
-                (x + bar_width / 2 + depth / 1000, 0 + depth),
-            ],
-            closed=True,
-            facecolor=side_color,
-            edgecolor="none",
-            **kwargs
-        )
-        ax.add_patch(side)
-
         # Text annotation
-        ax.text(x, val + annotation_offset, f"{val} fJ", ha="center", va="bottom", fontsize=10)
+        ax.text(
+            x,
+            val + annotation_offset,
+            f"{val} fJ",
+            ha="center",
+            va="bottom",
+            fontsize=10,
+        )
 
     ax.set_xlim(-0.5, len(labels) - 0.5)
     ax.set_ylim(*ylim)
@@ -119,7 +182,6 @@ def plot_energy_extruded_bar(
     return ax
 
 
-
 def draw_extruded_barh(
     ax, y_labels, values, colors, labels, xlabel, xticks, xticklabels
 ):
@@ -128,50 +190,16 @@ def draw_extruded_barh(
 
     for i, (val, label, base_color) in enumerate(zip(values, labels, colors)):
         y = i
-
-        # Color shading
-        front_color = base_color
-        top_color = lighten(base_color, 1.1)
-        side_color = darken(base_color, 0.6)
-
-        # Front face
-        rect = Rectangle(
-            (0, y - bar_height / 2),
-            val,
-            bar_height,
-            facecolor=front_color,
-            edgecolor="none",
+        draw_extruded_bar_faces(
+            ax,
+            x=0,  # x is not used for horizontal bars
+            y=y,
+            width=bar_height,
+            height=val,
+            depth=depth,
+            orientation="h",
+            base_color=base_color,
         )
-        ax.add_patch(rect)
-
-        # Top face
-        top = Polygon(
-            [
-                (0, y + bar_height / 2),
-                (depth, y + bar_height / 2 + depth),
-                (val + depth, y + bar_height / 2 + depth),
-                (val, y + bar_height / 2),
-            ],
-            closed=True,
-            facecolor=top_color,
-            edgecolor="none",
-        )
-        ax.add_patch(top)
-
-        # Side face
-        side = Polygon(
-            [
-                (val, y - bar_height / 2),
-                (val, y + bar_height / 2),
-                (val + depth, y + bar_height / 2 + depth),
-                (val + depth, y - bar_height / 2 + depth),
-            ],
-            closed=True,
-            facecolor=side_color,
-            edgecolor="none",
-        )
-        ax.add_patch(side)
-
         # Label inside bar
         ax.text(
             val - 0.2,
@@ -193,7 +221,6 @@ def draw_extruded_barh(
     ax.set_xticks(xticks)
     ax.set_xticklabels(xticklabels)
     ax.grid(axis="x", linestyle="--", linewidth=0.5)
-
 
 
 def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> Axes:
@@ -329,7 +356,6 @@ def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) 
     return ax
 
 
-
 def plot_alignment_histogram(
     diff_list, binwidth=1, save_fig=False, output_path="alignment_histogram.pdf"
 ):
@@ -353,6 +379,7 @@ def plot_alignment_histogram(
         plt.savefig(output_path, bbox_inches="tight")
     plt.show()
     return n, bins, patches
+
 
 def plot_alignment_offset_hist(
     dx_nm, dy_nm, save_fig=False, output_path="alignment_offsets_histogram.pdf"
@@ -401,7 +428,6 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     )
     ax.legend()
     return ax
-
 
 
 def plot_alignment_stats(
@@ -492,7 +518,6 @@ def plot_alignment_stats(
     return fig, axs
 
 
-
 def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     if len(vals) == 0:
         ax.text(
@@ -517,4 +542,3 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     if vmin and vmax:
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
-
