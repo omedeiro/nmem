@@ -362,21 +362,25 @@ def plot_alignment_histogram(
     """
     Plots a histogram of alignment differences.
     """
-    n, bins, patches = plt.hist(
-        x=diff_list,
-        bins=range(
-            int(np.floor(min(diff_list))),
-            int(np.ceil(max(diff_list))) + binwidth,
-            binwidth,
-        ),
-        edgecolor="black",
+    fig, ax = plt.subplots()
+    bins = range(
+        int(np.floor(min(diff_list))),
+        int(np.ceil(max(diff_list))) + binwidth,
+        binwidth,
+    )
+    n, bins, patches = plot_general_histogram(
+        ax,
+        diff_list,
+        bins=bins,
         color="#0504aa",
         alpha=0.5,
+        edgecolor="black",
+        xlabel="alignment difference [nm]",
+        ylabel="count",
+        legend=False,
     )
-    plt.ylabel("count")
-    plt.xlabel("alignment difference [nm]")
     if save_fig:
-        plt.savefig(output_path, bbox_inches="tight")
+        fig.savefig(output_path, bbox_inches="tight")
     plt.show()
     return n, bins, patches
 
@@ -388,46 +392,36 @@ def plot_alignment_offset_hist(
     Plots histograms of alignment offsets for ΔX and ΔY.
     """
     fig, ax = plt.subplots(figsize=(8, 6))
-    plt.hist(
-        dx_nm, bins=20, edgecolor="black", color="#1f77b4", alpha=0.7, label="ΔX [nm]"
+    plot_general_histogram(
+        ax,
+        dx_nm,
+        bins=20,
+        color="#1f77b4",
+        alpha=0.7,
+        edgecolor="black",
+        label="ΔX [nm]",
+        xlabel="Alignment Offset [nm]",
+        ylabel="Count",
+        legend=True,
+        grid=True,
     )
-    plt.hist(
-        dy_nm, bins=20, edgecolor="black", color="#ff7f0e", alpha=0.7, label="ΔY [nm]"
+    plot_general_histogram(
+        ax,
+        dy_nm,
+        bins=20,
+        color="#ff7f0e",
+        alpha=0.7,
+        edgecolor="black",
+        label="ΔY [nm]",
+        legend=True,
+        grid=True,
     )
-    plt.xlabel("Alignment Offset [nm]")
-    plt.ylabel("Count")
-    plt.title("Histogram of Alignment Offsets")
-    plt.legend()
-    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    ax.set_title("Histogram of Alignment Offsets")
     plt.tight_layout()
     if save_fig:
-        plt.savefig(output_path, dpi=300)
+        fig.savefig(output_path, dpi=300)
     plt.show()
     return fig, ax
-
-
-def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
-    ax.hist(
-        data_dict["read_zero_top"][0, :] * 1e3,
-        log=True,
-        range=(200, 600),
-        bins=100,
-        label="Read 0",
-        color="#658DDC",
-        alpha=0.8,
-        zorder=-1,
-    )
-    ax.hist(
-        data_dict["read_one_top"][0, :] * 1e3,
-        log=True,
-        range=(200, 600),
-        bins=100,
-        label="Read 1",
-        color="#DF7E79",
-        alpha=0.8,
-    )
-    ax.legend()
-    return ax
 
 
 def plot_alignment_stats(
@@ -443,15 +437,22 @@ def plot_alignment_stats(
     output_path="alignment_analysis.pdf",
 ):
     """
-    Plots histograms and KDE for alignment statistics.
+    Plots histograms and KDE for alignment statistics (z height, rotation, and alignment offsets).
     """
     import seaborn as sns
 
     fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
-    # Z height
-    axs[0].hist(df_z["z_height_mm"], bins=20, edgecolor="black", color="#1f77b4")
-    axs[0].set_xlabel("Z Height [mm]")
-    axs[0].set_ylabel("Count")
+    # Z height histogram
+    plot_general_histogram(
+        axs[0],
+        df_z["z_height_mm"],
+        bins=20,
+        color="#1f77b4",
+        edgecolor="black",
+        xlabel="Z Height [mm]",
+        ylabel="Count",
+        legend=False,
+    )
     axs[0].text(
         0.97,
         0.97,
@@ -464,13 +465,17 @@ def plot_alignment_stats(
             boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
         ),
     )
-    axs[0].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    # Rotation
-    axs[1].hist(
-        df_rot_valid["rotation_mrad"], bins=20, edgecolor="black", color="#1f77b4"
+    # Rotation histogram
+    plot_general_histogram(
+        axs[1],
+        df_rot_valid["rotation_mrad"],
+        bins=20,
+        color="#1f77b4",
+        edgecolor="black",
+        xlabel="Rotation [mrad]",
+        ylabel="Count",
+        legend=False,
     )
-    axs[1].set_xlabel("Rotation [mrad]")
-    axs[1].set_ylabel("Count")
     axs[1].text(
         0.97,
         0.97,
@@ -483,8 +488,7 @@ def plot_alignment_stats(
             boxstyle="round,pad=0.3", facecolor="white", edgecolor="black", alpha=0.9
         ),
     )
-    axs[1].grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    # Alignment offsets
+    # Alignment offsets KDE and scatter
     ax = axs[2]
     sns.kdeplot(
         x=dx_nm,
@@ -518,6 +522,32 @@ def plot_alignment_stats(
     return fig, axs
 
 
+def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
+    plot_general_histogram(
+        ax,
+        data_dict["read_zero_top"][0, :] * 1e3,
+        bins=100,
+        color="#658DDC",
+        alpha=0.8,
+        label="Read 0",
+        log=True,
+        range=(200, 600),
+        zorder=-1,
+    )
+    plot_general_histogram(
+        ax,
+        data_dict["read_one_top"][0, :] * 1e3,
+        bins=100,
+        color="#DF7E79",
+        alpha=0.8,
+        label="Read 1",
+        log=True,
+        range=(200, 600),
+    )
+    ax.legend()
+    return ax
+
+
 def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
     if len(vals) == 0:
         ax.text(
@@ -532,13 +562,72 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
         return
     vals = vals[~np.isnan(vals)]
     log_bins = np.logspace(np.log10(vals.min()), np.log10(vals.max()), 100)
-    ax.hist(vals, bins=log_bins, color="#888", edgecolor="black", alpha=0.8)
-    ax.set_xscale("log")
+    plot_general_histogram(
+        ax,
+        vals,
+        bins=log_bins,
+        color="#888",
+        alpha=0.8,
+        edgecolor="black",
+        xscale="log",
+        xlabel=None,
+        ylabel=f"{row_char}",
+        legend=False,
+        grid=True,
+    )
     ax.set_xlim(10, 5000)
     ax.set_ylim(0, 100)
-    ax.grid(True, linestyle=":", linewidth=0.5)
-    ax.set_ylabel(f"{row_char}", rotation=0, ha="right", va="center", fontsize=9)
     ax.tick_params(axis="both", which="both", labelsize=6)
     if vmin and vmax:
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
+
+
+def plot_general_histogram(
+    ax,
+    data,
+    bins=20,
+    label=None,
+    color="#1f77b4",
+    alpha=0.7,
+    edgecolor="black",
+    xlabel=None,
+    ylabel=None,
+    title=None,
+    log=False,
+    xscale=None,
+    yscale=None,
+    range=None,
+    legend=True,
+    grid=True,
+    **kwargs,
+):
+    """
+    Generalized histogram plotting function for consistent style and reuse.
+    """
+    n, bins_out, patches = ax.hist(
+        data,
+        bins=bins,
+        label=label,
+        color=color,
+        alpha=alpha,
+        edgecolor=edgecolor,
+        log=log,
+        range=range,
+        **kwargs,
+    )
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    if xscale:
+        ax.set_xscale(xscale)
+    if yscale:
+        ax.set_yscale(yscale)
+    if legend and label:
+        ax.legend()
+    if grid:
+        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    return n, bins_out, patches
