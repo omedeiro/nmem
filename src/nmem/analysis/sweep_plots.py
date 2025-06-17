@@ -7,22 +7,16 @@ import numpy as np
 from matplotlib import colors as mcolors
 from matplotlib import ticker
 from matplotlib.axes import Axes
-from matplotlib.ticker import MultipleLocator
 from matplotlib.collections import PolyCollection
+from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-from nmem.analysis.plotting import (
-    add_colorbar,
-    plot_fill_between,
-    plot_fill_between_array,
-    polygon_under_graph,
-)
+
 from nmem.analysis.bit_error import (
+    calculate_ber_errorbar,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_total_switches_norm,
-    calculate_ber_errorbar,
 )
-
 from nmem.analysis.constants import (
     CRITICAL_CURRENT_ZERO,
     CRITICAL_TEMP,
@@ -36,9 +30,9 @@ from nmem.analysis.constants import (
 )
 from nmem.analysis.core_analysis import (
     get_enable_write_width,
+    get_fitting_points,
     get_read_width,
     get_write_width,
-    get_fitting_points,
 )
 from nmem.analysis.currents import (
     calculate_channel_temperature,
@@ -58,12 +52,13 @@ from nmem.analysis.plotting import (
     add_colorbar,
     plot_fill_between,
     plot_fill_between_array,
+    polygon_under_graph,
 )
 from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS
 from nmem.analysis.utils import (
     build_array,
-    get_current_cell,
     convert_cell_to_coordinates,
+    get_current_cell,
 )
 from nmem.measurement.cells import (
     CELLS,
@@ -74,8 +69,6 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
-
-
 
 
 def plot_critical_currents_from_dc_sweep(

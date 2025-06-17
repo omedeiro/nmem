@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 
+from nmem.analysis.bar_plots import plot_histogram
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
@@ -13,7 +14,6 @@ from nmem.analysis.utils import (
     create_rmeas_matrix,
 )
 from nmem.measurement.cells import CELLS
-from nmem.analysis.bar_plots import plot_histogram
 
 
 def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):

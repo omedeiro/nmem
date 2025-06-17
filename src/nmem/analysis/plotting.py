@@ -3,16 +3,11 @@ from typing import Literal
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import ticker
 from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
-from matplotlib.ticker import MultipleLocator
-from mpl_toolkits.mplot3d import Axes3D
 
 from nmem.analysis.bit_error import (
     get_bit_error_rate,
-    get_bit_error_rate_args,
-    get_total_switches_norm,
 )
 from nmem.analysis.constants import (
     ALPHA,
@@ -32,13 +27,10 @@ from nmem.analysis.currents import (
     get_enable_read_current,
     get_optimal_enable_read_current,
     get_optimal_enable_write_current,
-    get_read_currents,
     get_state_currents_measured,
-    get_write_current,
 )
 from nmem.analysis.styles import (
     CMAP,
-    CMAP3,
 )
 from nmem.analysis.text_mapping import (
     get_text_from_bit,
