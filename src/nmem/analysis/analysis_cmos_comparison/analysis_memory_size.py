@@ -12,7 +12,7 @@ from nmem.analysis.analysis_cmos_comparison.memory_data import (
     tech_den,
 )
 from nmem.analysis.bar_plots import (
-    draw_extruded_barh,
+    plot_extruded_bar,
 )
 from nmem.analysis.styles import set_inter_font, set_pres_style
 
@@ -28,27 +28,38 @@ fig.suptitle(
 )
 
 # Plot 1: Capacity
-draw_extruded_barh(
-    axs[1],
+plot_extruded_bar(
     tech_cap,
     cap_vals,
     cap_colors,
-    cap_labels,
+    orientation="h",
+    depth=0.15,
     xlabel="Memory Capacity (log scale, bits/chip)",
     xticks=[np.log10(2**10), np.log10(2**20), np.log10(2**30), np.log10(2**40)],
-    xticklabels=["1 kb", "1 Mb", "1 Gb", "1 Tb"],
+    xticklabels=[
+        "1 kb",
+        "1 Mb",
+        "1 Gb",
+        "1 Tb",
+    ],
+    bar_labels=cap_labels,
+    ax=axs[1],
+    annotation_offset=-0.05,
 )
 
 # Plot 2: Density
-draw_extruded_barh(
-    axs[0],
+plot_extruded_bar(
     tech_den,
     den_vals,
     den_colors,
-    den_labels,
+    orientation="h",
+    depth=0.15,
     xlabel="Functional Density (log scale, bits/cm²)",
     xticks=[np.log10(1e6), np.log10(1e9), np.log10(1e12)],
     xticklabels=["1 Mb/cm²", "1 Gb/cm²", "1 Tb/cm²"],
+    bar_labels=den_labels,
+    annotation_offset=-0.05,
+    ax=axs[0],
 )
 
 plt.show()

@@ -13,6 +13,6 @@ set_pres_style()
 
 
 plot_extruded_bar(
-    energies_labels, energies_fj, colors
+    energies_labels, energies_fj, colors,
 )
 plt.show()
