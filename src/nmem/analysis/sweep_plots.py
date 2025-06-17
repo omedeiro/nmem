@@ -1,4 +1,3 @@
-
 from typing import Literal
 
 import ltspice
@@ -9,7 +8,14 @@ from matplotlib import colors as mcolors
 from matplotlib import ticker
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
-
+from matplotlib.collections import PolyCollection
+from mpl_toolkits.mplot3d import Axes3D
+from nmem.analysis.plotting import (
+    add_colorbar,
+    plot_fill_between,
+    plot_fill_between_array,
+    polygon_under_graph,
+)
 from nmem.analysis.bit_error import (
     get_bit_error_rate,
     get_bit_error_rate_args,
@@ -29,6 +35,7 @@ from nmem.analysis.core_analysis import (
     get_enable_write_width,
     get_read_width,
     get_write_width,
+    get_fitting_points,
 )
 from nmem.analysis.currents import (
     calculate_channel_temperature,
@@ -49,8 +56,12 @@ from nmem.analysis.plotting import (
     plot_fill_between,
     plot_fill_between_array,
 )
-from nmem.analysis.styles import CMAP, RBCOLORS
-from nmem.analysis.utils import build_array
+from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS
+from nmem.analysis.utils import (
+    build_array,
+    get_current_cell,
+    convert_cell_to_coordinates,
+)
 from nmem.measurement.cells import (
     CELLS,
 )
@@ -349,7 +360,9 @@ def plot_enable_write_sweep2(
     return fig, ax
 
 
-def plot_write_temp_vs_current(ax, write_current_array, write_temp_array, critical_current_zero):
+def plot_write_temp_vs_current(
+    ax, write_current_array, write_temp_array, critical_current_zero
+):
     ax2 = ax.twinx()
     for i in range(4):
         ax.plot(
@@ -371,7 +384,6 @@ def plot_write_temp_vs_current(ax, write_current_array, write_temp_array, critic
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
     return ax, ax2
-
 
 
 def plot_enable_write_sweep_fine(
@@ -592,7 +604,6 @@ def plot_read_sweep_switch_probability(
     return ax
 
 
-
 def plot_read_sweep_array(
     ax: Axes,
     dict_list: list[dict],
@@ -662,6 +673,7 @@ def plot_read_switch_probability_array(
             plot_read_sweep_switch_probability(ax, data_dict, color=colors[i])
     return ax
 
+
 def plot_enable_read_sweep(ax: plt.Axes, dict_list, **kwargs):
     plot_read_sweep_array(
         ax, dict_list, "bit_error_rate", "enable_read_current", **kwargs
@@ -672,6 +684,7 @@ def plot_enable_read_sweep(ax: plt.Axes, dict_list, **kwargs):
     ax.set_ylabel("BER")
     ax.set_xlim(READ_XMIN, READ_XMAX)
     return ax
+
 
 def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
@@ -728,6 +741,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     ax.set_ylabel("BER")
     ax.set_xlim(0, 300)
     return ax
+
 
 def plot_read_current_sweep_three(
     dict_list, save_fig=False, output_path="read_current_sweep_three2.pdf"
@@ -1171,7 +1185,6 @@ def plot_read_current_operating(dict_list):
     plt.show()
 
 
-
 def plot_retention(delay_list, bit_error_rate_list):
     """Plot BER vs retention time."""
     fig, axs = plt.subplot_mosaic("A;B", figsize=(3.5, 3.5), constrained_layout=True)
@@ -1194,7 +1207,6 @@ def plot_retention(delay_list, bit_error_rate_list):
     return fig, axs
 
 
-
 def plot_write_sweep_ber(ax, dict_list):
     plot_write_sweep(ax, dict_list)
     ax.set_xlabel("$I_{\\mathrm{write}}$ [µA]")
@@ -1203,7 +1215,6 @@ def plot_write_sweep_ber(ax, dict_list):
     return ax
 
 
-    
 def plot_temp_vs_current(ax, data, data2):
     ax.plot(
         [d["write_temp"] for d in data],
@@ -1222,7 +1233,6 @@ def plot_temp_vs_current(ax, data, data2):
     ax.set_ylim(0, 300)
     ax.grid()
     return ax
-
 
 
 def plot_read_current_sweep_enable_read(
@@ -1267,6 +1277,7 @@ def plot_read_current_sweep_enable_read(
         fig.savefig(output_path, bbox_inches="tight")
     plt.show()
 
+
 def plot_write_current_enable_sweep_margin(
     dict_list,
     inner,
@@ -1291,9 +1302,6 @@ def plot_write_current_enable_sweep_margin(
     if save_fig:
         fig.savefig(output_path, bbox_inches="tight")
     return fig, axs
-
-
-
 
 
 def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures):
@@ -1377,7 +1385,6 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     )
 
 
-
 def plot_state_current_markers2(dict_list):
     """
     Plots state current markers for each dataset.
@@ -1408,7 +1415,6 @@ def plot_state_current_markers2(dict_list):
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     return fig, ax
-
 
 
 def plot_state_current_markers(
@@ -1450,7 +1456,6 @@ def plot_state_current_markers(
     return ax
 
 
-
 def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
@@ -1483,3 +1488,161 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     )
     ax.grid()
     return ax
+
+
+def plot_delay(ax: plt.Axes, data_dict: dict):
+    delay_list = data_dict.get("delay")
+    bit_error_rate = data_dict.get("bit_error_rate")
+    N = 200e3
+    sort_index = np.argsort(delay_list)
+    delay_list = np.array(delay_list)[sort_index]
+    bit_error_rate = np.array(bit_error_rate)[sort_index]
+    bit_error_rate = np.array(bit_error_rate).flatten()
+    ber_std = np.sqrt(bit_error_rate * (1 - bit_error_rate) / N)
+    ax.errorbar(
+        delay_list,
+        bit_error_rate,
+        yerr=ber_std,
+        fmt="-",
+        marker=".",
+        color="black",
+    )
+    ax.set_ylabel("BER")
+    ax.set_xlabel("Memory Retention Time (s)")
+
+    ax.set_xscale("log")
+    ax.set_xbound(lower=1e-6)
+    ax.grid(True, which="both", linestyle="--")
+
+    ax.set_yscale("log")
+    ax.set_ylim([1e-4, 1e-3])
+    ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
+
+def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
+    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+    verts_list = []
+    zlist = []
+    for i, data_dict in enumerate(dict_list):
+        enable_write_currents = get_enable_current_sweep(data_dict, "write")
+        bit_error_rate = get_bit_error_rate(data_dict)
+        write_current = get_write_current(data_dict)
+        ax.plot(
+            enable_write_currents,
+            bit_error_rate,
+            zs=write_current,
+            zdir="y",
+            color=colors[i],
+            marker=".",
+            markerfacecolor="k",
+            markersize=5,
+            linewidth=2,
+        )
+        zlist.append(write_current)
+        verts = polygon_under_graph(enable_write_currents, bit_error_rate, 0.5)
+        verts_list.append(verts)
+
+    poly = PolyCollection(verts_list, facecolors=colors, alpha=0.6, edgecolors="k")
+    ax.add_collection3d(poly, zs=zlist, zdir="y")
+
+    ax.set_xlabel("$I_{{EW}}$ [µA]", labelpad=10)
+    ax.set_ylabel("$I_W$ [µA]", labelpad=70)
+    ax.set_zlabel("BER", labelpad=10)
+    ax.tick_params(axis="both", which="major", labelsize=12, pad=5)
+
+    ax.xaxis.set_rotate_label(True)
+    ax.yaxis.set_rotate_label(False)
+    ax.zaxis.set_rotate_label(True)
+
+    ax.set_zlim(0, 1)
+    ax.set_zticks([0, 0.5, 1])
+    ax.set_ylim(10, zlist[-1])
+    ax.set_yticks(zlist)
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.xaxis.set_major_locator(MultipleLocator(50))
+    ax.yaxis.set_major_locator(MultipleLocator(10))
+    ax.set_box_aspect([0.5, 1, 0.2], zoom=0.8)
+    return ax
+
+
+def plot_cell_data(ax, data_dict, colors, markers):
+    """
+    Helper function to plot a single cell's data.
+    """
+    cell = get_current_cell(data_dict)
+    column, row = convert_cell_to_coordinates(cell)
+    x = data_dict["x"][0]
+    y = data_dict["y"][0]
+    ztotal = data_dict["ztotal"]
+    xfit, yfit = get_fitting_points(x, y, ztotal)
+
+    ax.plot(
+        xfit,
+        yfit,
+        label=f"{cell}",
+        color=colors[column],
+        marker=markers[row],
+        markeredgecolor="k",
+        markeredgewidth=0.1,
+    )
+    ax.legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
+    ax.set_xlim(0, 600)
+    ax.set_ylim(0, 1500)
+
+    return ax
+
+
+def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
+    colors = CMAP3(np.linspace(0.1, 1, 4))
+    markers = ["o", "s", "D", "^"]
+
+    for data_dict in dict_list:
+        cell = get_current_cell(data_dict)
+        column, row = convert_cell_to_coordinates(cell)
+        ax = axs[row, column]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
+
+        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
+        # plot_linear_fit(ax, xfit, yfit)
+
+        ax.xaxis.set_major_locator(MultipleLocator(500))
+        ax.xaxis.set_minor_locator(MultipleLocator(100))
+
+    axs[-1, 0].set_xlabel("Enable Current [µA]")
+    axs[-1, 0].set_ylabel("Critical Current [µA]")
+    return axs
+
+
+def plot_row(axs, dict_list):
+    colors = CMAP3(np.linspace(0.1, 1, 4))
+    markers = ["o", "s", "D", "^"]
+
+    for data_dict in dict_list:
+        column, row = convert_cell_to_coordinates(get_current_cell(data_dict))
+        ax = axs[column]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
+
+    return axs
+
+
+def plot_column(axs, dict_list):
+    colors = CMAP3(np.linspace(0.1, 1, 4))
+    markers = ["o", "s", "D", "^"]
+
+    for data_dict in dict_list:
+        row = convert_cell_to_coordinates(get_current_cell(data_dict))[1]
+        ax = axs[row]
+        ax = plot_cell_data(ax, data_dict, colors, markers)
+
+    return axs
+
+
+def plot_full_grid(axs, dict_list):
+    plot_grid(axs[1:5, 0:4], dict_list)
+    plot_row(axs[0, 0:4], dict_list)
+    plot_column(axs[1:5, 4], dict_list)
+    axs[0, 4].axis("off")
+    axs[4, 0].set_xlabel("Enable Current [µA]")
+    axs[4, 0].set_ylabel("Critical Current [µA]")
+    return axs
