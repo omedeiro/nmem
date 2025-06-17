@@ -7,12 +7,13 @@ from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
-from nmem.analysis.plotting import CMAP, get_log_norm_limits, plot_histogram
+from nmem.analysis.plotting import CMAP, get_log_norm_limits
 from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     create_rmeas_matrix,
 )
 from nmem.measurement.cells import CELLS
+from nmem.analysis.bar_plots import plot_histogram
 
 
 def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):

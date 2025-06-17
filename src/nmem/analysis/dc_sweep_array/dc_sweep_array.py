@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.currents import extract_ic_vs_ih_data
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_ic_vs_ih_array
+from nmem.analysis.sweep_plots import plot_ic_vs_ih_array
 from nmem.analysis.styles import set_plot_style
 
 set_plot_style()
