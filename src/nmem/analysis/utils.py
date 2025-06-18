@@ -180,3 +180,14 @@ def center_crop_zoom(img, zoom_factor=2):
     zoomed = cropped.resize((w, h), Image.LANCZOS)
     return zoomed
 
+
+def get_cell_labels(rows=None, cols=None):
+    """
+    Generate cell labels like A1, B1, ..., D4 by default.
+    Optionally specify rows and cols for custom grids.
+    """
+    if rows is None:
+        rows = ["A", "B", "C", "D"]
+    if cols is None:
+        cols = range(1, 5)
+    return [f"{r}{c}" for r in rows for c in cols]
