@@ -7,7 +7,7 @@ from nmem.analysis.data_import import (
 
 def main():
     dict_list, ic_list, write_current_list, ic_list2, write_current_list2 = (
-        import_operating_data("write_current_sweep_C3")
+        import_operating_data("../data/ber_sweep_read_current/write_current/write_current_sweep_C3")
     )
     df = calculate_operating_table(
         dict_list, ic_list, write_current_list, ic_list2, write_current_list2

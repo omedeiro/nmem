@@ -5,7 +5,7 @@ from nmem.analysis.sweep_plots import plot_read_sweep_array
 
 
 def main(
-    data_dir="data",
+    data_dir="../data/ber_sweep_read_current/enable_write_width",
     save_fig=False,
     output_path="read_current_sweep_enable_write_width.pdf",
 ):

@@ -5,7 +5,7 @@ from nmem.analysis.trace_plots import plot_probe_station_prbs
 
 
 def main(
-    data_dir="data", trim=4500, save_fig=False, output_path="probe_station_prbs.pdf"
+    data_dir="../data/ber_prbs_probe_station", trim=4500, save_fig=False, output_path="probe_station_prbs.pdf"
 ):
     data_list = import_directory(data_dir)
     total_error, W1R0_error, W0R1_error, error_locs = analyze_prbs_errors(

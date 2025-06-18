@@ -11,10 +11,10 @@ from nmem.analysis.data_import import (
     import_read_current_sweep_sim_data,
     import_simulation_data,
 )
-from nmem.analysis.plotting import (
+from nmem.analysis.styles import (
     CMAP,
-    plot_simulation_results,
 )
+from nmem.analysis.state_currents_plots import plot_simulation_results
 from nmem.analysis.sweep_plots import plot_read_current_sweep_sim
 from nmem.simulation.spice_circuits.functions import process_read_data
 
@@ -28,9 +28,9 @@ def main():
 
 if __name__ == "__main__":
     # Import and sort simulation files
-    files = import_simulation_data("data")
+    files = import_simulation_data("../data/ber_sweep_read_current/ltspice_simulation")
 
-    ltsp_data = ltspice.Ltspice("nmem_cell_read_example_trace.raw").parse()
+    ltsp_data = ltspice.Ltspice("../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw").parse()
     ltsp_data_dict = process_read_data(ltsp_data)
 
     inner = [
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     case_current = ltsp_data_dict[CASE]["read_current"][CASE]
 
     dict_list = import_directory(
-        "../read_current_sweep_write_current2/write_current_sweep_C3"
+        "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
     )
     write_current_list = []
     for data_dict in dict_list:
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     files = [files[i] for i in [0, 2, -1]]
     max_write_current = 300
     for i, file in enumerate(files):
-        data = ltspice.Ltspice(f"data/{file}").parse()
+        data = ltspice.Ltspice(f"../data/ber_sweep_read_current/ltspice_simulation/{file}").parse()
         ltsp_data_dict = process_read_data(data)
         ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
 

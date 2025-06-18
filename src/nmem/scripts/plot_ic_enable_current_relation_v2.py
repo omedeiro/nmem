@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.styles import set_plot_style
 from nmem.analysis.sweep_plots import (
     plot_column,
     plot_full_grid,
     plot_grid,
     plot_row,
 )
-from nmem.analysis.styles import set_plot_style
 
 
 def main(

@@ -3,16 +3,17 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 
-from nmem.analysis.bar_plots import plot_histogram
+from nmem.analysis.histogram_utils import plot_histogram
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
-from nmem.analysis.plotting import CMAP, get_log_norm_limits
+from nmem.analysis.styles import CMAP
 from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     create_rmeas_matrix,
 )
+from nmem.analysis.plot_utils import get_log_norm_limits
 from nmem.measurement.cells import CELLS
 
 

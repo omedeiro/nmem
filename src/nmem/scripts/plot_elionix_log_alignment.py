@@ -4,7 +4,7 @@ Created on Mon Mar 20 17:32:21 2023
 
 @author: omedeiro
 """
-from nmem.analysis.bar_plots import plot_alignment_histogram
+from nmem.analysis.alignment_plots import plot_alignment_histogram
 
 
 def parse_elionix_log(logfile):

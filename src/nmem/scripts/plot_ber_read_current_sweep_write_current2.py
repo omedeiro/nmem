@@ -7,7 +7,7 @@ from nmem.analysis.currents import (
     get_enable_read_current,
 )
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (
+from nmem.analysis.plot_utils import (
     add_colorbar,
 )
 from nmem.analysis.sweep_plots import plot_read_sweep_array
@@ -16,9 +16,9 @@ from nmem.analysis.sweep_plots import plot_read_sweep_array
 def plot_read_temp_sweep_C3(save=True):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
     dict_list = [
-        import_directory("write_current_sweep_C3"),
-        import_directory("write_current_sweep_C3_4"),
-        import_directory("write_current_sweep_C3_3"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"),
         # import_directory("write_current_sweep_C3_1"),
     ]
     for i, data_dict in enumerate(dict_list):
@@ -56,9 +56,9 @@ def plot_read_temp_sweep_C3_v2(save=False):
     axs = [fig.add_subplot(gs[i]) for i in range(3)]
     cax = fig.add_subplot(gs[3])  # dedicated colorbar axis
     dict_list = [
-        import_directory("write_current_sweep_C3"),
-        import_directory("write_current_sweep_C3_4"),
-        import_directory("write_current_sweep_C3_3"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"),
+        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"),
         # import_directory("write_current_sweep_C3_1"),
     ]
     for i, data_dict in enumerate(dict_list):

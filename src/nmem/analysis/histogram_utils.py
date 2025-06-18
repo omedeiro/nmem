@@ -1,11 +1,10 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 
 
 def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     plot_general_histogram(
-        ax,
         data_dict["read_zero_top"][0, :] * 1e3,
         bins=100,
         color="#658DDC",
@@ -14,9 +13,9 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         log=True,
         range=(200, 600),
         zorder=-1,
+        ax=ax,
     )
     plot_general_histogram(
-        ax,
         data_dict["read_one_top"][0, :] * 1e3,
         bins=100,
         color="#DF7E79",
@@ -24,6 +23,7 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         label="Read 1",
         log=True,
         range=(200, 600),
+        ax=ax,
     )
     ax.legend()
     return ax

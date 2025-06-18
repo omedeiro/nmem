@@ -3,7 +3,7 @@ import scipy.io as sio
 
 from nmem.analysis.constants import CRITICAL_TEMP
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (
+from nmem.analysis.state_currents_plots import (
     plot_measured_state_currents,
     plot_persistent_current,
 )

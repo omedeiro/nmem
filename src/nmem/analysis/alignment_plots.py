@@ -1,7 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from nmem.analysis.histogram_utils import plot_general_histogram
+import numpy as np
 from matplotlib.axes import Axes
+
+from nmem.analysis.histogram_utils import plot_general_histogram
 
 
 def plot_alignment_histogram(
@@ -52,7 +53,6 @@ def plot_alignment_offset_hist(
         fig = ax.figure
 
     plot_general_histogram(
-        ax,
         dx_nm,
         bins=20,
         color="#1f77b4",
@@ -63,9 +63,9 @@ def plot_alignment_offset_hist(
         ylabel="Count",
         legend=True,
         grid=True,
+        ax=ax,
     )
     plot_general_histogram(
-        ax,
         dy_nm,
         bins=20,
         color="#ff7f0e",
@@ -74,6 +74,7 @@ def plot_alignment_offset_hist(
         label="ΔY [nm]",
         legend=True,
         grid=True,
+        ax=ax,
     )
     ax.set_title("Histogram of Alignment Offsets")
     if save_fig:
@@ -106,7 +107,6 @@ def plot_alignment_stats(
 
     # Z height histogram
     plot_general_histogram(
-        axs[0],
         df_z["z_height_mm"],
         bins=20,
         color="#1f77b4",
@@ -114,6 +114,7 @@ def plot_alignment_stats(
         xlabel="Z Height [mm]",
         ylabel="Count",
         legend=False,
+        ax = axs[0],
     )
     axs[0].text(
         0.97,
@@ -129,7 +130,6 @@ def plot_alignment_stats(
     )
     # Rotation histogram
     plot_general_histogram(
-        axs[1],
         df_rot_valid["rotation_mrad"],
         bins=20,
         color="#1f77b4",
@@ -137,6 +137,7 @@ def plot_alignment_stats(
         xlabel="Rotation [mrad]",
         ylabel="Count",
         legend=False,
+        ax=axs[1],
     )
     axs[1].text(
         0.97,

@@ -1,9 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle, Polygon
+import numpy as np
+from matplotlib.patches import Polygon, Rectangle
+
 from nmem.analysis.styles import darken, lighten, set_inter_font, set_pres_style
-
-
 
 
 def draw_extruded_bar_faces(

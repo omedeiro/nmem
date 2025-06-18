@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from nmem.analysis.bar_extrusion import (
+    plot_extruded_bar,
+)
 from nmem.analysis.memory_data import (
     cap_colors,
     cap_labels,
@@ -10,9 +13,6 @@ from nmem.analysis.memory_data import (
     den_vals,
     tech_cap,
     tech_den,
-)
-from nmem.analysis.bar_plots import (
-    plot_extruded_bar,
 )
 from nmem.analysis.styles import set_inter_font, set_pres_style
 

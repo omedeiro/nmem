@@ -4,7 +4,7 @@ from nmem.analysis.core_analysis import (
     get_fitting_points,
 )
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import (
+from nmem.analysis.htron_plotting import (
     plot_c2c3_comparison,
     plot_c2c3_subplots,
 )

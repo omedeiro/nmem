@@ -18,7 +18,7 @@ from nmem.analysis.core_analysis import (
     extract_shifted_traces,
     get_voltage_trace_data,
 )
-from nmem.analysis.plotting import plot_message
+from nmem.analysis.plot_utils import plot_message
 from nmem.analysis.styles import CMAP
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_enable_current_relation
+from nmem.analysis.htron_plotting import plot_enable_current_relation
 
 
 def main():

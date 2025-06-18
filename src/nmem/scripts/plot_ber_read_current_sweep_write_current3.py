@@ -7,7 +7,7 @@ from nmem.analysis.sweep_plots import (
 
 
 def main():
-    dict_list = import_directory("data2")
+    dict_list = import_directory("../data/ber_sweep_read_current/write_current/data2")
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, dict_list[0:4], "bit_error_rate", "write_current")
     ax.set_yscale("log")

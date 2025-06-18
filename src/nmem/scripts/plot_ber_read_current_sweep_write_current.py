@@ -5,8 +5,8 @@ from nmem.analysis.sweep_plots import (
 )
 
 if __name__ == "__main__":
-    data_list = import_directory("data")
+    data_list = import_directory("../data/ber_sweep_read_current/write_current/data1")
     plot_read_sweep_write_current(data_list)
 
-    data_list2 = import_directory("data2")
+    data_list2 = import_directory("../data/ber_sweep_read_current/write_current/data2")
     plot_read_sweep_write_current(data_list2)

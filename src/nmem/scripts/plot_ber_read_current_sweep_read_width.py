@@ -7,7 +7,7 @@ from nmem.analysis.sweep_plots import (
 
 
 def main(
-    data_dir="data", save_fig=False, output_path="read_current_sweep_read_width.pdf"
+    data_dir="../data/ber_sweep_read_current/width_read", save_fig=False, output_path="read_current_sweep_read_width.pdf"
 ):
     dict_list = import_directory(data_dir)
     fig, ax = plt.subplots()

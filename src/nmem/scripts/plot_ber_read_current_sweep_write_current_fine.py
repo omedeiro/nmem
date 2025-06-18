@@ -9,7 +9,7 @@ plt.rcParams["font.size"] = 14
 
 def main():
     fig, ax = plt.subplots()
-    dict_list = import_directory("data3")
+    dict_list = import_directory("../data/ber_sweep_read_current/write_current/fine_sweep")
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current")
     ax.set_yscale("log")
     ax.set_ylim(1e-4, 1)

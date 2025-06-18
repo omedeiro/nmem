@@ -1,6 +1,6 @@
 
 
-from nmem.analysis.bar_plots import (
+from nmem.analysis.alignment_plots import (
     plot_alignment_offset_hist,
     plot_alignment_stats,
 )

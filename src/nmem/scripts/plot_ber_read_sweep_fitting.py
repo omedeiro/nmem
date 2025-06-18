@@ -5,7 +5,7 @@ import scipy.io as sio
 from nmem.analysis.constants import CRITICAL_TEMP
 from nmem.analysis.core_analysis import fit_state_currents, prepare_state_current_data
 from nmem.analysis.currents import calculate_state_currents
-from nmem.analysis.plotting import plot_calculated_filled_region, plot_state_current_fit
+from nmem.analysis.state_currents_plots import plot_calculated_filled_region, plot_state_current_fit
 
 
 def main():
@@ -14,9 +14,9 @@ def main():
     WIDTH = 0.3
     persistent_current = 30
     critical_current_zero = 1240
-    data_dict1 = sio.loadmat("measured_state_currents_290.mat")
-    data_dict2 = sio.loadmat("measured_state_currents_300.mat")
-    data_dict3 = sio.loadmat("measured_state_currents_310.mat")
+    data_dict1 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_290.mat"),
+    data_dict2 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_300.mat")
+    data_dict3 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat")
     dict_list = [data_dict1, data_dict2, data_dict3]
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []

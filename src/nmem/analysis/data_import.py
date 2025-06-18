@@ -17,7 +17,7 @@ from nmem.analysis.currents import (
     get_read_currents,
     get_write_current,
 )
-from nmem.analysis.plotting import CMAP
+from nmem.analysis.styles import CMAP
 from nmem.analysis.utils import filter_first
 from nmem.simulation.spice_circuits.functions import process_read_data
 
@@ -300,7 +300,7 @@ def import_elionix_log(log_path):
     return df_z, df_rot_valid, dx_nm, dy_nm, delta_table
 
 
-def import_geom_loop_size_data(data_dir="data"):
+def import_geom_loop_size_data(data_dir="../data/loop_size_sweep"):
     """
     Imports and processes loop size data for geometry analysis.
     Returns:
@@ -332,15 +332,23 @@ def import_read_current_sweep_data():
         data_list: list of dicts for enable write
         data_list2: selected subset of data_list for plotting
     """
-    data = import_directory("data")
-    enable_read_290_list = import_directory("data_290uA")
-    enable_read_300_list = import_directory("data_300uA")
-    enable_read_310_list = import_directory("data_310uA")
-    enable_read_310_C4_list = import_directory("data_310uA_C4")
-    data_inverse = import_directory("data_inverse")
+    data = import_directory("../data/ber_sweep_read_current/enable_write")
+    enable_read_290_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_290uA"
+    )
+    enable_read_300_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_300uA"
+    )
+    enable_read_310_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_310uA"
+    )
+    enable_read_310_C4_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_310uA_C4"
+    )
+    data_inverse = import_directory("../data/ber_sweep_read_current/inverting")
     dict_list = [enable_read_290_list, enable_read_300_list, enable_read_310_list]
     dict_list = dict_list[2]  # Use 310uA by default
-    data_list = import_directory("../read_current_sweep_enable_write/data")
+    data_list = import_directory("../data/ber_sweep_read_current/enable_write")
     data_list2 = [data_list[0], data_list[3], data_list[-6], data_list[-1]]
     return dict_list, data_list, data_list2
 
@@ -349,11 +357,17 @@ def import_read_current_sweep_three_data():
     """
     Import all relevant data lists for the three read current sweep analysis.
     Returns:
-        dict_list: list of dicts for enable read (290uA, 300uA, 310uA)
+        dict_list: list of dicts for enable write (290uA, 300uA, 310uA)
     """
-    enable_read_290_list = import_directory("data_290uA")
-    enable_read_300_list = import_directory("data_300uA")
-    enable_read_310_list = import_directory("data_310uA")
+    enable_read_290_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_290uA"
+    )
+    enable_read_300_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_300uA"
+    )
+    enable_read_310_list = import_directory(
+        "../data/ber_sweep_read_current/enable_write_310uA"
+    )
     return [enable_read_290_list, enable_read_300_list, enable_read_310_list]
 
 
@@ -365,13 +379,15 @@ def import_read_current_sweep_enable_write_data():
         data_list2: selected subset of data_list for plotting
         colors: color array for plotting
     """
-    data_list = import_directory("data")
+    data_list = import_directory("../data/ber_sweep_read_current/enable_write")
     data_list2 = [data_list[0], data_list[3], data_list[-6]]
     colors = CMAP(np.linspace(0, 1, 4))
     return data_list, data_list2, colors
 
 
-def import_simulation_data(data_dir="data"):
+def import_simulation_data(
+    data_dir="../data/ber_sweep_read_current/ltspice_simulation",
+):
     """Import and sort .raw simulation files by write current."""
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith(".raw")]
@@ -387,7 +403,7 @@ def import_simulation_data(data_dir="data"):
 
 
 def import_read_current_sweep_sim_data(
-    data_dir="data",
+    data_dir="../data/ber_sweep_read_current/ltspice_simulation",
     write_current_dir="../read_current_sweep_write_current2/write_current_sweep_C3",
 ):
     # get raw files
@@ -402,7 +418,7 @@ def import_read_current_sweep_sim_data(
         write_current_list.append(write_current * 1e6)
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
-    ltsp_data = ltspice.Ltspice("nmem_cell_read_example_trace.raw").parse()
+    ltsp_data = ltspice.Ltspice("../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw").parse()
     ltsp_data_dict = process_read_data(ltsp_data)
     dict_list = import_directory(write_current_dir)
     write_current_list2 = []
@@ -417,12 +433,14 @@ def import_read_current_sweep_sim_data(
 
 def load_current_sweep_data():
     # get raw files
-    files = os.listdir("data")
+    files = os.listdir("../data/ber_sweep_read_current/ltspice_simulation")
     files = [f for f in files if f.endswith(".raw")]
     # Sort files by write current
     write_current_list = []
     for file in files:
-        data = ltspice.Ltspice(f"data/{file}").parse()
+        data = ltspice.Ltspice(
+            f"../data/ber_sweep_read_current/ltspice_simulation/{file}"
+        ).parse()
         ltsp_data_dict = process_read_data(data)
         write_current = ltsp_data_dict[0]["write_current"][0]
         write_current_list.append(write_current * 1e6)
@@ -430,11 +448,11 @@ def load_current_sweep_data():
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
 
-    ltsp_data = ltspice.Ltspice("nmem_cell_read_example_trace.raw").parse()
+    ltsp_data = ltspice.Ltspice("../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw").parse()
     ltsp_data_dict = process_read_data(ltsp_data)
 
     dict_list = import_directory(
-        "../read_current_sweep_write_current2/write_current_sweep_C3"
+        "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
     )
     dict_list = dict_list[::2]
     write_current_list = []
@@ -475,7 +493,7 @@ def import_operating_data(directory):
     return dict_list, ic_list, write_current_list, ic_list2, write_current_list2
 
 
-def import_delay_data(data_dir="data3"):
+def import_delay_data(data_dir="../data/ber_memory_retention"):
     """Import and preprocess data for retention test plots."""
     dict_list = import_directory(data_dir)
     delay_list = []
@@ -493,5 +511,3 @@ def load_and_process_write_sweep_data(path):
     dict_list = import_directory(path)
     dict_list = dict_list[1:][::-1]
     return dict_list
-
-

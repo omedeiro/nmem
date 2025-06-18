@@ -1,8 +1,10 @@
 import matplotlib
+
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import inspect
 import importlib
+import inspect
+
+import matplotlib.pyplot as plt
 
 # Replace with your actual module path
 script_module = importlib.import_module('nmem.scripts')

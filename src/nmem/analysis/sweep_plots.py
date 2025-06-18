@@ -48,7 +48,7 @@ from nmem.analysis.currents import (
     get_state_current_markers,
     get_write_current,
 )
-from nmem.analysis.plotting import (
+from nmem.analysis.plot_utils import (
     add_colorbar,
     plot_fill_between,
     plot_fill_between_array,
@@ -966,7 +966,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     files_sel = [files[i] for i in [0, 2, -1]]
     max_write_current = 300
     for i, file in enumerate(files_sel):
-        data = ltspice.Ltspice(f"data/{file}").parse()
+        data = ltspice.Ltspice(f"../data/ber_sweep_read_current/ltspice_simulation/{file}").parse()
         ltsp_data_dict = process_read_data(data)
         ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
         plot_current_sweep_ber(
