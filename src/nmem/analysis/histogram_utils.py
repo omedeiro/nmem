@@ -1,4 +1,3 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -30,7 +29,7 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     return ax
 
 
-def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
+def plot_histogram(ax, vals, row_char, vmin=None, vmax=None) -> Axes:
     if len(vals) == 0:
         ax.text(
             0.5,
@@ -64,6 +63,8 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
         ax.axvline(vmin, color="blue", linestyle="--", linewidth=1)
         ax.axvline(vmax, color="red", linestyle="--", linewidth=1)
 
+    return ax
+
 
 def plot_general_histogram(
     data,
@@ -83,7 +84,7 @@ def plot_general_histogram(
     grid=True,
     ax=None,
     **kwargs,
-):
+) -> tuple[plt.Figure, Axes]:
     """
     Generalized histogram plotting function for consistent style and reuse.
     """
@@ -117,4 +118,3 @@ def plot_general_histogram(
     if grid:
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     return fig, ax
-
