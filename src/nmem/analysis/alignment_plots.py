@@ -1,12 +1,16 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
 from nmem.analysis.histogram_utils import plot_general_histogram
+from matplotlib.axes import Axes
 
 
 def plot_alignment_histogram(
-    diff_list, binwidth=1, save_fig=False, output_path="alignment_histogram.pdf", ax=None
-):
+    diff_list,
+    binwidth=1,
+    save_fig=False,
+    output_path="alignment_histogram.pdf",
+    ax=None,
+) -> tuple[plt.Figure, Axes]:
     """
     Plots a histogram of alignment differences.
     """
@@ -33,13 +37,12 @@ def plot_alignment_histogram(
     )
     if save_fig:
         fig.savefig(output_path, bbox_inches="tight")
-    plt.show()
     return fig, ax
 
 
 def plot_alignment_offset_hist(
     dx_nm, dy_nm, save_fig=False, output_path="alignment_offsets_histogram.pdf", ax=None
-):
+) -> tuple[plt.Figure, Axes]:
     """
     Plots histograms of alignment offsets for ΔX and ΔY.
     """
@@ -73,10 +76,8 @@ def plot_alignment_offset_hist(
         grid=True,
     )
     ax.set_title("Histogram of Alignment Offsets")
-    plt.tight_layout()
     if save_fig:
         fig.savefig(output_path, dpi=300)
-    plt.show()
     return fig, ax
 
 
@@ -91,8 +92,8 @@ def plot_alignment_stats(
     r_std,
     save=False,
     output_path="alignment_analysis.pdf",
-    axs=None
-):
+    axs=None,
+) -> tuple[plt.Figure, list[Axes]]:
     """
     Plots histograms and KDE for alignment statistics (z height, rotation, and alignment offsets).
     """
@@ -102,7 +103,7 @@ def plot_alignment_stats(
         fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
     else:
         fig = axs[0].figure
-        
+
     # Z height histogram
     plot_general_histogram(
         axs[0],
@@ -179,5 +180,4 @@ def plot_alignment_stats(
     plt.tight_layout()
     if save:
         plt.savefig(output_path, dpi=300)
-    plt.show()
     return fig, axs
