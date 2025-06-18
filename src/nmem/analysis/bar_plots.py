@@ -9,8 +9,13 @@ from nmem.analysis.styles import darken, lighten, set_inter_font, set_pres_style
 
 
 def draw_extruded_bar_faces(
-    ax, x, y, width, height, depth, orientation="v", base_color="#1f77b4", **kwargs
+    x, y, width, height, depth, orientation="v", base_color="#1f77b4", ax=None, **kwargs
 ):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     """Draw 3D extruded bar on ax."""
     top_color = lighten(base_color)
     side_color = darken(base_color)
@@ -92,6 +97,7 @@ def draw_extruded_bar_faces(
             )
         )
 
+    return fig, ax
 
 def plot_extruded_bar(
     labels,
@@ -232,54 +238,15 @@ def plot_extruded_bar(
     if save_path:
         fig.savefig(save_path, dpi=600)
 
-    return ax
+    return fig, ax
 
 
-def draw_extruded_barh(
-    ax, y_labels, values, colors, bar_labels, xlabel, xticks, xticklabels
-):
-    bar_height = 0.6
-    depth = 0.15
+def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000, ax: Axes = None) -> Axes:
+    if ax is None:
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_subplot(111, projection="3d")
 
-    for i, (val, label, base_color) in enumerate(zip(values, bar_labels, colors)):
-        y = i
-        draw_extruded_bar_faces(
-            ax,
-            x=0,  # x is not used for horizontal bars
-            y=y,
-            width=bar_height,
-            height=val,
-            depth=depth,
-            orientation="h",
-            base_color=base_color,
-        )
-        # Label inside bar
-        ax.text(
-            val - 0.2,
-            y,
-            label,
-            va="center",
-            ha="right",
-            fontsize=13,
-            color="white" if base_color != "royalblue" else "black",
-        )
-
-    # Axes settings
-    ax.set_yticks(np.arange(len(y_labels)))
-    ax.set_yticklabels(y_labels)
-    ax.invert_yaxis()  # larger bars on top
-    ax.set_ylim(-0.5, len(y_labels) - 0.5)
-    ax.set_xlim(0, max(values) + 1.5)
-    ax.set_xlabel(xlabel)
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xticklabels)
-    ax.grid(axis="x", linestyle="--", linewidth=0.5)
-
-
-def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> Axes:
     barray = ber_array.copy()
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(111, projection="3d")
 
     # 4x4 grid
     x_data, y_data = np.meshgrid(np.arange(4), np.arange(4))
@@ -337,12 +304,12 @@ def plot_ber_3d_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> Axes:
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
     cbar.set_label("Errors (per 200k)")
 
-    return ax
+    return fig, ax
 
 
-def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) -> Axes:
-    import matplotlib.pyplot as plt
-    import numpy as np
+def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000, ax:Axes=None) -> Axes:
+    if ax is None:
+        fig, ax = plt.subplots()
 
     # Prepare data
     barray = ber_array.copy().T
@@ -403,16 +370,17 @@ def plot_fidelity_clean_bar(ber_array: np.ndarray, total_trials: int = 200_000) 
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
 
-    return ax
+    return fig, ax
 
 
 def plot_alignment_histogram(
-    diff_list, binwidth=1, save_fig=False, output_path="alignment_histogram.pdf"
+    diff_list, binwidth=1, save_fig=False, output_path="alignment_histogram.pdf", ax=None
 ):
     """
     Plots a histogram of alignment differences.
     """
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
     bins = range(
         int(np.floor(min(diff_list))),
         int(np.ceil(max(diff_list))) + binwidth,
@@ -432,16 +400,17 @@ def plot_alignment_histogram(
     if save_fig:
         fig.savefig(output_path, bbox_inches="tight")
     plt.show()
-    return n, bins, patches
+    return fig, ax
 
 
 def plot_alignment_offset_hist(
-    dx_nm, dy_nm, save_fig=False, output_path="alignment_offsets_histogram.pdf"
+    dx_nm, dy_nm, save_fig=False, output_path="alignment_offsets_histogram.pdf", ax=None
 ):
     """
     Plots histograms of alignment offsets for ΔX and ΔY.
     """
-    fig, ax = plt.subplots(figsize=(8, 6))
+    if ax is None:
+        fig, ax = plt.subplots()
     plot_general_histogram(
         ax,
         dx_nm,
@@ -485,13 +454,17 @@ def plot_alignment_stats(
     r_std,
     save=False,
     output_path="alignment_analysis.pdf",
+    axs=None
 ):
     """
     Plots histograms and KDE for alignment statistics (z height, rotation, and alignment offsets).
     """
     import seaborn as sns
 
-    fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
+    if axs is None:
+        fig, axs = plt.subplots(1, 3, figsize=(10, 3.5))
+    else:
+        fig = axs[0].figure
     # Z height histogram
     plot_general_histogram(
         axs[0],
@@ -634,7 +607,6 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None):
 
 
 def plot_general_histogram(
-    ax,
     data,
     bins=20,
     label=None,
@@ -650,11 +622,16 @@ def plot_general_histogram(
     range=None,
     legend=True,
     grid=True,
+    ax=None,
     **kwargs,
 ):
     """
     Generalized histogram plotting function for consistent style and reuse.
     """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
     n, bins_out, patches = ax.hist(
         data,
         bins=bins,
@@ -680,7 +657,7 @@ def plot_general_histogram(
         ax.legend()
     if grid:
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    return n, bins_out, patches
+    return fig, ax
 
 
 def get_cell_labels(rows=None, cols=None):
