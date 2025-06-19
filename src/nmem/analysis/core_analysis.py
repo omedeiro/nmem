@@ -30,6 +30,7 @@ from nmem.analysis.currents import (
     get_write_current,
 )
 from nmem.analysis.utils import (
+    convert_cell_to_coordinates,
     filter_first,
 )
 from nmem.calculations.calculations import (
@@ -211,6 +212,32 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
         )
     return param_dict
 
+def process_ber_data(logger=None) -> np.ndarray:
+    """
+    Process bit error rate (BER) data and return key statistics.
+    """
+    param_dict = initialize_dict((4, 4))
+    for c in CELLS:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
+
+    ber_array = param_dict["bit_error_rate"]
+    valid_ber = ber_array[np.isfinite(ber_array) & (ber_array < 5.5e-2)]
+
+    average_ber = np.mean(valid_ber)
+    std_ber = np.std(valid_ber)
+    min_ber = np.min(valid_ber)
+    max_ber = np.max(valid_ber)
+
+    logger.info("=== Array BER Statistics ===")
+    logger.info(f"Average BER: {average_ber:.2e}")
+    logger.info(f"Std Dev BER: {std_ber:.2e}")
+    logger.info(f"Min BER: {min_ber:.2e}")
+    logger.info(f"Max BER: {max_ber:.2e}")
+    logger.info("=============================")
+
+    return ber_array
+
 
 def analyze_alignment_stats(df_z, df_rot_valid, dx_nm, dy_nm):
     """
@@ -367,7 +394,6 @@ def prepare_state_current_data(data_dict):
     return x_list, y_list
 
 
-
 def compute_sigma_separation(data: dict, show_print=True) -> float:
     """Compute the peak separation between read0 and read1 histograms in units of σ."""
     v_read0 = np.array(data["read_zero_top"])
@@ -393,7 +419,6 @@ def compute_sigma_separation(data: dict, show_print=True) -> float:
     return separation_sigma
 
 
-
 def extract_shifted_traces(
     data_dict: dict, trace_index: int = 0, time_shift: float = 0.0
 ) -> Tuple:
@@ -411,7 +436,6 @@ def extract_shifted_traces(
     enab_in_x = enab_in_x + time_shift
 
     return chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y
-
 
 
 def extract_temp_current_data(dict_list):
@@ -454,3 +478,27 @@ def process_write_temp_arrays(dict_list):
                 write_temp_array[j, i] = write_temps[arg]
     return write_current_array, write_temp_array, critical_current_zero
 
+
+def process_array_parameter_data(cells, array_size=(4, 4)):
+    """
+    Process cell data for parameter arrays for the given array size.
+    Returns xloc_list, yloc_list, param_dict, yintercept_list, slope_list.
+    """
+    from nmem.analysis.core_analysis import initialize_dict, process_cell
+    from nmem.analysis.utils import convert_cell_to_coordinates
+
+    xloc_list = []
+    yloc_list = []
+    param_dict = initialize_dict(array_size)
+    yintercept_list = []
+    slope_list = []
+    for c in cells:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(cells[c], param_dict, xloc, yloc)
+        xloc_list.append(xloc)
+        yloc_list.append(yloc)
+        yintercept = cells[c]["y_intercept"]
+        yintercept_list.append(yintercept)
+        slope = cells[c]["slope"]
+        slope_list.append(slope)
+    return xloc_list, yloc_list, param_dict, yintercept_list, slope_list
