@@ -3,17 +3,17 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import LogNorm
 
-from nmem.analysis.histogram_utils import plot_histogram
 from nmem.analysis.core_analysis import (
     initialize_dict,
     process_cell,
 )
+from nmem.analysis.histogram_utils import plot_histogram
+from nmem.analysis.plot_utils import get_log_norm_limits
 from nmem.analysis.styles import CMAP
 from nmem.analysis.utils import (
     convert_cell_to_coordinates,
     create_rmeas_matrix,
 )
-from nmem.analysis.plot_utils import get_log_norm_limits
 from nmem.measurement.cells import CELLS
 
 
@@ -224,7 +224,6 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
 
 
 def plot_parameter_array(
-    ax: Axes,
     xloc: np.ndarray,
     yloc: np.ndarray,
     parameter_array: np.ndarray,
@@ -232,7 +231,14 @@ def plot_parameter_array(
     log: bool = False,
     reverse: bool = False,
     cmap: plt.cm = None,
+    ax: Axes = None,
+    save_path: str = None,
 ) -> Axes:
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     if cmap is None:
         cmap = plt.get_cmap("viridis")
     if reverse:
@@ -252,6 +258,12 @@ def plot_parameter_array(
     ax.set_xticks(range(4), ["A", "B", "C", "D"])
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.tick_params(axis="both", length=0)
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight", dpi=300)
+        plt.close(fig)
+    else:
+        plt.show()
     return ax
 
 
