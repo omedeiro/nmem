@@ -11,10 +11,10 @@ from nmem.analysis.data_import import (
     import_read_current_sweep_sim_data,
     import_simulation_data,
 )
+from nmem.analysis.state_currents_plots import plot_simulation_results
 from nmem.analysis.styles import (
     CMAP,
 )
-from nmem.analysis.state_currents_plots import plot_simulation_results
 from nmem.analysis.sweep_plots import plot_read_current_sweep_sim
 from nmem.simulation.spice_circuits.functions import process_read_data
 
