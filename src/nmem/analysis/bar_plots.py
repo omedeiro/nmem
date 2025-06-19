@@ -8,8 +8,23 @@ from nmem.analysis.utils import get_cell_labels
 
 
 def plot_ber_3d_bar(
-    ber_array: np.ndarray, total_trials: int = 200_000, ax: Axes = None
+    ber_array: np.ndarray,
+    total_trials: int = 200_000,
+    ax: Axes = None,
+    save_path: str = None,
 ) -> tuple[plt.Figure, Axes]:
+    """
+    Plots a 3D bar chart for the Bit Error Rate (BER) array.
+
+    Parameters:
+    - ber_array: The array containing BER values.
+    - total_trials: Total number of trials used for error count calculation.
+    - ax: Optional pre-existing axis to plot on.
+    - save_path: Path to save the plot as an image file. If None, the plot will be shown.
+
+    Returns:
+    - A tuple containing the figure and axis.
+    """
     if ax is None:
         fig = plt.figure(figsize=(7, 7))
         ax = fig.add_subplot(111, projection="3d")
@@ -32,6 +47,7 @@ def plot_ber_3d_bar(
     error_counts = np.round(dz * total_trials).astype(int)
     z_data = np.zeros_like(error_counts)
     dx = dy = 0.6 * np.ones_like(error_counts)
+
     # Normalize error counts for colormap
     norm = Normalize(vmin=error_counts.min(), vmax=error_counts.max())
     colors = cm.Blues(norm(error_counts))
@@ -70,15 +86,24 @@ def plot_ber_3d_bar(
 
     # Colorbar
     mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
-    mappable.set_array([])
+    mappable.set_array([])  # Empty array, just to set the color scale
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
     cbar.set_label("Errors (per 200k)")
+
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid display when saving
+    else:
+        plt.show()
 
     return fig, ax
 
 
 def plot_fidelity_clean_bar(
-    ber_array: np.ndarray, total_trials: int = 200_000, ax: Axes = None
+    ber_array: np.ndarray,
+    total_trials: int = 200_000,
+    ax: Axes = None,
+    save_path: str = None,
 ) -> tuple[plt.Figure, Axes]:
     if ax is None:
         fig, ax = plt.subplots()
@@ -101,7 +126,6 @@ def plot_fidelity_clean_bar(
     display_values = [f"{f:.5f}" if f < 0.99999 else "≥0.99999" for f in fidelity_flat]
 
     # Plotting
-    fig, ax = plt.subplots(figsize=(10, 3))
     x = np.arange(len(fidelity_flat))
     ax.bar(x, fidelity_flat, yerr=errors, capsize=3, color="#658DDC", edgecolor="black")
 
@@ -144,4 +168,10 @@ def plot_fidelity_clean_bar(
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
 
+    if save_path:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)  # Close the figure to avoid display when saving
+    else:
+        plt.show()
+        
     return fig, ax
