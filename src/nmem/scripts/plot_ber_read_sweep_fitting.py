@@ -5,7 +5,10 @@ import scipy.io as sio
 from nmem.analysis.constants import CRITICAL_TEMP
 from nmem.analysis.core_analysis import fit_state_currents, prepare_state_current_data
 from nmem.analysis.currents import calculate_state_currents
-from nmem.analysis.state_currents_plots import plot_calculated_filled_region, plot_state_current_fit
+from nmem.analysis.state_currents_plots import (
+    plot_calculated_filled_region,
+    plot_state_current_fit,
+)
 
 
 def main():
