@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 
+from nmem.analysis.data_import import import_directory
 from nmem.analysis.histogram_utils import (
     plot_voltage_hist,
 )
-from nmem.analysis.data_import import import_directory
 
 
 def main():
