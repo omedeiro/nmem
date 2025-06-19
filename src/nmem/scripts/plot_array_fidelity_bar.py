@@ -1,46 +1,43 @@
-import numpy as np
+import logging
 
 from nmem.analysis.bar_plots import (
     plot_ber_3d_bar,
     plot_fidelity_clean_bar,
 )
-from nmem.analysis.core_analysis import (
-    initialize_dict,
-    process_cell,
-)
+from nmem.analysis.core_analysis import process_ber_data
 from nmem.analysis.styles import (
     set_inter_font,
     set_pres_style,
 )
-from nmem.analysis.utils import convert_cell_to_coordinates
-from nmem.measurement.cells import CELLS
 
+# Set plot styles
 set_pres_style()
 set_inter_font()
 
+# Set up logger for better traceability
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-def main():
-    param_dict = initialize_dict((4, 4))
-    for c in CELLS:
-        xloc, yloc = convert_cell_to_coordinates(c)
-        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
+def generate_plots(ber_array, save_dir=None):
+    """
+    Generate the plots and save them to the specified directory.
+    """
+    if save_dir:
+        # Save the plots with a path provided
+        plot_ber_3d_bar(ber_array, save_path=f"{save_dir}/ber_3d_bar.png")
+        plot_fidelity_clean_bar(ber_array, save_path=f"{save_dir}/fidelity_clean_bar.png")
+    else:
+        # Display the plots if no save path is provided
+        plot_ber_3d_bar(ber_array)
+        plot_fidelity_clean_bar(ber_array)
 
-    ber_array = param_dict["bit_error_rate"]
-    valid_ber = ber_array[np.isfinite(ber_array) & (ber_array < 5.5e-2)]
-
-    average_ber = np.mean(valid_ber)
-    std_ber = np.std(valid_ber)
-    min_ber = np.min(valid_ber)
-    max_ber = np.max(valid_ber)
-    print("=== Array BER Statistics ===")
-    print(f"Average BER: {average_ber:.2e}")
-    print(f"Std Dev BER: {std_ber:.2e}")
-    print(f"Min BER: {min_ber:.2e}")
-    print(f"Max BER: {max_ber:.2e}")
-    print("=============================")
-
-    plot_ber_3d_bar(ber_array)
-    plot_fidelity_clean_bar(ber_array)
+def main(save_dir=None):
+    """
+    Main function to process data and generate plots.
+    """
+    ber_array = process_ber_data(logger=logger)
+    generate_plots(ber_array, save_dir)
 
 if __name__ == "__main__":
-    main()
+    # Call the main function
+    main(save_dir="../plots")
