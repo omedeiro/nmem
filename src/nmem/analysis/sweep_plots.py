@@ -520,7 +520,6 @@ def plot_read_sweep(
     write_temp = None
     label = None
     read_currents = get_read_currents(data_dict)
-    print(read_currents)
     if value_name == "bit_error_rate":
         value = get_bit_error_rate(data_dict)
     if value_name == "write_0_read_1":
@@ -643,7 +642,6 @@ def plot_read_switch_probability_array(
     ax: Axes, dict_list: list[dict], write_list=None, **kwargs
 ) -> Axes:
     colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    print(f"len dict_list: {len(dict_list)}")
     for i, data_dict in enumerate(dict_list):
         if write_list is not None:
             plot_read_sweep_switch_probability(
