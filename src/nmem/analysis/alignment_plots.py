@@ -26,7 +26,6 @@ def plot_alignment_histogram(
         binwidth,
     )
     n, bins, patches = plot_general_histogram(
-        ax,
         diff_list,
         bins=bins,
         color="#0504aa",
@@ -35,6 +34,7 @@ def plot_alignment_histogram(
         xlabel="alignment difference [nm]",
         ylabel="count",
         legend=False,
+        ax=ax,
     )
     if save_fig:
         fig.savefig(output_path, bbox_inches="tight")
@@ -114,7 +114,7 @@ def plot_alignment_stats(
         xlabel="Z Height [mm]",
         ylabel="Count",
         legend=False,
-        ax = axs[0],
+        ax=axs[0],
     )
     axs[0].text(
         0.97,
