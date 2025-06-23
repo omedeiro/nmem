@@ -1167,10 +1167,13 @@ def plot_read_current_operating(dict_list):
     plt.show()
 
 
-def plot_retention(delay_list, bit_error_rate_list):
-    """Plot BER vs retention time."""
-    fig, axs = plt.subplot_mosaic("A;B", figsize=(3.5, 3.5), constrained_layout=True)
-    ax = axs["A"]
+def plot_retention(delay_list, bit_error_rate_list, ax=None):
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     ax.set_aspect("equal")
     sort_index = np.argsort(delay_list)
     delay_list = delay_list[sort_index]
@@ -1186,7 +1189,7 @@ def plot_retention(delay_list, bit_error_rate_list):
     ax.set_yscale("log")
     ax.set_ylim([1e-4, 1e-3])
     ax.yaxis.set_minor_formatter(ticker.NullFormatter())
-    return fig, axs
+    return fig, ax
 
 
 def plot_write_sweep_ber(ax, dict_list):
