@@ -12,7 +12,19 @@ set_inter_font()
 set_pres_style()
 
 
-plot_extruded_bar(
-    energies_labels, energies_fj, colors,
-)
-plt.show()
+def main(save_dir=None):
+    plot_extruded_bar(
+        energies_labels,
+        energies_fj,
+        colors,
+    )
+
+    if save_dir:
+        plt.savefig(f"{save_dir}/compare_energy_bar.png", dpi=300, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()

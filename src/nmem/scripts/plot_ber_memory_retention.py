@@ -5,14 +5,18 @@ from nmem.analysis.matrix_plots import plot_ber_array
 from nmem.analysis.sweep_plots import plot_retention
 
 
-def main():
+def main(save_dir=None):
     delay_list, bit_error_rate_list, _ = import_delay_data()
     fig, axs = plot_retention(delay_list, bit_error_rate_list)
     plot_ber_array(axs["B"])
-    save_fig = False
-    if save_fig:
-        plt.savefig("read_delay_retention_test.pdf", bbox_inches="tight")
-    plt.show()
+
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_memory_retention.png", dpi=300, bbox_inches="tight"
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
