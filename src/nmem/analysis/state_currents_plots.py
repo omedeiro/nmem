@@ -45,8 +45,6 @@ def plot_branch_currents(
     ax.plot(T, irhr, label="$I_{r, H_R}(T)$", color="r", linestyle="--")
 
     ax.plot(T, ichr + irhl, label="$I_{0}(T)$", color="g", linestyle="-")
-    print(f"ichr: {ichr[0]}, irhl: {irhl[0]}")
-    print(f"sum {ichr[0]+irhl[0]}")
     return ax
 
 
