@@ -4,7 +4,7 @@ import numpy as np
 from nmem.analysis.constants import CRITICAL_TEMP
 from nmem.analysis.currents import get_critical_current_intercept
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.plotting import plot_branch_currents
+from nmem.analysis.state_currents_plots import plot_branch_currents
 
 ALPHA = 0.6
 RETRAP = 0.7
