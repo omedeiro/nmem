@@ -85,9 +85,16 @@ def modify_script_for_saving(script_name, save_dir):
     """
     # Override plt.show() to save instead
     original_show = plt.show
+    figure_counter = [0]  # Use list to make it mutable in nested function
 
     def save_instead_of_show():
-        save_path = os.path.join(save_dir, f"{script_name}.png")
+        figure_counter[0] += 1
+        if figure_counter[0] == 1:
+            save_path = os.path.join(save_dir, f"{script_name}.png")
+        else:
+            save_path = os.path.join(
+                save_dir, f"{script_name}_fig{figure_counter[0]}.png"
+            )
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         plt.close("all")  # Close all figures to free memory
         logger.info(f"Saved plot to {save_path}")
