@@ -3,12 +3,13 @@
 Script to run all plotting scripts and save outputs to the plots directory.
 This provides a centralized way to generate all plots for the nmem project.
 """
-import os
-import sys
 import importlib
 import logging
+import os
+import sys
 import traceback
 from pathlib import Path
+
 import matplotlib
 
 matplotlib.use("Agg")  # Use non-interactive backend
@@ -158,7 +159,7 @@ def main(output_dir=None):
 
     # Summary
     logger.info(f"\n{'='*50}")
-    logger.info(f"SUMMARY")
+    logger.info("SUMMARY")
     logger.info(f"{'='*50}")
     logger.info(f"Total scripts: {len(plotting_scripts)}")
     logger.info(f"Successful: {successful_runs}")
