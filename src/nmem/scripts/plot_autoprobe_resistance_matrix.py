@@ -18,8 +18,8 @@ def main():
     }
     plot_combined_histogram_and_die_maps(df, wafer_rows, limit_dict)
 
-    print(summary_df)  # Die-level stats
-    print(row_stats_df.head())  # Row-level summary
+    # print(summary_df)  # Die-level stats
+    # print(row_stats_df.head())  # Row-level summary
 
 
 if __name__ == "__main__":
