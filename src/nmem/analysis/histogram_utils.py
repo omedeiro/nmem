@@ -44,7 +44,6 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None) -> Axes:
     vals = vals[~np.isnan(vals)]
     log_bins = np.logspace(np.log10(vals.min()), np.log10(vals.max()), 100)
     plot_general_histogram(
-        ax,
         vals,
         bins=log_bins,
         color="#888",
@@ -55,6 +54,7 @@ def plot_histogram(ax, vals, row_char, vmin=None, vmax=None) -> Axes:
         ylabel=f"{row_char}",
         legend=False,
         grid=True,
+        ax=ax,
     )
     ax.set_xlim(10, 5000)
     ax.set_ylim(0, 100)
