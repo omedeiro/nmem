@@ -15,8 +15,6 @@ def main():
     save_csv = False
     if save_csv:
         df.to_csv("read_current_sweep_operating.csv", float_format="%.3f")
-    else:
-        print(df)
 
 
 if __name__ == "__main__":
