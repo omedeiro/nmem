@@ -149,9 +149,6 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
         ]
 
         n_nan = len(row_df) - len(valid_vals)
-        if n_nan > 0:
-            print(f"Row {row_number} has {n_nan} NaN values.")
-
         vmin, vmax = limit_dict.get(
             str(row_number), (valid_vals.min(), valid_vals.max())
         )
