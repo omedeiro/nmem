@@ -400,7 +400,7 @@ def plot_write_temp_vs_current(
 
 
 def plot_enable_write_sweep_fine(
-    data_list2, save_fig=False, output_path="enable_write_sweep_fine.pdf"
+    data_list2
 ):
     """
     Plots the fine enable write sweep for the provided data list.
@@ -409,8 +409,7 @@ def plot_enable_write_sweep_fine(
     fig, ax = plt.subplots(figsize=(6, 4))
     plot_enable_write_sweep_multiple(ax, data_list2)
     ax.set_xlim([260, 310])
-    if save_fig:
-        fig.savefig(output_path, bbox_inches="tight")
+
     return fig, ax
 
 
