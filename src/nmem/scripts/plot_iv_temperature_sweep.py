@@ -43,7 +43,7 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
             dpi=300
         )
         fig3.savefig(
-            f"{save_dir}/iv_curve_combined.pdf", 
+            f"{save_dir}/iv_curve_combined.png", 
             bbox_inches="tight", 
             dpi=300
         )

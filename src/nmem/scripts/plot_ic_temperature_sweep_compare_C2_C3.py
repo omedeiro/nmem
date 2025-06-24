@@ -13,8 +13,7 @@ from nmem.analysis.utils import build_array
 
 def main(
     data_dir="../data/enable_current_relation/compare_C2_C3",
-    save_fig=False,
-    output_path="enable_current_relation_compare_C2C3.png",
+    save_dir=None,
 ):
     """
     Main function to compare C2 and C3 cells and plot results.
@@ -33,10 +32,20 @@ def main(
     x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
     xfit2, yfit2 = get_fitting_points(x2, y2, ztotal2)
     plot_c2c3_subplots(axs2, xfit2, yfit2, split_idx, label_c2="C2", label_c3="C3")
-    if save_fig:
-        fig2.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.show()
-
+    if save_dir:
+        fig1.savefig(
+            f"{save_dir}/c2_c3_comparison.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+        fig2.savefig(
+            f"{save_dir}/c2_c3_subplots.png",
+            bbox_inches="tight",
+            dpi=300,
+        )
+        plt.close('all')
+    else:
+        plt.show()
 
 if __name__ == "__main__":
     main()
