@@ -107,8 +107,9 @@ def main():
         ax_inset.set_ylim([500, 950])
         ax_inset.set_xticks([])
         ax_inset.set_yticks([])
-    for f in fit_results:
-        print(f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}")
+        
+    # for f in fit_results:
+    #     print(f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}")
 
 
 if __name__ == "__main__":
