@@ -1,4 +1,5 @@
 import os
+import logging
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -18,6 +19,13 @@ CMAP3 = plt.get_cmap("plasma").reversed()
 STYLE_CONFIG = {
     "mode": "paper",  # Can be "presentation", "paper", or "thesis"
 }
+
+
+def suppress_font_logs():
+    """Suppress verbose font subsetting logs from matplotlib and fonttools."""
+    logging.getLogger("fontTools.subset").setLevel(logging.WARNING)
+    logging.getLogger("fontTools.ttLib").setLevel(logging.WARNING)
+    logging.getLogger("matplotlib.font_manager").setLevel(logging.WARNING)
 
 
 def set_style_mode(mode: str) -> None:
@@ -59,6 +67,9 @@ def apply_global_style(**kwargs) -> None:
     Args:
         **kwargs: Additional style parameters to override defaults
     """
+    # Suppress font logs before applying styles
+    suppress_font_logs()
+
     mode = STYLE_CONFIG["mode"]
 
     if mode == "presentation":
@@ -117,6 +128,13 @@ def lighten(color, factor=1.1):
 
 
 def set_inter_font():
+    """Set Inter font with caching to avoid repeated font loading."""
+    # Check if Inter is already available to avoid re-adding
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    if "Inter" in available_fonts:
+        mpl.rcParams["font.family"] = "Inter"
+        return
+
     if os.name == "nt":  # Windows
         font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
     elif os.name == "posix":
@@ -127,6 +145,9 @@ def set_inter_font():
     if font_path and os.path.exists(font_path):
         fm.fontManager.addfont(font_path)
         mpl.rcParams["font.family"] = "Inter"
+    else:
+        # Fallback to DejaVu Sans if Inter not available
+        mpl.rcParams["font.family"] = "DejaVu Sans"
 
 
 def set_paper_style() -> None:
@@ -141,7 +162,7 @@ def set_paper_style() -> None:
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "font.family": "Inter",
-            "mathtext.fontset": "cm",
+            "mathtext.fontset": "stix",  # Changed from "cm" to reduce font subsetting
             "font.size": 9,
             "axes.titlesize": 9,
             "axes.labelsize": 9,
@@ -182,7 +203,7 @@ def set_thesis_style(dpi=300, font_size=11, grid_alpha=0.3) -> None:
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "font.family": "serif",
-            "mathtext.fontset": "cm",
+            "mathtext.fontset": "stix",  # Changed from "cm" to reduce font subsetting
             "font.size": font_size,
             "axes.titlesize": font_size + 2,
             "axes.labelsize": font_size + 1,
