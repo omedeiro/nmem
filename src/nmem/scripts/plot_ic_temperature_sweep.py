@@ -18,7 +18,7 @@ def main(data_dir="../data/dc_sweep_array", save_dir=None):
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/ic_vs_ih_array.pdf",
+            f"{save_dir}/ic_vs_ih_array.png",
             bbox_inches="tight",
             dpi=300,
         )

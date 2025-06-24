@@ -44,7 +44,7 @@ def main(
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/ber_write_current_sweep_operation.pdf",
+            f"{save_dir}/ber_write_current_sweep_operation.png",
             bbox_inches="tight",
             dpi=300,
         )
