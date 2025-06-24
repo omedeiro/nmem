@@ -31,12 +31,23 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
     plt.subplots_adjust(wspace=0.4)
 
     if save_dir:
+        # Save all figures
+        fig1.savefig(
+            f"{save_dir}/critical_currents_dc_sweep.png",
+            bbox_inches="tight",
+            dpi=300
+        )
+        fig2.savefig(
+            f"{save_dir}/current_voltage_dc_sweep.png",
+            bbox_inches="tight",
+            dpi=300
+        )
         fig3.savefig(
             f"{save_dir}/iv_curve_combined.pdf", 
             bbox_inches="tight", 
             dpi=300
         )
-        plt.close()
+        plt.close('all')
     else:
         plt.show()
 
