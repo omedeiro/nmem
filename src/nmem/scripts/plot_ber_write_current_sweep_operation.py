@@ -19,8 +19,7 @@ from nmem.analysis.sweep_plots import (
 def main(
     enable_write_sweep_path="../data/ber_sweep_enable_write_current/data1",
     write_sweep_path="../data/ber_sweep_write_current/enable_write",
-    save_fig=False,
-    fig_path="write_current_sweep_operation.pdf",
+    save_dir=None,
 ):
     dict_list_ews = import_directory(enable_write_sweep_path)
     dict_list_ws = load_and_process_write_sweep_data(write_sweep_path)
@@ -43,8 +42,13 @@ def main(
     data, data2 = extract_temp_current_data(dict_list_ws)
     plot_temp_vs_current(axs["D"], data, data2)
 
-    if save_fig:
-        fig.savefig(fig_path, bbox_inches="tight")
+    if save_dir:
+        fig.savefig(
+            f"{save_dir}/ber_write_current_sweep_operation.pdf",
+            bbox_inches="tight",
+            dpi=300,
+        )
+        plt.close()
     else:
         plt.show()
 
