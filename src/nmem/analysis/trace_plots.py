@@ -141,7 +141,7 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
     return axs
 
 
-def plot_voltage_pulse_avg(dict_list):
+def plot_voltage_pulse_avg(dict_list, logger=None):
     """Plot voltage pulse traces and histograms."""
     fig, ax_dict = plt.subplot_mosaic("A;B", figsize=(6, 5), constrained_layout=True)
     ax2 = ax_dict["A"].twinx()
@@ -168,7 +168,10 @@ def plot_voltage_pulse_avg(dict_list):
         ax3, dict_list[4], "trace_eread_avg", color="#ff1423", label="Enable\nRead"
     )
 
-    sigma_sep = compute_sigma_separation(dict_list[3], show_print=True)
+    sigma_sep, sigma_avg = compute_sigma_separation(dict_list[3])
+    if logger:
+        logger.info(f"Sigma separation: {sigma_sep:.2f} mV")
+        logger.info(f"Sigma average: {sigma_avg:.2f} mV")
     ax_dict["A"].legend(loc="upper left", handlelength=1.2)
     ax_dict["A"].set_ylabel("Voltage [mV]")
     ax2.legend(loc="upper right", handlelength=1.2)
