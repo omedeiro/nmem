@@ -2,7 +2,16 @@
 """
 Script to run all plotting scripts and save outputs to the plots directory.
 This provides a centralized way to generate all plots for the nmem project.
+
+Usage:
+    python run_all_plotting_scripts.py [output_dir] [--style {presentation,paper,thesis}]
+
+Examples:
+    python run_all_plotting_scripts.py --style presentation
+    python run_all_plotting_scripts.py ./plots --style thesis
+    python run_all_plotting_scripts.py ./plots --style paper
 """
+import argparse
 import importlib
 import logging
 import os
@@ -14,6 +23,9 @@ import matplotlib
 
 matplotlib.use("Agg")  # Use non-interactive backend
 import matplotlib.pyplot as plt
+
+# Import style management functions
+from nmem.analysis.styles import set_style_mode, apply_global_style, get_style_mode
 
 # Set up logging
 logging.basicConfig(
@@ -42,6 +54,9 @@ def run_script_with_save_dir(script_name, module_name, save_dir):
     Try to run a plotting script, attempting different ways to pass save_dir.
     """
     try:
+        # Apply global style before importing the module
+        apply_global_style()
+
         module = importlib.import_module(module_name)
 
         # Method 1: Try to call main() with save_dir parameter
@@ -104,13 +119,18 @@ def modify_script_for_saving(script_name, save_dir):
     return original_show
 
 
-def main(output_dir=None):
+def main(output_dir=None, style_mode="thesis"):
     """
     Main function to run all plotting scripts.
 
     Args:
         output_dir (str): Directory to save plots. Defaults to '../plots'
+        style_mode (str): Global plotting style mode ('presentation', 'paper', or 'thesis')
     """
+    # Set global style mode
+    set_style_mode(style_mode)
+    logger.info(f"Using global plot style: {get_style_mode()}")
+
     if output_dir is None:
         # Default to plots directory relative to project root
         project_root = Path(__file__).parent.parent.parent.parent
@@ -164,14 +184,35 @@ def main(output_dir=None):
     logger.info(f"Total scripts: {len(plotting_scripts)}")
     logger.info(f"Successful: {successful_runs}")
     logger.info(f"Failed: {failed_runs}")
+    logger.info(f"Plot style: {get_style_mode()}")
     logger.info(f"Plots saved to: {output_dir}")
 
 
 if __name__ == "__main__":
-    # Allow command line argument for output directory
-    if len(sys.argv) > 1:
-        output_dir = sys.argv[1]
-    else:
-        output_dir = None
+    parser = argparse.ArgumentParser(
+        description="Run all plotting scripts with configurable output directory and style",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python run_all_plotting_scripts.py --style presentation
+  python run_all_plotting_scripts.py ./plots --style thesis  
+  python run_all_plotting_scripts.py ./plots --style paper
+        """,
+    )
 
-    main(output_dir)
+    parser.add_argument(
+        "output_dir",
+        nargs="?",
+        default=None,
+        help="Output directory for plots (default: auto-detected plots directory)",
+    )
+
+    parser.add_argument(
+        "--style",
+        choices=["presentation", "pres", "paper", "publication", "thesis"],
+        default="thesis",
+        help="Global plotting style mode (default: thesis)",
+    )
+
+    args = parser.parse_args()
+    main(args.output_dir, args.style)
