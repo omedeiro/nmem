@@ -16,7 +16,7 @@ CMAP3 = plt.get_cmap("plasma").reversed()
 
 # Global style configuration
 STYLE_CONFIG = {
-    "mode": "thesis",  # Can be "presentation", "paper", or "thesis"
+    "mode": "paper",  # Can be "presentation", "paper", or "thesis"
 }
 
 
