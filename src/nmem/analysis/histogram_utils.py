@@ -26,6 +26,8 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
         ax=ax,
     )
     ax.legend()
+    ax.set_xlabel("Voltage (mV)")
+    ax.set_ylabel("Counts")
     return ax
 
 
