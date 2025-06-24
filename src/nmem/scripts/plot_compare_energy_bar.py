@@ -6,10 +6,10 @@ from nmem.analysis.memory_data import (
     energies_fj,
     energies_labels,
 )
-from nmem.analysis.styles import set_inter_font, set_pres_style
+from nmem.analysis.styles import apply_global_style
 
-set_inter_font()
-set_pres_style()
+# Apply the globally configured style
+apply_global_style()
 
 
 def main(save_dir=None):
