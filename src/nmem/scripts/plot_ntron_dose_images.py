@@ -10,11 +10,11 @@ from nmem.analysis.utils import center_crop_zoom
 
 def main(
     image_folder="../data/ntron_dose_test_images",
-    output_file="dose_grid.pdf",
     doses=None,
     ncols=5,
     zoom_factor=8,
-    save_fig=False,
+    save_dir=None,
+
 ):
     if doses is None:
         doses = np.linspace(250, 440, 20)  # Doses in µC/cm²
@@ -37,10 +37,15 @@ def main(
     fig.subplots_adjust(
         left=0.05, right=0.95, top=0.95, bottom=0.05, hspace=0.2, wspace=0.2
     )
-    if save_fig:
-        plt.savefig(output_file, bbox_inches="tight", transparent=False)
-    plt.show()
-    plt.close()
+    if save_dir:
+        fig.savefig(
+            os.path.join(save_dir, "ntron_dose_images.png"),
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
