@@ -126,9 +126,6 @@ def plot_critical_currents_from_dc_sweep(
     ax2.axhline(substrate_temp, color="black", linestyle="--", linewidth=0.5)
     ax2.axhline(CRITICAL_TEMP, color="black", linestyle="--", linewidth=0.5)
 
-    if save:
-        plt.savefig("critical_currents_full.pdf", bbox_inches="tight")
-
     return ax
 
 
@@ -137,8 +134,6 @@ def plot_ic_vs_ih_array(
     avg_current,
     ystd,
     cell_names,
-    save_fig=False,
-    output_path="ic_vs_ih_array.png",
 ):
     """
     Plots Ic vs Ih for all cells in the array, including average fit line.
@@ -261,9 +256,7 @@ def plot_ic_vs_ih_array(
     ax.legend(ncol=2, frameon=False, loc="upper right")
     ax.set_ybound(lower=0)
     ax.set_xlim(0, 800)
-    plt.tight_layout()
-    if save_fig:
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+
     return fig, ax
 
 
