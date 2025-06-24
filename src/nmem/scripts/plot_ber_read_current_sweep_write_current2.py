@@ -121,7 +121,7 @@ def main(save_dir=None):
     fig, axs = plot_read_temp_sweep_C3_v2()
 
     if save_dir:
-        fig.savefig(f"{save_dir}/read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
+        fig.savefig(f"{save_dir}/read_current_sweep_write_current_C3.png", bbox_inches="tight")
         plt.close(fig)
     else:
         plt.show()
