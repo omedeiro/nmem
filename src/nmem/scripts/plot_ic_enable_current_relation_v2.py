@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import set_plot_style
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_column,
     plot_full_grid,
@@ -26,7 +26,7 @@ def main(
     """
     import os
 
-    set_plot_style()
+    apply_global_style()
     dict_list = import_directory(data_dir)
 
     # Figure 1: Full grid
