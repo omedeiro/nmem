@@ -130,7 +130,7 @@ def set_inter_font():
 
 
 def set_paper_style() -> None:
-    """Paper/publication-optimized style with serif fonts and compact layout."""
+    """Paper/publication-optimized style with Inter fonts and compact layout."""
     set_inter_font()
     golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
     width = 3.5  # Example width in inches (single-column for Nature)
@@ -140,7 +140,7 @@ def set_paper_style() -> None:
             "figure.figsize": [width, height],
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
-            "font.family": "serif",
+            "font.family": "Inter",
             "mathtext.fontset": "cm",
             "font.size": 9,
             "axes.titlesize": 9,
@@ -171,7 +171,6 @@ def set_thesis_style(dpi=300, font_size=11, grid_alpha=0.3) -> None:
         font_size (int): Base font size for axes and labels.
         grid_alpha (float): Grid line transparency.
     """
-    set_inter_font()
     golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
     width = 5.0  # Slightly larger than paper style
     height = width / golden_ratio
@@ -182,7 +181,7 @@ def set_thesis_style(dpi=300, font_size=11, grid_alpha=0.3) -> None:
             "figure.figsize": [width, height],
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
-            "font.family": "Inter",
+            "font.family": "serif",
             "mathtext.fontset": "cm",
             "font.size": font_size,
             "axes.titlesize": font_size + 2,
