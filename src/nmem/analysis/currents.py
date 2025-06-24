@@ -127,7 +127,6 @@ def extract_ic_vs_ih_data(data):
     """
     Extracts and returns heater currents, average current, std, and cell names from the data dict.
     """
-    print(data.keys())
     ic_vs_ih = data["ic_vs_ih_data"]
     heater_currents = ic_vs_ih["heater_currents"][0, 0]
     avg_current = ic_vs_ih["avg_current"][0, 0]
