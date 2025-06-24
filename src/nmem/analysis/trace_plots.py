@@ -92,12 +92,7 @@ def plot_voltage_trace_averaged(
     return ax
 
 
-
-
-
-def plot_current_voltage_from_dc_sweep(
-    ax: Axes, dict_list: list, save: bool = False
-) -> Axes:
+def plot_current_voltage_from_dc_sweep(ax: Axes, dict_list: list) -> Axes:
     colors = plt.cm.coolwarm(np.linspace(0, 1, int(len(dict_list) / 2) + 1))
     colors = np.flipud(colors)
     for i, data in enumerate(dict_list):
@@ -110,11 +105,8 @@ def plot_current_voltage_from_dc_sweep(
     ax.set_ylim([-500, 500])
     ax.set_xlabel("Voltage [V]")
     ax.set_ylabel("Current [µA]")
-    if save:
-        plt.savefig("iv_curve.pdf", bbox_inches="tight")
+
     return ax
-
-
 
 
 def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> List[Axes]:
@@ -185,9 +177,6 @@ def plot_voltage_pulse_avg(dict_list, logger=None):
     return fig, ax_dict
 
 
-
-
-
 def plot_voltage_trace_bitstream(ax: Axes, data_dict: dict, trace_name: str) -> Axes:
     x, y = get_voltage_trace_data(
         data_dict,
@@ -246,7 +235,6 @@ def plot_combined_dc_figure(axs: List[Axes], dict_list: list) -> List[Axes]:
     axs[2].set_xlim(-500, 500)
     axs[2].xaxis.set_major_locator(MultipleLocator(250))
     return axs
-
 
 
 def plot_probe_station_prbs(
