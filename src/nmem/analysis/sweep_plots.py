@@ -351,7 +351,7 @@ def plot_enable_write_temp(
 
 
 def plot_enable_write_sweep2(
-    dict_list, save_fig=False, output_path="enable_write_sweep.pdf"
+    dict_list
 ):
     """
     Plots the enable write sweep for multiple datasets.
@@ -361,8 +361,6 @@ def plot_enable_write_sweep2(
     ax = plot_enable_write_sweep_multiple(ax, dict_list)
     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     ax.set_ylabel("BER")
-    if save_fig:
-        fig.savefig(output_path, bbox_inches="tight")
     return fig, ax
 
 
