@@ -1291,8 +1291,6 @@ def plot_read_current_sweep_enable_read(
 def plot_write_current_enable_sweep_margin(
     dict_list,
     inner,
-    save_fig=False,
-    output_path="write_current_enable_sweep_margin.pdf",
 ):
     """
     Plots the write current enable sweep margin using a subplot mosaic.
@@ -1309,8 +1307,7 @@ def plot_write_current_enable_sweep_margin(
     ax = axs["B"]
     plot_enable_sweep_markers(ax, sort_dict_list)
     fig.subplots_adjust(wspace=0.7, hspace=0.5)
-    if save_fig:
-        fig.savefig(output_path, bbox_inches="tight")
+
     return fig, axs
 
 
