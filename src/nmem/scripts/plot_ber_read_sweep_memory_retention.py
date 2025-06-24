@@ -6,7 +6,7 @@ from nmem.analysis.sweep_plots import (
 )
 
 
-def main():
+def main(save_dir=None):
     dict_list = import_directory("../data/ber_sweep_read_current/memory_retention")
 
     fig, ax = plt.subplots()
@@ -21,7 +21,16 @@ def main():
         bbox_to_anchor=(1, 1),
         title="Read Delay",
     )
-    plt.show()
+
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_read_sweep_memory_retention.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

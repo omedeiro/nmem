@@ -11,7 +11,7 @@ RETRAP = 0.7
 WIDTH = 1 / 3
 
 
-def main(data_dir="../data/ber_sweep_read_current/nominal", save_fig=False, output_path="plot_branch_currents.pdf"):
+def main(data_dir="../data/ber_sweep_read_current/nominal", save_dir=None):
     data_dict = import_directory(data_dir)[0]
     fig, ax = plt.subplots()
 
@@ -31,9 +31,14 @@ def main(data_dir="../data/ber_sweep_read_current/nominal", save_fig=False, outp
     ax.set_ylim(0, 2000)
     ax.plot([0], [critical_current_zero], marker="x", color="black", markersize=10)
     ax.plot([7], [800], marker="x", color="black", markersize=10)
-    if save_fig:
-        plt.savefig(output_path, bbox_inches="tight")
-    plt.show()
+
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_branch_currents_sweep.png", dpi=300, bbox_inches="tight"
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

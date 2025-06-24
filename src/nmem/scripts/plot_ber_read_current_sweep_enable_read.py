@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_read_current_sweep_data
 from nmem.analysis.sweep_plots import (
@@ -5,9 +6,19 @@ from nmem.analysis.sweep_plots import (
 )
 
 
-def main():
+def main(save_dir=None):
     dict_list, data_list, data_list2 = import_read_current_sweep_data()
     plot_read_current_sweep_enable_read(dict_list, data_list, data_list2)
+
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_read_current_sweep_enable_read.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

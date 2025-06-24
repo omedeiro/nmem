@@ -11,15 +11,23 @@ from nmem.analysis.state_currents_plots import (
 )
 
 
-def main():
+def main(save_dir=None):
 
     ALPHA = 0.612
     WIDTH = 0.3
     persistent_current = 30
     critical_current_zero = 1240
-    data_dict1 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_290.mat"),
-    data_dict2 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_300.mat")
-    data_dict3 = sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat")
+    data_dict1 = (
+        sio.loadmat(
+            "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_290.mat"
+        ),
+    )
+    data_dict2 = sio.loadmat(
+        "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_300.mat"
+    )
+    data_dict3 = sio.loadmat(
+        "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat"
+    )
     dict_list = [data_dict1, data_dict2, data_dict3]
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []
@@ -107,7 +115,15 @@ def main():
         ax_inset.set_ylim([500, 950])
         ax_inset.set_xticks([])
         ax_inset.set_yticks([])
-        
+
+        if save_dir:
+            plt.savefig(
+                f"{save_dir}/ber_read_sweep_fitting.png", dpi=300, bbox_inches="tight"
+            )
+            plt.close()
+        else:
+            plt.show()
+
     # for f in fit_results:
     #     print(f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}")
 

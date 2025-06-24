@@ -5,7 +5,7 @@ from nmem.analysis.core_analysis import analyze_geom_loop_size
 from nmem.analysis.data_import import import_geom_loop_size_data
 
 
-def main(data_dir="../data/loop_size_sweep", save_fig=False, output_path="geom_loop_size.pdf"):
+def main(data_dir="../data/loop_size_sweep", save_dir=None):
     data, loop_sizes = import_geom_loop_size_data(data_dir)
     vch_list, ber_est_list, err_list, best_ber = analyze_geom_loop_size(
         data, loop_sizes
@@ -31,14 +31,16 @@ def main(data_dir="../data/loop_size_sweep", save_fig=False, output_path="geom_l
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     fig.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1, wspace=0.2)
     axs[2].axis("off")
-    if save_fig:
+    if save_dir:
         plt.savefig(
-            output_path,
+            f"{save_dir}/geom_loop_size.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0.1,
         )
-    plt.show()
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

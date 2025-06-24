@@ -10,7 +10,7 @@ from nmem.analysis.sweep_plots import (
 )
 
 
-def main():
+def main(save_dir=None):
     innerb = [
         ["C", "D"],
     ]
@@ -30,6 +30,16 @@ def main():
         hspace=0.4,
         wspace=0.7,
     )
+
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_write_current_sweep_enable_margin.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
