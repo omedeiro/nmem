@@ -88,9 +88,8 @@ def plot_read_temp_sweep_C3_v2(save=False):
     axpos = axs[2].get_position()
     cbar = add_colorbar(axs[2], dict_list, "write_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
-    if save:
-        plt.savefig("read_current_sweep_write_current_C3_v2.pdf", bbox_inches="tight")
 
+    return fig, axs
 
 def plot_read_sweep_import(data_dict: dict[str, list[float]]):
     fig, ax = plt.subplots()
@@ -108,8 +107,10 @@ def plot_read_sweep_import(data_dict: dict[str, list[float]]):
     ax.set_title(f"Cell {cell}")
     return fig, ax
 
-
-if __name__ == "__main__":
+def main(save_dir=None):
+    """
+    Main function to plot read current sweep data.
+    """
     # plot_read_sweep_import(import_directory("write_current_sweep_B2_0"))
     # plot_read_sweep_import(import_directory("write_current_sweep_B2_1"))
     # plot_read_sweep_import(import_directory("write_current_sweep_B2_2"))
@@ -117,4 +118,13 @@ if __name__ == "__main__":
     # plot_read_sweep_import(import_directory("write_current_sweep_A2"))
     # plot_read_sweep_import(import_directory("write_current_sweep_C2"))
 
-    plot_read_temp_sweep_C3_v2()
+    fig, axs = plot_read_temp_sweep_C3_v2()
+
+    if save_dir:
+        fig.savefig(f"{save_dir}/read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+if __name__ == "__main__":
+    main()
