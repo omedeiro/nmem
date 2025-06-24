@@ -1,4 +1,5 @@
 from typing import Literal
+import warnings
 
 import ltspice
 import matplotlib.gridspec as gridspec
@@ -10,6 +11,10 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+
+# Suppress numpy warnings about all-nan slices
+warnings.filterwarnings('ignore', message='All-NaN slice encountered')
+warnings.filterwarnings('ignore', message='invalid value encountered')
 
 from nmem.analysis.bit_error import (
     calculate_ber_errorbar,
@@ -203,7 +208,7 @@ def plot_ic_vs_ih_array(
             linewidth=1.5,  # Main line width
             alpha=0.5,  # Slight transparency for overlap
         )
-        avg_error_list.append(np.mean(err))
+        avg_error_list.append(np.nanmean(err))
         # Linear fit for intercepts (200-600 µA)
         valid_indices = (ih >= 200) & (ih <= 550)
         ih_filtered = ih[valid_indices]
@@ -221,12 +226,22 @@ def plot_ic_vs_ih_array(
     filtered_x = np.array(x_intercepts)
     filtered_y = np.array(y_intercepts)
     valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
-    avg_x_intercept = np.mean(filtered_x[valid_avg])
-    avg_y_intercept = np.mean(filtered_y[valid_avg])
+    
+    # Check if we have valid data before calculating means
+    if np.any(valid_avg):
+        avg_x_intercept = np.nanmean(filtered_x[valid_avg])
+        avg_y_intercept = np.nanmean(filtered_y[valid_avg])
+    else:
+        # Fallback values if no valid data
+        avg_x_intercept = 0
+        avg_y_intercept = 0
 
     def avg_line(x):
-        slope = avg_y_intercept / avg_x_intercept
-        return -slope * x + avg_y_intercept
+        if avg_x_intercept != 0:
+            slope = avg_y_intercept / avg_x_intercept
+            return -slope * x + avg_y_intercept
+        else:
+            return np.zeros_like(x)  # Return zeros if no valid intercept
 
     fit_range = np.linspace(0, 800, 100)
     ax.plot(
@@ -1069,19 +1084,29 @@ def plot_read_current_operating(dict_list):
         bit_error_rate = get_bit_error_rate(data_dict)
         berargs = get_bit_error_rate_args(bit_error_rate)
         read_currents = get_read_currents(data_dict)
-        if not np.isnan(berargs[0]) and write_current < 100:
-            ic_list.append(read_currents[berargs[0]])
-            write_current_list.append(write_current)
-        if not np.isnan(berargs[2]) and write_current > 100:
-            ic_list.append(read_currents[berargs[3]])
-            write_current_list.append(write_current)
+        # Ensure berargs has at least 4 elements and handle NaN values properly
+        if len(berargs) >= 4:
+            if not np.isnan(berargs[0]) and write_current < 100:
+                arg_idx = int(berargs[0])
+                if 0 <= arg_idx < len(read_currents):
+                    ic_list.append(read_currents[arg_idx])
+                    write_current_list.append(write_current)
+            if not np.isnan(berargs[2]) and write_current > 100:
+                arg_idx = int(berargs[3])
+                if 0 <= arg_idx < len(read_currents):
+                    ic_list.append(read_currents[arg_idx])
+                    write_current_list.append(write_current)
 
-        if not np.isnan(berargs[1]):
-            ic_list2.append(read_currents[berargs[1]])
-            write_current_list2.append(write_current)
-        if not np.isnan(berargs[3]):
-            ic_list2.append(read_currents[berargs[2]])
-            write_current_list2.append(write_current)
+            if not np.isnan(berargs[1]):
+                arg_idx = int(berargs[1])
+                if 0 <= arg_idx < len(read_currents):
+                    ic_list2.append(read_currents[arg_idx])
+                    write_current_list2.append(write_current)
+            if not np.isnan(berargs[3]):
+                arg_idx = int(berargs[2])
+                if 0 <= arg_idx < len(read_currents):
+                    ic_list2.append(read_currents[arg_idx])
+                    write_current_list2.append(write_current)
 
     ax.plot(write_current_list, ic_list, "-", color="grey", linewidth=0.5)
     ax.plot(write_current_list2, ic_list2, "-", color="grey", linewidth=0.5)
@@ -1332,9 +1357,11 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
         write_current_array[j] = write_current
         critical_current_zero = get_critical_current_heater_off(data_dict)
         for i, arg in enumerate(berargs):
-            if arg is not np.nan:
-                write_temp_array[j, i] = write_temps[arg]
-                enable_current_array[j, i] = enable_currents[arg]
+            if not np.isnan(arg) and arg is not None:
+                arg_idx = int(arg)
+                if 0 <= arg_idx < len(write_temps) and 0 <= arg_idx < len(enable_currents):
+                    write_temp_array[j, i] = write_temps[arg_idx]
+                    enable_current_array[j, i] = enable_currents[arg_idx]
     markers = ["o", "s", "D", "^"]
     for i in range(4):
         ax.plot(
@@ -1639,14 +1666,17 @@ def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
 
     read_current = get_read_currents(data_dict)
     for arg in berargs:
-        if arg is not np.nan:
-            ax.plot(
-                read_current[arg],
-                bit_error_rate[arg],
-                marker="o",
-                color=color,
-            )
-            ax.axvline(read_current[arg], color=color, linestyle="--")
+        if not np.isnan(arg) and arg is not None:
+            # Convert to int to use as index, with bounds checking
+            arg_idx = int(arg)
+            if 0 <= arg_idx < len(read_current) and 0 <= arg_idx < len(bit_error_rate):
+                ax.plot(
+                    read_current[arg_idx],
+                    bit_error_rate[arg_idx],
+                    marker="o",
+                    color=color,
+                )
+                ax.axvline(read_current[arg_idx], color=color, linestyle="--")
     return ax
 
 
