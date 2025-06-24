@@ -181,10 +181,8 @@ def plot_voltage_pulse_avg(dict_list, logger=None):
     ax_dict["B"].set_xlabel("time [µs]")
     ax_dict["B"].set_ylabel("Voltage [mV]")
     ax_dict["B"].legend(loc="upper left", handlelength=1.2)
-    save_fig = False
-    if save_fig:
-        plt.savefig("voltage_trace_out.png", bbox_inches="tight")
-    plt.show()
+
+    return fig, ax_dict
 
 
 
