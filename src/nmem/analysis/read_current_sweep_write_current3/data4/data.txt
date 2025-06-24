@@ -1,5 +1,0 @@
-SPG806_20240912_nMem_parameter_sweep_D6_A4_C1_2024-09-12 14-27-55.mat
-SPG806_20240912_nMem_parameter_sweep_D6_A4_C1_2024-09-12 14-32-14.mat
-SPG806_20240912_nMem_parameter_sweep_D6_A4_C1_2024-09-12 16-58-03.mat
-SPG806_20240912_nMem_parameter_sweep_D6_A4_C1_2024-09-12 17-00-28.mat
-SPG806_20240912_nMem_parameter_sweep_D6_A4_C1_2024-09-12 17-02-51.mat

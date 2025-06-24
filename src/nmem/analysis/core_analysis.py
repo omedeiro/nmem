@@ -1,260 +1,107 @@
-import collections
-import collections.abc
-from typing import Any, Literal, Tuple
+from typing import Literal, Tuple
 
 import numpy as np
+import pandas as pd
+from scipy.interpolate import griddata
+from scipy.optimize import least_squares
 
+from nmem.analysis.bit_error import (
+    get_bit_error_rate,
+    get_bit_error_rate_args,
+)
+from nmem.analysis.constants import (
+    CRITICAL_CURRENT_ZERO,
+    CRITICAL_TEMP,
+    IRHL_TR,
+    IRM,
+    SUBSTRATE_TEMP,
+    WIDTH,
+)
+from nmem.analysis.currents import (
+    calculate_channel_temperature,
+    calculate_critical_current_temp,
+    calculate_state_currents,
+    get_channel_temperature,
+    get_channel_temperature_sweep,
+    get_critical_current_heater_off,
+    get_enable_write_current,
+    get_read_current,
+    get_read_currents,
+    get_write_current,
+)
+from nmem.analysis.utils import (
+    convert_cell_to_coordinates,
+    filter_first,
+)
 from nmem.calculations.calculations import (
     calculate_heater_power,
     htron_critical_current,
 )
 from nmem.measurement.cells import CELLS
 
-SUBSTRATE_TEMP = 1.3
-CRITICAL_TEMP = 12.3
+
+def calculate_inductance_ratio(state0, state1, ic0):
+    alpha = (ic0 - state1) / (state0 - state1)
+    # alpha_test = 1 - ((critical_current_right - persistent_current_est) / ic)
+    # alpha_test2 = (critical_current_left - persistent_current_est) / ic2
+
+    return alpha
 
 
-def build_array(
-    data_dict: dict, parameter_z: Literal["total_switches_norm"]
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    if data_dict.get("total_switches_norm") is None:
-        data_dict["total_switches_norm"] = get_total_switches_norm(data_dict)
-    x: np.ndarray = data_dict.get("x")[0][:, 0] * 1e6
-    y: np.ndarray = data_dict.get("y")[0][:, 0] * 1e6
-    z: np.ndarray = data_dict.get(parameter_z)
-
-    xlength: int = filter_first(data_dict.get("sweep_x_len", len(x)))
-    ylength: int = filter_first(data_dict.get("sweep_y_len", len(y)))
-
-    # X, Y reversed in reshape
-    zarray = z.reshape((ylength, xlength), order="F")
-    return x, y, zarray
-
-def build_resistance_map(df, grid_size=56):
-    """Build a resistance map from a DataFrame with x_abs, y_abs, Rmean."""
-    Rmeas = np.full((grid_size, grid_size), np.nan)
-    for _, row in df.iterrows():
-        x, y = row["x_abs"], row["y_abs"]
-        if 0 <= x < grid_size and 0 <= y < grid_size:
-            val = row["Rmean"]
-            Rmeas[int(x), int(y)] = 0 if val < 0 else val
-    Rmeas[Rmeas == 0] = np.nanmax(Rmeas)
-    return Rmeas
-
-
-
-def normalize_row_by_squares(Rmeas, row_letter, length_um=300):
-    """Normalize resistance values in a row by number of squares."""
-    row_map = {k: i for i, k in enumerate("ABCDEFG")}
-    y_start = row_map[row_letter.upper()] * 8
-    length_nm = length_um * 1e3
-    Rmeas = Rmeas.copy()
-
-    for i in range(8):
-        width_nm = 50 * (i + 1)
-        num_squares = length_nm / width_nm
-        Rmeas[:, y_start + i] /= num_squares
-
-    return Rmeas
-
-def filter_plateau(
-    xfit: np.ndarray, yfit: np.ndarray, plateau_height: float
-) -> Tuple[np.ndarray, np.ndarray]:
-    xfit = np.where(yfit < plateau_height, xfit, np.nan)
-    yfit = np.where(yfit < plateau_height, yfit, np.nan)
-
-    # Remove nans
-    xfit = xfit[~np.isnan(xfit)]
-    yfit = yfit[~np.isnan(yfit)]
-
-    return xfit, yfit
-
-
-def filter_first(value) -> Any:
-    if isinstance(value, collections.abc.Iterable) and not isinstance(
-        value, (str, bytes)
-    ):
-        return np.asarray(value).flatten()[0]
-    return value
-
-
-def convert_cell_to_coordinates(cell: str) -> tuple:
-    """Converts a cell name like 'A1' to coordinates (x, y)."""
-    column_letter = cell[0]
-    row_number = int(cell[1:]) - 1
-    column_number = ord(column_letter) - ord("A")
-    return column_number, row_number
-
-
-def calculate_bit_error_rate(data_dict: dict) -> np.ndarray:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w1r0 = data_dict.get("write_1_read_0")[0].flatten() / num_meas
-    w0r1 = data_dict.get("write_0_read_1")[0].flatten() / num_meas
-    ber = (w1r0 + w0r1) / 2
-    return ber
-
-
-def calculate_channel_temperature(
-    critical_temperature: float,
-    substrate_temperature: float,
-    ih: float,
-    ih_max: float,
-) -> float:
-    N = 2.0
-    beta = 1.25
-    if ih_max == 0:
-        raise ValueError("ih_max cannot be zero to avoid division by zero.")
-
-    channel_temperature = (critical_temperature**4 - substrate_temperature**4) * (
-        (ih / ih_max) ** N
-    ) + substrate_temperature**4
-
-    channel_temperature = np.maximum(channel_temperature, 0)
-
-    temp_channel = np.power(channel_temperature, 0.25).astype(float)
-    return temp_channel
-
-
-def calculate_critical_current_zero(
-    critical_temperature: float,
-    substrate_temperature: float,
-    critical_current_heater_off: float,
-) -> np.ndarray:
-    ic_zero = (
-        critical_current_heater_off
-        / (1 - (substrate_temperature / critical_temperature) ** 3) ** 2.1
+def calculate_operating_table(
+    dict_list, ic_list, write_current_list, ic_list2, write_current_list2
+):
+    ic = np.array(ic_list)
+    ic2 = np.array(ic_list2)
+    write_current_array = np.array(write_current_list)
+    data_dict = dict_list[-1] if dict_list else {}
+    read_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_read_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+    write_temperature = calculate_channel_temperature(
+        CRITICAL_TEMP,
+        SUBSTRATE_TEMP,
+        data_dict["enable_write_current"] * 1e6,
+        CELLS[data_dict["cell"][0]]["x_intercept"],
+    ).flatten()
+    critical_current_channel = calculate_critical_current_temp(
+        read_temperature, CRITICAL_TEMP, CRITICAL_CURRENT_ZERO
     )
-    return ic_zero
-
-
-# def calculate_critical_current(T: np.ndarray, Tc: float, Ic0: float) -> np.ndarray:
-#     return Ic0 * (1 - (T / Tc) ** (3 / 2))
-
-
-def calculate_critical_current_temp(
-    temp_array: np.ndarray, Tc: float, critical_current_zero: float
-) -> np.ndarray:
-    return critical_current_zero * (1 - (temp_array / Tc) ** (3)) ** (2.1)
-
-
-def calculate_retrapping_current_temp(
-    T: np.ndarray, Tc: float, critical_current_zero: float, retrap_ratio: float
-) -> np.ndarray:
-    Ir = retrap_ratio * critical_current_zero * (1 - (T / Tc)) ** (1 / 2)
-
-    Ic = calculate_critical_current_temp(T, Tc, critical_current_zero)
-    Ir = np.minimum(Ir, Ic)
-    return Ir
-
-
-def calculate_branch_currents(
-    T: np.ndarray,
-    Tc: float,
-    retrap_ratio: float,
-    width_ratio: float,
-    critical_current_zero: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-
-    if any(T > Tc):
-        raise ValueError("Temperature must be less than critical temperature.")
-    ichr: np.ndarray = calculate_critical_current_temp(
-        T, Tc, critical_current_zero * (1 - width_ratio)
+    critical_current_left = critical_current_channel * WIDTH
+    critical_current_right = critical_current_channel * (1 - WIDTH)
+    read_current_difference = ic2 - ic
+    read1_dist = np.abs(ic - IRM)
+    read2_dist = np.abs(ic2 - IRM)
+    persistent_current = []
+    for i, write_current in enumerate(write_current_list):
+        if write_current > IRHL_TR / 2:
+            ip = np.abs(write_current - IRHL_TR) / 2
+        else:
+            ip = write_current
+        if ip > IRHL_TR / 2:
+            ip = IRHL_TR / 2
+        persistent_current.append(ip)
+    df = pd.DataFrame(
+        {
+            "Write Current": write_current_list,
+            "Read Current": ic_list,
+            "Read Current 2": ic_list2,
+            "Channel Critical Current": critical_current_channel
+            * np.ones_like(ic_list),
+            "Channel Critical Current Left": critical_current_left
+            * np.ones_like(ic_list),
+            "Channel Critical Current Right": critical_current_right
+            * np.ones_like(ic_list),
+            "Persistent Current": persistent_current,
+            "Read Current Difference": read_current_difference,
+            "Read Current 1 Distance": read1_dist,
+            "Read Current 2 Distance": read2_dist,
+        }
     )
-    ichl: np.ndarray = calculate_critical_current_temp(
-        T, Tc, critical_current_zero * width_ratio
-    )
-
-    irhr: np.ndarray = calculate_retrapping_current_temp(
-        T, Tc, critical_current_zero * (1 - width_ratio), retrap_ratio
-    )
-    irhl: np.ndarray = calculate_retrapping_current_temp(
-        T, Tc, critical_current_zero * width_ratio, retrap_ratio
-    )
-
-    ichl = np.maximum(ichl, 0)
-    irhl = np.maximum(irhl, 0)
-    ichr = np.maximum(ichr, 0)
-    irhr = np.maximum(irhr, 0)
-    return ichl, irhl, ichr, irhr
-
-
-def calculate_state_currents(
-    T: np.ndarray,
-    Tc: float,
-    retrap_ratio: float,
-    width_ratio: float,
-    alpha: float,
-    persistent_current: float,
-    critical_current_zero: float,
-) -> tuple:
-    ichl, irhl, ichr, irhr = calculate_branch_currents(
-        T, Tc, retrap_ratio, width_ratio, critical_current_zero
-    )
-
-    fa = ichr + irhl
-    fb = ichl + irhr - persistent_current
-    fc = (ichl - persistent_current) / alpha
-    fd = fb - persistent_current
-
-    fa = np.maximum(fa, 0)
-    fb = np.maximum(fb, 0)
-    fc = np.maximum(fc, 0)
-    fd = np.maximum(fd, 0)
-    return fa, fb, fc, fd
-
-
-def get_current_cell(data_dict: dict) -> str:
-    cell = filter_first(data_dict.get("cell"))
-    if cell is None:
-        cell = filter_first(data_dict.get("sample_name"))[-2:]
-    return cell
-
-
-def get_critical_current_heater_off(data_dict: dict) -> np.ndarray:
-    cell = get_current_cell(data_dict)
-    switching_current_heater_off = CELLS[cell]["max_critical_current"] * 1e6
-    return switching_current_heater_off
-
-
-def get_enable_read_current(data_dict: dict) -> float:
-    return filter_first(data_dict.get("enable_read_current")) * 1e6
-
-
-def get_enable_write_current(data_dict: dict) -> float:
-    return filter_first(data_dict.get("enable_write_current")) * 1e6
-
-
-def get_optimal_enable_read_current(current_cell: str) -> float:
-    return CELLS[current_cell]["enable_read_current"] * 1e6
-
-
-def get_optimal_enable_write_current(current_cell: str) -> float:
-    return CELLS[current_cell]["enable_write_current"] * 1e6
-
-
-def get_enable_current_sweep(data_dict: dict) -> np.ndarray:
-
-    enable_current_array: np.ndarray = data_dict.get("x")[:, :, 0].flatten() * 1e6
-    if len(enable_current_array) == 1:
-        enable_current_array = data_dict.get("x")[:, 0].flatten() * 1e6
-
-    if enable_current_array[0] == enable_current_array[1]:
-        enable_current_array = data_dict.get("y")[:, :, 0].flatten() * 1e6
-
-    return enable_current_array
-
-
-def get_enable_currents_array(
-    dict_list: list[dict], operation: Literal["read", "write"]
-) -> np.ndarray:
-    enable_currents = []
-    for data_dict in dict_list:
-        if operation == "read":
-            enable_current = get_enable_read_current(data_dict)
-        elif operation == "write":
-            enable_current = get_enable_write_current(data_dict)
-        enable_currents.append(enable_current)
-    return np.array(enable_currents)
+    return df
 
 
 def get_enable_write_width(data_dict: dict) -> float:
@@ -281,121 +128,6 @@ def get_average_response(cell_dict):
     return slope, intercept
 
 
-
-def get_text_from_bit(bit: str) -> str:
-    if bit == "0":
-        return "WR0"
-    elif bit == "1":
-        return "WR1"
-    elif bit == "N":
-        return ""
-    elif bit == "R":
-        return "RD"
-    elif bit == "E":
-        return "Read \nEnable"
-    elif bit == "W":
-        return "Write \nEnable"
-    else:
-        return None
-
-
-def get_text_from_bit_v2(bit: str) -> str:
-    if bit == "0":
-        return "WR0"
-    elif bit == "1":
-        return "WR1"
-    elif bit == "N":
-        return ""
-    elif bit == "R":
-        return "RD"
-    elif bit == "E":
-        return "ER"
-    elif bit == "W":
-        return "EW"
-    elif bit == "z":
-        return "RD0"
-    elif bit == "Z":
-        return "W0R1"
-    elif bit == "o":
-        return "RD1"
-    elif bit == "O":
-        return "W1R0"
-    else:
-        return None
-
-
-def get_text_from_bit_v3(bit: str) -> str:
-    if bit == "0":
-        return "0"
-    elif bit == "1":
-        return "1"
-    elif bit == "N":
-        return ""
-    elif bit == "R":
-        return ""
-    elif bit == "E":
-        return ""
-    elif bit == "W":
-        return ""
-    else:
-        return None
-
-
-def get_total_switches_norm(data_dict: dict) -> np.ndarray:
-    num_meas = data_dict.get("num_meas")[0][0]
-    w0r1 = data_dict.get("write_0_read_1").flatten()
-    w1r0 = num_meas - data_dict.get("write_1_read_0").flatten()
-    total_switches_norm = (w0r1 + w1r0) / (num_meas * 2)
-    return total_switches_norm
-
-
-def get_write_currents(data_dict: dict) -> np.ndarray:
-    write_currents = data_dict.get("write_current").flatten() * 1e6
-    return write_currents
-
-
-def get_read_currents(data_dict: dict) -> np.ndarray:
-    read_currents = data_dict.get("y")[:, :, 0] * 1e6
-    return read_currents.flatten()
-
-
-def get_bit_error_rate(data_dict: dict) -> np.ndarray:
-    return data_dict.get("bit_error_rate").flatten()
-
-
-def get_critical_currents_from_trace(dict_list: list) -> Tuple[np.ndarray, np.ndarray]:
-    critical_currents = []
-    critical_currents_std = []
-    for data in dict_list:
-        time = data.get("trace")[0, :]
-        voltage = data.get("trace")[1, :]
-
-        M = int(np.round(len(voltage), -2))
-        if len(voltage) > M:
-            voltage = voltage[:M]
-            time = time[:M]
-        else:
-            voltage = np.concatenate([voltage, np.zeros(M - len(voltage))])
-            time = np.concatenate([time, np.zeros(M - len(time))])
-
-        current_time_trend = (
-            data["vpp"]
-            / 2
-            / 10e3
-            * (data["time_trend"][1, :])
-            / (1 / (data["freq"] * 4))
-            * 1e6
-        )
-        print(f"length of current_time_trend: {len(current_time_trend[0])}")
-        avg_critical_current = np.mean(current_time_trend)
-        std_critical_current = np.std(current_time_trend)
-        critical_currents.append(avg_critical_current)
-        critical_currents_std.append(std_critical_current)
-    critical_currents = np.array(critical_currents)
-    critical_currents_std = np.array(critical_currents_std)
-    return critical_currents, critical_currents_std
-
-
 def get_fitting_points(
     x: np.ndarray, y: np.ndarray, ztotal: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -403,82 +135,6 @@ def get_fitting_points(
     xfit, xfit_idx = np.unique(x[mid_idx[1]], return_index=True)
     yfit = y[mid_idx[0]][xfit_idx]
     return xfit, yfit
-
-
-def get_max_enable_current(data_dict: dict) -> float:
-    cell = get_current_cell(data_dict)
-    return CELLS[cell]["x_intercept"]
-
-
-def get_critical_current_intercept(data_dict: dict) -> float:
-    cell = get_current_cell(data_dict)
-    return CELLS[cell]["y_intercept"]
-
-
-def get_channel_temperature(
-    data_dict: dict, operation: Literal["read", "write"]
-) -> float:
-    if operation == "read":
-        enable_current = get_enable_read_current(data_dict)
-    elif operation == "write":
-        enable_current = get_enable_write_current(data_dict)
-
-    max_enable_current = get_max_enable_current(data_dict)
-
-    channel_temp = calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_current, max_enable_current
-    )
-    return channel_temp
-
-
-def get_channel_temperature_sweep(data_dict: dict) -> np.ndarray:
-    enable_currents = get_enable_current_sweep(data_dict)
-
-    max_enable_current = get_max_enable_current(data_dict)
-    channel_temps = calculate_channel_temperature(
-        CRITICAL_TEMP, SUBSTRATE_TEMP, enable_currents, max_enable_current
-    )
-    return channel_temps
-
-
-def get_write_current(data_dict: dict) -> float:
-    if data_dict.get("write_current").shape[1] == 1:
-        return filter_first(data_dict.get("write_current")) * 1e6
-    if data_dict.get("write_current").shape[1] > 1:
-        return data_dict.get("write_current")[0, 0] * 1e6
-
-
-def get_read_current(data_dict: dict) -> float:
-    if data_dict.get("read_current").shape[1] == 1:
-        return filter_first(data_dict.get("read_current")) * 1e6
-
-
-def get_operating_points(data_dict: dict) -> np.ndarray:
-    berargs = get_bit_error_rate_args(get_bit_error_rate(data_dict))
-    nominal_operating_point = np.mean([berargs[0], berargs[1]])
-    inverting_operating_point = np.mean([berargs[2], berargs[3]])
-    return nominal_operating_point, inverting_operating_point
-
-
-def get_bit_error_rate_args(bit_error_rate: np.ndarray) -> list:
-    nominal_args = np.argwhere(bit_error_rate < 0.45)
-    inverting_args = np.argwhere(bit_error_rate > 0.55)
-
-    if len(inverting_args) > 0:
-        inverting_arg1 = inverting_args[0][0]
-        inverting_arg2 = inverting_args[-1][0]
-    else:
-        inverting_arg1 = np.nan
-        inverting_arg2 = np.nan
-
-    if len(nominal_args) > 0:
-        nominal_arg1 = nominal_args[0][0]
-        nominal_arg2 = nominal_args[-1][0]
-    else:
-        nominal_arg1 = np.nan
-        nominal_arg2 = np.nan
-
-    return nominal_arg1, nominal_arg2, inverting_arg1, inverting_arg2
 
 
 def get_voltage_trace_data(
@@ -493,70 +149,6 @@ def get_voltage_trace_data(
         x = data_dict[trace_name][0][:, trace_index] * 1e6
         y = data_dict[trace_name][1][:, trace_index] * 1e3
     return x, y
-
-
-
-
-
-def get_state_currents_measured(
-    data_dict: dict,
-    current_sweep: Literal["enable_write_current", "enable_read_current"],
-) -> Tuple[np.ndarray, np.ndarray]:
-    bit_error_rate = get_bit_error_rate(data_dict)
-    nominal_edge1, nominal_edge2, inverting_edge1, inverting_edge2 = (
-        get_bit_error_rate_args(bit_error_rate)
-    )
-    if current_sweep == "enable_write_current":
-        temperature = get_channel_temperature(data_dict, "write")
-    else:
-        temperature = get_channel_temperature(data_dict, "read")
-
-    read_currents = get_read_currents(data_dict)
-    if nominal_edge1 is not np.nan:
-        nominal_state0_current = read_currents[nominal_edge2]
-        nominal_state1_current = read_currents[nominal_edge1]
-    else:
-        nominal_state0_current = np.nan
-        nominal_state1_current = np.nan
-    if inverting_edge1 is not np.nan:
-        inverting_state0_current = read_currents[inverting_edge2]
-        inverting_state1_current = read_currents[inverting_edge1]
-    else:
-        inverting_state0_current = np.nan
-        inverting_state1_current = np.nan
-    temp = np.array(temperature)
-    state_currents = np.array(
-        [
-            nominal_state0_current,
-            nominal_state1_current,
-            inverting_state0_current,
-            inverting_state1_current,
-        ]
-    )
-    return temp, state_currents
-
-
-def get_state_currents_measured_array(
-    dict_list: list[dict], current_sweep: str
-) -> np.ndarray:
-    temps = []
-    state_currents = []
-    for data_dict in dict_list:
-        temp, state_current = get_state_currents_measured(data_dict, current_sweep)
-        temps.append(temp)
-        state_currents.append(state_current)
-    return np.array(temps), np.array(state_currents)
-
-
-
-def get_state_currents_array(dict_list: list[dict]) -> np.ndarray:
-    state_currents = []
-    for data_dict in dict_list:
-        get_state_currents_measured(data_dict)
-        state_currents.append(get_state_currents_measured(data_dict))
-    return np.array(state_currents)
-
-
 
 
 def initialize_dict(array_size: tuple) -> dict:
@@ -578,26 +170,6 @@ def initialize_dict(array_size: tuple) -> dict:
         "enable_write_power": np.zeros(array_size),
         "enable_read_power": np.zeros(array_size),
     }
-
-
-def polygon_under_graph(x, y, y2=0.0):
-    """
-    Construct the vertex list which defines the polygon filling the space under
-    the (x, y) line graph. This assumes x is in ascending order.
-    """
-    return [(x[0], y2), *zip(x, y), (x[-1], y2)]
-
-
-def polygon_nominal(x: np.ndarray, y: np.ndarray) -> list:
-    y = np.copy(y)
-    y[y > 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
-
-
-def polygon_inverting(x: np.ndarray, y: np.ndarray) -> list:
-    y = np.copy(y)
-    y[y < 0.5] = 0.5
-    return [(x[0], 0.5), *zip(x, y), (x[-1], 0.5)]
 
 
 def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
@@ -640,69 +212,289 @@ def process_cell(cell: dict, param_dict: dict, x: int, y: int) -> dict:
         )
     return param_dict
 
+def process_ber_data(logger=None) -> np.ndarray:
+    """
+    Process bit error rate (BER) data and return key statistics.
+    """
+    param_dict = initialize_dict((4, 4))
+    for c in CELLS:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(CELLS[c], param_dict, xloc, yloc)
 
-def get_state_current_markers_list(
-    dict_list: list[dict],
-    current_sweep: Literal["read_current", "enable_write_current"],
-) -> list[np.ndarray]:
-    state_current_markers_list = []
-    for data_dict in dict_list:
-        state_current_markers = get_state_current_markers(data_dict, current_sweep)
-        state_current_markers_list.append(state_current_markers)
-    return state_current_markers_list
+    ber_array = param_dict["bit_error_rate"]
+    valid_ber = ber_array[np.isfinite(ber_array) & (ber_array < 5.5e-2)]
+
+    average_ber = np.mean(valid_ber)
+    std_ber = np.std(valid_ber)
+    min_ber = np.min(valid_ber)
+    max_ber = np.max(valid_ber)
+
+    logger.info("=== Array BER Statistics ===")
+    logger.info(f"Average BER: {average_ber:.2e}")
+    logger.info(f"Std Dev BER: {std_ber:.2e}")
+    logger.info(f"Min BER: {min_ber:.2e}")
+    logger.info(f"Max BER: {max_ber:.2e}")
+    logger.info("=============================")
+
+    return ber_array
 
 
-def get_state_current_markers(
-    data_dict: dict, current_sweep: Literal["read_current", "enable_write_current"]
-) -> np.ndarray:
-    if current_sweep == "read_current":
-        currents = get_read_currents(data_dict)
-    if current_sweep == "enable_write_current":
-        currents = get_enable_current_sweep(data_dict)
-    bit_error_rate = get_bit_error_rate(data_dict)
-    berargs = get_bit_error_rate_args(bit_error_rate)
-    state_current_markers = np.zeros((2, 4))
-    for arg in berargs:
-        if arg is not np.nan:
-            state_current_markers[0, berargs.index(arg)] = currents[arg]
-            state_current_markers[1, berargs.index(arg)] = bit_error_rate[arg]
+def analyze_alignment_stats(df_z, df_rot_valid, dx_nm, dy_nm):
+    """
+    Compute statistics for z height and rotation.
+    Returns: z_mean, z_std, r_mean, r_std
+    """
+    z_mean, z_std = df_z["z_height_mm"].mean(), df_z["z_height_mm"].std()
+    r_mean, r_std = (
+        df_rot_valid["rotation_mrad"].mean(),
+        df_rot_valid["rotation_mrad"].std(),
+    )
+    return z_mean, z_std, r_mean, r_std
+
+
+def analyze_geom_loop_size(data, loop_sizes, nmeas=1000):
+    """
+    Analyzes geometry loop size data.
+    Returns:
+        vch_list: list of Vch arrays
+        ber_est_list: list of BER arrays
+        err_list: list of error arrays
+        best_ber: list of minimum BER for each loop size
+    """
+    import numpy as np
+
+    vch_list = []
+    ber_est_list = []
+    err_list = []
+    best_ber = []
+    for i, d in enumerate(data):
+        Vch = np.ravel(d["Vch"]) * 1e3
+        ber_est = np.ravel(d["ber_est"])
+        err = np.sqrt(ber_est * (1 - ber_est) / nmeas)
+        vch_list.append(Vch)
+        ber_est_list.append(ber_est)
+        err_list.append(err)
+        best_ber.append(np.min(ber_est))
+    return vch_list, ber_est_list, err_list, best_ber
+
+
+def interpolate_map(data_map, radius, grid_x, grid_y, boundary_pts):
+    x_vals = data_map.columns.astype(float)
+    y_vals = data_map.index.astype(float)
+    xy = np.array([(x, y) for y in y_vals for x in x_vals])
+    z = data_map.values.flatten()
+    mask = ~np.isnan(z)
+    xy, z = xy[mask], z[mask]
+
+    bx, by, bz = boundary_pts
+    aug_xy = np.column_stack(
+        [np.concatenate([xy[:, 0], bx]), np.concatenate([xy[:, 1], by])]
+    )
+    aug_z = np.concatenate([z, bz])
+
+    grid_z = griddata(aug_xy, aug_z, (grid_x, grid_y), method="cubic")
+    distance = np.sqrt(grid_x**2 + grid_y**2)
+    grid_z[distance > radius] = np.nan
+    return grid_z, xy, z
+
+
+def analyze_prbs_errors(data_list, trim=4500):
+    W1R0_error = 0
+    W0R1_error = 0
+    error_locs = []
+    for i, data in enumerate(data_list):
+        bit_write = "".join(data["bit_string"].flatten())
+        bit_read = "".join(data["byte_meas"].flatten())
+        errors = [bw != br for bw, br in zip(bit_write, bit_read)]
+        for j, error in enumerate(errors):
+            if error:
+                if bit_write[j] == "1":
+                    W1R0_error += 1
+                elif bit_write[j] == "0":
+                    W0R1_error += 1
+                error_locs.append((i, j, bit_write[j], bit_read[j]))
+    total_error = W1R0_error + W0R1_error
+    return total_error, W1R0_error, W0R1_error, error_locs
+
+
+def fit_state_currents(
+    x_list,
+    y_list,
+    initial_guess,
+    width,
+    critical_current_zero,
+    bounds=([0, -100], [1, 100]),
+):
+
+    def model_function(x0, x1, x2, x3, alpha, persistent):
+        retrap = 1
+        i0, _, _, _ = calculate_state_currents(
+            x0, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, i1, _, _ = calculate_state_currents(
+            x1, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, _, i2, _ = calculate_state_currents(
+            x2, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        _, _, _, i3 = calculate_state_currents(
+            x3, CRITICAL_TEMP, retrap, width, alpha, persistent, critical_current_zero
+        )
+        model = [i0, i1, i2, i3]
+        return model
+
+    def residuals(p, x0, y0, x1, y1, x2, y2, x3, y3):
+        alpha, persistent = p
+        model = model_function(x0, x1, x2, x3, alpha, persistent)
+        residuals = np.concatenate(
+            [
+                y0 - model[0],
+                y1 - model[1],
+                y2 - model[2],
+                y3 - model[3],
+            ]
+        )
+        return residuals
+
+    fit = least_squares(
+        residuals,
+        initial_guess,
+        args=(
+            x_list[0],
+            y_list[0],
+            x_list[1],
+            y_list[1],
+            x_list[2],
+            y_list[2],
+            x_list[3],
+            y_list[3],
+        ),
+        bounds=bounds,
+    )
+    return fit
+
+
+def prepare_state_current_data(data_dict):
+    from nmem.analysis.utils import filter_nan
+
+    temp = data_dict["measured_temperature"].flatten()
+    state_currents = data_dict["measured_state_currents"]
+    x_list = []
+    y_list = []
+    for i in range(4):
+        x = temp
+        y = state_currents[:, i]
+        x, y = filter_nan(x, y)
+        if len(x) > 0:
+            x_list.append(x)
+            y_list.append(y)
         else:
-            state_current_markers[0, berargs.index(arg)] = np.nan
-            state_current_markers[1, berargs.index(arg)] = np.nan
-
-    return state_current_markers
-
-def filter_nan(x, y):
-    mask = np.isnan(y)
-    x = x[~mask]
-    y = y[~mask]
-    return x, y
+            x_list.append(None)
+            y_list.append(None)
+    return x_list, y_list
 
 
+def compute_sigma_separation(data: dict) -> float:
+    """Compute the peak separation between read0 and read1 histograms in units of σ."""
+    v_read0 = np.array(data["read_zero_top"])
+    v_read1 = np.array(data["read_one_top"])
 
-def create_rmeas_matrix(df, x_col, y_col, value_col, shape):
-    """Create a 2D resistance matrix from DataFrame columns."""
-    Rmeas = np.full(shape, np.nan)
-    for _, row in df.iterrows():
-        x, y = int(row[x_col]), int(row[y_col])
-        val = row[value_col]
-        if 0 <= x < shape[1] and 0 <= y < shape[0]:
-            Rmeas[y, x] = np.nan if val < 0 else val
-    return Rmeas
+    # Remove NaNs or invalid data
+    v_read0 = v_read0[np.isfinite(v_read0)]
+    v_read1 = v_read1[np.isfinite(v_read1)]
 
+    mu0 = np.mean(v_read0)
+    mu1 = np.mean(v_read1)
+    sigma0 = np.std(v_read0)
+    sigma1 = np.std(v_read1)
 
-def get_log_norm_limits(R):
-    """Safely get vmin and vmax for LogNorm."""
-    values = R[~np.isnan(R) & (R > 0)]
-    if values.size == 0:
-        return None, None
-    return np.nanmin(values), np.nanmax(values)
+    sigma_avg = 0.5 * (sigma0 + sigma1)
+    separation_sigma = mu0 + sigma0 * 3 - (mu1 - 3 * sigma1)
 
 
-def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):
-    """Add text annotations to matrix cells."""
-    for y in range(R.shape[0]):
-        for x in range(R.shape[1]):
-            val = R[y, x]
-            if not np.isnan(val):
-                ax.text(x, y, fmt.format(val), ha="center", va="center", fontsize=6, color=color)
+    return separation_sigma, sigma_avg
+
+
+def extract_shifted_traces(
+    data_dict: dict, trace_index: int = 0, time_shift: float = 0.0
+) -> Tuple:
+    chan_in_x, chan_in_y = get_voltage_trace_data(
+        data_dict, "trace_chan_in", trace_index
+    )
+    chan_out_x, chan_out_y = get_voltage_trace_data(
+        data_dict, "trace_chan_out", trace_index
+    )
+    enab_in_x, enab_in_y = get_voltage_trace_data(data_dict, "trace_enab", trace_index)
+
+    # Shift all x values
+    chan_in_x = chan_in_x + time_shift
+    chan_out_x = chan_out_x + time_shift
+    enab_in_x = enab_in_x + time_shift
+
+    return chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y
+
+
+def extract_temp_current_data(dict_list):
+    data = []
+    data2 = []
+    for data_dict in dict_list:
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        write_currents = get_read_currents(data_dict)
+        enable_write_current = get_enable_write_current(data_dict)
+        read_current = get_read_current(data_dict)
+        for i, arg in enumerate(berargs):
+            if arg is not np.nan:
+                entry = {
+                    "write_current": write_currents[arg],
+                    "write_temp": get_channel_temperature(data_dict, "write"),
+                    "read_current": read_current,
+                    "enable_write_current": enable_write_current,
+                }
+                if i == 0:
+                    data.append(entry)
+                if i == 2:
+                    data2.append(entry)
+    return data, data2
+
+
+def process_write_temp_arrays(dict_list):
+    write_temp_array = np.empty((len(dict_list), 4))
+    write_current_array = np.empty((len(dict_list), 1))
+    critical_current_zero = None
+    for j, data_dict in enumerate(dict_list):
+        bit_error_rate = get_bit_error_rate(data_dict)
+        berargs = get_bit_error_rate_args(bit_error_rate)
+        write_current = get_write_current(data_dict)
+        write_temps = get_channel_temperature_sweep(data_dict)
+        write_current_array[j] = write_current
+        critical_current_zero = get_critical_current_heater_off(data_dict)
+        for i, arg in enumerate(berargs):
+            if arg is not np.nan:
+                write_temp_array[j, i] = write_temps[arg]
+    return write_current_array, write_temp_array, critical_current_zero
+
+
+def process_array_parameter_data(cells, array_size=(4, 4)):
+    """
+    Process cell data for parameter arrays for the given array size.
+    Returns xloc_list, yloc_list, param_dict, yintercept_list, slope_list.
+    """
+    from nmem.analysis.core_analysis import initialize_dict, process_cell
+    from nmem.analysis.utils import convert_cell_to_coordinates
+
+    xloc_list = []
+    yloc_list = []
+    param_dict = initialize_dict(array_size)
+    yintercept_list = []
+    slope_list = []
+    for c in cells:
+        xloc, yloc = convert_cell_to_coordinates(c)
+        param_dict = process_cell(cells[c], param_dict, xloc, yloc)
+        xloc_list.append(xloc)
+        yloc_list.append(yloc)
+        yintercept = cells[c]["y_intercept"]
+        yintercept_list.append(yintercept)
+        slope = cells[c]["slope"]
+        slope_list.append(slope)
+    return xloc_list, yloc_list, param_dict, yintercept_list, slope_list
