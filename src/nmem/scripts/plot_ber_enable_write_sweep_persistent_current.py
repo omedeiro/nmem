@@ -10,7 +10,11 @@ from nmem.analysis.state_currents_plots import (
 
 
 def main(
-    data_dir="../data/ber_sweep_enable_write_current/data1", mat_files=None, persistent_current=75, critical_current_zero=1250
+    data_dir="../data/ber_sweep_enable_write_current/data1",
+    mat_files=None,
+    persistent_current=75,
+    critical_current_zero=1250,
+    save_dir=None,
 ):
     """
     Main function to plot persistent current and measured state currents.
@@ -22,9 +26,15 @@ def main(
     )
     if mat_files is None:
         mat_files = [
-            sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_290.mat"),
-            sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_300.mat"),
-            sio.loadmat("../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat"),
+            sio.loadmat(
+                "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_290.mat"
+            ),
+            sio.loadmat(
+                "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_300.mat"
+            ),
+            sio.loadmat(
+                "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat"
+            ),
         ]
     colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     plot_measured_state_currents(ax, [mat_files[1]], colors)
@@ -36,7 +46,15 @@ def main(
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1, 1))
     ax.set_xlim(6, 9)
     ax.set_ylim(500, 900)
-    plt.show()
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/ber_enable_write_sweep_persistent_current.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close()
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
