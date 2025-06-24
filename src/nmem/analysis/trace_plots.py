@@ -241,8 +241,6 @@ def plot_probe_station_prbs(
     data_list,
     trim=4500,
     error_locs=None,
-    save_fig=False,
-    output_path="probe_station_prbs.pdf",
 ):
     N = len(data_list)
     cmap = plt.get_cmap("Reds")
@@ -279,8 +277,4 @@ def plot_probe_station_prbs(
     ax.tick_params(direction="in", length=3, width=0.5)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.tight_layout()
-    if save_fig:
-        fig.savefig(output_path, bbox_inches="tight")
-    plt.show()
     return fig, ax
