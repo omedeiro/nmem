@@ -210,8 +210,8 @@ Examples:
     parser.add_argument(
         "--style",
         choices=["presentation", "pres", "paper", "publication", "thesis"],
-        default="thesis",
-        help="Global plotting style mode (default: thesis)",
+        default="paper",
+        help="Global plotting style mode (default: paper)",
     )
 
     args = parser.parse_args()
