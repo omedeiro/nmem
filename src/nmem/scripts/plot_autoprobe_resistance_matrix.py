@@ -6,7 +6,7 @@ from nmem.analysis.utils import summarize_die_yield
 
 
 def main(save_dir=None):
-    df = load_autoprobe_data("../data/wafer_autoprobe_resistance/autoprobe_parsed.mat")
+    df = load_autoprobe_data("../data/autoprobe_resistance_matrix/autoprobe_parsed.mat")
     wafer_rows = ["1", "4", "6", "7"]
     summary_df, row_stats_df = summarize_die_yield(
         df, wafer_rows, min_kohm=0.1, max_kohm=500000
