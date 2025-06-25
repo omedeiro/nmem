@@ -12,7 +12,7 @@ from nmem.analysis.plot_utils import (
 from nmem.analysis.sweep_plots import plot_read_sweep_array
 
 
-def plot_read_temp_sweep_C3(save=True):
+def plot_read_temp_sweep_C3():
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
     dict_list = [
         import_directory(
@@ -50,11 +50,9 @@ def plot_read_temp_sweep_C3(save=True):
     )
     fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
-    if save:
-        plt.savefig("read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
+    return fig, axs
 
-
-def plot_read_temp_sweep_C3_v2(save=False):
+def plot_read_temp_sweep_C3_v2():
     fig = plt.figure(figsize=(180 / 25.4, 90 / 25.4))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
 

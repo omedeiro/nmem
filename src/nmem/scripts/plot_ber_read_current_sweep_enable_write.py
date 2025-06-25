@@ -6,7 +6,7 @@ from nmem.analysis.sweep_plots import plot_read_current_sweep_enable_write
 
 def main(save_dir=None):
     data_list, data_list2, colors = import_read_current_sweep_enable_write_data()
-    plot_read_current_sweep_enable_write(data_list, data_list2, colors)
+    fig, axs = plot_read_current_sweep_enable_write(data_list, data_list2, colors)
 
     if save_dir:
         plt.savefig(

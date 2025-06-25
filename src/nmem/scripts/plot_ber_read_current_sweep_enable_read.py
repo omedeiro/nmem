@@ -8,7 +8,7 @@ from nmem.analysis.sweep_plots import (
 
 def main(save_dir=None):
     dict_list, data_list, data_list2 = import_read_current_sweep_data()
-    plot_read_current_sweep_enable_read(dict_list, data_list, data_list2)
+    fig, axs = plot_read_current_sweep_enable_read(dict_list, data_list, data_list2)
 
     if save_dir:
         plt.savefig(
