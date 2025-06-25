@@ -25,9 +25,9 @@ def generate_plots(ber_array, save_dir=None):
     """
     if save_dir:
         # Save the plots with a path provided
-        plot_ber_3d_bar(ber_array, save_path=f"{save_dir}/ber_3d_bar.png")
+        plot_ber_3d_bar(ber_array, save_path=f"{save_dir}/array_fidelity_bar_3d.png")
         plot_fidelity_clean_bar(
-            ber_array, save_path=f"{save_dir}/fidelity_clean_bar.png"
+            ber_array, save_path=f"{save_dir}/array_fidelity_bar_clean.png"
         )
     else:
         # Display the plots if no save path is provided

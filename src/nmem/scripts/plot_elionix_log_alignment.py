@@ -29,9 +29,7 @@ def main(
 
     # Plot 1: Alignment statistics
     if save_dir:
-        analysis_save_path = os.path.join(
-            save_dir, "plot_elionix_log_alignment2_stats.png"
-        )
+        analysis_save_path = os.path.join(save_dir, "elionix_log_alignment_stats.png")
         plot_alignment_stats(
             df_z,
             df_rot_valid,
@@ -60,9 +58,7 @@ def main(
 
     # Plot 2: Offset histogram
     if save_dir:
-        hist_save_path = os.path.join(
-            save_dir, "plot_elionix_log_alignment2_histogram.png"
-        )
+        hist_save_path = os.path.join(save_dir, "elionix_log_alignment_histogram.png")
         plot_alignment_offset_hist(
             dx_nm, dy_nm, save_fig=True, output_path=hist_save_path
         )

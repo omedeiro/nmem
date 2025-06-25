@@ -24,13 +24,14 @@ def main(
 
     if save_dir:
         plt.savefig(
-            f"{save_dir}/read_current_sweep_enable_write_width.png",
+            f"{save_dir}/ber_read_current_sweep_ew_width.png",
             dpi=300,
             bbox_inches="tight",
         )
         plt.close()
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()
