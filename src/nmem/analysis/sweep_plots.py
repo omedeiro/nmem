@@ -13,8 +13,8 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
 
 # Suppress numpy warnings about all-nan slices
-warnings.filterwarnings('ignore', message='All-NaN slice encountered')
-warnings.filterwarnings('ignore', message='invalid value encountered')
+warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+warnings.filterwarnings("ignore", message="invalid value encountered")
 
 from nmem.analysis.bit_error import (
     calculate_ber_errorbar,
@@ -221,7 +221,7 @@ def plot_ic_vs_ih_array(
     filtered_x = np.array(x_intercepts)
     filtered_y = np.array(y_intercepts)
     valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
-    
+
     # Check if we have valid data before calculating means
     if np.any(valid_avg):
         avg_x_intercept = np.nanmean(filtered_x[valid_avg])
@@ -350,9 +350,7 @@ def plot_enable_write_temp(
     return ax
 
 
-def plot_enable_write_sweep2(
-    dict_list
-):
+def plot_enable_write_sweep2(dict_list):
     """
     Plots the enable write sweep for multiple datasets.
     Returns (fig, ax).
@@ -390,9 +388,7 @@ def plot_write_temp_vs_current(
     return ax, ax2
 
 
-def plot_enable_write_sweep_fine(
-    data_list2
-):
+def plot_enable_write_sweep_fine(data_list2):
     """
     Plots the fine enable write sweep for the provided data list.
     Returns (fig, ax).
@@ -439,9 +435,7 @@ def plot_enable_write_sweep_multiple(
     return ax
 
 
-def plot_enable_current_vs_temp(
-    data,
-):
+def plot_enable_current_vs_temp(data):
     """
     Plots enable current vs. critical current and channel temperature for all cells.
     Returns (fig, axs, axs2).
@@ -470,7 +464,6 @@ def plot_enable_current_vs_temp(
     axs.set_xlabel("Enable Current ($\mu$A)")
     axs.set_ylabel("Critical Current ($\mu$A)")
     axs2.set_ylabel("Channel Temperature (K)")
-
     return fig, axs, axs2
 
 
@@ -967,7 +960,9 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     files_sel = [files[i] for i in [0, 2, -1]]
     max_write_current = 300
     for i, file in enumerate(files_sel):
-        data = ltspice.Ltspice(f"../data/ber_sweep_read_current/ltspice_simulation/{file}").parse()
+        data = ltspice.Ltspice(
+            f"../data/ber_sweep_read_current/ltspice_simulation/{file}"
+        ).parse()
         ltsp_data_dict = process_read_data(data)
         ltsp_write_current = ltsp_data_dict[0]["write_current"][0]
         plot_current_sweep_ber(
@@ -1344,7 +1339,9 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
         for i, arg in enumerate(berargs):
             if not np.isnan(arg) and arg is not None:
                 arg_idx = int(arg)
-                if 0 <= arg_idx < len(write_temps) and 0 <= arg_idx < len(enable_currents):
+                if 0 <= arg_idx < len(write_temps) and 0 <= arg_idx < len(
+                    enable_currents
+                ):
                     write_temp_array[j, i] = write_temps[arg_idx]
                     enable_current_array[j, i] = enable_currents[arg_idx]
     markers = ["o", "s", "D", "^"]
