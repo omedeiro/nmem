@@ -4,3 +4,4 @@
 *.tif filter=lfs diff=lfs merge=lfs -text
 *.txt filter=lfs diff=lfs merge=lfs -text
 LICENSE.txt !filter !diff !merge
+*.raw filter=lfs diff=lfs merge=lfs -text
