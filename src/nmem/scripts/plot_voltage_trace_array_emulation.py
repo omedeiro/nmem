@@ -7,7 +7,7 @@ from nmem.analysis.trace_plots import (
 
 
 def main(save_dir=None):
-    dict_list = import_directory("../data/voltage_trace_emulate_array")
+    dict_list = import_directory("../data/voltage_trace_array_emulation")
 
     fig, axs = plt.subplots(3, 1, figsize=(6, 3), sharex=True)
     plot_time_concatenated_traces(axs, dict_list[:5])
