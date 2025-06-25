@@ -1,193 +1,252 @@
 # nmem
 
-**nmem** is a Python-based framework for analyzing and simulating superconducting memory arrays. It includes modules for:
+**nmem** is a comprehensive Python-based framework for analyzing, simulating, and fabricating superconducting nanowire memory (nMem) arrays. This research tool supports the complete development cycle of superconducting memory devices from design to characterization.
 
-- **Data analysis** – Processing and visualizing experimental results.
-- **Measurement automation** – Running and optimizing parameter sweeps.
-- **Circuit simulation** – Simulating superconducting memory behavior using SPICE.
+## Key Features
+
+### 🔬 **Data Analysis & Visualization**
+
+- **Experimental data processing** – Import and analyze measurement data from various sources
+- **Advanced plotting suite** – Generate publication-ready plots for bit error rate (BER), current sweeps, state currents, and array parameters
+- **Statistical analysis** – Process alignment statistics, memory retention data, and error analysis
+- **Matrix visualization** – Create parameter matrices and resistance maps for device arrays
+
+### ⚡ **Measurement Automation**
+
+- **Parameter sweeps** – Automated current, voltage, and timing parameter optimization
+- **BER testing** – Comprehensive bit error rate characterization across operating conditions
+- **Real-time optimization** – Bayesian optimization for device parameter tuning
+- **Instrument control** – Integration with measurement equipment via qnnpy
+
+### 🧮 **Modeling & Simulation**
+
+- **Analytical models** – Physics-based models for superconducting nanowire behavior
+- **SPICE simulations** – Circuit-level simulations using behavioral hTron models
+- **Temperature dependencies** – Critical current and state current calculations
+- **Read/write margin analysis** – Operating window optimization
+
+### 🏗️ **Layout & Fabrication**
+
+- **GDS layout generation** – Automated mask design using gdspy and phidl
+- **Device arrays** – Scalable memory cell and test structure layouts
+- **Process integration** – Support for e-beam lithography and fabrication workflows
+- **Test structure libraries** – Standard cells for characterization
 
 ## Installation
 
-To set up the environment using Conda, run:
+### Environment Setup
 
-    conda env create -f environment.yml
-    conda activate nmem
+Set up the conda environment with all required dependencies:
+
+```bash
+conda env create -f environment.yml
+conda activate nmem
+```
+
+### Dependencies
+
+Key packages include:
+
+- **Analysis**: numpy, scipy, pandas, matplotlib, scikit-optimize
+- **Layout**: gdspy, phidl, qnngds
+- **Simulation**: ltspice, tdgl
+- **Measurement**: pyvisa, qnnpy, mariadb
+
+## Quick Start
+
+### Data Analysis
+
+```python
+from nmem.analysis import import_directory, plot_ber_sweep
+from nmem.scripts import plot_array_fidelity_bar
+
+# Import experimental data
+data_dict = import_directory("path/to/data")[0]
+
+# Generate analysis plots
+plot_array_fidelity_bar.main(save_dir="plots/")
+```
+
+### Device Simulation
+
+```python
+from nmem.calculations import analytical_model
+from nmem.simulation.spice_circuits import functions
+
+# Run analytical model
+model_results = analytical_model.run_analysis()
+
+# SPICE circuit simulation
+spice_data = functions.process_read_data(ltspice_file)
+```
+
+### Layout Generation
+
+```python
+from nmem.layout import die_layout_v2
+
+# Generate memory array layout
+memory_array = die_layout_v2.nMemArray8()
+memory_array.write_gds("memory_array.gds")
+```
 
 ## Repository Structure
 
-    ├── LICENSE.txt
-    ├── README.md
-    ├── environment.yml
-    ├── nmem.code-workspace
-    ├── pyproject.toml
-    └── src
-        └── nmem
-            ├── __init__.py
-            ├── analysis/                     # Data analysis scripts
-            ├── calculations/                 # Analytical models and calculations
-            ├── layout/                       # Layout generation and visualization
-            ├── measurement/                   # Experimental measurement scripts
-            ├── simulation/                    # SPICE circuit simulations
-            └── more subdirectories...
+```text
+├── LICENSE.txt                      # MIT License
+├── README.md                        # This file
+├── environment.yml                  # Conda environment specification
+├── pyproject.toml                   # Python project configuration
+└── src/nmem/                       # Main source code
+    ├── analysis/                    # Data analysis and visualization
+    │   ├── core_analysis.py         # Core analysis functions
+    │   ├── data_import.py           # Data import utilities
+    │   ├── plotting.py              # General plotting functions
+    │   ├── matrix_plots.py          # Array parameter visualization
+    │   ├── sweep_plots.py           # Parameter sweep plotting
+    │   ├── state_currents_plots.py  # State current analysis
+    │   ├── bit_error.py             # BER analysis functions
+    │   └── styles.py                # Plot styling and configuration
+    ├── calculations/                # Analytical models and calculations
+    │   ├── analytical_model.py      # Physics-based device models
+    │   ├── calculations.py          # Core calculation functions
+    │   └── plotting.py              # Model visualization
+    ├── data/                        # Experimental data storage
+    │   ├── ber_*/                   # Bit error rate measurements
+    │   ├── dc_sweep*/               # DC characterization data
+    │   ├── voltage_*/               # Voltage measurements
+    │   └── wafer_*/                 # Wafer-level test data
+    ├── layout/                      # GDS layout generation
+    │   ├── die_layout_v*.py         # Die layout generators
+    │   ├── circuit_*.tex            # Circuit schematic generation
+    │   └── sample/                  # Layout examples
+    ├── measurement/                 # Experimental measurement
+    │   ├── functions.py             # Measurement utilities
+    │   ├── cells.py                 # Device parameter database
+    │   ├── run_*.py                 # Measurement scripts
+    │   └── optimize.py              # Parameter optimization
+    ├── plots/                       # Generated plots and figures
+    ├── scripts/                     # Analysis and plotting scripts
+    │   ├── plot_*.py                # Individual plot generators
+    │   └── calc_*.py                # Calculation scripts
+    └── simulation/                  # Device simulation
+        ├── spice_circuits/          # SPICE simulation files
+        │   ├── *.asc                # LTspice circuit files
+        │   ├── functions.py         # Simulation utilities
+        │   └── plotting.py          # Simulation visualization
+        └── geometry/                # Device geometry models
+```
 
-For a full breakdown, see the **Tree** section below.
+## Key Modules
 
-## Dependency Installation (MariaDB)
+### Analysis (`nmem.analysis`)
 
-If you need MariaDB for database-related operations, install the required packages:
+**Core Functions:**
 
-    sudo apt-get install build-essential libssl-dev libffi-dev python3-dev
-    sudo apt-get install libmariadb-dev libmariadb-dev-compat
+- `core_analysis.py` - Data processing, BER calculation, fitting algorithms
+- `data_import.py` - Import measurement data from various formats (.mat, .csv)
+- `sweep_plots.py` - Comprehensive parameter sweep visualization
+- `matrix_plots.py` - Array parameter matrices and die maps
+
+**Specialized Analysis:**
+
+- `bit_error.py` - Bit error rate analysis and statistics
+- `state_currents_plots.py` - Memory state current characterization
+- `alignment_plots.py` - E-beam alignment analysis
+- `histogram_utils.py` - Statistical data analysis
+
+### Measurement (`nmem.measurement`)
+
+**Automation:**
+
+- `run_parameter_sweep.py` - Automated parameter sweeps
+- `run_optimize_parameter.py` - Bayesian optimization of device parameters
+- `measure_enable_response.py` - Enable current characterization
+- `run_delay.py` - Memory retention measurements
+
+**Device Database:**
+
+- `cells.py` - Comprehensive device parameter database with 16 characterized cells
+- Includes critical currents, resistances, operating points, and BER data
+
+### Simulation (`nmem.simulation`)
+
+**SPICE Models:**
+
+- Behavioral hTron models for superconducting nanowires
+- Complete memory cell circuits with read/write operations
+- Parameter sweeps and Monte Carlo analysis
+
+**Analytical Models:**
+
+- Temperature-dependent critical current models
+- State current calculations for memory operations
+- Read/write margin analysis
+
+### Layout (`nmem.layout`)
+
+**Device Generation:**
+
+- Memory array layouts (4×4, 8×8 configurations)
+- Test structure libraries
+- Automated routing and interconnects
+- GDS export for fabrication
+
+## Advanced Features
+
+### Measurement Automation
+
+- **Real-time optimization** using scikit-optimize
+- **Multi-parameter sweeps** with early termination
+- **Statistical analysis** with outlier rejection
+- **Database integration** for data management
+
+### Analysis Capabilities
+
+- **BER vs. operating parameters** with confidence intervals
+- **Array uniformity analysis** across dies and wafers
+- **Temperature coefficient extraction** from measurements
+- **Critical current distribution mapping**
+
+### Visualization Suite
+
+- **Publication-ready plots** with configurable styles
+- **Interactive parameter exploration** tools
+- **3D bar charts** for multi-dimensional data
+- **Matrix plots** for array visualization
+
+## Dependencies and MariaDB
+
+If using database features, install MariaDB dependencies:
+
+```bash
+sudo apt-get install build-essential libssl-dev libffi-dev python3-dev
+sudo apt-get install libmariadb-dev libmariadb-dev-compat
+```
+
+## Recent Updates
+
+This framework has been significantly expanded from its original scope to include:
+
+- **Comprehensive device characterization** with 16 fully characterized memory cells
+- **Advanced plotting capabilities** with 50+ specialized plot types
+- **Automated measurement workflows** with real-time optimization
+- **Complete fabrication support** from layout to device testing
+- **SPICE simulation integration** with behavioral device models
+
+## Contributing
+
+This is a research tool under active development. Key areas for contribution:
+
+- **New analysis methods** for superconducting memory characterization  
+- **Additional device models** for different nanowire geometries
+- **Measurement automation** for new test setups
+- **Visualization improvements** for data presentation
+
+## Citation
+
+If you use this framework in your research, please cite the associated publications on superconducting nanowire memory devices.
 
 ## License
 
 This project is licensed under the MIT License – see [LICENSE.txt](LICENSE.txt) for details.
-
-## Tree
-
-├── LICENSE.txt
-├── README.md
-├── environment.yml
-├── nmem.code-workspace
-├── pyproject.toml
-└── src
-    └── nmem
-        ├── analysis
-        │   ├── analysis.py
-        │   ├── array_parameter_plotting
-        │   │   ├── array_parameter_plotting.py
-        │   │   ├── main_analysis.py
-        │   │   └── main_analysis_table.py
-        │   ├── compare_C2C3_cells
-        │   │   ├── SPG806_20241220_nMem_measure_enable_response_D6_A4_C2_2024-12-20 13-28-02.mat
-        │   │   └── SPG806_20241220_nMem_measure_enable_response_D6_A4_C3_2024-12-20 17-28-57.mat
-        │   ├── dc_sweep
-        │   │   ├── data
-        │   │   └── dc_sweep.py
-        │   ├── enable_current_relation
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   └── enable_current_relation_fit.py
-        │   ├── enable_current_relation_compare_C2C3_cells
-        │   │   ├── compare_C2C3_cells.py
-        │   │   └── data
-        │   ├── enable_current_relation_v2
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   ├── enable_current_relation_temp.py
-        │   │   └── enable_current_relation_v2.py
-        │   ├── enable_write_current_sweep
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   ├── enable_write_current_sweep.py
-        │   │   └── enable_write_sweep_fine.py
-        │   ├── fitting_attempt.py
-        │   ├── main_analysis.pdf
-        │   ├── plot_branch_currents.py
-        │   ├── plot_persistent_current.py
-        │   ├── read_current_sweep_enable_read
-        │   │   ├── data
-        │   │   ├── data_290uA
-        │   │   ├── data_300uA
-        │   │   ├── data_310uA
-        │   │   ├── data_310uA_C4
-        │   │   ├── data_inverse
-        │   │   ├── read_current_sweep_enable_read.py
-        │   │   └── read_current_sweep_three.py
-        │   ├── read_current_sweep_enable_write
-        │   │   ├── data
-        │   │   └── read_current_sweep_enable_write.py
-        │   ├── read_current_sweep_enable_write_width
-        │   │   ├── data
-        │   │   └── read_current_sweep_enable_write_width.py
-        │   ├── read_current_sweep_operating.py
-        │   ├── read_current_sweep_operating_calculation.py
-        │   ├── read_current_sweep_read_width
-        │   │   ├── data
-        │   │   └── read_current_sweep_read_width.py
-        │   ├── read_current_sweep_write_current
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   └── write_current_read_sweep.py
-        │   ├── read_current_sweep_write_current2
-        │   │   ├── write_current_sweep.py
-        │   │   ├── write_current_sweep_A2
-        │   │   ├── write_current_sweep_B2_0
-        │   │   ├── write_current_sweep_B2_1
-        │   │   ├── write_current_sweep_B2_2
-        │   │   ├── write_current_sweep_C2
-        │   │   ├── write_current_sweep_C3
-        │   │   ├── write_current_sweep_C3_2
-        │   │   ├── write_current_sweep_C3_3
-        │   │   └── write_current_sweep_C3_4
-        │   ├── read_current_sweep_write_current3
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   ├── data3
-        │   │   ├── data4
-        │   │   ├── read_current_sweep_write_current.py
-        │   │   ├── read_current_sweep_write_current_coarse.py
-        │   │   ├── read_current_sweep_write_current_fine.py
-        │   │   └── write_current_sweep_voltage_trace.py
-        │   ├── read_current_sweep_write_width
-        │   │   ├── data
-        │   │   └── read_current_sweep_write_width.py
-        │   ├── read_delay_v1
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   └── voltage_pulse_read_histogram.py
-        │   ├── read_delay_v2
-        │   │   ├── data
-        │   │   ├── data2
-        │   │   ├── data3
-        │   │   ├── read_delay_read_current_sweep_fine.py
-        │   │   └── read_delay_retention_test.py
-        │   ├── state_currents.pdf
-        │   ├── voltage_trace_emulate_slow
-        │   │   ├── data
-        │   │   └── voltage_trace_emulate_slow.py
-        │   ├── write_current_sweep_enable_write
-        │   │   ├── data
-        │   │   └── write_current_sweep_enable_write.py
-        │   ├── write_current_sweep_operation.py
-        │   └── write_current_v_temp.py
-        ├── calculations
-        │   ├── analytical_model.py
-        │   ├── calculations.py
-        │   └── plotting.py
-        ├── layout
-        │   ├── die_layout_test.py
-        │   ├── die_layout_v1.py
-        │   ├── die_layout_v2.py
-        │   └── sample
-        ├── measurement
-        │   ├── SPG806_config_ICE.yml
-        │   ├── cells.py
-        │   ├── functions.py
-        │   ├── measure_delay_error.py
-        │   ├── measure_enable_response.py
-        │   ├── optimize.py
-        │   ├── run_delay.py
-        │   ├── run_optimal.py
-        │   ├── run_optimize_parameter.py
-        │   └── run_parameter_sweep.py
-        └── simulation
-            ├── geometry
-            ├── nMem_test_1.py
-            ├── nMem_test_2.py
-            └── spice_circuits
-                ├── functions.py
-                ├── hTron_behavioral.asy
-                ├── hTron_behavioral.lib
-                ├── hTron_behavioral.log
-                ├── nmem_cell_read.asc
-                ├── nmem_cell_read.log
-                ├── nmem_cell_read.net
-                ├── nmem_cell_read.op.raw
-                ├── nmem_cell_read.plt
-                ├── nmem_cell_read.raw
-                ├── nmem_cell_write.png
-                ├── nmem_cell_write_slope.png
-                ├── plotting.py
-                ├── spice_data_plotting.py
-                └── spice_simulation_raw
