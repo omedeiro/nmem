@@ -18,7 +18,7 @@ def main(save_dir=None):
         "6": [900, 1100],
         "7": [20, 100],
     }
-    plot_combined_histogram_and_die_maps(df, wafer_rows, limit_dict)
+    fig, axs = plot_combined_histogram_and_die_maps(df, wafer_rows, limit_dict)
 
     if save_dir:
         plt.savefig(

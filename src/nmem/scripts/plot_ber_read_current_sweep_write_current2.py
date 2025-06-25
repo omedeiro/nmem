@@ -1,4 +1,3 @@
-
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
@@ -13,12 +12,18 @@ from nmem.analysis.plot_utils import (
 from nmem.analysis.sweep_plots import plot_read_sweep_array
 
 
-def plot_read_temp_sweep_C3(save=True):
+def plot_read_temp_sweep_C3():
     fig, axs = plt.subplots(2, 2, figsize=(12, 6))
     dict_list = [
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3"),
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"),
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
+        ),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"
+        ),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"
+        ),
         # import_directory("write_current_sweep_C3_1"),
     ]
     for i, data_dict in enumerate(dict_list):
@@ -45,20 +50,24 @@ def plot_read_temp_sweep_C3(save=True):
     )
     fig.subplots_adjust(hspace=0.5, wspace=0.3)
 
-    if save:
-        plt.savefig("read_current_sweep_write_current_C3.pdf", bbox_inches="tight")
+    return fig, axs
 
-
-def plot_read_temp_sweep_C3_v2(save=False):
+def plot_read_temp_sweep_C3_v2():
     fig = plt.figure(figsize=(180 / 25.4, 90 / 25.4))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
 
     axs = [fig.add_subplot(gs[i]) for i in range(3)]
     cax = fig.add_subplot(gs[3])  # dedicated colorbar axis
     dict_list = [
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3"),
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"),
-        import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
+        ),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"
+        ),
+        import_directory(
+            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"
+        ),
         # import_directory("write_current_sweep_C3_1"),
     ]
     for i, data_dict in enumerate(dict_list):
@@ -91,6 +100,7 @@ def plot_read_temp_sweep_C3_v2(save=False):
 
     return fig, axs
 
+
 def plot_read_sweep_import(data_dict: dict[str, list[float]]):
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, data_dict, "bit_error_rate", "write_current")
@@ -107,6 +117,7 @@ def plot_read_sweep_import(data_dict: dict[str, list[float]]):
     ax.set_title(f"Cell {cell}")
     return fig, ax
 
+
 def main(save_dir=None):
     """
     Main function to plot read current sweep data.
@@ -121,10 +132,13 @@ def main(save_dir=None):
     fig, axs = plot_read_temp_sweep_C3_v2()
 
     if save_dir:
-        fig.savefig(f"{save_dir}/read_current_sweep_write_current_C3.png", bbox_inches="tight")
+        fig.savefig(
+            f"{save_dir}/ber_read_current_sweep_write_current2.png", bbox_inches="tight"
+        )
         plt.close(fig)
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     main()

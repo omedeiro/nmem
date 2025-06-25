@@ -212,12 +212,8 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
 
     axs[2, 0].set_xlim(500, 1500)
     fig.patch.set_visible(False)
-    save_fig = False
-    if save_fig:
-        fig.savefig(
-            "combined_wafer_map_and_histograms.pdf", bbox_inches="tight", dpi=300
-        )
-    plt.show()
+
+    return fig, axs
 
 
 def plot_parameter_array(

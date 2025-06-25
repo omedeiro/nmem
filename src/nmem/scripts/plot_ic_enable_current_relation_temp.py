@@ -53,14 +53,24 @@ def process_enable_current_data(dict_list):
         )
     return processed
 
-def main(data_dir="../data/enable_current_relation/data3", save_fig=False, output_path="enable_current_vs_temp.png"):
+
+def main(data_dir="../data/enable_current_relation/data3", save_dir=None):
     """
     Main function to process data and plot enable current vs. temperature.
     """
     dict_list = import_directory(data_dir)
     data = process_enable_current_data(dict_list)
-    fig, axs, axs2 = plot_enable_current_vs_temp(data, save_fig, output_path)
-    plt.show()
+    fig, axs, axs2 = plot_enable_current_vs_temp(data)
+
+    if save_dir:
+        fig.savefig(
+            f"{save_dir}/enable_current_vs_temp.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":

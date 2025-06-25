@@ -12,6 +12,7 @@ from nmem.analysis.trace_plots import (
 
 apply_global_style()
 
+
 def main(data_dir="../data/dc_sweep", save_dir=None):
     """
     Main function to generate IV temperature sweep plots.
@@ -33,21 +34,21 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
     if save_dir:
         # Save all figures
         fig1.savefig(
-            f"{save_dir}/critical_currents_dc_sweep.png",
+            f"{save_dir}/iv_temperature_sweep_critical_currents.png",
             bbox_inches="tight",
-            dpi=300
+            dpi=300,
         )
         fig2.savefig(
-            f"{save_dir}/current_voltage_dc_sweep.png",
+            f"{save_dir}/iv_temperature_sweep_current_voltage.png",
             bbox_inches="tight",
-            dpi=300
+            dpi=300,
         )
         fig3.savefig(
-            f"{save_dir}/iv_curve_combined.png", 
-            bbox_inches="tight", 
-            dpi=300
+            f"{save_dir}/iv_temperature_sweep_combined.png",
+            bbox_inches="tight",
+            dpi=300,
         )
-        plt.close('all')
+        plt.close("all")
     else:
         plt.show()
 

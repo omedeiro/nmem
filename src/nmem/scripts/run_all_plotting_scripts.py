@@ -104,13 +104,20 @@ def modify_script_for_saving(script_name, save_dir):
     original_show = plt.show
     figure_counter = [0]  # Use list to make it mutable in nested function
 
+    # Remove 'plot_' prefix from script name for consistent file naming
+    base_name = (
+        script_name.replace("plot_", "")
+        if script_name.startswith("plot_")
+        else script_name
+    )
+
     def save_instead_of_show():
         figure_counter[0] += 1
         if figure_counter[0] == 1:
-            save_path = os.path.join(save_dir, f"{script_name}.png")
+            save_path = os.path.join(save_dir, f"{base_name}.png")
         else:
             save_path = os.path.join(
-                save_dir, f"{script_name}_fig{figure_counter[0]}.png"
+                save_dir, f"{base_name}_fig{figure_counter[0]}.png"
             )
         plt.savefig(save_path, dpi=300, bbox_inches="tight")
         plt.close("all")  # Close all figures to free memory
@@ -207,18 +214,18 @@ def generate_plots_readme(plotting_scripts, output_dir, style_mode):
             # Look for files that match the script name pattern
             script_base = script_name.replace("plot_", "")
 
-            # Check for exact matches first
+            # Check for exact matches first - look for files with base name (without plot_ prefix)
             for ext in [".png", ".pdf", ".svg"]:
-                base_image = output_dir / f"{script_name}{ext}"
+                base_image = output_dir / f"{script_base}{ext}"
                 if base_image.exists():
-                    image_files.append(f"{script_name}{ext}")
+                    image_files.append(f"{script_base}{ext}")
 
             # Also check for numbered figures
             fig_num = 2
             while True:
-                fig_image = output_dir / f"{script_name}_fig{fig_num}.png"
+                fig_image = output_dir / f"{script_base}_fig{fig_num}.png"
                 if fig_image.exists():
-                    image_files.append(f"{script_name}_fig{fig_num}.png")
+                    image_files.append(f"{script_base}_fig{fig_num}.png")
                     fig_num += 1
                 else:
                     break

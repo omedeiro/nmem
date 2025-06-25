@@ -21,7 +21,7 @@ def main(save_dir=None):
         param_dict["write_current"],
         "Write Current [$\\mu$A]",
         ax=ax,
-        save_path=f"{save_dir}/write_current_array.png" if save_dir else None,
+        save_path=f"{save_dir}/array_parameter_matrix.png" if save_dir else None,
     )
 
 

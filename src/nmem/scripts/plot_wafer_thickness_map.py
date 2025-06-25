@@ -19,8 +19,7 @@ def main(
     wafer_radius=WAFER_RADIUS,
     grid_res=GRID_RES,
     num_boundary_points=NUM_BOUNDARY_POINTS,
-    save_fig=False,
-    output_path="wafer_maps_before_after_delta.pdf",
+    save_dir=None,
 ):
     before_map = load_and_clean_thickness(csv_before)
     after_map = load_and_clean_thickness(csv_after)
@@ -58,10 +57,15 @@ def main(
         grid_y,
         wafer_radius,
     )
-    if save_fig:
-        fig.savefig(output_path, bbox_inches="tight", dpi=300)
-    plt.show()
-
+    if save_dir:
+        fig.savefig(
+            f"{save_dir}/wafer_thickness_map.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close(fig)
+    else:
+        plt.show()
 
 if __name__ == "__main__":
     main()

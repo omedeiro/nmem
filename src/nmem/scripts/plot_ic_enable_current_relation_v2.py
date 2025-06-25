@@ -34,7 +34,7 @@ def main(
     plot_full_grid(axs1, dict_list)
     if save_dir:
         fig1.savefig(
-            os.path.join(save_dir, "plot_ic_enable_current_relation_v2_full_grid.png"),
+            os.path.join(save_dir, "ic_enable_current_relation_v2_full_grid.png"),
             dpi=300,
             bbox_inches="tight",
         )
@@ -52,7 +52,7 @@ def main(
     axs2[0].set_ylabel("Critical Current ($\\mu$A)")
     if save_dir:
         fig2.savefig(
-            os.path.join(save_dir, "plot_ic_enable_current_relation_v2_columns.png"),
+            os.path.join(save_dir, "ic_enable_current_relation_v2_columns.png"),
             dpi=300,
             bbox_inches="tight",
         )
@@ -67,7 +67,7 @@ def main(
     axs3[0].set_ylabel("Critical Current ($\\mu$A)")
     if save_dir:
         fig3.savefig(
-            os.path.join(save_dir, "plot_ic_enable_current_relation_v2_rows.png"),
+            os.path.join(save_dir, "ic_enable_current_relation_v2_rows.png"),
             dpi=300,
             bbox_inches="tight",
         )
@@ -82,7 +82,7 @@ def main(
     plot_grid(axs4, dict_list)
     if save_dir:
         fig4.savefig(
-            os.path.join(save_dir, "plot_ic_enable_current_relation_v2_grid.png"),
+            os.path.join(save_dir, "ic_enable_current_relation_v2_grid.png"),
             dpi=300,
             bbox_inches="tight",
         )
