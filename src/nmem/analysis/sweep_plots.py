@@ -618,7 +618,7 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_sweep_write_current(data_list, save_path=None):
+def plot_read_sweep_write_current(data_list):
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
     ax.set_xlabel("Read Current [$\mu$A]")
@@ -629,9 +629,8 @@ def plot_read_sweep_write_current(data_list, save_path=None):
         bbox_to_anchor=(1, 1),
         title="Write Current [$\mu$A]",
     )
-    if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.show()
+    
+    return fig, ax
 
 
 def plot_read_switch_probability_array(
@@ -722,7 +721,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
 
 
 def plot_read_current_sweep_three(
-    dict_list, save_fig=False, output_path="read_current_sweep_three2.pdf"
+    dict_list
 ):
     fig = plt.figure(figsize=(6, 3))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
@@ -748,17 +747,14 @@ def plot_read_current_sweep_three(
     cbar = add_colorbar(axs[2], dict_list, "enable_read_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     cbar.set_ticks(plt.MaxNLocator(nbins=6))
-    if save_fig:
-        plt.savefig(output_path, bbox_inches="tight")
-    plt.show()
+    
+    return fig, axs, cbar
 
 
 def plot_read_current_sweep_enable_write(
     data_list,
     data_list2,
     colors,
-    save_fig=False,
-    output_path="read_current_sweep_enable_write2.pdf",
 ):
     fig, axs = plt.subplots(
         1, 2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, 0.25]
@@ -804,9 +800,8 @@ def plot_read_current_sweep_enable_write(
     ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
-    if save_fig:
-        plt.savefig(output_path, bbox_inches="tight")
-    plt.show()
+    
+    return fig, axs
 
 
 def plot_read_current_sweep_sim(
@@ -1015,11 +1010,8 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         handlelength=2.5,
         fontsize=8,
     )
-    save_fig = False
-    if save_fig:
-        plt.savefig("spice_comparison.pdf", bbox_inches="tight")
-    plt.show()
-
+    
+    return fig, axs
 
 def plot_read_current_operating(dict_list):
     """Plot all figures using the provided data dictionary list."""
@@ -1169,11 +1161,8 @@ def plot_read_current_operating(dict_list):
         alpha=0.1,
     )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
-    save_fig = False
-    if save_fig:
-        plt.savefig("read_current_sweep_operating.pdf", bbox_inches="tight")
-    plt.show()
-
+    
+    return fig, axs
 
 def plot_retention(delay_list, bit_error_rate_list, ax=None):
 
@@ -1232,8 +1221,6 @@ def plot_read_current_sweep_enable_read(
     dict_list,
     data_list,
     data_list2,
-    save=False,
-    output_path="read_current_sweep_enable_read.pdf",
 ):
     """
     Plot the read and write current/temperature sweeps.
@@ -1266,10 +1253,8 @@ def plot_read_current_sweep_enable_read(
     plot_enable_write_sweep(ax, data_list2, marker=".")
     ax = axs[0, 1]
     plot_enable_write_temp(ax, enable_write_currents, write_temperatures)
-    if save:
-        fig.savefig(output_path, bbox_inches="tight")
-    plt.show()
-
+    
+    return fig, axs
 
 def plot_write_current_enable_sweep_margin(
     dict_list,
