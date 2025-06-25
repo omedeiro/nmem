@@ -3,3 +3,4 @@
 *.mat filter=lfs diff=lfs merge=lfs -text
 *.tif filter=lfs diff=lfs merge=lfs -text
 *.txt filter=lfs diff=lfs merge=lfs -text
+LICENSE.txt !filter !diff !merge
