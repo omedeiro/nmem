@@ -440,7 +440,7 @@ def plot_enable_write_sweep_multiple(
 
 
 def plot_enable_current_vs_temp(
-    data, save_fig=False, output_path="enable_current_vs_temp.png"
+    data,
 ):
     """
     Plots enable current vs. critical current and channel temperature for all cells.
@@ -470,9 +470,7 @@ def plot_enable_current_vs_temp(
     axs.set_xlabel("Enable Current ($\mu$A)")
     axs.set_ylabel("Critical Current ($\mu$A)")
     axs2.set_ylabel("Channel Temperature (K)")
-    plt.tight_layout()
-    if save_fig:
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+
     return fig, axs, axs2
 
 
