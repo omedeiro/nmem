@@ -1,0 +1,12 @@
+00_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 16-49-00.mat
+01_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-33-56.mat
+02_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-31-07.mat
+03_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-28-29.mat
+04_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-25-09.mat
+05_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-38-59.mat
+06_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-53-11.mat
+07_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 15-57-39.mat
+08_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 17-00-35.mat
+09_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 17-04-51.mat
+10_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 17-08-52.mat
+11_SPG806_20240917_nMem_parameter_sweep_D6_A4_C1_2024-09-17 17-11-51.mat
