@@ -46,7 +46,7 @@ Usage:
 | Bit Error Rate | ![Bit Error Rate](array_bit_error_rate_matrix.png) | Enable Read Current | ![Enable Read Current](array_enable_read_current_matrix.png) |
 | Enable Read Power | ![Enable Read Power](array_enable_read_power_matrix.png) | Enable Write Current | ![Enable Write Current](array_enable_write_current_matrix.png) |
 | Enable Write Power | ![Enable Write Power](array_enable_write_power_matrix.png) | Max Critical Current | ![Max Critical Current](array_max_critical_current_matrix.png) |
-| Parameter | ![Parameter](array_parameter_matrix.png) | Read Current | ![Read Current](array_read_current_matrix.png) |
+| Parameter | ![Parameter](array_write_current_matrix.png) | Read Current | ![Read Current](array_read_current_matrix.png) |
 | Resistance | ![Resistance](array_resistance_matrix.png) | Slope | ![Slope](array_slope_matrix.png) |
 | Write Current | ![Write Current](array_write_current_matrix.png) | X Intercept | ![X Intercept](array_x_intercept_matrix.png) |
 | Y Intercept | ![Y Intercept](array_y_intercept_matrix.png) |  |  |
