@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+
+"""
+Plot the calculated and experimentally extracted state currents for a fixed persistent current. 
+
+This script visualizes the nominal (blue) and inverting (red) operating regions as a function of the temperature. 
+Incomplete results. 
+
+"""
+
 import matplotlib.pyplot as plt
 import scipy.io as sio
 
