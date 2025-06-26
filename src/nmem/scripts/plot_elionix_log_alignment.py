@@ -1,3 +1,11 @@
+#! /usr/bin/env python3
+
+"""
+Plot Elionix alignment log data.
+This script imports alignment data from an Elionix log file, analyzes the alignment statistics,
+and generates plots for alignment statistics and offset histograms.
+"""
+
 import os
 
 from nmem.analysis.alignment_plots import (
