@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+"""
+Generate array parameter matrix visualization showing write current distribution across memory cells.
+
+Creates a spatial heatmap displaying write current parameters for each cell position
+in the memory array, enabling identification of process variations and optimization
+of array-level performance characteristics.
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.core_analysis import (
