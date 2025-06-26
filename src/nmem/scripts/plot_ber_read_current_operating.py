@@ -1,3 +1,14 @@
+#! /usr/bin/env python3
+"""
+Bit error rate (BER) as a function of the read current for various write current setpoints. 
+The switching probability is also plotted for each read current.
+
+The width of each operating region (defined where the trace exceeds and returns from a ±5% bound from 0.5 is plotted as a function of the write current. 
+The width is approximately equal to the stored persistent current. 
+
+Incomplete analysis. Attempting to derive a relationship between the write current and the stored persistent current. 
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
