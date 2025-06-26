@@ -1,3 +1,13 @@
+#! /usr/bin/env python3
+
+"""
+Plot Bit Error Rate (BER) as a function of read current for various enable write widths.
+
+The width of the pulse is defined by the number of points in the waveform. 
+Approximately, the pulse widths range from 5ns to 150ns. 
+
+"""
+    
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
