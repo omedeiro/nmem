@@ -211,6 +211,31 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                     f.write(f"| {left_cell} | {right_cell} |\n")
 
                 f.write("\n")
+            # Special handling for supplemental plots with multiple parts
+            elif (
+                script_name == "plot_ber_enable_write_sweep_supplemental"
+                and len(image_files) > 1
+            ):
+                f.write("**BER Enable Write Sweep Supplemental:**\n\n")
+
+                # Create table for part1 and part2
+                f.write("| Part 1 | Part 2 |\n")
+                f.write("|--------|--------|\n")
+
+                # Find part1 and part2 images
+                part1_img = next((img for img in image_files if "part1" in img), None)
+                part2_img = next((img for img in image_files if "part2" in img), None)
+
+                if part1_img and part2_img:
+                    f.write(f"| ![Part 1]({part1_img}) | ![Part 2]({part2_img}) |\n")
+                else:
+                    # Fallback to first two images if naming pattern doesn't match
+                    if len(image_files) >= 2:
+                        f.write(
+                            f"| ![Part 1]({image_files[0]}) | ![Part 2]({image_files[1]}) |\n"
+                        )
+
+                f.write("\n")
             else:
                 # Standard handling for other plots
                 if len(image_files) == 1:
