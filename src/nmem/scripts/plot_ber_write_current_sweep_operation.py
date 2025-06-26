@@ -8,7 +8,7 @@ from nmem.analysis.data_import import (
     import_directory,
     load_and_process_write_sweep_data,
 )
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_enable_sweep,
     plot_temp_vs_current,
@@ -27,17 +27,22 @@ def main(
 ):
     dict_list_ews = import_directory(enable_write_sweep_path)
     dict_list_ws = load_and_process_write_sweep_data(write_sweep_path)
-    
+
+    figsize = get_consistent_figure_size("wide")
     fig, axs = plt.subplot_mosaic(
-        "AB;CD", figsize=(8.3, 4), width_ratios=[1, 0.25], constrained_layout=True
+        "AB;CD", figsize=figsize, width_ratios=[1, 0.25], constrained_layout=True
     )
 
     # Panel A
     plot_enable_sweep(axs["A"], dict_list_ews, add_colorbar=True)
 
     # Panel B
-    write_current_array, write_temp_array, critical_current_zero = process_write_temp_arrays(dict_list_ews)
-    plot_write_temp_vs_current(axs["B"], write_current_array, write_temp_array, critical_current_zero)
+    write_current_array, write_temp_array, critical_current_zero = (
+        process_write_temp_arrays(dict_list_ews)
+    )
+    plot_write_temp_vs_current(
+        axs["B"], write_current_array, write_temp_array, critical_current_zero
+    )
 
     # Panel C
     plot_write_sweep_ber(axs["C"], dict_list_ws)

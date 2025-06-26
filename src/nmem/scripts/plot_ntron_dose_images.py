@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.utils import center_crop_zoom
 
 # Apply global plot styling
 apply_global_style()
-
 
 
 def main(
@@ -19,7 +18,6 @@ def main(
     ncols=5,
     zoom_factor=8,
     save_dir=None,
-
 ):
     if doses is None:
         doses = np.linspace(250, 440, 20)  # Doses in µC/cm²
@@ -32,7 +30,8 @@ def main(
         zoomed_img = center_crop_zoom(img, zoom_factor=zoom_factor)
         images.append(zoomed_img)
     # Plot
-    fig = plt.figure(figsize=(7, 4), facecolor="white")
+    figsize = get_consistent_figure_size("wide")
+    fig = plt.figure(figsize=figsize, facecolor="white")
     gs = gridspec.GridSpec(nrows, ncols, wspace=0.15, hspace=0.25)
     for i, (dose, img) in enumerate(zip(doses, images)):
         ax = fig.add_subplot(gs[i])

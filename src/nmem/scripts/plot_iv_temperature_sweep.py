@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
@@ -27,7 +27,8 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
     plot_current_voltage_from_dc_sweep(ax2, data_list)
 
     # Create combined figure
-    fig3, axs = plt.subplots(1, 3, figsize=(7, 4))
+    figsize = get_consistent_figure_size("wide")
+    fig3, axs = plt.subplots(1, 3, figsize=figsize)
     plot_combined_dc_figure(axs, data_list)
     plt.subplots_adjust(wspace=0.4)
 

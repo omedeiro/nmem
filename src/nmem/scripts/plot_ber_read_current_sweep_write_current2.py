@@ -9,7 +9,7 @@ from nmem.analysis.data_import import import_directory
 from nmem.analysis.plot_utils import (
     add_colorbar,
 )
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import plot_read_sweep_array
 
 # Apply global plot styling
@@ -17,7 +17,8 @@ apply_global_style()
 
 
 def plot_read_temp_sweep_C3():
-    fig, axs = plt.subplots(2, 2, figsize=(12, 6))
+    figsize = get_consistent_figure_size("grid")
+    fig, axs = plt.subplots(2, 2, figsize=figsize)
     dict_list = [
         import_directory(
             "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
@@ -56,8 +57,10 @@ def plot_read_temp_sweep_C3():
 
     return fig, axs
 
+
 def plot_read_temp_sweep_C3_v2():
-    fig = plt.figure(figsize=(180 / 25.4, 90 / 25.4))
+    figsize = get_consistent_figure_size("wide")
+    fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
 
     axs = [fig.add_subplot(gs[i]) for i in range(3)]

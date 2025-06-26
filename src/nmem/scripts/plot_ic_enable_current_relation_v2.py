@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_column,
     plot_full_grid,
@@ -30,7 +30,8 @@ def main(
     dict_list = import_directory(data_dir)
 
     # Figure 1: Full grid
-    fig1, axs1 = plt.subplots(5, 5, figsize=(6, 6), sharex=True, sharey=True)
+    figsize1 = get_consistent_figure_size("square")
+    fig1, axs1 = plt.subplots(5, 5, figsize=figsize1, sharex=True, sharey=True)
     plot_full_grid(axs1, dict_list)
     if save_dir:
         fig1.savefig(
@@ -46,7 +47,8 @@ def main(
         plt.show()
 
     # Figure 2: Columns
-    fig2, axs2 = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+    figsize2 = get_consistent_figure_size("wide")
+    fig2, axs2 = plt.subplots(1, 4, figsize=figsize2, sharey=True)
     plot_column(axs2, dict_list)
     axs2[0].set_xlabel("Enable Current ($\\mu$A)")
     axs2[0].set_ylabel("Critical Current ($\\mu$A)")
@@ -61,7 +63,8 @@ def main(
         plt.show()
 
     # Figure 3: Rows
-    fig3, axs3 = plt.subplots(1, 4, figsize=(12, 6), sharey=True)
+    figsize3 = get_consistent_figure_size("wide")
+    fig3, axs3 = plt.subplots(1, 4, figsize=figsize3, sharey=True)
     plot_row(axs3, dict_list)
     axs3[0].set_xlabel("Enable Current ($\\mu$A)")
     axs3[0].set_ylabel("Critical Current ($\\mu$A)")
@@ -76,9 +79,8 @@ def main(
         plt.show()
 
     # Figure 4: Grid
-    fig4, axs4 = plt.subplots(
-        4, 4, figsize=(180 / 25.4, 180 / 25.4), sharex=True, sharey=True
-    )
+    figsize4 = get_consistent_figure_size("square")
+    fig4, axs4 = plt.subplots(4, 4, figsize=figsize4, sharex=True, sharey=True)
     plot_grid(axs4, dict_list)
     if save_dir:
         fig4.savefig(

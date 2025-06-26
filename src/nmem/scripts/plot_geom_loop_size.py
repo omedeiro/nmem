@@ -3,11 +3,10 @@ from matplotlib.ticker import LogLocator, MaxNLocator
 
 from nmem.analysis.core_analysis import analyze_geom_loop_size
 from nmem.analysis.data_import import import_geom_loop_size_data
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 
 # Apply global plot styling
 apply_global_style()
-
 
 
 def main(data_dir="../data/loop_size_sweep", save_dir=None):
@@ -15,7 +14,8 @@ def main(data_dir="../data/loop_size_sweep", save_dir=None):
     vch_list, ber_est_list, err_list, best_ber = analyze_geom_loop_size(
         data, loop_sizes
     )
-    fig, axs = plt.subplots(1, 3, figsize=(7, 2.5), sharey=True)
+    figsize = get_consistent_figure_size("wide")
+    fig, axs = plt.subplots(1, 3, figsize=figsize, sharey=True)
     # First plot: Vch vs. ber_est
     ax = axs[0]
     for i in range(len(data)):

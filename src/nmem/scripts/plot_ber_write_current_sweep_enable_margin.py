@@ -4,7 +4,7 @@ from nmem.analysis.data_import import (
     import_write_sweep_formatted,
     import_write_sweep_formatted_markers,
 )
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_write_sweep_formatted,
     plot_write_sweep_formatted_markers,
@@ -18,9 +18,10 @@ def main(save_dir=None):
     innerb = [
         ["C", "D"],
     ]
+    figsize = get_consistent_figure_size("comparison")
     fig, axs = plt.subplot_mosaic(
         innerb,
-        figsize=(6, 2),
+        figsize=figsize,
     )
     dict_list = import_write_sweep_formatted()
     plot_write_sweep_formatted(axs["C"], dict_list)

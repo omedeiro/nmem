@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.trace_plots import (
     plot_time_concatenated_traces,
 )
@@ -13,7 +13,8 @@ apply_global_style()
 def main(save_dir=None):
     dict_list = import_directory("../data/voltage_trace_array_emulation")
 
-    fig, axs = plt.subplots(3, 1, figsize=(6, 3), sharex=True)
+    figsize = get_consistent_figure_size("wide")
+    fig, axs = plt.subplots(3, 1, figsize=figsize, sharex=True)
     plot_time_concatenated_traces(axs, dict_list[:5])
 
     if save_dir:

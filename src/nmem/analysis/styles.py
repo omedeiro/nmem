@@ -229,3 +229,61 @@ def set_thesis_style(dpi=300, font_size=11, grid_alpha=0.3) -> None:
             "savefig.pad_inches": 0.15,
         }
     )
+
+
+def get_figure_size(nrows=1, ncols=1, aspect_ratio=None):
+    """
+    Get appropriate figure size based on current global style and subplot configuration.
+
+    Args:
+        nrows (int): Number of subplot rows
+        ncols (int): Number of subplot columns
+        aspect_ratio (float, optional): Override aspect ratio (width/height)
+
+    Returns:
+        tuple: (width, height) in inches
+    """
+    # Get base figure size from current style
+    base_width, base_height = plt.rcParams["figure.figsize"]
+
+    # Calculate figure size based on subplot grid
+    width = base_width * ncols
+    height = base_height * nrows
+
+    # Apply custom aspect ratio if provided
+    if aspect_ratio is not None:
+        height = width / aspect_ratio
+
+    return (width, height)
+
+
+def get_consistent_figure_size(plot_type="single"):
+    """
+    Get consistent figure size for common plot types.
+
+    Args:
+        plot_type (str): Type of plot. Options:
+            - "single": Single plot (default)
+            - "wide": Wide single plot (1.5x width)
+            - "tall": Tall single plot (1.5x height)
+            - "square": Square aspect ratio
+            - "comparison": Side-by-side comparison (2x1 grid)
+            - "grid": 2x2 grid
+            - "multi_row": Multi-row layout (1x3 or similar)
+
+    Returns:
+        tuple: (width, height) in inches
+    """
+    base_width, base_height = plt.rcParams["figure.figsize"]
+
+    size_map = {
+        "single": (base_width, base_height),
+        "wide": (base_width * 1.5, base_height),
+        "tall": (base_width, base_height * 1.5),
+        "square": (base_width, base_width),
+        "comparison": (base_width * 2, base_height),
+        "grid": (base_width * 2, base_height * 2),
+        "multi_row": (base_width, base_height * 1.5),
+    }
+
+    return size_map.get(plot_type, (base_width, base_height))

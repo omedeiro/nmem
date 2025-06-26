@@ -1,16 +1,16 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import plot_enable_sweep
 
 # Apply global plot styling
 apply_global_style()
 
 
-
 def main(save_dir=None):
-    fig, axs = plt.subplot_mosaic("BC", figsize=(180 / 25.4, 90 / 25.4))
+    figsize = get_consistent_figure_size("comparison")
+    fig, axs = plt.subplot_mosaic("BC", figsize=figsize)
     dict_list = import_directory("../data/ber_sweep_enable_write_current/data1")
     sort_dict_list = sorted(
         dict_list, key=lambda x: x.get("write_current").flatten()[0]
