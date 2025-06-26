@@ -225,7 +225,6 @@ def plot_parameter_array(
     reverse: bool = False,
     cmap: plt.cm = None,
     ax: Axes = None,
-    save_path: str = None,
 ) -> Axes:
     if ax is None:
         fig, ax = plt.subplots()
@@ -252,11 +251,6 @@ def plot_parameter_array(
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.tick_params(axis="both", length=0)
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight", dpi=300)
-        plt.close(fig)
-    else:
-        plt.show()
     return ax
 
 
