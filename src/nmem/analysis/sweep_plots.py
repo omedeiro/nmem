@@ -1,5 +1,5 @@
-from typing import Literal
 import warnings
+from typing import Literal
 
 import ltspice
 import matplotlib.gridspec as gridspec
@@ -11,10 +11,6 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
-# Suppress numpy warnings about all-nan slices
-warnings.filterwarnings("ignore", message="All-NaN slice encountered")
-warnings.filterwarnings("ignore", message="invalid value encountered")
 
 from nmem.analysis.bit_error import (
     calculate_ber_errorbar,
@@ -74,6 +70,10 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
+
+# Suppress numpy warnings about all-nan slices
+warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+warnings.filterwarnings("ignore", message="invalid value encountered")
 
 
 def plot_critical_currents_from_dc_sweep(
@@ -812,7 +812,6 @@ def plot_read_current_sweep_sim(
     save_fig=False,
     output_path="spice_comparison_sim.pdf",
 ):
-    from nmem.simulation.spice_circuits.plotting import create_plot
 
     inner = [
         ["T0", "T1", "T2", "T3"],
