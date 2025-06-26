@@ -410,7 +410,7 @@ def plot_enable_write_sweep_multiple(
 ) -> Axes:
     if N is None:
         N = len(dict_list)
-    
+
     write_current_list = []
     for data_dict in dict_list:
         write_current = get_write_current(data_dict)
@@ -419,21 +419,23 @@ def plot_enable_write_sweep_multiple(
     # Normalize colors based on actual min/max range of write currents
     min_write_current = min(write_current_list)
     max_write_current = max(write_current_list)
-    
+
     for i, data_dict in enumerate(dict_list):
         write_current = write_current_list[i]
         # Properly normalize to use full colormap range
         if max_write_current > min_write_current:
-            write_current_norm = (write_current - min_write_current) / (max_write_current - min_write_current)
+            write_current_norm = (write_current - min_write_current) / (
+                max_write_current - min_write_current
+            )
         else:
             write_current_norm = 0.5  # Default to middle if all values are the same
-            
+
         plot_enable_sweep_single(
-            ax, 
-            data_dict, 
-            color=CMAP(write_current_norm), 
+            ax,
+            data_dict,
+            color=CMAP(write_current_norm),
             add_errorbar=add_errorbar,
-            label=f"{write_current:.1f} µA"
+            label=f"{write_current:.1f} µA",
         )
 
     if add_legend:
@@ -441,10 +443,10 @@ def plot_enable_write_sweep_multiple(
         ax.legend(
             title="Write Current",
             bbox_to_anchor=(1.05, 1),
-            loc='upper left',
+            loc="upper left",
             frameon=True,
             fancybox=True,
-            shadow=True
+            shadow=True,
         )
 
     ax.set_ylim(0, 1)
@@ -493,10 +495,10 @@ def plot_enable_sweep_single(
     enable_currents = get_enable_current_sweep(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     write_current = get_write_current(data_dict)
-    
+
     # Use provided label or create default label
-    label = kwargs.pop('label', f"$I_{{W}}$ = {write_current:.1f}µA")
-    
+    label = kwargs.pop("label", f"$I_{{W}}$ = {write_current:.1f}µA")
+
     ax.plot(
         enable_currents,
         bit_error_rate,
@@ -650,7 +652,7 @@ def plot_read_sweep_write_current(data_list):
         bbox_to_anchor=(1, 1),
         title="Write Current [$\mu$A]",
     )
-    
+
     return fig, ax
 
 
@@ -703,33 +705,53 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
 
 
 def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
-    # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
     write_temp_list = []
     enable_write_current_list = []
+
+    # Collect enable write currents for normalization
+    for data_dict in dict_list:
+        enable_write_current = get_enable_write_current(data_dict)
+        enable_write_current_list.append(enable_write_current)
+
+    # Normalize colors based on actual min/max range of enable write currents
+    min_enable_current = min(enable_write_current_list)
+    max_enable_current = max(enable_write_current_list)
+
     for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
         _, _, zswitch = build_array(data_dict, "total_switches_norm")
         write_temp = get_channel_temperature(data_dict, "write")
-        enable_write_current = get_enable_write_current(data_dict)
+        enable_write_current = enable_write_current_list[i]
         write_temp_list.append(write_temp)
-        enable_write_current_list.append(enable_write_current)
+
+        # Properly normalize to use full colormap range
+        if max_enable_current > min_enable_current:
+            enable_current_norm = (enable_write_current - min_enable_current) / (
+                max_enable_current - min_enable_current
+            )
+        else:
+            enable_current_norm = 0.5  # Default to middle if all values are the same
+
         ax.plot(
             y,
             ztotal,
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} µA",
-            color=colors[dict_list.index(data_dict)],
+            color=CMAP(enable_current_norm),
             marker=".",
         )
+
     ax.set_ylim([0, 1])
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    norm = mcolors.Normalize(
-        vmin=min(enable_write_current_list), vmax=max(enable_write_current_list)
+
+    # Use legend instead of colorbar
+    ax.legend(
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+        frameon=True,
+        fancybox=True,
+        shadow=True,
     )
-    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    cbar.set_label("$I_{{EW}}$ [µA]")
+
     return ax
 
 
@@ -741,9 +763,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     return ax
 
 
-def plot_read_current_sweep_three(
-    dict_list
-):
+def plot_read_current_sweep_three(dict_list):
     fig = plt.figure(figsize=(6, 3))
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
     axs = [fig.add_subplot(gs[i]) for i in range(3)]
@@ -768,7 +788,7 @@ def plot_read_current_sweep_three(
     cbar = add_colorbar(axs[2], dict_list, "enable_read_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     cbar.set_ticks(plt.MaxNLocator(nbins=6))
-    
+
     return fig, axs, cbar
 
 
@@ -821,7 +841,7 @@ def plot_read_current_sweep_enable_write(
     ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
-    
+
     return fig, axs
 
 
@@ -1029,8 +1049,9 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         handlelength=2.5,
         fontsize=8,
     )
-    
+
     return fig, axs
+
 
 def plot_read_current_operating(dict_list):
     """Plot all figures using the provided data dictionary list."""
@@ -1180,8 +1201,9 @@ def plot_read_current_operating(dict_list):
         alpha=0.1,
     )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
-    
+
     return fig, axs
+
 
 def plot_retention(delay_list, bit_error_rate_list, ax=None):
 
@@ -1272,8 +1294,9 @@ def plot_read_current_sweep_enable_read(
     plot_enable_write_sweep(ax, data_list2, marker=".")
     ax = axs[0, 1]
     plot_enable_write_temp(ax, enable_write_currents, write_temperatures)
-    
+
     return fig, axs
+
 
 def plot_write_current_enable_sweep_margin(
     dict_list,
@@ -1289,7 +1312,7 @@ def plot_write_current_enable_sweep_margin(
     )
     ax = axs["A"]
     plot_enable_sweep(
-        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True
+        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_legend=True
     )
     ax = axs["B"]
     plot_enable_sweep_markers(ax, sort_dict_list)
