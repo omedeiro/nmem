@@ -287,14 +287,14 @@ def plot_enable_sweep(
     dict_list: list[dict],
     range=None,
     add_errorbar=False,
-    add_colorbar=False,
+    add_legend=True,
 ):
     N = len(dict_list)
     if range is not None:
         dict_list = dict_list[range]
     # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
     ax = plot_enable_write_sweep_multiple(
-        ax, dict_list, add_errorbar=add_errorbar, N=N, add_colorbar=add_colorbar
+        ax, dict_list, add_errorbar=add_errorbar, N=N, add_legend=add_legend
     )
 
     ax.set_ylabel("BER")
@@ -396,7 +396,8 @@ def plot_enable_write_sweep_fine(data_list2):
     fig, ax = plt.subplots(figsize=(6, 4))
     plot_enable_write_sweep_multiple(ax, data_list2)
     ax.set_xlim([260, 310])
-
+    ax.set_ylabel("Bit Error Rate")
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     return fig, ax
 
 
@@ -405,30 +406,46 @@ def plot_enable_write_sweep_multiple(
     dict_list: list[dict],
     add_errorbar: bool = False,
     N: int = None,
-    add_colorbar: bool = True,
+    add_legend: bool = True,
 ) -> Axes:
     if N is None:
         N = len(dict_list)
-    colors = CMAP(np.linspace(0, 1, N))
+    
     write_current_list = []
     for data_dict in dict_list:
         write_current = get_write_current(data_dict)
         write_current_list.append(write_current)
 
+    # Normalize colors based on actual min/max range of write currents
+    min_write_current = min(write_current_list)
+    max_write_current = max(write_current_list)
+    
     for i, data_dict in enumerate(dict_list):
-        write_current_norm = write_current_list[i] / 100
+        write_current = write_current_list[i]
+        # Properly normalize to use full colormap range
+        if max_write_current > min_write_current:
+            write_current_norm = (write_current - min_write_current) / (max_write_current - min_write_current)
+        else:
+            write_current_norm = 0.5  # Default to middle if all values are the same
+            
         plot_enable_sweep_single(
-            ax, data_dict, color=CMAP(write_current_norm), add_errorbar=add_errorbar
+            ax, 
+            data_dict, 
+            color=CMAP(write_current_norm), 
+            add_errorbar=add_errorbar,
+            label=f"{write_current:.1f} µA"
         )
 
-    if add_colorbar:
-        norm = mcolors.Normalize(
-            vmin=min(write_current_list), vmax=max(write_current_list)
-        )  # Normalize for colormap
-        sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-        sm.set_array([])
-        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-        cbar.set_label("Write Current [µA]")
+    if add_legend:
+        # Use legend instead of colorbar
+        ax.legend(
+            title="Write Current",
+            bbox_to_anchor=(1.05, 1),
+            loc='upper left',
+            frameon=True,
+            fancybox=True,
+            shadow=True
+        )
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
@@ -476,10 +493,14 @@ def plot_enable_sweep_single(
     enable_currents = get_enable_current_sweep(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     write_current = get_write_current(data_dict)
+    
+    # Use provided label or create default label
+    label = kwargs.pop('label', f"$I_{{W}}$ = {write_current:.1f}µA")
+    
     ax.plot(
         enable_currents,
         bit_error_rate,
-        label=f"$I_{{W}}$ = {write_current:.1f}µA",
+        label=label,
         **kwargs,
     )
     if add_errorbar:
