@@ -119,24 +119,29 @@ def create_plots_readme(plots_dir, style_mode="paper"):
     for png_file in png_files:
         image_name = png_file.stem
 
-        # Try to find the corresponding script
-        script_file = find_script_for_image(image_name, scripts_dir)
-
-        if script_file:
-            script_name = script_file.stem
+        # Special case: Group all array parameter matrix plots together
+        if image_name.startswith("array_") and image_name.endswith("_matrix"):
+            script_name = "plot_array_parameter_matrix"
+            script_file = scripts_dir / f"{script_name}.py"
         else:
-            # Fallback: guess the script name
-            if image_name.startswith("plot_"):
-                script_name = image_name
-            elif image_name.startswith("ber_"):
-                script_name = f"plot_{image_name}"
+            # Try to find the corresponding script
+            script_file = find_script_for_image(image_name, scripts_dir)
+
+            if script_file:
+                script_name = script_file.stem
             else:
-                script_name = f"plot_{image_name}"
+                # Fallback: guess the script name
+                if image_name.startswith("plot_"):
+                    script_name = image_name
+                elif image_name.startswith("ber_"):
+                    script_name = f"plot_{image_name}"
+                else:
+                    script_name = f"plot_{image_name}"
 
         # Use script_name as key, not image_name
         if script_name not in script_groups:
             script_groups[script_name] = {
-                "script_file": script_file,  # This should be the actual file if found
+                "script_file": script_file if script_file and script_file.exists() else None,
                 "images": [],
             }
         script_groups[script_name]["images"].append(png_file.name)
@@ -167,14 +172,52 @@ def create_plots_readme(plots_dir, style_mode="paper"):
             f.write(f"**Script:** `{script_name}.py`\n\n")
             f.write(f"**Description:** {description}\n\n")
 
-            # Write image references
-            if len(image_files) == 1:
-                f.write(f"![{script_name}]({image_files[0]})\n\n")
-            else:
-                f.write("**Images:**\n")
-                for i, img_file in enumerate(image_files, 1):
-                    f.write(f"- ![{script_name}_fig{i}]({img_file})\n")
+            # Special handling for array parameter matrix plots
+            if script_name == "plot_array_parameter_matrix" and len(image_files) > 1:
+                f.write("**Array Parameter Matrix Plots:**\n\n")
+
+                # Create table with 3 columns
+                f.write("| Parameter | Plot | Parameter | Plot |\n")
+                f.write("|-----------|------|-----------|------|\n")
+
+                # Group images in pairs for table formatting
+                for i in range(0, len(image_files), 2):
+                    left_img = image_files[i]
+                    right_img = image_files[i + 1] if i + 1 < len(image_files) else None
+
+                    # Extract parameter names from filenames (array_PARAMETER_matrix.png)
+                    left_param = (
+                        left_img.replace("array_", "")
+                        .replace("_matrix.png", "")
+                        .replace("_", " ")
+                        .title()
+                    )
+
+                    left_cell = f"{left_param} | ![{left_param}]({left_img})"
+
+                    if right_img:
+                        right_param = (
+                            right_img.replace("array_", "")
+                            .replace("_matrix.png", "")
+                            .replace("_", " ")
+                            .title()
+                        )
+                        right_cell = f"{right_param} | ![{right_param}]({right_img})"
+                    else:
+                        right_cell = " | "
+
+                    f.write(f"| {left_cell} | {right_cell} |\n")
+
                 f.write("\n")
+            else:
+                # Standard handling for other plots
+                if len(image_files) == 1:
+                    f.write(f"![{script_name}]({image_files[0]})\n\n")
+                else:
+                    f.write("**Images:**\n")
+                    for i, img_file in enumerate(image_files, 1):
+                        f.write(f"- ![{script_name}_fig{i}]({img_file})\n")
+                    f.write("\n")
 
             f.write("---\n\n")
 
