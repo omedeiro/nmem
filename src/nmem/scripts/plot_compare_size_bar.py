@@ -1,3 +1,8 @@
+#! /usr/bin/env python3
+"""
+Generate memory scaling comparison plots showing capacity and density.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
