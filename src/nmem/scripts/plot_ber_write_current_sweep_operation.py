@@ -34,7 +34,7 @@ def main(
     )
 
     # Panel A
-    plot_enable_sweep(axs["A"], dict_list_ews, add_colorbar=True)
+    plot_enable_sweep(axs["A"], dict_list_ews, add_legend=True)
 
     # Panel B
     write_current_array, write_temp_array, critical_current_zero = (
