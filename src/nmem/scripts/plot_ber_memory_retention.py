@@ -1,3 +1,14 @@
+#! /usr/bin/env python3
+
+"""
+Plot Bit Error Rate (BER) Memory Retention
+
+Generates a plot showing the relationship between memory retention time and bit error rate
+Times shorter than 10ms were programmed by adjusting the waveform output. Longer delays were programmed with software defined triggers. 
+
+"""
+
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_delay_data
