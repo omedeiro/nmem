@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+"""
+Plot Branch Currents Sweep for BER Analysis
+
+Calculates and visualizes the critical current as a function of temperature
+of each branch in a memory cell. Measured data is used for reference. 
+"""
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 
