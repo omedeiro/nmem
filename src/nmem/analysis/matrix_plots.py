@@ -211,7 +211,7 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
     axs[-1, 0].set_xlabel("Resistance (kΩ)", fontsize=8)
 
     axs[2, 0].set_xlim(500, 1500)
-    fig.patch.set_visible(False)
+
 
     return fig, axs
 
