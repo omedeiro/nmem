@@ -1,3 +1,15 @@
+#! /usr/bin/env python3
+"""
+Plot Autoprobe Resistance Matrix. 
+
+This script loads resistance data from an autoprobe measurement,
+summarizes the yield across specified wafer rows, and generates
+combined histogram and die maps to visualize the resistance distribution.
+
+Measurements were performed in the Palacios lab at room temperature. 
+Rows 1, 4, 6, and 7 were selected for analysis.  
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import load_autoprobe_data
