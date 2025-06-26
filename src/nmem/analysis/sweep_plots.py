@@ -995,7 +995,6 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     )
 
     fig.subplots_adjust(hspace=0.5, wspace=0.5)
-    fig.patch.set_alpha(0)
 
     ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
     ax_legend.axis("off")
