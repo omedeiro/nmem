@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+"""
+Plot the bit error rate as a function of the enable write current. 
+
+Sweeps are shown for different write currents, allowing analysis of 
+how the enable write current affects the bit error rate across various 
+write current set points.
+
+"""
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
