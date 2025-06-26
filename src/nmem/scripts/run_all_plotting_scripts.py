@@ -357,6 +357,60 @@ def main(output_dir=None, style_mode="thesis", generate_readme=True):
         except Exception as e:
             logger.error(f"Failed to generate plots README: {e}")
 
+    # Generate array parameter matrix plots for all parameters
+    logger.info(f"\n{'='*50}")
+    logger.info("Generating Array Parameter Matrix Plots")
+    logger.info(f"{'='*50}")
+
+    try:
+        from nmem.scripts.plot_array_parameter_matrix import main as plot_array_main
+
+        # All available parameters
+        parameters = [
+            "write_current",
+            "read_current",
+            "enable_write_current",
+            "enable_read_current",
+            "slope",
+            "y_intercept",
+            "x_intercept",
+            "resistance",
+            "bit_error_rate",
+            "max_critical_current",
+            "enable_write_power",
+            "enable_read_power",
+        ]
+
+        array_matrix_successful = 0
+        for param in parameters:
+            try:
+                logger.info(f"Generating array parameter matrix for: {param}")
+                # Use log scale for bit error rate
+                use_log_scale = param == "bit_error_rate"
+                plot_array_main(
+                    save_dir=str(output_dir),
+                    parameter=param,
+                    show_colorbar=True,
+                    log_scale=use_log_scale,
+                )
+                array_matrix_successful += 1
+                log_msg = f"✓ Successfully generated array matrix for {param}"
+                if use_log_scale:
+                    log_msg += " (with log scale)"
+                logger.info(log_msg)
+            except Exception as e:
+                logger.error(f"✗ Failed to generate array matrix for {param}: {str(e)}")
+                logger.debug(f"Traceback for {param}:\n{traceback.format_exc()}")
+
+        logger.info(
+            f"Array parameter matrices: {array_matrix_successful}/{len(parameters)} successful"
+        )
+        successful_runs += array_matrix_successful
+
+    except Exception as e:
+        logger.error(f"Failed to import or run array parameter matrix plotting: {e}")
+        logger.debug(f"Array matrix traceback:\n{traceback.format_exc()}")
+
     # Summary
     logger.info(f"\n{'='*50}")
     logger.info("SUMMARY")
