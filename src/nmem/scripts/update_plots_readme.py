@@ -141,7 +141,9 @@ def create_plots_readme(plots_dir, style_mode="paper"):
         # Use script_name as key, not image_name
         if script_name not in script_groups:
             script_groups[script_name] = {
-                "script_file": script_file if script_file and script_file.exists() else None,
+                "script_file": (
+                    script_file if script_file and script_file.exists() else None
+                ),
                 "images": [],
             }
         script_groups[script_name]["images"].append(png_file.name)
