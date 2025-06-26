@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+"""
+Generate array fidelity bar plots showing bit error rates across memory array positions.
+
+Creates both 3D and clean 2D bar visualizations of BER data to analyze
+memory array performance and identify spatial patterns in error rates.
+"""
+
 import logging
 
 from nmem.analysis.bar_plots import (
