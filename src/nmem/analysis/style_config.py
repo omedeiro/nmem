@@ -5,7 +5,7 @@ Style configuration utility for nmem plotting scripts.
 This module provides easy access to set global plotting styles across all scripts.
 """
 
-from nmem.analysis.styles import set_style_mode, apply_global_style, get_style_mode
+from nmem.analysis.styles import apply_global_style, get_style_mode, set_style_mode
 
 
 def set_presentation_style():
