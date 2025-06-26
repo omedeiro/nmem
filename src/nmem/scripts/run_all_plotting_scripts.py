@@ -12,15 +12,14 @@ Examples:
     python run_all_plotting_scripts.py ./plots --style paper
 """
 import argparse
+import ast
 import importlib
+import inspect
 import logging
 import os
-import sys
 import traceback
-from pathlib import Path
-import ast
-import inspect
 from datetime import datetime
+from pathlib import Path
 
 import matplotlib
 
@@ -28,7 +27,7 @@ matplotlib.use("Agg")  # Use non-interactive backend
 import matplotlib.pyplot as plt
 
 # Import style management functions
-from nmem.analysis.styles import set_style_mode, apply_global_style, get_style_mode
+from nmem.analysis.styles import apply_global_style, get_style_mode, set_style_mode
 
 # Set up logging
 logging.basicConfig(
@@ -170,7 +169,7 @@ def extract_plot_description(module_path):
                 and module.main.__doc__
             ):
                 return module.main.__doc__.strip()
-        except:
+        except Exception as e:
             pass
 
         return "No description available"
