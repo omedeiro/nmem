@@ -13,11 +13,10 @@ Examples:
 """
 import argparse
 import ast
-import importlib
-from pathlib import Path
-from datetime import datetime
-import sys
 import logging
+import sys
+from datetime import datetime
+from pathlib import Path
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
