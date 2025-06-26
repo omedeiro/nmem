@@ -1,3 +1,14 @@
+#! /usr/bin/env python3
+
+"""
+Captured voltage traces from PRBS measurements performed in the probe station at 3.5K. 
+Each trace contains eight consecutive write/read operations with a 1µs delay between operations. 
+Traces are offset vertically for clarity. Set bit streams are plotted to the right. Errors are highlighted in red. 
+
+Total errors: 18/50e3, W1R0: 8, W0R1: 10
+"""
+
+
 import logging
 
 from matplotlib import pyplot as plt
