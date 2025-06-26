@@ -1,7 +1,12 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_delay_data
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import plot_retention
+
+# Apply global plot styling
+apply_global_style()
+
 
 
 def main(save_dir=None):

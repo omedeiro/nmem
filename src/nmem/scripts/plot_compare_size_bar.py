@@ -14,10 +14,9 @@ from nmem.analysis.memory_data import (
     tech_cap,
     tech_den,
 )
-from nmem.analysis.styles import set_inter_font, set_pres_style
+from nmem.analysis.styles import apply_global_style
 
-set_inter_font()
-set_pres_style()
+apply_global_style()
 
 
 def main(save_dir=None):

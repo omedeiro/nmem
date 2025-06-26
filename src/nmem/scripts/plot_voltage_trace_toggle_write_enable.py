@@ -4,12 +4,16 @@ from nmem.analysis.constants import TRACE_INDEX
 from nmem.analysis.data_import import (
     import_directory,
 )
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_bit_error_rate,
 )
 from nmem.analysis.trace_plots import (
     plot_voltage_trace_stack,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

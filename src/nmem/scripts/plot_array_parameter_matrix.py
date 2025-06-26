@@ -13,7 +13,11 @@ from nmem.analysis.core_analysis import (
     process_array_parameter_data,  # newly refactored function
 )
 from nmem.analysis.matrix_plots import plot_parameter_array
+from nmem.analysis.styles import apply_global_style
 from nmem.measurement.cells import CELLS
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

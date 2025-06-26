@@ -4,10 +4,14 @@ from nmem.analysis.data_import import (
     import_write_sweep_formatted,
     import_write_sweep_formatted_markers,
 )
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_write_sweep_formatted,
     plot_write_sweep_formatted_markers,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

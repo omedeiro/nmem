@@ -8,12 +8,16 @@ from nmem.analysis.data_import import (
     import_directory,
     load_and_process_write_sweep_data,
 )
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_enable_sweep,
     plot_temp_vs_current,
     plot_write_sweep_ber,
     plot_write_temp_vs_current,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(

@@ -5,7 +5,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.utils import center_crop_zoom
+
+# Apply global plot styling
+apply_global_style()
+
 
 
 def main(

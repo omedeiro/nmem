@@ -13,14 +13,10 @@ from nmem.analysis.bar_plots import (
     plot_fidelity_clean_bar,
 )
 from nmem.analysis.core_analysis import process_ber_data
-from nmem.analysis.styles import (
-    set_inter_font,
-    set_pres_style,
-)
+from nmem.analysis.styles import apply_global_style
 
 # Set plot styles
-set_pres_style()
-set_inter_font()
+apply_global_style()
 
 # Set up logger for better traceability
 logger = logging.getLogger(__name__)

@@ -1,9 +1,15 @@
+import logging
+
 from matplotlib import pyplot as plt
+
 from nmem.analysis.core_analysis import analyze_prbs_errors
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.trace_plots import plot_probe_station_prbs
 
-import logging
+# Apply global plot styling
+apply_global_style()
+
 
 logging.basicConfig(
     level=logging.INFO,

@@ -1,9 +1,13 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.trace_plots import (
     plot_time_concatenated_traces,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

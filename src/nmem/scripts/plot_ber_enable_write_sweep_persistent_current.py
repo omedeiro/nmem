@@ -7,6 +7,10 @@ from nmem.analysis.state_currents_plots import (
     plot_measured_state_currents,
     plot_persistent_current,
 )
+from nmem.analysis.styles import apply_global_style
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(

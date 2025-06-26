@@ -4,6 +4,10 @@ from nmem.analysis.data_import import import_directory
 from nmem.analysis.histogram_utils import (
     plot_voltage_hist,
 )
+from nmem.analysis.styles import apply_global_style
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

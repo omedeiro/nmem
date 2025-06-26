@@ -11,10 +11,14 @@ to provide comprehensive analysis of write current dependencies.
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_enable_write_sweep2,
     plot_state_current_markers2,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(data_dir="../data/ber_sweep_enable_write_current/data1", save_dir=None):

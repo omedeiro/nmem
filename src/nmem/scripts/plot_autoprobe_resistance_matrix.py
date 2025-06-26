@@ -2,7 +2,11 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import load_autoprobe_data
 from nmem.analysis.matrix_plots import plot_combined_histogram_and_die_maps
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.utils import summarize_die_yield
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

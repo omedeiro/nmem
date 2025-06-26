@@ -5,6 +5,11 @@ from nmem.analysis.constants import CRITICAL_TEMP
 from nmem.analysis.currents import get_critical_current_intercept
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.state_currents_plots import plot_branch_currents
+from nmem.analysis.styles import apply_global_style
+
+# Apply global plot styling
+apply_global_style()
+
 
 ALPHA = 0.6
 RETRAP = 0.7

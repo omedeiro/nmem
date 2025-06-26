@@ -5,7 +5,12 @@ from nmem.analysis.constants import WAFER_RADIUS
 from nmem.analysis.core_analysis import interpolate_map
 from nmem.analysis.data_import import load_and_clean_thickness
 from nmem.analysis.matrix_plots import plot_wafer_maps
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.utils import generate_boundary_points
+
+# Apply global plot styling
+apply_global_style()
+
 
 GRID_RES = 400j
 NUM_BOUNDARY_POINTS = 100

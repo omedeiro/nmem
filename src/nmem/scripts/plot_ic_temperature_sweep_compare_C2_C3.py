@@ -8,7 +8,11 @@ from nmem.analysis.htron_plotting import (
     plot_c2c3_comparison,
     plot_c2c3_subplots,
 )
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.utils import build_array
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(

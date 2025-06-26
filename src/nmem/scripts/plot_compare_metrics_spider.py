@@ -13,6 +13,10 @@ from nmem.analysis.memory_data import (
 from nmem.analysis.spider_plots import (
     plot_radar,
 )
+from nmem.analysis.styles import apply_global_style
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):
