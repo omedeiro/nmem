@@ -1069,6 +1069,8 @@ def plot_read_current_operating(dict_list):
     axs["B"].set_xlim(650, 850)
     axs["A"].set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
     axs["A"].set_ylabel("BER")
+    axs["B"].set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
+    axs["B"].set_ylabel("Switching Probability")
 
     ax = axs["C"]
     for data_dict in dict_list:
