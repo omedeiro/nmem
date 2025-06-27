@@ -1,3 +1,10 @@
+#! /usr/bin/env python3
+
+"""
+Script to plot averaged voltage traces from a directory of data files.
+
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory

@@ -21,14 +21,17 @@ from nmem.analysis.utils import (
 )
 
 
-def plot_c2c3_comparison(ax, xfit, yfit, split_idx, label_c2="C2", label_c3="C3"):
+def plot_c2c3_comparison(ax, c2, c3, split_idx=10):
     """
     Plot C2 and C3 comparison on a single axis.
     """
-    ax.plot(xfit, yfit, label=label_c2, linestyle="-")
+    xfit, yfit = c2
+    ax.plot(xfit, yfit, label="C2", linestyle="-")
+    xfit, yfit = c3
     plot_fitting(
-        ax, xfit[split_idx + 1 :], yfit[split_idx + 1 :], label=label_c3, linestyle="-"
+        ax, xfit[split_idx + 1 :], yfit[split_idx + 1 :], label="_C3", linestyle="-"
     )
+    ax.plot(xfit, yfit, label="C3", linestyle="-")
     ax.set_ylim([0, 1000])
     ax.set_xlim([0, 500])
     ax.set_xlabel("Enable Current ($\mu$A)")
@@ -37,26 +40,27 @@ def plot_c2c3_comparison(ax, xfit, yfit, split_idx, label_c2="C2", label_c3="C3"
     return ax
 
 
-def plot_c2c3_subplots(axs, xfit, yfit, split_idx, label_c2="C2", label_c3="C3"):
+def plot_c3_subplots(axs, c3, split_idx):
     """
     Plot C2 and C3 comparison on two subplots.
     """
+    xfit, yfit = c3
     plot_fitting(
         axs[0],
         xfit[split_idx + 1 :],
         yfit[split_idx + 1 :],
-        label=label_c3,
+        label="C3",
         linestyle="-",
     )
-    axs[0].plot(xfit, yfit, label=label_c2, linestyle="-")
+    axs[0].plot(xfit, yfit, label="C3", linestyle="-")
     axs[0].set_ylim([0, 1000])
     axs[0].set_xlim([0, 500])
     axs[0].set_xlabel("Enable Current ($\mu$A)")
     axs[0].set_ylabel("Critical Current ($\mu$A)")
     plot_fitting(
-        axs[1], xfit[:split_idx], yfit[:split_idx], label=label_c3, linestyle="-"
+        axs[1], xfit[:split_idx], yfit[:split_idx], label="C3", linestyle="-"
     )
-    axs[1].plot(xfit, yfit, label=label_c2, linestyle="-")
+    axs[1].plot(xfit, yfit, label="C3", linestyle="-")
     axs[1].set_ylim([0, 1000])
     axs[1].set_xlim([0, 500])
     axs[1].set_xlabel("Enable Current ($\mu$A)")

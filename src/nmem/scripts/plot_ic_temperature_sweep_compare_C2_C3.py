@@ -6,7 +6,7 @@ from nmem.analysis.core_analysis import (
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.htron_plotting import (
     plot_c2c3_comparison,
-    plot_c2c3_subplots,
+    plot_c3_subplots,
 )
 from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 from nmem.analysis.utils import build_array
@@ -29,14 +29,15 @@ def main(
     # First plot: single axis comparison
     fig1, ax1 = plt.subplots()
     x, y, ztotal = build_array(data_dict, "total_switches_norm")
-    xfit, yfit = get_fitting_points(x, y, ztotal)
-    plot_c2c3_comparison(ax1, xfit, yfit, split_idx, label_c2="C2", label_c3="C3")
+    x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
+
+    c2 = get_fitting_points(x, y, ztotal)
+    c3 = get_fitting_points(x2, y2, ztotal2)
+    plot_c2c3_comparison(ax1, c2, c3)
     # Second plot: subplots for C2 and C3
     figsize2 = get_consistent_figure_size("comparison")
     fig2, axs2 = plt.subplots(1, 2, figsize=figsize2)
-    x2, y2, ztotal2 = build_array(data_dict2, "total_switches_norm")
-    xfit2, yfit2 = get_fitting_points(x2, y2, ztotal2)
-    plot_c2c3_subplots(axs2, xfit2, yfit2, split_idx, label_c2="C2", label_c3="C3")
+    plot_c3_subplots(axs2, c3, split_idx)
     if save_dir:
         fig1.savefig(
             f"{save_dir}/c2_c3_comparison.png",
@@ -44,7 +45,7 @@ def main(
             dpi=300,
         )
         fig2.savefig(
-            f"{save_dir}/c2_c3_subplots.png",
+            f"{save_dir}/c3_subplots.png",
             bbox_inches="tight",
             dpi=300,
         )
