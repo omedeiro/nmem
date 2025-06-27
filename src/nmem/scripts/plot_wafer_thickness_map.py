@@ -1,3 +1,11 @@
+#! /usr/bin/env python3
+"""
+Plot wafer thickness maps before and after SiO2 PECVD.
+This script loads thickness data from CSV files, interpolates the data onto a grid,
+and generates visualizations of the wafer maps before and after deposition, as well as the
+deposited thickness.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
