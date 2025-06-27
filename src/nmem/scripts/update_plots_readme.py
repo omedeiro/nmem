@@ -235,6 +235,45 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                         )
 
                 f.write("\n")
+            # Special handling for voltage trace toggle write enable plots (2x2 table)
+            elif (
+                script_name == "plot_voltage_trace_toggle_write_enable"
+                and len(image_files) == 4
+            ):
+                f.write("**Voltage Trace Toggle Write Enable (2x2 Layout):**\n\n")
+
+                # Expected file patterns based on the script
+                # Enable OFF plots (left column): voltage_write_current_sweep_off.png, voltage_trace_stack_off.png
+                # Enable ON plots (right column): voltage_write_current_sweep_on.png, voltage_trace_stack_on.png
+
+                sweep_off = next(
+                    (img for img in image_files if "sweep_off" in img), None
+                )
+                trace_off = next(
+                    (img for img in image_files if "trace_stack_off" in img), None
+                )
+                sweep_on = next((img for img in image_files if "sweep_on" in img), None)
+                trace_on = next(
+                    (img for img in image_files if "trace_stack_on" in img), None
+                )
+
+                # Create 2x2 table
+                f.write("| Enable OFF | Enable ON |\n")
+                f.write("|------------|----------|\n")
+
+                # Row 1: Current sweep plots
+                if sweep_off and sweep_on:
+                    f.write(
+                        f"| ![Write Current Sweep OFF]({sweep_off}) | ![Write Current Sweep ON]({sweep_on}) |\n"
+                    )
+
+                # Row 2: Trace stack plots
+                if trace_off and trace_on:
+                    f.write(
+                        f"| ![Voltage Trace Stack OFF]({trace_off}) | ![Voltage Trace Stack ON]({trace_on}) |\n"
+                    )
+
+                f.write("\n")
             else:
                 # Standard handling for other plots
                 if len(image_files) == 1:
