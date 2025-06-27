@@ -78,8 +78,8 @@ def plot_voltage_trace_stack(
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
     axs[2].set_xlim([0, 10])
     fig = plt.gcf()
-    fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [µs]")
+    fig.supylabel("Voltage [mV]", x=-0.02)
+    fig.supxlabel("Time [µs]", y=-0.03)
     fig.subplots_adjust(hspace=0.0)
     return axs
 
