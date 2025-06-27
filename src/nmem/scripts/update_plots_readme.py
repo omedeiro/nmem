@@ -124,9 +124,11 @@ def create_plots_readme(plots_dir, style_mode="paper"):
             script_name = "plot_array_parameter_matrix"
             script_file = scripts_dir / f"{script_name}.py"
         # Special case: Group voltage trace toggle write enable plots together
-        elif (image_name.startswith("voltage_") and 
-              ("_off" in image_name or "_on" in image_name) and
-              ("trace_stack" in image_name or "write_current_sweep" in image_name)):
+        elif (
+            image_name.startswith("voltage_")
+            and ("_off" in image_name or "_on" in image_name)
+            and ("trace_stack" in image_name or "write_current_sweep" in image_name)
+        ):
             script_name = "plot_voltage_trace_toggle_write_enable"
             script_file = scripts_dir / f"{script_name}.py"
         else:
