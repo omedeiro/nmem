@@ -14,7 +14,9 @@ def main(data_dir="../data/dc_sweep_array", save_dir=None):
     """
     data = import_directory(data_dir)[0]
     heater_currents, avg_current, ystd, cell_names = extract_ic_vs_ih_data(data)
-    fig, ax = plot_ic_vs_ih_array(heater_currents, avg_current, ystd, cell_names)
+
+    fig, ax = plt.subplots()
+    plot_ic_vs_ih_array(heater_currents, avg_current, cell_names, ax=ax)
 
     if save_dir:
         fig.savefig(

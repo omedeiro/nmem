@@ -9,6 +9,8 @@ from matplotlib import font_manager as fm
 from matplotlib.colors import to_rgb
 
 RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+MARKERS = ["o", "s", "D", "^"]
+
 C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
@@ -20,6 +22,31 @@ STYLE_CONFIG = {
     "mode": "paper",  # Can be "presentation", "paper", or "thesis"
 }
 
+
+new_colors = {
+    "A": "#1b9e77",  # Teal
+    "B": "#d95f02",  # Orange
+    "C": "#7570b3",  # Purple
+    "D": "#e7298a",  # Pink
+    "E": "#66a61e",  # Green
+    "F": "#e6ab02",  # Mustard
+    "G": "#a6761d",  # Brown
+    # "H": "#666666",  # Gray
+}
+
+# Set as default color cycle for matplotlib
+plt.rcParams["axes.prop_cycle"] = plt.cycler(color=new_colors.values())
+
+col_linestyles = {
+    "1": "-",
+    "2": "--",
+    "3": "-.",
+    "4": ":",
+    "5": "-",
+    "6": "-",       
+    "7": "--",
+    "8": "-.",
+}
 
 def suppress_font_logs():
     """Suppress verbose font subsetting logs from matplotlib and fonttools."""

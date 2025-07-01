@@ -55,7 +55,7 @@ from nmem.analysis.plot_utils import (
     plot_fill_between_array,
     polygon_under_graph,
 )
-from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS
+from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS, MARKERS, new_colors, col_linestyles
 from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
@@ -75,7 +75,6 @@ from nmem.simulation.spice_circuits.plotting import (
 warnings.filterwarnings("ignore", message="All-NaN slice encountered")
 warnings.filterwarnings("ignore", message="invalid value encountered")
 
-MARKERS = ["o", "s", "D", "^"]
 
 
 def plot_critical_currents_from_dc_sweep(
@@ -133,32 +132,18 @@ def plot_critical_currents_from_dc_sweep(
 def plot_ic_vs_ih_array(
     heater_currents,
     avg_current,
-    ystd,
     cell_names,
+    ax = None,
 ):
     """
     Plots Ic vs Ih for all cells in the array, including average fit line.
     Returns (fig, ax).
     """
-    # row_colors = {
-    #     "A": "#1f77b4",
-    #     "B": "#ff7f0e",
-    #     "C": "#2ca02c",
-    #     "D": "#d62728",
-    #     "E": "#9467bd",
-    #     "F": "#8c564b",
-    #     "G": "#e377c2",
-    # }
-    # col_linestyles = {
-    #     "1": "-",
-    #     "2": "--",
-    #     "3": "-.",
-    #     "4": ":",
-    #     "5": (0, (3, 1, 1, 1)),
-    #     "6": (0, (5, 2)),
-    #     "7": (0, (1, 1)),
-    # }
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:   
+        fig = ax.figure
+
     x_intercepts = []
     y_intercepts = []
     avg_error_list = []
@@ -167,82 +152,80 @@ def plot_ic_vs_ih_array(
     for j in range(heater_currents.shape[1]):
         ih = np.squeeze(heater_currents[0, j]) * 1e6
         ic = np.squeeze(avg_current[0, j])
-        err = np.squeeze(ystd[0, j])
 
         cell_name = str(cell_names[0, j][0])
         row, col = cell_name[0], cell_name[1]
+        color = new_colors.get(row)
+        linestyle = col_linestyles.get(col, "-")
 
-        # color = row_colors.get(row, "black")
-        # linestyle = col_linestyles.get(col, "-")
 
-        # Add to legend only if the row is not already included
-        label = f"{row}" if row not in rows_in_legend else None
-        if label:
-            rows_in_legend.add(row)
-
-        ax.errorbar(
-            ih,
-            ic,
-            yerr=err,
-            label=label,
-        )
         ax.plot(
             ih,
             ic,
-            label=label,
+            label=cell_name,
+            color=color,
+            linestyle=linestyle,
         )
 
-        avg_error_list.append(np.nanmean(err))
-        # Linear fit for intercepts (200-600 µA)
-        valid_indices = (ih >= 200) & (ih <= 550)
-        ih_filtered = ih[valid_indices]
-        ic_filtered = ic[valid_indices]
+        # avg_error_list.append(np.nanmean(err))
+        # # Linear fit for intercepts (200-600 µA)
+        # valid_indices = (ih >= 200) & (ih <= 550)
+        # ih_filtered = ih[valid_indices]
+        # ic_filtered = ic[valid_indices]
 
-        if len(ih_filtered) > 1:
-            z = np.polyfit(ih_filtered, ic_filtered, 1)
-            x_intercept = -z[1] / z[0]
-            y_intercept = z[1]
+        # if len(ih_filtered) > 1:
+        #     z = np.polyfit(ih_filtered, ic_filtered, 1)
+        #     x_intercept = -z[1] / z[0]
+        #     y_intercept = z[1]
 
-            x_intercepts.append(x_intercept)
-            y_intercepts.append(y_intercept)
+        #     x_intercepts.append(x_intercept)
+        #     y_intercepts.append(y_intercept)
 
-    # Average fit line
-    filtered_x = np.array(x_intercepts)
-    filtered_y = np.array(y_intercepts)
-    valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
+    # # Average fit line
+    # filtered_x = np.array(x_intercepts)
+    # filtered_y = np.array(y_intercepts)
+    # valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
 
-    # Check if we have valid data before calculating means
-    if np.any(valid_avg):
-        avg_x_intercept = np.nanmean(filtered_x[valid_avg])
-        avg_y_intercept = np.nanmean(filtered_y[valid_avg])
-    else:
-        # Fallback values if no valid data
-        avg_x_intercept = 0
-        avg_y_intercept = 0
+    # # Check if we have valid data before calculating means
+    # if np.any(valid_avg):
+    #     avg_x_intercept = np.nanmean(filtered_x[valid_avg])
+    #     avg_y_intercept = np.nanmean(filtered_y[valid_avg])
+    # else:
+    #     # Fallback values if no valid data
+    #     avg_x_intercept = 0
+    #     avg_y_intercept = 0
 
-    def avg_line(x):
-        if avg_x_intercept != 0:
-            slope = avg_y_intercept / avg_x_intercept
-            return -slope * x + avg_y_intercept
-        else:
-            return np.zeros_like(x)  # Return zeros if no valid intercept
+    # def avg_line(x):
+    #     if avg_x_intercept != 0:
+    #         slope = avg_y_intercept / avg_x_intercept
+    #         return -slope * x + avg_y_intercept
+    #     else:
+    #         return np.zeros_like(x)  # Return zeros if no valid intercept
 
-    fit_range = np.linspace(0, 800, 100)
-    ax.plot(
-        fit_range,
-        avg_line(fit_range),
-        color="black",
-        linestyle="-",
-        linewidth=2,
-        label="Fit",
-    )
+    # fit_range = np.linspace(0, 800, 100)
+    # ax.plot(
+    #     fit_range,
+    #     avg_line(fit_range),
+    #     color="black",
+    #     linestyle="-",
+    #     linewidth=2,
+    #     label="Fit",
+    # )
 
     # Final touches
     ax.set_xlabel(r"$I_{\text{enable}}$ [µA]")
     ax.set_ylabel(r"$I_c$ [µA]")
     # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    ax.legend(ncol=2, frameon=False, loc="upper right")
+    ax.legend(
+            title="Cell",
+            ncol=7,
+            bbox_to_anchor=(1.05, 1),
+            loc="upper left",
+            frameon=True,
+            fancybox=True,
+            shadow=True,
+        )
     ax.set_ybound(lower=0)
     ax.set_xlim(0, 800)
 
