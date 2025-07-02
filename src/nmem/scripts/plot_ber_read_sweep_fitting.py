@@ -9,7 +9,7 @@ from nmem.analysis.state_currents_plots import (
     plot_calculated_filled_region,
     plot_state_current_fit,
 )
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, RBCOLORS
 
 # Apply global plot styling
 apply_global_style()
@@ -33,7 +33,6 @@ def main(save_dir=None):
         "../data/ber_sweep_enable_write_current/persistent_current/measured_state_currents_310.mat"
     )
     dict_list = [data_dict1, data_dict2, data_dict3]
-    colors = {0: "blue", 1: "blue", 2: "red", 3: "red"}
     fit_results = []
     for data_dict in [dict_list[2]]:
         fig, ax = plt.subplots()
@@ -87,7 +86,7 @@ def main(save_dir=None):
         model = model_function(
             x_list_full, x_list_full, x_list_full, x_list_full, *fit.x
         )
-        plot_state_current_fit(ax, x_list, y_list, x_list_full, model, colors)
+        plot_state_current_fit(ax, x_list, y_list, x_list_full, model, RBCOLORS)
         f = fit.x
         plot_calculated_filled_region(
             ax,
@@ -102,7 +101,7 @@ def main(save_dir=None):
         )
         ax_inset = fig.add_axes([0.15, 0.15, 0.35, 0.35])
         for i in range(4):
-            ax_inset.plot(x_list[i], y_list[i], "o", color=colors[i])
+            ax_inset.plot(x_list[i], y_list[i], "o", color=RBCOLORS[i])
             plot_calculated_filled_region(
                 ax_inset,
                 x_list_full,
@@ -114,7 +113,7 @@ def main(save_dir=None):
                 f[0],
                 critical_current_zero,
             )
-            ax_inset.plot(x_list_full, model[i], "--", color=colors[i])
+            ax_inset.plot(x_list_full, model[i], "--", color=RBCOLORS[i])
         ax_inset.set_xlim([6, 8.5])
         ax_inset.set_ylim([500, 950])
         ax_inset.set_xticks([])
@@ -127,10 +126,6 @@ def main(save_dir=None):
             plt.close()
         else:
             plt.show()
-
-    # for f in fit_results:
-    #     print(f"Alpha: {f[0]:.2f}, Persistent: {f[1]:.2f}")
-
 
 if __name__ == "__main__":
     main()
