@@ -1,5 +1,5 @@
 import warnings
-from typing import Literal
+from typing import Literal, Tuple
 
 import ltspice
 import matplotlib.gridspec as gridspec
@@ -103,18 +103,15 @@ def plot_critical_currents_from_dc_sweep(
         heater_currents,
         critical_currents,
         "o--",
-        color=CMAP[0],
         label="$I_{{EN}}$",
         linewidth=0.5,
         markersize=0.5,
-        markerfacecolor=CMAP[0],
     )
 
     ax.fill_between(
         heater_currents,
         critical_currents + critical_currents_std,
         critical_currents - critical_currents_std,
-        color=CMAP[0],
         alpha=0.3,
         edgecolor="none",
     )
@@ -1473,7 +1470,7 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-def plot_cell_data(data_dict: dict, colors: list, markers: list, ax:plt.Axes=None) -> Axes:
+def plot_cell_data(data_dict: dict, colors: list, markers: list, ax:plt.Axes=None) -> Tuple[plt.Axes, plt.Figure]:
     """
     Helper function to plot a single cell's data.
     """
@@ -1501,52 +1498,66 @@ def plot_cell_data(data_dict: dict, colors: list, markers: list, ax:plt.Axes=Non
     return ax, fig
 
 
-def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
+def plot_grid(axs: Axes, dict_list: list[dict]) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
 
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
         column, row = convert_cell_to_coordinates(cell)
         ax = axs[row, column]
-        ax = plot_cell_data(ax, data_dict, colors, MARKERS)
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
 
         ax.xaxis.set_major_locator(MultipleLocator(500))
         ax.xaxis.set_minor_locator(MultipleLocator(100))
-
+        apply_legend_style(
+            ax,
+            style="inside_upper_right",
+            labels=[cell]
+        )
     axs[-1, 0].set_xlabel("Enable Current [µA]")
     axs[-1, 0].set_ylabel("Critical Current [µA]")
     return axs
 
-
-def plot_row(axs, dict_list):
+def plot_row(axs, dict_list)-> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
 
     for data_dict in dict_list:
         column, row = convert_cell_to_coordinates(get_current_cell(data_dict))
         ax = axs[column]
-        ax = plot_cell_data(ax, data_dict, colors, MARKERS)
-
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
+        apply_legend_style(
+            ax,
+            style="inside_upper_right",
+        )
     return axs
 
 
-def plot_column(axs, dict_list):
+def plot_column(axs, dict_list)-> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
 
     for data_dict in dict_list:
         row = convert_cell_to_coordinates(get_current_cell(data_dict))[1]
         ax = axs[row]
-        ax = plot_cell_data(ax, data_dict, colors, MARKERS)
-
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
+        apply_legend_style(
+            ax,
+            style="inside_upper_right",
+        )
     return axs
 
 
-def plot_full_grid(axs, dict_list):
+def plot_full_grid(axs, dict_list) -> list[Axes]:
     plot_grid(axs[1:5, 0:4], dict_list)
-    plot_row(axs[0, 0:4], dict_list)
-    plot_column(axs[1:5, 4], dict_list)
+    row_axs = plot_row(axs[0, 0:4], dict_list)
+    col_axs = plot_column(axs[1:5, 4], dict_list)
     axs[0, 4].axis("off")
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
+
+    for ax in row_axs:
+        ax.legend().remove()
+    for ax in col_axs:
+        ax.legend().remove()
     return axs
 
 
