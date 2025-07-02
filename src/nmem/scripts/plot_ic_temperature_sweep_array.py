@@ -1,3 +1,8 @@
+"""
+Script to plot the critical current vs enable current.
+Enable current was swept through the linear region of the hTron reponse.
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
@@ -6,7 +11,6 @@ from nmem.analysis.styles import apply_global_style
 
 # Apply global plot styling
 apply_global_style()
-
 
 
 def main(save_dir=None):
