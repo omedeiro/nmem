@@ -134,7 +134,7 @@ def add_colorbar(
     data_dict_list: list[dict],
     cbar_label: Literal["write_current", "enable_read_current"],
     cax=None,
-):
+)-> plt.colorbar:
     data_list = []
     for data_dict in data_dict_list:
         if cbar_label == "write_current":
