@@ -225,15 +225,7 @@ def plot_ic_vs_ih_array(
     ax.set_ylabel(r"$I_c$ [µA]")
     # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    ax.legend(
-        title="Cell",
-        ncol=7,
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left",
-        frameon=True,
-        fancybox=True,
-        shadow=True,
-    )
+    apply_legend_style(ax, "outside_right", title="Cell", ncol=7)
     ax.set_ybound(lower=0)
     ax.set_xlim(0, 800)
 
@@ -413,14 +405,7 @@ def plot_enable_write_sweep_multiple(
 
     if add_legend:
         # Use legend instead of colorbar
-        ax.legend(
-            title="Write Current",
-            bbox_to_anchor=(1.05, 1),
-            loc="upper left",
-            frameon=True,
-            fancybox=True,
-            shadow=True,
-        )
+        apply_legend_style(ax, "outside_right", title="Write Current")
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
@@ -447,7 +432,7 @@ def plot_enable_current_vs_temp(data):
             d["enable_currents"], d["channel_temperature"], color="grey", marker="o"
         )
     axs2.set_ybound(lower=0)
-    axs.legend(loc="upper right")
+    apply_legend_style(axs, "inside_upper_right")
     axs.set_xlim(0, 600)
     axs.set_ylim(0, 1000)
     axs.set_xlabel("Enable Current ($\mu$A)")
@@ -616,12 +601,7 @@ def plot_read_sweep_write_current(data_list):
     plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
     ax.set_xlabel("Read Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
-    )
+    apply_legend_style(ax, "outside_right", title="Write Current [$\mu$A]", frameon=False)
 
     return fig, ax
 
@@ -710,13 +690,7 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     ax.set_ylim([0, 1])
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
-    ax.legend(
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left",
-        frameon=True,
-        fancybox=True,
-        shadow=True,
-    )
+    apply_legend_style(ax, "outside_right")
 
     return ax
 
@@ -1232,7 +1206,7 @@ def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
         linestyle="--",
         linewidth=1,
     )
-    ax.legend()
+    apply_legend_style(ax, "outside_right")
     ax.set_yticks([0, 0.5, 1])
     ax.set_ylim([0, 1])
     ax.set_ylabel("Normalized\nBit Error Rate")
@@ -1296,7 +1270,12 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
 
 
-def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
+def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
     ax.set_ylim([8.3, 9.7])
 
@@ -1336,19 +1315,17 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     ax.grid()
     ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-    ax.legend(
-        [
+    apply_legend_style(
+        ax, 
+        style="outside_right",
+        labels=[
             "$I_{1}$",
             "$I_{0}$",
-            "$I_{0,\mathrm{inv}}$",
+            "$I_{0,\mathrm{inv}}$", 
             "$I_{1,\mathrm{inv}}$",
         ],
-        loc="upper right",
-        frameon=True,
-        ncol=2,
-        facecolor="white",
-        edgecolor="none",
     )
+    return fig, ax
 
 
 def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
@@ -1415,12 +1392,10 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlim(0, 300)
-    ax.legend(
-        ["Lower bound", "Upper bound"],
-        loc="upper right",
-        fontsize=6,
-        facecolor="white",
-        frameon=True,
+    apply_legend_style(
+        ax,
+        style="outside_right",
+        labels=["Lower bound", "Upper bound"],
     )
     ax.grid()
     return ax
@@ -1498,10 +1473,14 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-def plot_cell_data(ax, data_dict, colors, markers):
+def plot_cell_data(data_dict: dict, colors: list, markers: list, ax:plt.Axes=None) -> Axes:
     """
     Helper function to plot a single cell's data.
     """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
     cell = get_current_cell(data_dict)
     column, row = convert_cell_to_coordinates(cell)
     x = data_dict["x"][0]
@@ -1515,11 +1494,11 @@ def plot_cell_data(ax, data_dict, colors, markers):
         label=f"{cell}",
         color=colors[column],
     )
-    ax.legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
     ax.set_xlim(0, 600)
     ax.set_ylim(0, 1500)
 
-    return ax
+    apply_legend_style(ax, "outside_right")
+    return ax, fig
 
 
 def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
