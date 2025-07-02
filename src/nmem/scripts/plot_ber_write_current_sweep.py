@@ -30,8 +30,6 @@ def main(save_dir=None):
     dict_list = import_write_sweep_formatted()
     plot_write_sweep_formatted(ax, dict_list)
 
-    plt.tight_layout()
-
     if save_dir:
         plt.savefig(
             f"{save_dir}/ber_write_current_sweep.png",
