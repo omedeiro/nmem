@@ -10,55 +10,13 @@ from nmem.analysis.plot_utils import (
     add_colorbar,
 )
 from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
-from nmem.analysis.sweep_plots import plot_read_sweep_array
+from nmem.analysis.sweep_plots import plot_read_sweep_array, plot_read_sweep_write_current
 
 # Apply global plot styling
 apply_global_style()
 
 
 def plot_read_temp_sweep_C3():
-    figsize = get_consistent_figure_size("grid")
-    fig, axs = plt.subplots(2, 2, figsize=figsize)
-    dict_list = [
-        import_directory(
-            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3"
-        ),
-        import_directory(
-            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_4"
-        ),
-        import_directory(
-            "../data/ber_sweep_read_current/write_current/write_current_sweep_C3_3"
-        ),
-        # import_directory("write_current_sweep_C3_1"),
-    ]
-    for i, data_dict in enumerate(dict_list):
-        enable_temperature = get_channel_temperature(data_dict[0], "read")
-        enable_read_current = get_enable_read_current(data_dict[0])
-        plot_read_sweep_array(
-            axs[i // 2, i % 2],
-            data_dict,
-            "bit_error_rate",
-            "write_current",
-            marker=".",
-        )
-        axs[i // 2, i % 2].set_xlabel("Read Current [µA]")
-        axs[i // 2, i % 2].set_ylabel("Bit Error Rate")
-        axs[i // 2, i % 2].set_title(
-            f"Enable Read Current: {enable_read_current} µA, T= {enable_temperature:.2f} K"
-        )
-
-    axs[0, 1].legend(
-        frameon=False,
-        bbox_to_anchor=(1.1, 1),
-        loc="upper left",
-        title="Write Current [µA]",
-    )
-    fig.subplots_adjust(hspace=0.5, wspace=0.3)
-
-    return fig, axs
-
-
-def plot_read_temp_sweep_C3_v2():
     figsize = get_consistent_figure_size("wide")
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
@@ -129,14 +87,14 @@ def main(save_dir=None):
     """
     Main function to plot read current sweep data.
     """
-    # plot_read_sweep_import(import_directory("write_current_sweep_B2_0"))
-    # plot_read_sweep_import(import_directory("write_current_sweep_B2_1"))
-    # plot_read_sweep_import(import_directory("write_current_sweep_B2_2"))
+    plot_read_sweep_write_current(import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_B2_0"))
+    plot_read_sweep_write_current(import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_B2_1"))
+    plot_read_sweep_write_current(import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_B2_2"))
 
-    # plot_read_sweep_import(import_directory("write_current_sweep_A2"))
-    # plot_read_sweep_import(import_directory("write_current_sweep_C2"))
+    plot_read_sweep_write_current(import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_A2"))
+    plot_read_sweep_write_current(import_directory("../data/ber_sweep_read_current/write_current/write_current_sweep_C2"))
 
-    fig, axs = plot_read_temp_sweep_C3_v2()
+    fig, axs = plot_read_temp_sweep_C3()
 
     if save_dir:
         fig.savefig(
