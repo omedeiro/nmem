@@ -55,7 +55,15 @@ from nmem.analysis.plot_utils import (
     plot_fill_between_array,
     polygon_under_graph,
 )
-from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS, MARKERS, new_colors, col_linestyles
+from nmem.analysis.styles import (
+    CMAP,
+    CMAP3,
+    RBCOLORS,
+    MARKERS,
+    new_colors,
+    col_linestyles,
+    apply_legend_style,
+)
 from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
@@ -76,9 +84,10 @@ warnings.filterwarnings("ignore", message="All-NaN slice encountered")
 warnings.filterwarnings("ignore", message="invalid value encountered")
 
 
-
 def plot_critical_currents_from_dc_sweep(
-    ax: Axes, dict_list: list, substrate_temp: float = 1.3, 
+    ax: Axes,
+    dict_list: list,
+    substrate_temp: float = 1.3,
 ) -> Axes:
 
     critical_currents, critical_currents_std = get_critical_currents_from_trace(
@@ -133,7 +142,7 @@ def plot_ic_vs_ih_array(
     heater_currents,
     avg_current,
     cell_names,
-    ax = None,
+    ax=None,
 ):
     """
     Plots Ic vs Ih for all cells in the array, including average fit line.
@@ -141,7 +150,7 @@ def plot_ic_vs_ih_array(
     """
     if ax is None:
         fig, ax = plt.subplots()
-    else:   
+    else:
         fig = ax.figure
 
     x_intercepts = []
@@ -157,7 +166,6 @@ def plot_ic_vs_ih_array(
         row, col = cell_name[0], cell_name[1]
         color = new_colors.get(row)
         linestyle = col_linestyles.get(col, "-")
-
 
         ax.plot(
             ih,
@@ -218,14 +226,14 @@ def plot_ic_vs_ih_array(
     # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5)
     ax.legend(
-            title="Cell",
-            ncol=7,
-            bbox_to_anchor=(1.05, 1),
-            loc="upper left",
-            frameon=True,
-            fancybox=True,
-            shadow=True,
-        )
+        title="Cell",
+        ncol=7,
+        bbox_to_anchor=(1.05, 1),
+        loc="upper left",
+        frameon=True,
+        fancybox=True,
+        shadow=True,
+    )
     ax.set_ybound(lower=0)
     ax.set_xlim(0, 800)
 
@@ -1348,12 +1356,12 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
     Plots state current markers for each dataset.
     Returns (fig, ax).
     """
-    
+
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = ax.figure
-    
+
     for data_dict in dict_list:
         state_current_markers = get_state_current_markers(
             data_dict, "enable_write_current"
@@ -1369,8 +1377,19 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
                 )
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-    return fig, ax
 
+    # Apply standardized legend style
+    apply_legend_style(
+        ax,
+        style="outside_right",
+        labels=[
+            "$I_{1}$",
+            "$I_{0}$",
+            "$I_{0,\mathrm{inv}}$",
+            "$I_{1,\mathrm{inv}}$",
+        ],
+    )
+    return fig, ax
 
 
 def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
@@ -1570,5 +1589,3 @@ def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
                 )
                 ax.axvline(read_current[arg_idx], color=color, linestyle="--")
     return ax
-
-

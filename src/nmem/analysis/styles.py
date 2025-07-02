@@ -8,7 +8,7 @@ from matplotlib import colors as mcolors
 from matplotlib import font_manager as fm
 from matplotlib.colors import to_rgb
 
-RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+RBCOLORS = {0: "blue", 1: "lightblue", 2: "darkred", 3: "red"}
 MARKERS = ["o", "s", "D", "^"]
 
 C0 = "#1b9e77"
@@ -22,6 +22,49 @@ STYLE_CONFIG = {
     "mode": "paper",  # Can be "presentation", "paper", or "thesis"
 }
 
+# Standardized legend configurations
+LEGEND_CONFIG = {
+    "outside_right": {
+        "bbox_to_anchor": (1.05, 1),
+        "loc": "upper left",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": True,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "columnspacing": 1.0,
+    },
+    "inside_upper_right": {
+        "loc": "upper right",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+    },
+    "inside_upper_left": {
+        "loc": "upper left",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+    },
+    "bottom_outside": {
+        "bbox_to_anchor": (0.5, -0.15),
+        "loc": "upper center",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": True,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "ncol": 4,
+    },
+}
 
 new_colors = {
     "A": "#1b9e77",  # Teal
@@ -43,10 +86,11 @@ col_linestyles = {
     "3": "-.",
     "4": ":",
     "5": "-",
-    "6": "-",       
+    "6": "-",
     "7": "--",
     "8": "-.",
 }
+
 
 def suppress_font_logs():
     """Suppress verbose font subsetting logs from matplotlib and fonttools."""
@@ -314,3 +358,50 @@ def get_consistent_figure_size(plot_type="single"):
     }
 
     return size_map.get(plot_type, (base_width, base_height))
+
+
+def apply_legend_style(ax, style="outside_right", **kwargs):
+    """
+    Apply a standardized legend style to an axes object.
+
+    Args:
+        ax: Matplotlib axes object
+        style: Legend style name from LEGEND_CONFIG
+        **kwargs: Additional legend parameters to override defaults
+
+    Returns:
+        legend: The legend object
+    """
+    if style not in LEGEND_CONFIG:
+        raise ValueError(
+            f"Unknown legend style '{style}'. Available styles: {list(LEGEND_CONFIG.keys())}"
+        )
+
+    # Start with the base configuration
+    legend_params = LEGEND_CONFIG[style].copy()
+
+    # Override with any provided kwargs
+    legend_params.update(kwargs)
+
+    # Apply the legend
+    legend = ax.legend(**legend_params)
+
+    return legend
+
+
+def get_legend_config(style="outside_right"):
+    """
+    Get a copy of the legend configuration for a specific style.
+
+    Args:
+        style: Legend style name from LEGEND_CONFIG
+
+    Returns:
+        dict: Legend configuration parameters
+    """
+    if style not in LEGEND_CONFIG:
+        raise ValueError(
+            f"Unknown legend style '{style}'. Available styles: {list(LEGEND_CONFIG.keys())}"
+        )
+
+    return LEGEND_CONFIG[style].copy()
