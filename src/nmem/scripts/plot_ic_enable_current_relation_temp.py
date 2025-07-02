@@ -1,3 +1,6 @@
+'''
+Plotting script for enable current relation temperature analysis.
+'''
 import matplotlib.pyplot as plt
 
 from nmem.analysis.constants import CRITICAL_TEMP, SUBSTRATE_TEMP
@@ -53,7 +56,7 @@ def process_enable_current_data(dict_list):
                 "yfit_plateau": yfit_plateau,
                 "max_enable_current": max_enable_current,
                 "channel_temperature": channel_temperature,
-            }
+            }   
         )
     return processed
 
