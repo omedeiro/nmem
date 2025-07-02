@@ -414,7 +414,7 @@ def plot_enable_current_vs_temp(data):
     Plots enable current vs. critical current and channel temperature for all cells.
     Returns (fig, axs, axs2).
     """
-    colors = CMAP(np.linspace(0.1, 1, 4))
+    colors = CMAP3(np.linspace(0.1, 1, 4))
     fig, axs = plt.subplots(sharex=True, sharey=True)
     axs2 = axs.twinx()
     for d in data:
@@ -429,7 +429,7 @@ def plot_enable_current_vs_temp(data):
             d["enable_currents"], d["channel_temperature"], color="grey", marker="o"
         )
     axs2.set_ybound(lower=0)
-    apply_legend_style(axs, "inside_upper_right")
+    apply_legend_style(axs, "outside_right", bbox_to_anchor=(1.15, 1), title="Cell", ncol=4)
     axs.set_xlim(0, 600)
     axs.set_ylim(0, 1000)
     axs.set_xlabel("Enable Current ($\mu$A)")
