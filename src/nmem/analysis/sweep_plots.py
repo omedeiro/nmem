@@ -593,12 +593,16 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_sweep_write_current(data_list):
-    fig, ax = plt.subplots()
-    plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
+def plot_read_sweep_write_current(data_list:list[dict], ax: Axes = None) -> Tuple[plt.Figure, Axes]:
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    
+    ax = plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
     ax.set_xlabel("Read Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    apply_legend_style(ax, "outside_right", title="Write Current [$\mu$A]", frameon=False)
+    apply_legend_style(ax, "outside_right", title="Write Current [$\mu$A]")
 
     return fig, ax
 
@@ -702,7 +706,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
 
 def plot_read_current_sweep_three(dict_list:list[dict], axs:list[Axes] = None):
     if axs is None:
-        fig, axs = plt.subplots(1, 4, width_ratios=[1, 1, 1, 0.05], constrained_layout=True)
+        fig, axs = plt.subplots(1, 4, width_ratios=[1, 1, 1, 0.05])
         cax = axs[3]
     else:
         fig = axs[0].figure
