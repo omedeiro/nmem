@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.styles import apply_global_style
-from nmem.analysis.sweep_plots import plot_read_sweep_array
+from nmem.analysis.sweep_plots import plot_read_sweep_write_current
 
 # Apply global plot styling
 apply_global_style()
@@ -13,17 +13,10 @@ def main(save_dir=None):
     dict_list = import_directory(
         "../data/ber_sweep_read_current/write_current/fine_sweep"
     )
-    plot_read_sweep_array(ax, dict_list, "bit_error_rate", "write_current")
+    plot_read_sweep_write_current(dict_list, ax=ax)
     ax.set_yscale("log")
     ax.set_ylim(1e-4, 1)
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\\mu$A]",
-    )
+
 
     if save_dir:
         plt.savefig(
