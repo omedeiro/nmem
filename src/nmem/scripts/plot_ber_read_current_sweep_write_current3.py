@@ -36,7 +36,7 @@ def main(save_dir=None):
         plt.show()
 
     fig, ax = plt.subplots()
-    dict_list2 = dict_list[4:][::-1]
+    dict_list2 = dict_list[4:]
     plot_read_sweep_array(ax, dict_list2, "bit_error_rate", "write_current")
     ax.set_yscale("log")
     ax.set_ylim(1e-4, 1)
