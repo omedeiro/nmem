@@ -37,8 +37,8 @@ LEGEND_CONFIG = {
     },
     "inside_upper_right": {
         "loc": "upper right",
-        "frameon": True,
-        "fancybox": True,
+        "frameon": False,
+        "fancybox": False,
         "shadow": False,
         "fontsize": "small",
         "handlelength": 1.5,
