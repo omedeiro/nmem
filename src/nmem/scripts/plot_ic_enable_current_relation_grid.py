@@ -1,3 +1,8 @@
+'''
+# Plotting script for enable current relation grids and columns/rows. 
+# Displays all measured traces for a 16-bit array in a grid format. 
+'''
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
