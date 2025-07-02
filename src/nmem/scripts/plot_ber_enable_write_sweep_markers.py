@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.styles import apply_global_style
-from nmem.analysis.sweep_plots import plot_state_current_markers2
+from nmem.analysis.sweep_plots import plot_state_current_markers
 
 # Apply global plot styling
 apply_global_style()
@@ -28,7 +28,7 @@ def main(data_dir="../data/ber_sweep_enable_write_current/data1", save_dir=None)
     dict_list = import_directory(data_dir)
 
     # Plot state current markers
-    fig, ax = plot_state_current_markers2(dict_list)
+    fig, ax = plot_state_current_markers(dict_list)
     if save_dir:
         plt.savefig(
             f"{save_dir}/ber_enable_write_sweep_state_current_markers.png",

@@ -1269,29 +1269,6 @@ def plot_read_current_sweep_enable_read(
     return fig, axs
 
 
-def plot_write_current_enable_sweep_margin(
-    dict_list,
-    inner,
-):
-    """
-    Plots the write current enable sweep margin using a subplot mosaic.
-    Returns (fig, axs).
-    """
-    fig, axs = plt.subplot_mosaic(inner)
-    sort_dict_list = sorted(
-        dict_list, key=lambda x: x.get("write_current").flatten()[0]
-    )
-    ax = axs["A"]
-    plot_enable_sweep(
-        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_legend=True
-    )
-    ax = axs["B"]
-    plot_enable_sweep_markers(ax, sort_dict_list)
-    fig.subplots_adjust(wspace=0.7, hspace=0.5)
-
-    return fig, axs
-
-
 def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures):
     colors = CMAP(np.linspace(0, 1, len(enable_read_currents)))
     ax.plot(
@@ -1366,12 +1343,17 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     )
 
 
-def plot_state_current_markers2(dict_list):
+def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
     """
     Plots state current markers for each dataset.
     Returns (fig, ax).
     """
-    fig, ax = plt.subplots()
+    
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    
     for data_dict in dict_list:
         state_current_markers = get_state_current_markers(
             data_dict, "enable_write_current"
@@ -1383,50 +1365,12 @@ def plot_state_current_markers2(dict_list):
                     write_current,
                     state_current,
                     "o",
-                    label=f"{write_current} $\\mu$A",
+                    color=RBCOLORS[i],
                 )
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     return fig, ax
 
-
-def plot_state_current_markers(
-    ax: Axes,
-    data_dict: dict,
-    current_sweep: Literal["read_current", "enable_write_current"],
-    **kwargs,
-) -> Axes:
-
-    state_current_markers = get_state_current_markers(data_dict, current_sweep)
-    currents = state_current_markers[0, :]
-    bit_error_rate = state_current_markers[1, :]
-    if currents[0] > 0:
-        for i in range(2):
-            ax.plot(
-                currents[i],
-                bit_error_rate[i],
-                color="blue",
-                marker="o",
-                markeredgecolor="k",
-                linewidth=1.5,
-                label="_state0",
-                markersize=12,
-                **kwargs,
-            )
-    if currents[2] > 0:
-        for i in range(2, 4):
-            ax.plot(
-                currents[i],
-                bit_error_rate[i],
-                color="red",
-                marker="o",
-                markeredgecolor="k",
-                linewidth=1.5,
-                label="_state1",
-                markersize=12,
-                **kwargs,
-            )
-    return ax
 
 
 def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
