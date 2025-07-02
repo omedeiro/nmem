@@ -700,11 +700,13 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     return ax
 
 
-def plot_read_current_sweep_three(dict_list):
-    fig = plt.figure()
-    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
-    axs = [fig.add_subplot(gs[i]) for i in range(3)]
-    cax = fig.add_subplot(gs[3])  # dedicated colorbar axis
+def plot_read_current_sweep_three(dict_list:list[dict], axs:list[Axes] = None):
+    if axs is None:
+        fig, axs = plt.subplots(1, 4, width_ratios=[1, 1, 1, 0.05], constrained_layout=True)
+        cax = axs[3]
+    else:
+        fig = axs[0].figure
+    
     for i in range(3):
         plot_read_sweep_array(
             axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
