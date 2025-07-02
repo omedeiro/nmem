@@ -1,3 +1,12 @@
+"""
+Combined BER Write Current Sweep and Enable Margin Analysis
+
+This script generates both BER vs write current sweep plots and enable margin
+markers in a combined view. For individual plots, use the separate scripts:
+- plot_ber_write_current_sweep.py
+- plot_ber_write_current_enable_margin_markers.py
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import (
@@ -15,6 +24,12 @@ apply_global_style()
 
 
 def main(save_dir=None):
+    """
+    Generate combined BER vs write current and enable margin plots.
+
+    Args:
+        save_dir (str): Directory to save plots (if None, displays plots)
+    """
     innerb = [
         ["C", "D"],
     ]
@@ -27,6 +42,11 @@ def main(save_dir=None):
     plot_write_sweep_formatted(axs["C"], dict_list)
     data_dict = import_write_sweep_formatted_markers(dict_list)
     plot_write_sweep_formatted_markers(axs["D"], data_dict)
+
+    # Set subplot titles for clarity
+    axs["C"].set_title("BER vs Write Current")
+    axs["D"].set_title("Enable Margin Markers")
+
     fig.subplots_adjust(
         left=0.1,
         right=0.9,
