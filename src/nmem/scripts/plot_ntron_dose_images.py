@@ -30,7 +30,7 @@ def main(
         zoomed_img = center_crop_zoom(img, zoom_factor=zoom_factor)
         images.append(zoomed_img)
     # Plot
-    figsize = get_consistent_figure_size("wide")
+    figsize = get_consistent_figure_size("grid")
     fig = plt.figure(figsize=figsize, facecolor="white")
     gs = gridspec.GridSpec(nrows, ncols, wspace=0.15, hspace=0.25)
     for i, (dose, img) in enumerate(zip(doses, images)):
