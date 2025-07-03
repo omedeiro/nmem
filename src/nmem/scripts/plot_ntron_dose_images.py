@@ -1,3 +1,8 @@
+'''
+# Script to plot images of NTRON dose test results
+# Images are of different nTron test structures written at various doses. 
+# Each image is a new device written with the same current and write settings.  
+# '''
 import os
 
 import matplotlib.gridspec as gridspec
