@@ -9,7 +9,7 @@ from nmem.analysis.state_currents_plots import (
     plot_calculated_filled_region,
     plot_state_current_fit,
 )
-from nmem.analysis.styles import apply_global_style, RBCOLORS
+from nmem.analysis.styles import RBCOLORS, apply_global_style
 
 # Apply global plot styling
 apply_global_style()

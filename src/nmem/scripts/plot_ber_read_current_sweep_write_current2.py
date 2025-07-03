@@ -10,7 +10,10 @@ from nmem.analysis.plot_utils import (
     add_colorbar,
 )
 from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
-from nmem.analysis.sweep_plots import plot_read_sweep_array, plot_read_sweep_write_current
+from nmem.analysis.sweep_plots import (
+    plot_read_sweep_array,
+    plot_read_sweep_write_current,
+)
 
 # Apply global plot styling
 apply_global_style()

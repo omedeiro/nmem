@@ -9,7 +9,11 @@ read current levels, providing insights into read stability.
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style, get_consistent_figure_size, apply_legend_style
+from nmem.analysis.styles import (
+    apply_global_style,
+    apply_legend_style,
+    get_consistent_figure_size,
+)
 from nmem.analysis.sweep_plots import plot_read_switch_probability_array
 
 # Apply global plot styling

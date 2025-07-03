@@ -1,12 +1,11 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
 from nmem.analysis.trace_plots import (
-    plot_combined_dc_figure,
     plot_current_voltage_from_dc_sweep,
 )
 

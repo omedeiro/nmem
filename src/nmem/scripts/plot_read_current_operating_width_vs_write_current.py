@@ -10,16 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from nmem.analysis.constants import (
-    CRITICAL_CURRENT_ZERO,
-    CRITICAL_TEMP,
     IRHL_TR,
     IRM,
-    SUBSTRATE_TEMP,
-    WIDTH,
 )
 from nmem.analysis.core_analysis import (
-    calculate_channel_temperature,
-    calculate_critical_current_temp,
     get_bit_error_rate,
     get_bit_error_rate_args,
     get_read_currents,

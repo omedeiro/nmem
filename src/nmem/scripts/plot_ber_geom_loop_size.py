@@ -15,7 +15,6 @@ The data here is insufficient to determine the optimal loop size, but it provide
 """
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, MaxNLocator
 
 from nmem.analysis.core_analysis import analyze_geom_loop_size
 from nmem.analysis.data_import import import_geom_loop_size_data
