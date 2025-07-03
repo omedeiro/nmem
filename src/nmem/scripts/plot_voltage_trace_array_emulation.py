@@ -15,7 +15,7 @@ def main(save_dir=None):
 
     figsize = get_consistent_figure_size("wide")
     fig, axs = plt.subplots(3, 1, figsize=figsize, sharex=True)
-    plot_time_concatenated_traces(axs, dict_list[:5])
+    plot_time_concatenated_traces(dict_list[:5], axs=axs)
 
     if save_dir:
         plt.savefig(

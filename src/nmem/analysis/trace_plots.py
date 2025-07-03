@@ -19,7 +19,7 @@ from nmem.analysis.core_analysis import (
     get_voltage_trace_data,
 )
 from nmem.analysis.plot_utils import plot_message
-from nmem.analysis.styles import CMAP
+from nmem.analysis.styles import CMAP, apply_legend_style
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
@@ -109,24 +109,27 @@ def plot_current_voltage_from_dc_sweep(ax: Axes, dict_list: list) -> Axes:
     return ax
 
 
-def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> List[Axes]:
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    colors = np.flipud(colors)
+def plot_time_concatenated_traces(dict_list: List[dict], axs: Axes) -> List[Axes]:
+    if axs is None:
+        fig, axs = plt.subplots(3, 1, sharex=True)
+    else:
+        fig = axs[0].get_figure()
     for idx, data_dict in enumerate(dict_list):
         shift = 10 * idx
         chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y = (
             extract_shifted_traces(data_dict, time_shift=shift)
         )
-        plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color=colors[0])
-        plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color=colors[1])
-        plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color=colors[-1])
+        plot_voltage_trace(axs[0], chan_in_x, chan_in_y)
+        plot_voltage_trace(axs[1], enab_in_x, enab_in_y)
+        plot_voltage_trace(axs[2], chan_out_x, chan_out_y)
     axs[2].xaxis.set_major_locator(MultipleLocator(10))
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
     axs[2].set_xlim(0, 50)
-    axs[0].legend(["input"], loc="upper right", fontsize=8, frameon=True)
-    axs[1].legend(["enable"], loc="upper right", fontsize=8, frameon=True)
-    axs[2].legend(["output"], loc="upper right", fontsize=8, frameon=True)
-    fig = plt.gcf()
+
+    apply_legend_style(axs[0], "outside_right", labels=["Input"])
+    apply_legend_style(axs[1], "outside_right", labels=["Enable"])
+    apply_legend_style(axs[2], "outside_right", labels=["Output"])
+
     fig.supylabel("Voltage [mV]", fontsize=9)
     fig.supxlabel("Time [µs]", y=-0.02, fontsize=9)
     fig.subplots_adjust(hspace=0.0)
