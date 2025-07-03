@@ -1206,14 +1206,14 @@ def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
         measurement_param,
         total_switches_norm,
         color="grey",
-        label="_Total Switches",
+        label="Switching Probability",
         linestyle="--",
         linewidth=1,
     )
     apply_legend_style(ax, "outside_right")
     ax.set_yticks([0, 0.5, 1])
     ax.set_ylim([0, 1])
-    ax.set_ylabel("Normalized\nBit Error Rate")
+    ax.set_ylabel("Bit Error Rate")
     return ax
 
 
