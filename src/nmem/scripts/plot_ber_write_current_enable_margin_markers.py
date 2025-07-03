@@ -34,7 +34,6 @@ def main(save_dir=None):
     data_dict = import_write_sweep_formatted_markers(dict_list)
     plot_write_sweep_formatted_markers(ax, data_dict)
 
-    plt.tight_layout()
 
     if save_dir:
         plt.savefig(
