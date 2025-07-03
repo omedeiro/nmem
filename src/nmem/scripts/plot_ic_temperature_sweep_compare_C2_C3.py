@@ -33,9 +33,9 @@ def main(
 
     c2 = get_fitting_points(x, y, ztotal)
     c3 = get_fitting_points(x2, y2, ztotal2)
-    plot_c2c3_comparison(ax1, c2, c3)
+    plot_c2c3_comparison(ax1, c2, c3, split_idx=6)
     # Second plot: subplots for C2 and C3
-    figsize2 = get_consistent_figure_size("comparison")
+    figsize2 = get_consistent_figure_size("wide")
     fig2, axs2 = plt.subplots(1, 2, figsize=figsize2)
     plot_c3_subplots(axs2, c3, split_idx)
     if save_dir:
