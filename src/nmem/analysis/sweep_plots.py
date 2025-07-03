@@ -11,6 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.ticker import LogLocator, MaxNLocator
 
 from nmem.analysis.bit_error import (
     calculate_ber_errorbar,
@@ -1585,3 +1586,36 @@ def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
                 )
                 ax.axvline(read_current[arg_idx], color=color, linestyle="--")
     return ax
+
+
+def plot_loop_size_sweep(dict_list, vch_list, ber_est_list, loop_sizes, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    for i in range(len(dict_list)):
+        ax.plot(
+            vch_list[i], ber_est_list[i], label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µm"
+        )
+    ax.set_yscale("log")
+    ax.set_xlabel("channel voltage [mV]")
+    ax.set_ylabel("estimated BER")
+    apply_legend_style(ax, "outside_right")
+
+    return fig, ax
+   
+def plot_loop_size_sweep_ber(
+   loop_sizes, best_ber, ax=None
+):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    ax.plot(loop_sizes, best_ber, "-o")
+    ax.set_yscale("log")
+    ax.set_xlabel("loop size [µm]")
+    ax.set_ylabel("minimum BER")
+    ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+    ax.xaxis.set_major_locator(MaxNLocator(7))
+    return fig, ax
