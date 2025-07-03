@@ -5,6 +5,7 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Normalize
 
 from nmem.analysis.utils import get_cell_labels
+from nmem.analysis.styles import get_consistent_figure_size
 
 
 def plot_ber_3d_bar(
@@ -106,7 +107,7 @@ def plot_fidelity_clean_bar(
     save_path: str = None,
 ) -> tuple[plt.Figure, Axes]:
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=get_consistent_figure_size("wide"))
     else:
         fig = ax.figure
 
@@ -132,9 +133,9 @@ def plot_fidelity_clean_bar(
     # Add value labels only if they fit in the visible range
     for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
         if val > 0.998:  # only plot label if within axis range
-            ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=8)
+            ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=6)
         if val < 0.998:
-            ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=8)
+            ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=6)
     # Formatting
     ax.set_xticks(x)
     ax.set_xlim(-1.5, len(x) + 0.5)
@@ -159,7 +160,7 @@ def plot_fidelity_clean_bar(
         "Previous Record",
         va="top",
         ha="right",
-        fontsize=14,
+        fontsize=12,
         color="red",
         zorder=4,
         bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
@@ -173,5 +174,5 @@ def plot_fidelity_clean_bar(
         plt.close(fig)  # Close the figure to avoid display when saving
     else:
         plt.show()
-        
+
     return fig, ax
