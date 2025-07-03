@@ -7,8 +7,9 @@ This script generates two plots:
 2. Minimum BER vs loop size
 
 The geometric loop size parameter (w_5) affects the memory cell's switching
-characteristics and BER performance. These measurements were performed in the probe station 
-at a base temperature of 3.5K. 
+characteristics and BER performance. These measurements were performed in the probe station
+at a base temperature of 3.5K.
+The estimated BER was calculated by fitting two gaussian functions to the data and taking the intersection of the fitted curves.
 
 The data here is insufficient to determine the optimal loop size, but it provides a good starting point for further analysis.
 """
