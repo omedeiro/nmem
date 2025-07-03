@@ -7,8 +7,10 @@ This script generates two plots:
 2. Minimum BER vs loop size
 
 The geometric loop size parameter (w_5) affects the memory cell's switching
-characteristics and BER performance. These plots help optimize the loop
-geometry for minimum error rates.
+characteristics and BER performance. These measurements were performed in the probe station 
+at a base temperature of 3.5K. 
+
+The data here is insufficient to determine the optimal loop size, but it provides a good starting point for further analysis.
 """
 
 import matplotlib.pyplot as plt
