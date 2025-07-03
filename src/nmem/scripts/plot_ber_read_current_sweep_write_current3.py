@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, apply_legend_style
 from nmem.analysis.sweep_plots import (
     plot_read_sweep_array,
 )
@@ -18,12 +18,7 @@ def main(save_dir=None):
     ax.set_ylim(1e-4, 1)
     ax.set_xlabel("Read Current [$\\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\\mu$A]",
-    )
+    apply_legend_style(ax, "outside_right", title="Write Current [$\\mu$A]")
 
     if save_dir:
         plt.savefig(
@@ -42,12 +37,7 @@ def main(save_dir=None):
     ax.set_ylim(1e-4, 1)
     ax.set_xlabel("Read Current [$\\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\\mu$A]",
-    )
+    apply_legend_style(ax, "outside_right", title="Write Current [$\\mu$A]")
 
     if save_dir:
         plt.savefig(
