@@ -10,7 +10,7 @@ Approximately, the pulse widths range from 5ns to 150ns.
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.styles import apply_global_style
+from nmem.analysis.styles import apply_global_style, apply_legend_style
 from nmem.analysis.sweep_plots import (
     plot_read_sweep_array,
 )
@@ -23,9 +23,7 @@ def main(data_dir="../data/ber_sweep_read_current/width_read", save_dir=None):
     dict_list = import_directory(data_dir)
     fig, ax = plt.subplots()
     plot_read_sweep_array(ax, dict_list, "bit_error_rate", "read_width")
-    ax.legend(
-        frameon=False, loc="upper left", bbox_to_anchor=(1, 1), title="Read Width"
-    )
+    apply_legend_style(ax, "outside_right", title="Read Width (pts)")
     ax.set_yscale("log")
     ax.set_ylabel("Bit Error Rate")
     ax.set_xlabel("Read Current ($\\mu$A)")
