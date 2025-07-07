@@ -79,6 +79,7 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
+from nmem.analysis.styles import get_consistent_figure_size
 
 # Suppress numpy warnings about all-nan slices
 warnings.filterwarnings("ignore", message="All-NaN slice encountered")
@@ -430,7 +431,9 @@ def plot_enable_current_vs_temp(data):
             d["enable_currents"], d["channel_temperature"], color="grey", marker="o"
         )
     axs2.set_ybound(lower=0)
-    apply_legend_style(axs, "outside_right", bbox_to_anchor=(1.15, 1), title="Cell", ncol=4)
+    apply_legend_style(
+        axs, "outside_right", bbox_to_anchor=(1.15, 1), title="Cell", ncol=4
+    )
     axs.set_xlim(0, 600)
     axs.set_ylim(0, 1000)
     axs.set_xlabel("Enable Current ($\mu$A)")
@@ -594,12 +597,14 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_sweep_write_current(data_list:list[dict], ax: Axes = None) -> Tuple[plt.Figure, Axes]:
+def plot_read_sweep_write_current(
+    data_list: list[dict], ax: Axes = None
+) -> Tuple[plt.Figure, Axes]:
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = ax.figure
-    
+
     ax = plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
     ax.set_xlabel("Read Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
@@ -705,13 +710,18 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
     return ax
 
 
-def plot_read_current_sweep_three(dict_list:list[dict], axs:list[Axes] = None):
+def plot_read_current_sweep_three(dict_list: list[dict], axs: list[Axes] = None):
     if axs is None:
-        fig, axs = plt.subplots(1, 4, width_ratios=[1, 1, 1, 0.05])
+        fig, axs = plt.subplots(
+            1,
+            4,
+            width_ratios=[1, 1, 1, 0.05],
+            figsize=get_consistent_figure_size("wide"),
+        )
         cax = axs[3]
     else:
         fig = axs[0].figure
-    
+
     for i in range(3):
         plot_read_sweep_array(
             axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
@@ -881,6 +891,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
         height_ratios=[2, 0.5, 1, 1],
+        figsize=get_consistent_figure_size("large"),
     )
 
     CASE = 16
@@ -1212,7 +1223,7 @@ def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
     )
     apply_legend_style(ax, "outside_right")
     ax.set_yticks([0, 0.5, 1])
-    ax.set_ylim([0, 1])
+    ax.set_ylim([-0.05, 1.05])
     ax.set_ylabel("Bit Error Rate")
     return ax
 
@@ -1320,12 +1331,12 @@ def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
     ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     apply_legend_style(
-        ax, 
+        ax,
         style="outside_right",
         labels=[
             "$I_{1}$",
             "$I_{0}$",
-            "$I_{0,\mathrm{inv}}$", 
+            "$I_{0,\mathrm{inv}}$",
             "$I_{1,\mathrm{inv}}$",
         ],
     )
@@ -1477,7 +1488,9 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-def plot_cell_data(data_dict: dict, colors: list, markers: list, ax:plt.Axes=None) -> Tuple[plt.Axes, plt.Figure]:
+def plot_cell_data(
+    data_dict: dict, colors: list, markers: list, ax: plt.Axes = None
+) -> Tuple[plt.Axes, plt.Figure]:
     """
     Helper function to plot a single cell's data.
     """
@@ -1516,16 +1529,13 @@ def plot_grid(axs: Axes, dict_list: list[dict]) -> list[Axes]:
 
         ax.xaxis.set_major_locator(MultipleLocator(500))
         ax.xaxis.set_minor_locator(MultipleLocator(100))
-        apply_legend_style(
-            ax,
-            style="inside_upper_right",
-            labels=[cell]
-        )
+        apply_legend_style(ax, style="inside_upper_right", labels=[cell])
     axs[-1, 0].set_xlabel("Enable Current [µA]")
     axs[-1, 0].set_ylabel("Critical Current [µA]")
     return axs
 
-def plot_row(axs, dict_list)-> list[Axes]:
+
+def plot_row(axs, dict_list) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
 
     for data_dict in dict_list:
@@ -1539,7 +1549,7 @@ def plot_row(axs, dict_list)-> list[Axes]:
     return axs
 
 
-def plot_column(axs, dict_list)-> list[Axes]:
+def plot_column(axs, dict_list) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
 
     for data_dict in dict_list:
@@ -1603,10 +1613,9 @@ def plot_loop_size_sweep(dict_list, vch_list, ber_est_list, loop_sizes, ax=None)
     apply_legend_style(ax, "outside_right")
 
     return fig, ax
-   
-def plot_loop_size_sweep_ber(
-   loop_sizes, best_ber, ax=None
-):
+
+
+def plot_loop_size_sweep_ber(loop_sizes, best_ber, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     else:
