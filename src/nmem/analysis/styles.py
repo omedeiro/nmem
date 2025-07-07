@@ -355,6 +355,7 @@ def get_consistent_figure_size(plot_type="single"):
         "comparison": (base_width * 2, base_height),
         "grid": (base_width * 2, base_height * 2),
         "multi_row": (base_width, base_height * 1.5),
+        "large": (base_width * 2, base_height * 4),  # For larger multi-panel plots
     }
 
     return size_map.get(plot_type, (base_width, base_height))
