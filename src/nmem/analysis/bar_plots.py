@@ -13,7 +13,6 @@ def plot_ber_3d_bar(
     ber_array: np.ndarray,
     total_trials: int = 200_000,
     ax: Axes3D = None,
-    save_path: str = None,
 ) -> tuple[plt.Figure, Axes3D]:
     """
     Plots a 3D bar chart for the Bit Error Rate (BER) array.
@@ -92,12 +91,6 @@ def plot_ber_3d_bar(
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
     cbar.set_label("Errors (per 200k)")
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid display when saving
-    else:
-        plt.show()
-
     return fig, ax
 
 
@@ -105,7 +98,6 @@ def plot_fidelity_clean_bar(
     ber_array: np.ndarray,
     total_trials: int = 200_000,
     ax: Axes = None,
-    save_path: str = None,
 ) -> tuple[plt.Figure, Axes]:
     if ax is None:
         fig, ax = plt.subplots(figsize=get_consistent_figure_size("wide"))
@@ -170,10 +162,5 @@ def plot_fidelity_clean_bar(
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid display when saving
-    else:
-        plt.show()
 
     return fig, ax
