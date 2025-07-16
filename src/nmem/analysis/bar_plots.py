@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 from matplotlib.axes import Axes
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import Normalize
 
 from nmem.analysis.utils import get_cell_labels
@@ -11,9 +12,9 @@ from nmem.analysis.styles import get_consistent_figure_size
 def plot_ber_3d_bar(
     ber_array: np.ndarray,
     total_trials: int = 200_000,
-    ax: Axes = None,
+    ax: Axes3D = None,
     save_path: str = None,
-) -> tuple[plt.Figure, Axes]:
+) -> tuple[plt.Figure, Axes3D]:
     """
     Plots a 3D bar chart for the Bit Error Rate (BER) array.
 
