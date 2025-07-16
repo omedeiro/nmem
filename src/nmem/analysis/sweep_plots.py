@@ -1316,8 +1316,8 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
         for i, state_current in enumerate(state_current_markers[0, :]):
             if state_current > 0:
                 ax.plot(
-                    write_current,
                     state_current,
+                    write_current,
                     "o",
                     color=RBCOLORS[i],
                 )
