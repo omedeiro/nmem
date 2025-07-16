@@ -19,7 +19,7 @@ from nmem.analysis.core_analysis import (
     get_voltage_trace_data,
 )
 from nmem.analysis.plot_utils import plot_message
-from nmem.analysis.styles import CMAP, apply_legend_style
+from nmem.analysis.styles import CMAP, apply_legend_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
@@ -89,6 +89,8 @@ def plot_voltage_trace_averaged(
 ) -> Axes:
     x, y = get_voltage_trace_data(data_dict, trace_name)
     ax.plot((x - x[0]), y, **kwargs)
+    ax.xaxis.set_major_locator(MultipleLocator(.1))
+    ax.yaxis.set_major_locator(MaxNLocator(4))
     return ax
 
 
@@ -138,7 +140,8 @@ def plot_time_concatenated_traces(dict_list: List[dict], axs: Axes) -> List[Axes
 
 def plot_voltage_pulse_avg(dict_list, logger=None):
     """Plot voltage pulse traces and histograms."""
-    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=(6, 5), constrained_layout=True)
+    figsize = get_consistent_figure_size("single")
+    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=figsize, constrained_layout=True)
     ax2 = ax_dict["A"].twinx()
     ax3 = ax_dict["B"].twinx()
 
@@ -167,15 +170,15 @@ def plot_voltage_pulse_avg(dict_list, logger=None):
     if logger:
         logger.info(f"Sigma separation: {sigma_sep:.2f} mV")
         logger.info(f"Sigma average: {sigma_avg:.2f} mV")
-    ax_dict["A"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["A"].legend(loc="upper left", handlelength=2)
     ax_dict["A"].set_ylabel("Voltage [mV]")
-    ax2.legend(loc="upper right", handlelength=1.2)
+    ax2.legend(loc="upper right", handlelength=2)
     ax2.set_ylabel("Voltage [mV]")
-    ax3.legend(loc="upper right", handlelength=1.2)
+    ax3.legend(loc="upper right", handlelength=2)
     ax3.set_ylabel("Voltage [mV]")
-    ax_dict["B"].set_xlabel("time [µs]")
+    ax_dict["B"].set_xlabel("Time [µs]")
     ax_dict["B"].set_ylabel("Voltage [mV]")
-    ax_dict["B"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["B"].legend(loc="upper left", handlelength=2)
 
     return fig, ax_dict
 

@@ -909,8 +909,8 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     selected_labels2 = [
         "$i_{\mathrm{H_L}}$",
         "$i_{\mathrm{H_R}}$",
-        "$I_{\mathrm{c,H_L}}$",
-        "$I_{\mathrm{c,H_R}}$",
+        "$I_{\mathrm{c,H_L}}(I_{\mathrm{enable}})$",
+        "$I_{\mathrm{c,H_R}}(I_{\mathrm{enable}})$",
     ]
     selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
 

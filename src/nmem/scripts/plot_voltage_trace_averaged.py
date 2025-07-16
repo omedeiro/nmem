@@ -17,13 +17,13 @@ from nmem.analysis.trace_plots import (
 apply_global_style()
 
 
-def main(save_dir=None):
+def main(save_dir="../plots"):
     dict_list = import_directory("../data/voltage_trace_averaged")
     plot_voltage_pulse_avg(dict_list)
 
     if save_dir:
         plt.savefig(
-            f"{save_dir}/voltage_trace_averaged.png", dpi=300, bbox_inches="tight"
+            f"{save_dir}/voltage_trace_averaged.pdf",
         )
         plt.close()
     else:

@@ -150,8 +150,8 @@ def apply_global_style(**kwargs) -> None:
     elif mode == "thesis":
         set_thesis_style(**kwargs)
     else:
-        # Default to thesis style
-        set_thesis_style(**kwargs)
+        # Default to paper style
+        set_paper_style(**kwargs)
 
 
 def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
@@ -225,8 +225,8 @@ def set_paper_style() -> None:
     """Paper/publication-optimized style with Inter fonts and compact layout."""
     set_inter_font()
     golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
-    width = 3.5  # Example width in inches (single-column for Nature)
-    height = width / golden_ratio
+    width = 60/25.4
+    height = 45/25.4
     plt.rcParams.update(
         {
             "figure.figsize": [width, height],
@@ -234,19 +234,19 @@ def set_paper_style() -> None:
             "ps.fonttype": 42,
             "font.family": "Inter",
             "mathtext.fontset": "stix",  # Changed from "cm" to reduce font subsetting
-            "font.size": 9,
-            "axes.titlesize": 9,
-            "axes.labelsize": 9,
-            "xtick.labelsize": 8,
-            "ytick.labelsize": 8,
-            "legend.fontsize": 8,
+            "font.size": 5,
+            "axes.titlesize": 5,
+            "axes.labelsize": 5,
+            "xtick.labelsize": 5,
+            "ytick.labelsize": 5,
+            "legend.fontsize": 5,
             "axes.linewidth": 0.5,
             "xtick.major.width": 0.5,
             "ytick.major.width": 0.5,
             "xtick.direction": "out",
             "ytick.direction": "out",
             "lines.markersize": 3,
-            "lines.linewidth": 1.2,
+            "lines.linewidth": 0.5,
             "legend.frameon": False,
             "xtick.major.size": 2,
             "ytick.major.size": 2,
