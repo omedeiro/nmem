@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
-from nmem.analysis.sweep_plots import plot_enable_sweep
+from nmem.analysis.sweep_plots import plot_enable_write_sweep_multiple
 
 # Apply global plot styling
 apply_global_style()
 
-
+IDX = 7
 def main(save_dir=None):
     figsize = get_consistent_figure_size("single")
     dict_list = import_directory("../data/ber_sweep_enable_write_current/data1")
@@ -17,12 +17,9 @@ def main(save_dir=None):
 
     # First figure - first half of data
     fig1, ax1 = plt.subplots(figsize=figsize)
-    plot_enable_sweep(
-        ax1,
-        sort_dict_list,
-        range=slice(0, len(sort_dict_list) // 2),
-        add_errorbar=False,
-        add_legend=True,
+    plot_enable_write_sweep_multiple(
+        sort_dict_list[:IDX],
+        ax = ax1,
     )
     ax1.set_title("BER vs Enable Current (Part 1)")
 
@@ -38,12 +35,9 @@ def main(save_dir=None):
 
     # Second figure - second half of data
     fig2, ax2 = plt.subplots(figsize=figsize)
-    plot_enable_sweep(
-        ax2,
-        sort_dict_list,
-        range=slice(len(sort_dict_list) // 2, len(sort_dict_list)),
-        add_errorbar=False,
-        add_legend=True,
+    plot_enable_write_sweep_multiple(
+        sort_dict_list[IDX:],
+        ax=ax2,
     )
     ax2.set_title("BER vs Enable Current (Part 2)")
 
