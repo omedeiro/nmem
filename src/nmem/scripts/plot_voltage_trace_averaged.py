@@ -17,7 +17,7 @@ from nmem.analysis.trace_plots import (
 apply_global_style()
 
 
-def main(save_dir="../plots"):
+def main(save_dir=False):
     dict_list = import_directory("../data/voltage_trace_averaged")
     plot_voltage_pulse_avg(dict_list)
 
