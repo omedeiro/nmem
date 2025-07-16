@@ -13,7 +13,7 @@ apply_global_style()
 def main(save_dir=None):
     dict_list = import_directory("../data/voltage_trace_averaged")
     fig, ax = plt.subplots()
-    plot_voltage_hist(ax, dict_list[-2])
+    plot_voltage_hist(ax, dict_list[1])
 
     if save_dir:
         plt.savefig(
