@@ -231,41 +231,6 @@ def plot_ic_vs_ih_array(
     return fig, ax
 
 
-def plot_write_current_sweep(
-    ax: plt.Axes, dict_list: list[dict[str, list[float]]]
-) -> plt.Axes:
-    plot_read_sweep_array(
-        ax, dict_list, "bit_error_rate", "write_current", add_errorbar=False
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    # ax.legend(
-    #     frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left", title="Write Current"
-    # )
-
-    return ax
-
-
-def plot_enable_sweep(
-    ax: plt.Axes,
-    dict_list: list[dict],
-    range=None,
-    add_errorbar=False,
-    add_legend=True,
-):
-    N = len(dict_list)
-    if range is not None:
-        dict_list = dict_list[range]
-    # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax = plot_enable_write_sweep_multiple(
-        ax, dict_list, add_errorbar=add_errorbar, N=N, add_legend=add_legend
-    )
-
-    ax.set_ylabel("BER")
-    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-    return ax
-
-
 def plot_enable_write_sweep(ax: plt.Axes, dict_list: list[dict], **kwargs):
     colors = CMAP(np.linspace(0, 1, len(dict_list)))
 
@@ -314,17 +279,6 @@ def plot_enable_write_temp(
     return ax
 
 
-def plot_enable_write_sweep2(dict_list):
-    """
-    Plots the enable write sweep for multiple datasets.
-    Returns (fig, ax).
-    """
-    fig, ax = plt.subplots()
-    ax = plot_enable_write_sweep_multiple(ax, dict_list)
-    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-    ax.set_ylabel("BER")
-    return fig, ax
-
 
 def plot_write_temp_vs_current(
     ax, write_current_array, write_temp_array, critical_current_zero
@@ -352,28 +306,23 @@ def plot_write_temp_vs_current(
     return ax, ax2
 
 
-def plot_enable_write_sweep_fine(data_list2):
-    """
-    Plots the fine enable write sweep for the provided data list.
-    Returns (fig, ax).
-    """
-    fig, ax = plt.subplots()
-    plot_enable_write_sweep_multiple(ax, data_list2)
-    ax.set_xlim([260, 310])
-    ax.set_ylabel("Bit Error Rate")
-    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-    return fig, ax
-
-
 def plot_enable_write_sweep_multiple(
-    ax: Axes,
     dict_list: list[dict],
     add_errorbar: bool = False,
     N: int = None,
     add_legend: bool = True,
+    xlabel: str = "$I_{\\mathrm{enable}}$ [µA]", 
+    ylabel: str = "Bit Error Rate",
+    ax: Axes = None,
+    **kwargs,
 ) -> Axes:
     if N is None:
         N = len(dict_list)
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
 
     write_current_list = []
     for data_dict in dict_list:
@@ -400,15 +349,20 @@ def plot_enable_write_sweep_multiple(
             color=CMAP(write_current_norm),
             add_errorbar=add_errorbar,
             label=f"{write_current:.1f} µA",
+            **kwargs,
         )
 
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
     if add_legend:
-        # Use legend instead of colorbar
         apply_legend_style(ax, "outside_right", title="Write Current")
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    return ax
+    return fig, ax
 
 
 def plot_enable_current_vs_temp(data):
