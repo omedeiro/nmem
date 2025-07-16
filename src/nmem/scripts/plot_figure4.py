@@ -63,7 +63,7 @@ def main(save_dir=None):
         3,  # Use 5 columns: 2+2 for left 2x2, 1 for right column
         figure=fig,
         width_ratios=[1, 1, 1],  # Equal width for all columns
-        height_ratios=[.5, 1, 1, 1, 1, .5],  # Equal height for all rows
+        height_ratios=[1, 1, .5, .5, 1, 1],  # Equal height for all rows
         hspace=0.3,
         wspace=0.3,
     )
@@ -76,9 +76,9 @@ def main(save_dir=None):
     ax_bottom_center = fig.add_subplot(gs[3:, 1])  # Enable Margin Markers
 
     # Right column: 3 plots stacked vertically (column 3, with spacing)
-    ax_top_right = fig.add_subplot(gs[0:2, 2])  # Memory Retention
-    ax_mid_right = fig.add_subplot(gs[2:4, 2], projection="3d")  # 3D BER Plot
-    ax_bottom_right = fig.add_subplot(gs[4:6, 2])  # Array Fidelity
+    ax_top_right = fig.add_subplot(gs[0:3, 2], projection="3d")  # Memory Retention
+    ax_mid_right = fig.add_subplot(gs[3:5, 2])  # 3D BER Plot
+    ax_bottom_right = fig.add_subplot(gs[5:6, 2])  # Array Fidelity
 
     # Load data for each plot
     print("Loading data for Figure 4 plots...")
@@ -110,13 +110,13 @@ def main(save_dir=None):
     # 6. Middle right: 3D BER Bar Plot
     print("  - 3D BER Bar Plot")
     ber_array = process_ber_data(logger=logger)
-    plot_ber_3d_bar(ber_array, ax=ax_mid_right)
-    ax_mid_right.set_title("(f) 3D BER Array", fontweight="bold")
+    plot_ber_3d_bar(ber_array, ax=ax_top_right)
+    ax_top_right.set_title("(f) 3D BER Array", fontweight="bold")
 
     # 7. Bottom right: Array Fidelity Bar
     print("  - Array Fidelity Bar Plot")
-    plot_fidelity_clean_bar(ber_array, ax=ax_top_right)
-    ax_top_right.set_title("(g) Array Fidelity", fontweight="bold")
+    plot_fidelity_clean_bar(ber_array, ax=ax_mid_right)
+    ax_mid_right.set_title("(g) Array Fidelity", fontweight="bold")
 
 
     # 5. Top right: Memory Retention
