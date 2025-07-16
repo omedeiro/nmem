@@ -23,7 +23,7 @@ def main(save_dir=False):
 
     if save_dir:
         plt.savefig(
-            f"{save_dir}/voltage_trace_averaged.pdf",
+            f"{save_dir}/voltage_trace_averaged.png", dpi=300, bbox_inches="tight"
         )
         plt.close()
     else:
