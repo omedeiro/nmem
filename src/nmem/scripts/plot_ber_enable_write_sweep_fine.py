@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.styles import apply_global_style
-from nmem.analysis.sweep_plots import plot_enable_write_sweep_fine
+from nmem.analysis.sweep_plots import plot_enable_write_sweep_multiple
 
 # Apply global plot styling
 apply_global_style()
@@ -23,7 +23,7 @@ def main(data_dir="../data/ber_sweep_enable_write_current/data2", save_dir=None)
     Main function to plot fine enable write sweep.
     """
     data_list2 = import_directory(data_dir)
-    plot_enable_write_sweep_fine(data_list2)
+    plot_enable_write_sweep_multiple(data_list2)
 
     if save_dir:
         plt.savefig(
