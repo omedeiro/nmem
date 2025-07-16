@@ -2,7 +2,13 @@
 """
 Figure 4: Comprehensive BER Analysis Summary
 
-This script creates a 2x3 figure arrangement showing key bit error rate (BER)
+This script creates a 2x3 figure arran    # 6. Bottom center: 3D BER Bar Plot
+    print("  - 3D BER Bar Plot")
+    ber_array = process_ber_data(logger=logger)
+    plot_ber_3d_bar(ber_array, ax=ax_bottom_center)
+    ax_bottom_center.set_title("(f) 3D BER Array", fontweight="bold")
+
+    # 7. Bottom right: Array Fidelity Bar showing key bit error rate (BER)
 analysis results including enable/write current sweeps, memory retention, and
 array fidelity measurements. The figure provides a comprehensive overview of
 memory device performance characteristics across multiple measurement types.
@@ -14,6 +20,7 @@ import matplotlib.gridspec as gridspec
 
 from nmem.analysis.bar_plots import (
     plot_fidelity_clean_bar,
+    plot_ber_3d_bar,
 )
 from nmem.analysis.core_analysis import process_ber_data
 from nmem.analysis.data_import import (
@@ -46,14 +53,14 @@ def main(save_dir=None):
     Args:
         save_dir (str): Directory to save plots (if None, displays plots)
     """
-    # Set up the figure with 3x2 subplot arrangement
+    # Set up the figure with mixed subplot arrangement
     figsize = get_consistent_figure_size("wide")
-    fig = plt.figure(figsize=(15, 12))  # Adjusted for 3-column layout
+    fig = plt.figure(figsize=(18, 12))  # Increased width for 3-column bottom row
 
-    # Create gridspec for 3x2 arrangement with custom spacing
+    # Create gridspec for mixed layout: 2x2 top section + 1x3 bottom section
     gs = gridspec.GridSpec(
         3,
-        2,
+        6,  # Use 6 columns for better control
         figure=fig,
         height_ratios=[1, 1, 1],
         hspace=0.3,
@@ -61,16 +68,22 @@ def main(save_dir=None):
     )
 
     # Create subplots
-    ax_top_left = fig.add_subplot(gs[0, 0])  # plot_ber_enable_write_sweep figure 1
-    ax_top_right = fig.add_subplot(gs[0, 1])  # plot_ber_write_current_sweep
-    ax_mid_left = fig.add_subplot(gs[1, 0])  # plot_ber_enable_write_sweep figure 2
+    # Top row: 2 plots, each spanning 3 columns
+    ax_top_left = fig.add_subplot(gs[0, :3])  # plot_ber_enable_write_sweep figure 1
+    ax_top_right = fig.add_subplot(gs[0, 3:])  # plot_ber_write_current_sweep
+
+    # Middle row: 2 plots, each spanning 3 columns
+    ax_mid_left = fig.add_subplot(gs[1, :3])  # plot_ber_enable_write_sweep figure 2
     ax_mid_right = fig.add_subplot(
-        gs[1, 1]
+        gs[1, 3:]
     )  # plot_ber_write_current_enable_margin_markers
-    ax_bottom_left = fig.add_subplot(gs[2, 0])  # plot_ber_memory_retention
-    ax_bottom_right = fig.add_subplot(
-        gs[2, 1]
-    ) 
+
+    # Bottom row: 3 plots, each spanning 2 columns
+    ax_bottom_left = fig.add_subplot(gs[2, :2])  # plot_ber_memory_retention
+    ax_bottom_center = fig.add_subplot(
+        gs[2, 2:4], projection="3d"
+    )  # 3D plot needs 3D projection
+    ax_bottom_right = fig.add_subplot(gs[2, 4:])  # array fidelity
 
     # Load data for each plot
     print("Loading data for Figure 4 plots...")
@@ -104,11 +117,16 @@ def main(save_dir=None):
     plot_retention(delay_list, bit_error_rate_list, ax=ax_bottom_left)
     ax_bottom_left.set_title("(e) Memory Retention", fontweight="bold")
 
-    # 6. Right side: Array Fidelity Bar (spanning two rows)
-    print("  - Array Fidelity Bar Plot")
+    # # 6. Bottom center: 3D BER Bar Plot
+    # print("  - 3D BER Bar Plot")
     ber_array = process_ber_data(logger=logger)
+    fig, ax_bottom_center = plot_ber_3d_bar(ber_array, ax=ax_bottom_center)
+
+
+    # 7. Bottom right: Array Fidelity Bar
+    print("  - Array Fidelity Bar Plot")
     plot_fidelity_clean_bar(ber_array, ax=ax_bottom_right)
-    ax_bottom_right.set_title("(f) Array Fidelity", fontweight="bold")
+    ax_bottom_right.set_title("(g) Array Fidelity", fontweight="bold")
 
     # Adjust layout
     plt.tight_layout()
