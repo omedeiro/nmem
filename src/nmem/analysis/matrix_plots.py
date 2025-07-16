@@ -513,14 +513,20 @@ def plot_ber_heatmap_detailed(dict_list, ax=None, annotate=False):
         cmap=plt.get_cmap("Reds").reversed(),
         origin="lower",
         aspect="auto",
+        extent=[
+            enable_current_array.min(),
+            enable_current_array.max(),
+            min(unique_write_currents),
+            max(unique_write_currents),
+        ],
     )
     
     # Set discrete ticks
-    ax.set_xticks(range(0, len(enable_current_array), 5))  # Every 5th enable current
-    ax.set_xticklabels([f"{enable_current_array[i]:.0f}" for i in range(0, len(enable_current_array), 5)])
+    # ax.set_xticks(range(0, len(enable_current_array), 5))  # Every 5th enable current
+    # ax.set_xticklabels([f"{enable_current_array[i]:.0f}" for i in range(0, len(enable_current_array), 5)])
     
-    ax.set_yticks(range(len(unique_write_currents)))
-    ax.set_yticklabels([f"{wc:.0f}" for wc in unique_write_currents])
+    # ax.set_yticks(range(len(unique_write_currents)))
+    # ax.set_yticklabels([f"{wc:.0f}" for wc in unique_write_currents])
     
     ax.set_xlabel("Enable Current [µA]")
     ax.set_ylabel("Write Current [µA]")
@@ -539,7 +545,7 @@ def plot_ber_heatmap_detailed(dict_list, ax=None, annotate=False):
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label("Bit Error Rate")
     
-    return ax
+    return fig, ax
 
 
 if __name__ == "__main__":
