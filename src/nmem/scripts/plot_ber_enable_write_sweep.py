@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
 from nmem.analysis.styles import apply_global_style
-from nmem.analysis.sweep_plots import plot_enable_write_sweep2
+from nmem.analysis.sweep_plots import plot_enable_write_sweep_multiple
 
 # Apply global plot styling
 apply_global_style()
@@ -28,7 +28,8 @@ def main(data_dir="../data/ber_sweep_enable_write_current/data1", save_dir=None)
     dict_list = import_directory(data_dir)
 
     # Plot enable write sweep
-    fig, ax = plot_enable_write_sweep2(dict_list)
+    fig, ax = plt.subplots()
+    fig, ax = plot_enable_write_sweep_multiple(dict_list, ax=ax)
     if save_dir:
         plt.savefig(
             f"{save_dir}/ber_enable_write_sweep.png",
