@@ -362,6 +362,7 @@ def plot_enable_write_sweep_multiple(
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
+    ax.grid(axis="x")
     return fig, ax
 
 
@@ -613,7 +614,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
     return ax
 
 
-def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
+def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool=True) -> Axes:
     write_temp_list = []
     enable_write_current_list = []
 
@@ -651,16 +652,18 @@ def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
     ax.set_ylim([0, 1])
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
 
-    apply_legend_style(ax, "outside_right")
+    if add_legend:
+        apply_legend_style(ax, "outside_right")
 
     return ax
 
 
-def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
-    plot_write_sweep(ax, dict_list)
+def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict], **kwargs) -> Axes:
+    plot_write_sweep(ax, dict_list, **kwargs)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("BER")
+    ax.set_ylabel("Bit Error Rate")
     ax.set_xlim(0, 300)
+    ax.grid(axis="x")
     return ax
 
 
@@ -1118,8 +1121,8 @@ def plot_retention(delay_list, bit_error_rate_list, ax=None):
     ax.set_xlabel("Memory Retention Time (s)")
     ax.set_xscale("log")
     ax.set_xbound(lower=1e-6)
-    ax.xaxis.set_label_position("top")
-    ax.xaxis.set_ticks_position("top")
+    # ax.xaxis.set_label_position("top")
+    # ax.xaxis.set_ticks_position("top")
     ax.grid(True, which="both", linestyle="--")
     ax.set_yscale("log")
     ax.set_ylim([1e-4, 1e-3])
@@ -1297,7 +1300,7 @@ def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
     return fig, ax
 
 
-def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
+def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None, add_legend: bool = True):
     """
     Plots state current markers for each dataset.
     Returns (fig, ax).
@@ -1324,21 +1327,23 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None):
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
 
-    # Apply standardized legend style
-    apply_legend_style(
-        ax,
-        style="outside_right",
-        labels=[
-            "$I_{1}$",
-            "$I_{0}$",
-            "$I_{0,\mathrm{inv}}$",
-            "$I_{1,\mathrm{inv}}$",
-        ],
-    )
+    if add_legend:
+        # Apply standardized legend style
+        apply_legend_style(
+            ax,
+            style="outside_right",
+            labels=[
+                "$I_{1}$",
+                "$I_{0}$",
+                "$I_{0,\mathrm{inv}}$",
+                "$I_{1,\mathrm{inv}}$",
+            ],
+        )
+    ax.grid(axis="x")
     return fig, ax
 
 
-def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
+def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict, add_legend: bool = True) -> Axes:
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
     colors = CMAP(np.linspace(0, 1, 4))
@@ -1361,12 +1366,13 @@ def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlim(0, 300)
-    apply_legend_style(
-        ax,
-        style="outside_right",
-        labels=["Lower bound", "Upper bound"],
-    )
-    ax.grid()
+    if add_legend:
+        apply_legend_style(
+            ax,
+            style="outside_right",
+            labels=["Lower bound", "Upper bound"],
+        )
+    ax.grid(axis="x")
     return ax
 
 

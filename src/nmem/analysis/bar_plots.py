@@ -72,10 +72,10 @@ def plot_ber_3d_bar(
     ax.invert_yaxis()
 
     # Labels and ticks
-    ax.set_xlabel("Column")
-    ax.set_ylabel("Row")
-    ax.set_zlabel("Errors")
-    ax.set_title("Error Count per Cell")
+    ax.set_xlabel("Column", labelpad=-8)
+    ax.set_ylabel("Row", labelpad=-8)
+    ax.set_zlabel("Errors", labelpad=-8)
+    # ax.set_title("Error Count per Cell")
     ax.set_xticks(np.arange(4) + 0.3)  # Offset tick locations
     ax.set_xticklabels(["A", "B", "C", "D"])
     ax.set_yticks(np.arange(4) + 0.3)  # Offset tick locations
@@ -85,11 +85,16 @@ def plot_ber_3d_bar(
     ax.set_zlim(1, 500)
     ax.view_init(elev=45, azim=220)
 
+
+    ax.xaxis.set_tick_params(pad=-4)
+    ax.yaxis.set_tick_params(pad=-4)
+    ax.zaxis.set_tick_params(pad=-4)
+
     # Colorbar
-    mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
-    mappable.set_array([])  # Empty array, just to set the color scale
-    cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
-    cbar.set_label("Errors (per 200k)")
+    # mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
+    # mappable.set_array([])  # Empty array, just to set the color scale
+    # cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
+    # cbar.set_label("Errors (per 200k)")
 
     return fig, ax
 
@@ -124,11 +129,11 @@ def plot_fidelity_clean_bar(
     ax.bar(x, fidelity_flat, yerr=errors, capsize=3, color="#658DDC", edgecolor="black")
 
     # Add value labels only if they fit in the visible range
-    for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
-        if val > 0.998:  # only plot label if within axis range
-            ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=6)
-        if val < 0.998:
-            ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=6)
+    # for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
+    #     if val > 0.998:  # only plot label if within axis range
+    #         ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=6)
+    #     if val < 0.998:
+    #         ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=6)
     # Formatting
     ax.set_xticks(x)
     ax.set_xlim(-1.5, len(x) + 0.5)
@@ -147,17 +152,17 @@ def plot_fidelity_clean_bar(
         linewidth=0.8,
         zorder=3,
     )
-    ax.text(
-        len(x) + 0.3,
-        1 - 1.5e-3,
-        "Previous Record",
-        va="top",
-        ha="right",
-        fontsize=12,
-        color="red",
-        zorder=4,
-        bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
-    )
+    # ax.text(
+    #     len(x) + 0.3,
+    #     1 - 1.5e-3,
+    #     "Previous Record",
+    #     va="top",
+    #     ha="right",
+    #     fontsize=12,
+    #     color="red",
+    #     zorder=4,
+    #     bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
+    # )
     ax.set_ylim(0.998, 1.0004)
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])

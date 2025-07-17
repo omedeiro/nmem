@@ -349,7 +349,7 @@ def get_consistent_figure_size(plot_type="single"):
 
     size_map = {
         "single": (base_width, base_height),
-        "wide": (base_width * 1.5, base_height),
+        "wide": (base_width * 3, base_height*2),
         "tall": (base_width, base_height * 1.5),
         "square": (base_width, base_width),
         "comparison": (base_width * 2, base_height),

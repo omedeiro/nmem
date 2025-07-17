@@ -55,30 +55,28 @@ def main(save_dir=None):
     """
     # Set up the figure with mixed subplot arrangement
     figsize = get_consistent_figure_size("wide")
-    fig = plt.figure(figsize=(18, 12))  # Wide figure for 2x2 + right column
+    fig = plt.figure(figsize=(120/25.4, 90/25.4))  # Wide figure for 2x2 + right column
 
     # Create gridspec for mixed layout: 2x2 left section + 1x3 right column
     gs = gridspec.GridSpec(
-        6,
-        3,  # Use 5 columns: 2+2 for left 2x2, 1 for right column
+        2,
+        2,  # Use 5 columns: 2+2 for left 2x2, 1 for right column
         figure=fig,
-        width_ratios=[1, 1, 1],  # Equal width for all columns
-        height_ratios=[1, 1, .5, .5, 1, 1],  # Equal height for all rows
         hspace=0.3,
         wspace=0.3,
     )
 
     # Create subplots
     # Left side: 2x2 grid spanning all 3 rows (first 2 columns)
-    ax_top_left = fig.add_subplot(gs[:3, 0])  # BER vs Enable Current (spans 2 rows)
-    ax_top_center = fig.add_subplot(gs[:3, 1])  # BER vs Write Current (spans 2 rows)
-    ax_bottom_left = fig.add_subplot(gs[3:, 0])  # State Current Markers
-    ax_bottom_center = fig.add_subplot(gs[3:, 1])  # Enable Margin Markers
+    ax_top_left = fig.add_subplot(gs[0, 0])  # BER vs Enable Current (spans 2 rows)
+    ax_top_center = fig.add_subplot(gs[0, 1])  # BER vs Write Current (spans 2 rows)
+    ax_bottom_left = fig.add_subplot(gs[1, 0])  # State Current Markers
+    ax_bottom_center = fig.add_subplot(gs[1, 1])  # Enable Margin Markers
 
     # Right column: 3 plots stacked vertically (column 3, with spacing)
-    ax_top_right = fig.add_subplot(gs[0:3, 2], projection="3d")  # Memory Retention
-    ax_mid_right = fig.add_subplot(gs[3:5, 2])  # 3D BER Plot
-    ax_bottom_right = fig.add_subplot(gs[5:6, 2])  # Array Fidelity
+    # ax_top_right = fig.add_subplot(gs[0:3, 2], projection="3d")  # Memory Retention
+    # ax_mid_right = fig.add_subplot(gs[3:5, 2])  # 3D BER Plot
+    # ax_bottom_right = fig.add_subplot(gs[5:6, 2])  # Array Fidelity
 
     # Load data for each plot
     print("Loading data for Figure 4 plots...")
@@ -86,44 +84,41 @@ def main(save_dir=None):
     # 1. Top left: BER vs Enable Write Current Sweep (Figure 1)
     print("  - BER Enable Write Sweep (Figure 1)")
     dict_list_ews = import_directory("../data/ber_sweep_enable_write_current/data1")
-    plot_enable_write_sweep_multiple(dict_list_ews, ax=ax_top_left)
-    ax_top_left.set_title("(a) BER vs Enable Current", fontweight="bold")
-
+    plot_enable_write_sweep_multiple(dict_list_ews, ax=ax_top_left, add_legend=False)
+    ax_top_left.set_xlim([250, 335])
+    ax_top_left.xaxis.set_major_locator(plt.MultipleLocator(25))
+    ax_top_left.xaxis.set_minor_locator(plt.MultipleLocator(5))
     # 2. Top center: BER vs Write Current Sweep
     print("  - BER Write Current Sweep")
     dict_list_ws = import_write_sweep_formatted()
-    plot_write_sweep_formatted(ax_top_center, dict_list_ws)
-    ax_top_center.set_title("(b) BER vs Write Current", fontweight="bold")
+    plot_write_sweep_formatted(ax_top_center, dict_list_ws, add_legend=False)
 
     # 3. Bottom left: BER Enable Write Sweep State Current Markers (Figure 2)
     print("  - BER Enable Write Sweep Markers (Figure 2)")
-    plot_state_current_markers(dict_list_ews, ax=ax_bottom_left)
-    ax_bottom_left.set_title("(c) State Current Markers", fontweight="bold")
-
+    plot_state_current_markers(dict_list_ews, ax=ax_bottom_left, add_legend=False)
+    ax_bottom_left.set_xlim([250, 335])
+    ax_bottom_left.xaxis.set_major_locator(plt.MultipleLocator(25))
+    ax_bottom_left.xaxis.set_minor_locator(plt.MultipleLocator(5))
     # 4. Bottom center: Write Current Enable Margin Markers
     print("  - Write Current Enable Margin Markers")
     data_dict = import_write_sweep_formatted_markers(dict_list_ws)
-    plot_write_sweep_formatted_markers(ax_bottom_center, data_dict)
-    ax_bottom_center.set_title("(d) Enable Margin Markers", fontweight="bold")
+    plot_write_sweep_formatted_markers(ax_bottom_center, data_dict, add_legend=False)
 
 
-    # 6. Middle right: 3D BER Bar Plot
-    print("  - 3D BER Bar Plot")
-    ber_array = process_ber_data(logger=logger)
-    plot_ber_3d_bar(ber_array, ax=ax_top_right)
-    ax_top_right.set_title("(f) 3D BER Array", fontweight="bold")
+    # # 6. Middle right: 3D BER Bar Plot
+    # print("  - 3D BER Bar Plot")
+    # ber_array = process_ber_data(logger=logger)
+    # plot_ber_3d_bar(ber_array, ax=ax_top_right)
 
-    # 7. Bottom right: Array Fidelity Bar
-    print("  - Array Fidelity Bar Plot")
-    plot_fidelity_clean_bar(ber_array, ax=ax_mid_right)
-    ax_mid_right.set_title("(g) Array Fidelity", fontweight="bold")
+    # # 7. Bottom right: Array Fidelity Bar
+    # print("  - Array Fidelity Bar Plot")
+    # plot_fidelity_clean_bar(ber_array, ax=ax_mid_right)
 
 
-    # 5. Top right: Memory Retention
-    print("  - Memory Retention")
-    delay_list, bit_error_rate_list, _ = import_delay_data()
-    plot_retention(delay_list, bit_error_rate_list, ax=ax_bottom_right)
-    ax_bottom_right.set_title("(e) Memory Retention", fontweight="bold")
+    # # 5. Top right: Memory Retention
+    # print("  - Memory Retention")
+    # delay_list, bit_error_rate_list, _ = import_delay_data()
+    # plot_retention(delay_list, bit_error_rate_list, ax=ax_bottom_right)
 
 
     # Adjust layout
