@@ -1344,7 +1344,6 @@ def plot_state_current_markers(
             marker=MARKERS[i],
             c=colors,
             edgecolor="black",
-            s=50,
         )
 
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
