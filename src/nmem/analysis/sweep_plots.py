@@ -1377,6 +1377,7 @@ def plot_write_sweep_formatted_markers(
         [d["write_temp"] for d in data],
         "-",
         color='gray',
+        zorder=-1,
     )
     ax.scatter(
         [d["write_current"] for d in data],
@@ -1391,6 +1392,7 @@ def plot_write_sweep_formatted_markers(
         [d["write_temp"] for d in data2],
         "-",
         color="gray",
+        zorder=-1,
     )
 
     ax.scatter(
