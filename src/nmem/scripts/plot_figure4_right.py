@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 """
-Figure 4: Comprehensive BER Analysis Summary
+Figure 4 Right Panel: BER Analysis Summary
 
-This script creates a 2x3 figure arran    # 6. Bottom center: 3D BER Bar Plot
-    print("  - 3D BER Bar Plot")
-    ber_array = process_ber_data(logger=logger)
-    plot_ber_3d_bar(ber_array, ax=ax_bottom_center)
-    ax_bottom_center.set_title("(f) 3D BER Array", fontweight="bold")
-
-    # 7. Bottom right: Array Fidelity Bar showing key bit error rate (BER)
-analysis results including enable/write current sweeps, memory retention, and
-array fidelity measurements. The figure provides a comprehensive overview of
-memory device performance characteristics across multiple measurement types.
+This script creates a 3x1 vertical figure arrangement showing key bit error rate (BER)
+analysis results including 3D BER visualization, array fidelity measurements, and
+memory retention characteristics. The figure provides a focused overview of
+memory device performance in a compact vertical layout.
 """
 
 import logging
@@ -46,51 +40,50 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def main(save_dir=None):
+def main(save_dir="../plots"):
 
-    fig = plt.figure(
-        figsize=(60 / 25.4, 90 / 25.4)
-    )  # Wide figure for 2x2 + right column
+    fig = plt.figure(figsize=(40 / 25.4, 90 / 25.4))  # Vertical figure for 3x1 layout
 
-    # Create gridspec for mixed layout: 2x2 left section + 1x3 right column
+    # Create gridspec for 3x1 vertical layout with custom height ratios
     gs = gridspec.GridSpec(
         3,
-        1,  # Use 5 columns: 2+2 for left 2x2, 1 for right column
+        1,  # 3 rows, 1 column
         figure=fig,
-        hspace=0.6,
+        hspace=0.4,
         wspace=0.3,
+        height_ratios=[1, 1, 1],  # Give more space to the 3D plot
     )
-    ax_top_right = fig.add_subplot(gs[0, 0], projection="3d")  # Memory Retention
-    ax_mid_right = fig.add_subplot(gs[1, 0])  # 3D BER Plot
-    ax_bottom_right = fig.add_subplot(gs[2, 0])  # Array Fidelity
+    ax_top_right = fig.add_subplot(gs[0, 0], projection="3d")  # 3D BER Bar Plot
+    ax_mid_right = fig.add_subplot(gs[1, 0])  # Array Fidelity Bar
+    ax_bottom_right = fig.add_subplot(gs[2, 0])  # Memory Retention
 
-    # 6. Middle right: 3D BER Bar Plot
+    # 1. Top: 3D BER Bar Plot
     print("  - 3D BER Bar Plot")
     ber_array = process_ber_data(logger=logger)
     plot_ber_3d_bar(ber_array, ax=ax_top_right)
 
-    # 7. Bottom right: Array Fidelity Bar
+    # 2. Middle: Array Fidelity Bar
     print("  - Array Fidelity Bar Plot")
     plot_fidelity_clean_bar(ber_array, ax=ax_mid_right)
 
-    # 5. Top right: Memory Retention
+    # 3. Bottom: Memory Retention
     print("  - Memory Retention")
     delay_list, bit_error_rate_list, _ = import_delay_data()
     plot_retention(delay_list, bit_error_rate_list, ax=ax_bottom_right)
 
-
-    # pos = ax_top_right.get_position()
-    # ax_top_right.set_position([pos.x0 - 0.15, pos.y0, pos.width, pos.height])
-
+    # Adjust 3D plot position and size to fill more space
+    pos = ax_top_right.get_position()
+    ax_top_right.set_position(
+        [pos.x0 - 0.25, pos.y0 - 0.05, pos.width + 0.4, pos.height + 0.2]
+    )
 
     # Save or show the figure
     if save_dir:
         plt.savefig(
-            f"{save_dir}/figure4_comprehensive_ber_analysis.png",
+            f"{save_dir}/figure4_right_panel_ber_analysis.pdf",
             dpi=300,
             bbox_inches="tight",
         )
-        print(f"Figure 4 saved to {save_dir}/figure4_comprehensive_ber_analysis.png")
         plt.close()
     else:
         plt.show()

@@ -126,7 +126,7 @@ def plot_fidelity_clean_bar(
 
     # Plotting
     x = np.arange(len(fidelity_flat))
-    ax.bar(x, fidelity_flat, yerr=errors, capsize=3, color="#658DDC", edgecolor="black")
+    ax.bar(x, fidelity_flat, yerr=errors, capsize=1, color="#658DDC", edgecolor="black", linewidth=0.5)
 
     # Add value labels only if they fit in the visible range
     # for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
@@ -137,11 +137,11 @@ def plot_fidelity_clean_bar(
     # Formatting
     ax.set_xticks(x)
     ax.set_xlim(-1.5, len(x) + 0.5)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_xticklabels(labels, rotation=45, ha="center")
     ax.set_ylabel("Fidelity (1 - BER)")
     ax.set_ylim(0.998, 1.0001)
     ax.grid(axis="y", linestyle="--", alpha=0.6)
-
+    ax.set_xlabel("Cell")
     # Reference lines
     ax.axhline(0.999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
     ax.axhline(0.9999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
