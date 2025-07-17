@@ -361,7 +361,7 @@ def plot_enable_write_sweep_multiple(
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    ax.grid(axis="x")
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
     return fig, ax
 
 
@@ -645,7 +645,6 @@ def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool = True) -> Axes:
             ztotal,
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} µA",
             color=CMAP(enable_current_norm),
-            marker=".",
         )
 
     ax.set_ylim([0, 1])
@@ -662,7 +661,7 @@ def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict], **kwargs) ->
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
     ax.set_xlim(0, 300)
-    ax.grid(axis="x")
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
     return ax
 
 
@@ -1283,7 +1282,7 @@ def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
     ax.yaxis.set_minor_locator(plt.MultipleLocator(10))
     ax.xaxis.set_major_locator(plt.MultipleLocator(25))
     ax.xaxis.set_minor_locator(plt.MultipleLocator(5))
-    ax.grid()
+    ax.grid(linestyle="--", linewidth=0.5, zorder=-1)
     ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     apply_legend_style(
@@ -1333,27 +1332,31 @@ def plot_state_current_markers(
         ax.plot(
             state_currents[:, i],
             write_currents,
-            marker=None,
+            marker=MARKERS[i],
             color="gray",
             label=labels[i],
             zorder=-1,
+            markersize=2,
+
         )
         ax.scatter(
             state_currents[:, i],
             write_currents,
             marker=MARKERS[i],
             c=colors,
-            edgecolor="black",
+            s=10,
+            zorder=1,
+            label="_nolegend_",  # Prevent duplicate legend entries
         )
 
-    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
-    ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+    ax.set_ylabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
 
     if add_legend:
         # Apply standardized legend style
         apply_legend_style(
             ax,
-            style="outside_right",
+            style="inside_lower_left",
             labels=[
                 "$I_{1}$",
                 "$I_{0}$",
@@ -1361,7 +1364,7 @@ def plot_state_current_markers(
                 "$I_{1,\mathrm{inv}}$",
             ],
         )
-    ax.grid(axis="x")
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
     return fig, ax
 
 
@@ -1371,47 +1374,56 @@ def plot_write_sweep_formatted_markers(
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
     colors = CMAP(np.linspace(0, 1, len([d["write_current"] for d in data2])))
-    ax.plot(
-        [d["write_current"] for d in data],
-        [d["write_temp"] for d in data],
-        "-",
-        color='gray',
-        zorder=-1,
-    )
+
     ax.scatter(
         [d["write_current"] for d in data],
-        [d["write_temp"] for d in data],
+        [d["enable_write_current"] for d in data],
         marker="o",
         c=colors[-len(data):],
-        label="Lower bound",
+        s=8,  # Increase the size of the markers
+        label="_nolegend_",  # Prevent duplicate legend entries
     )
 
-    ax.plot(
-        [d["write_current"] for d in data2],
-        [d["write_temp"] for d in data2],
-        "-",
-        color="gray",
-        zorder=-1,
-    )
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+
 
     ax.scatter(
         [d["write_current"] for d in data2],
-        [d["write_temp"] for d in data2],
-        marker="o",
+        [d["enable_write_current"] for d in data2],
+        marker="+",
         c=colors,
-        label="Upper bound",
+        linewidths=1.5,  # Increase the thickness of the marker lines
+        s=12,  # Increase the size of the markers
+        zorder=1,
+        label="_nolegend_",  # Prevent duplicate legend entries
     )
+    ax.plot(
+        [d["write_current"] for d in data],
+        [d["enable_write_current"] for d in data],
+        "-o",
+        color='gray',
+        zorder=-1,
+        label="Lower bound",
 
+    )
+    ax.plot(
+        [d["write_current"] for d in data2],
+        [d["enable_write_current"] for d in data2],
+        "-+",
+        color="gray",
+        zorder=-1,
+        label="Upper bound",
+
+    )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
+    ax.set_ylabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.set_xlim(0, 300)
     if add_legend:
         apply_legend_style(
             ax,
-            style="outside_right",
+            style="inside_lower_left",
             labels=["Lower bound", "Upper bound"],
         )
-    ax.grid(axis="x")
     return ax
 
 

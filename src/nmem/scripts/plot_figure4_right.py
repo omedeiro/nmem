@@ -42,7 +42,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 def main(save_dir="../plots"):
 
-    fig = plt.figure(figsize=(40 / 25.4, 90 / 25.4))  # Vertical figure for 3x1 layout
+    fig = plt.figure(figsize=(60 / 25.4, 90 / 25.4))  # Vertical figure for 3x1 layout
 
     # Create gridspec for 3x1 vertical layout with custom height ratios
     gs = gridspec.GridSpec(

@@ -53,6 +53,16 @@ LEGEND_CONFIG = {
         "handlelength": 1.5,
         "handletextpad": 0.5,
     },
+    "inside_lower_left": {
+        "loc": "lower left",
+        "frameon": True,
+        "fancybox": False,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "edgecolor": "white",
+    },
     "bottom_outside": {
         "bbox_to_anchor": (0.5, -0.15),
         "loc": "upper center",
@@ -225,8 +235,8 @@ def set_paper_style() -> None:
     """Paper/publication-optimized style with Inter fonts and compact layout."""
     set_inter_font()
     golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
-    width = 60/25.4
-    height = 45/25.4
+    width = 60 / 25.4
+    height = 45 / 25.4
     plt.rcParams.update(
         {
             "figure.figsize": [width, height],
@@ -349,7 +359,7 @@ def get_consistent_figure_size(plot_type="single"):
 
     size_map = {
         "single": (base_width, base_height),
-        "wide": (base_width * 3, base_height*2),
+        "wide": (base_width * 3, base_height * 2),
         "tall": (base_width, base_height * 1.5),
         "square": (base_width, base_width),
         "comparison": (base_width * 2, base_height),

@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def main(save_dir=None):
+def main(save_dir="../plots"):
     """
     Generate Figure 4 with comprehensive BER analysis.
 
@@ -95,14 +95,14 @@ def main(save_dir=None):
 
     # 3. Bottom left: BER Enable Write Sweep State Current Markers (Figure 2)
     print("  - BER Enable Write Sweep Markers (Figure 2)")
-    plot_state_current_markers(dict_list_ews, ax=ax_bottom_left, add_legend=False)
+    plot_state_current_markers(dict_list_ews, ax=ax_bottom_left, add_legend=True)
     ax_bottom_left.set_xlim([250, 335])
     ax_bottom_left.xaxis.set_major_locator(plt.MultipleLocator(25))
     ax_bottom_left.xaxis.set_minor_locator(plt.MultipleLocator(5))
     # 4. Bottom center: Write Current Enable Margin Markers
     print("  - Write Current Enable Margin Markers")
     data_dict = import_write_sweep_formatted_markers(dict_list_ws)
-    plot_write_sweep_formatted_markers(ax_bottom_center, data_dict, add_legend=False)
+    plot_write_sweep_formatted_markers(ax_bottom_center, data_dict, add_legend=True)
 
     # Adjust layout
     plt.tight_layout()
@@ -110,7 +110,7 @@ def main(save_dir=None):
     # Save or show the figure
     if save_dir:
         plt.savefig(
-            f"{save_dir}/figure4_comprehensive_ber_analysis.png",
+            f"{save_dir}/figure4_comprehensive_ber_analysis.pdf",
             dpi=300,
             bbox_inches="tight",
         )
