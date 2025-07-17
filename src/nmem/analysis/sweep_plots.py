@@ -279,7 +279,6 @@ def plot_enable_write_temp(
     return ax
 
 
-
 def plot_write_temp_vs_current(
     ax, write_current_array, write_temp_array, critical_current_zero
 ):
@@ -311,7 +310,7 @@ def plot_enable_write_sweep_multiple(
     add_errorbar: bool = False,
     N: int = None,
     add_legend: bool = True,
-    xlabel: str = "$I_{\\mathrm{enable}}$ [µA]", 
+    xlabel: str = "$I_{\\mathrm{enable}}$ [µA]",
     ylabel: str = "Bit Error Rate",
     ax: Axes = None,
     **kwargs,
@@ -614,7 +613,7 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
     return ax
 
 
-def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool=True) -> Axes:
+def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool = True) -> Axes:
     write_temp_list = []
     enable_write_current_list = []
 
@@ -1300,7 +1299,9 @@ def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
     return fig, ax
 
 
-def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None, add_legend: bool = True):
+def plot_state_current_markers(
+    dict_list: list[dict], ax: plt.Axes = None, add_legend: bool = True
+):
     """
     Plots state current markers for each dataset.
     Returns (fig, ax).
@@ -1311,19 +1312,41 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None, add_l
     else:
         fig = ax.figure
 
+    write_current_list = []
+    state_current_list = []
     for data_dict in dict_list:
         state_current_markers = get_state_current_markers(
             data_dict, "enable_write_current"
         )
-        write_current = get_write_current(data_dict)
-        for i, state_current in enumerate(state_current_markers[0, :]):
-            if state_current > 0:
-                ax.plot(
-                    state_current,
-                    write_current,
-                    "o",
-                    color=RBCOLORS[i],
-                )
+        write_current_list.append(get_write_current(data_dict))
+        state_current_list.append(state_current_markers[0, :])
+    state_currents = np.array(state_current_list)
+    write_currents = np.array(write_current_list)
+    colors = CMAP(np.linspace(0, 1, len(write_currents)))
+    labels = [
+        "$I_{1}$",
+        "$I_{0}$",
+        "$I_{0,\mathrm{inv}}$",
+        "$I_{1,\mathrm{inv}}$",
+    ]
+    for i in range(4):
+        ax.plot(
+            state_currents[:, i],
+            write_currents,
+            marker=None,
+            color="gray",
+            label=labels[i],
+            zorder=-1,
+        )
+        ax.scatter(
+            state_currents[:, i],
+            write_currents,
+            marker=MARKERS[i],
+            c=colors,
+            edgecolor="black",
+            s=50,
+        )
+
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
 
@@ -1343,26 +1366,41 @@ def plot_state_current_markers(dict_list: list[dict], ax: plt.Axes = None, add_l
     return fig, ax
 
 
-def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict, add_legend: bool = True) -> Axes:
+def plot_write_sweep_formatted_markers(
+    ax: plt.Axes, data_dict: dict, add_legend: bool = True
+) -> Axes:
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
-    colors = CMAP(np.linspace(0, 1, 4))
+    colors = CMAP(np.linspace(0, 1, len([d["write_current"] for d in data2])))
     ax.plot(
         [d["write_current"] for d in data],
         [d["write_temp"] for d in data],
-        "d",
-        color=colors[0],
-        markeredgecolor="black",
-        markeredgewidth=0.5,
+        "-",
+        color='gray',
     )
+    ax.scatter(
+        [d["write_current"] for d in data],
+        [d["write_temp"] for d in data],
+        marker="o",
+        c=colors[-len(data):],
+        label="Lower bound",
+    )
+
     ax.plot(
         [d["write_current"] for d in data2],
         [d["write_temp"] for d in data2],
-        "o",
-        color=colors[2],
-        markeredgecolor="black",
-        markeredgewidth=0.5,
+        "-",
+        color="gray",
     )
+
+    ax.scatter(
+        [d["write_current"] for d in data2],
+        [d["write_temp"] for d in data2],
+        marker="o",
+        c=colors,
+        label="Upper bound",
+    )
+
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
     ax.set_xlim(0, 300)
@@ -1588,3 +1626,21 @@ def plot_loop_size_sweep_ber(loop_sizes, best_ber, ax=None):
     ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
     ax.xaxis.set_major_locator(MaxNLocator(7))
     return fig, ax
+
+
+if __name__ == "__main__":
+    # Example usage of the plotting functions
+    fig, ax = plt.subplots()
+    from nmem.analysis.data_import import (
+        import_directory,
+        import_write_sweep_formatted_markers,
+        import_write_sweep_formatted,
+    )
+
+    dict_list_ews = import_directory("../data/ber_sweep_enable_write_current/data1")
+    dict_list_ws = import_write_sweep_formatted()
+
+    # plot_state_current_markers(dict_list_ews, ax=ax, add_legend=False)
+
+    data_dict = import_write_sweep_formatted_markers(dict_list_ws)
+    plot_write_sweep_formatted_markers(ax, data_dict, add_legend=False)

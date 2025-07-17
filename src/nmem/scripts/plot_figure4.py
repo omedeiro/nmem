@@ -104,23 +104,6 @@ def main(save_dir=None):
     data_dict = import_write_sweep_formatted_markers(dict_list_ws)
     plot_write_sweep_formatted_markers(ax_bottom_center, data_dict, add_legend=False)
 
-
-    # # 6. Middle right: 3D BER Bar Plot
-    # print("  - 3D BER Bar Plot")
-    # ber_array = process_ber_data(logger=logger)
-    # plot_ber_3d_bar(ber_array, ax=ax_top_right)
-
-    # # 7. Bottom right: Array Fidelity Bar
-    # print("  - Array Fidelity Bar Plot")
-    # plot_fidelity_clean_bar(ber_array, ax=ax_mid_right)
-
-
-    # # 5. Top right: Memory Retention
-    # print("  - Memory Retention")
-    # delay_list, bit_error_rate_list, _ = import_delay_data()
-    # plot_retention(delay_list, bit_error_rate_list, ax=ax_bottom_right)
-
-
     # Adjust layout
     plt.tight_layout()
 
