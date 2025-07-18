@@ -58,6 +58,7 @@ from nmem.analysis.plot_utils import (
 )
 from nmem.analysis.styles import (
     CMAP,
+    CMAP2,
     CMAP3,
     RBCOLORS,
     MARKERS,
@@ -644,7 +645,7 @@ def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool = True) -> Axes:
             y,
             ztotal,
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} µA",
-            color=CMAP(enable_current_norm),
+            color=CMAP2(enable_current_norm),
         )
 
     ax.set_ylim([0, 1])
@@ -1365,6 +1366,8 @@ def plot_state_current_markers(
             ],
         )
     ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+    ax.set_axisbelow(True)  
+
     return fig, ax
 
 
@@ -1373,7 +1376,7 @@ def plot_write_sweep_formatted_markers(
 ) -> Axes:
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
-    colors = CMAP(np.linspace(0, 1, len([d["write_current"] for d in data2])))
+    colors = CMAP2(np.linspace(0, 1, len([d["write_current"] for d in data2])))
 
     ax.scatter(
         [d["write_current"] for d in data],
@@ -1383,8 +1386,6 @@ def plot_write_sweep_formatted_markers(
         s=8,  # Increase the size of the markers
         label="_nolegend_",  # Prevent duplicate legend entries
     )
-
-    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
 
 
     ax.scatter(
@@ -1418,6 +1419,9 @@ def plot_write_sweep_formatted_markers(
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.set_xlim(0, 300)
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+    ax.set_axisbelow(True)  
+
     if add_legend:
         apply_legend_style(
             ax,
