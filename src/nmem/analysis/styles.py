@@ -14,7 +14,7 @@ MARKERS = ["o", "s", "D", "^"]
 C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
-CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
+CMAP2 = plt.get_cmap("viridis")
 CMAP3 = plt.get_cmap("plasma").reversed()
 
 # Global style configuration
