@@ -459,27 +459,27 @@ def plot_read_sweep(
 
     if variable_name == "write_current":
         variable = get_write_current(data_dict)
-        label = f"{variable:.2f}µA"
+        label = f"{variable:.1f} µA"
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
         write_temp = get_channel_temperature(data_dict, "write")
         if write_temp is None:
-            label = f"{variable:.2f}µA"
+            label = f"{variable:.1f} µA"
         else:
-            label = f"{variable:.2f}µA, {write_temp:.2f}K"
+            label = f"{variable:.1f} µA, {write_temp:.1f}K"
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
-        label = f"{variable:.2f} pts "
+        label = f"{variable:.1f} pts "
     if variable_name == "write_width":
         variable = get_write_width(data_dict)
-        label = f"{variable:.2f} pts "
+        label = f"{variable:.1f} pts "
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
         read_temp = get_channel_temperature(data_dict, "read")
-        label = f"{variable:.2f}µA, {read_temp:.2f}K"
+        label = f"{variable:.1f} µA, {read_temp:.1f} K"
     if variable_name == "enable_write_width":
         variable = get_enable_write_width(data_dict)
-        label = f"{variable:.2f} pts"
+        label = f"{variable:.1f} pts"
 
     ax.plot(
         read_currents,
@@ -847,7 +847,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
         height_ratios=[2, 0.5, 1, 1],
-        figsize=get_consistent_figure_size("large"),
+        figsize=(180/25.4, 180/25.4),
     )
 
     CASE = 16
@@ -877,22 +877,29 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         "write_current",
         marker=".",
         linestyle="-",
-        markersize=4,
+        markersize=2,
+        linewidth=1.0,
     )
     axs["A"].set_xlim(650, 850)
     axs["A"].set_ylabel("BER")
-    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
     plot_read_switch_probability_array(
-        axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
+        axs["B"],
+        dict_list,
+        write_current_list,
+        marker=".",
+        linestyle="-",
+        markersize=2,
+        linewidth=1.0,
     )
     axs["B"].set_xlim(650, 850)
     # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
-    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
+    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
 
     axs["C"].set_xlim(650, 850)
     axs["D"].set_xlim(650, 850)
-    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
     axs["C"].set_ylabel("BER")
     axs["B"].set_ylabel("Switching Probability")
     axs["D"].set_ylabel("Switching Probability")
@@ -911,19 +918,21 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
             axs["C"],
             ltsp_data_dict,
             color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
+            label=f"{ltsp_write_current} µA",
             marker=".",
             linestyle="-",
-            markersize=5,
+            markersize=2,
+            linewidth=1.0,
         )
 
         plot_current_sweep_switching(
             axs["D"],
             ltsp_data_dict,
             color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
+            label=f"{ltsp_write_current} µA",
             marker=".",
-            markersize=5,
+            markersize=2,
+            linewidth=1.0,
         )
 
     axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
@@ -932,17 +941,31 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
 
     axs["B"].legend(
-        loc="upper right",
+        loc="lower right",
         labelspacing=0.1,
-        fontsize=6,
+        fontsize=5,
+        handlelength=0.8,
     )
     axs["D"].legend(
-        loc="upper right",
+        loc="lower right",
         labelspacing=0.1,
-        fontsize=6,
+        fontsize=5,
+        handlelength=0.8,
+    )
+    axs["A"].legend(
+        loc="lower right",
+        labelspacing=0.1,
+        fontsize=5,
+        handlelength=0.8,
+    )
+    axs["C"].legend(
+        loc="lower right",
+        labelspacing=0.1,
+        fontsize=5,
+        handlelength=0.8,
     )
 
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+    fig.subplots_adjust(hspace=0.3, wspace=0.3)
 
     ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
     ax_legend.axis("off")
@@ -952,8 +975,13 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         loc="center",
         ncol=4,
         bbox_to_anchor=(0.0, 1.0),
+        fontsize=6,
     )
 
+    axs["A"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["B"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["C"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["D"].xaxis.set_major_locator(plt.MultipleLocator(25))
     return fig, axs
 
 
@@ -1338,7 +1366,6 @@ def plot_state_current_markers(
             label=labels[i],
             zorder=-1,
             markersize=2,
-
         )
         ax.scatter(
             state_currents[:, i],
@@ -1366,7 +1393,7 @@ def plot_state_current_markers(
             ],
         )
     ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
-    ax.set_axisbelow(True)  
+    ax.set_axisbelow(True)
 
     return fig, ax
 
@@ -1382,11 +1409,10 @@ def plot_write_sweep_formatted_markers(
         [d["write_current"] for d in data],
         [d["enable_write_current"] for d in data],
         marker="o",
-        c=colors[-len(data):],
+        c=colors[-len(data) :],
         s=8,  # Increase the size of the markers
         label="_nolegend_",  # Prevent duplicate legend entries
     )
-
 
     ax.scatter(
         [d["write_current"] for d in data2],
@@ -1402,10 +1428,9 @@ def plot_write_sweep_formatted_markers(
         [d["write_current"] for d in data],
         [d["enable_write_current"] for d in data],
         "-o",
-        color='gray',
+        color="gray",
         zorder=-1,
         label="Lower bound",
-
     )
     ax.plot(
         [d["write_current"] for d in data2],
@@ -1414,13 +1439,12 @@ def plot_write_sweep_formatted_markers(
         color="gray",
         zorder=-1,
         label="Upper bound",
-
     )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_ylabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.set_xlim(0, 300)
     ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
-    ax.set_axisbelow(True)  
+    ax.set_axisbelow(True)
 
     if add_legend:
         apply_legend_style(
