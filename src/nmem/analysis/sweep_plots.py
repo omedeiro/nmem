@@ -942,6 +942,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
 
     axs["B"].legend(
         loc="lower right",
+        bbox_to_anchor=(0.99, -0.02),
         labelspacing=0.1,
         fontsize=5,
         handlelength=0.8,
@@ -954,6 +955,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     )
     axs["A"].legend(
         loc="lower right",
+        bbox_to_anchor=(0.99, -0.02),
         labelspacing=0.1,
         fontsize=5,
         handlelength=0.8,
@@ -963,6 +965,28 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         labelspacing=0.1,
         fontsize=5,
         handlelength=0.8,
+    )
+
+    # Add professional Nature-style cell labels to plots A and C
+    axs["A"].text(
+        0.95, 0.95, 
+        "Cell C3", 
+        transform=axs["A"].transAxes,
+        fontsize=7,
+        fontweight='bold',
+        ha='right',
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
+    )
+    axs["B"].text(
+        0.95, 0.95, 
+        "Cell C3", 
+        transform=axs["B"].transAxes,
+        fontsize=7,
+        fontweight='bold',
+        ha='right',
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
     )
 
     fig.subplots_adjust(hspace=0.3, wspace=0.3)

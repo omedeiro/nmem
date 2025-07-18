@@ -77,6 +77,19 @@ def main(save_dir="../plots"):
         [pos.x0 - 0.25, pos.y0 - 0.05, pos.width + 0.4, pos.height + 0.2]
     )
 
+    ax_bottom_right.text(
+        0.95,
+        0.05,
+        "Cell C3",
+        transform=ax_bottom_right.transAxes,
+        fontsize=7,
+        fontweight="bold",
+        ha="right",
+        va="bottom",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8
+        ),
+    )
     # Save or show the figure
     if save_dir:
         plt.savefig(

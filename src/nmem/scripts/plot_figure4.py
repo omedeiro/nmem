@@ -55,7 +55,9 @@ def main(save_dir="../plots"):
     """
     # Set up the figure with mixed subplot arrangement
     figsize = get_consistent_figure_size("wide")
-    fig = plt.figure(figsize=(120/25.4, 90/25.4))  # Wide figure for 2x2 + right column
+    fig = plt.figure(
+        figsize=(120 / 25.4, 90 / 25.4)
+    )  # Wide figure for 2x2 + right column
 
     # Create gridspec for mixed layout: 2x2 left section + 1x3 right column
     gs = gridspec.GridSpec(
@@ -88,11 +90,39 @@ def main(save_dir="../plots"):
     ax_top_left.set_xlim([250, 335])
     ax_top_left.xaxis.set_major_locator(plt.MultipleLocator(25))
     ax_top_left.xaxis.set_minor_locator(plt.MultipleLocator(5))
+
+    # Add professional Nature-style cell label to top left plot
+    ax_top_left.text(
+        0.05,
+        0.95,
+        "Cell C1",
+        transform=ax_top_left.transAxes,
+        fontsize=7,
+        fontweight="bold",
+        ha="left",
+        va="top",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8
+        ),
+    )
+
     # 2. Top center: BER vs Write Current Sweep
     print("  - BER Write Current Sweep")
     dict_list_ws = import_write_sweep_formatted()
     plot_write_sweep_formatted(ax_top_center, dict_list_ws, add_legend=False)
-
+    ax_top_center.text(
+        0.05,
+        0.95,
+        "Cell C3",
+        transform=ax_top_center.transAxes,
+        fontsize=7,
+        fontweight="bold",
+        ha="left",
+        va="top",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8
+        ),
+    )
     # 3. Bottom left: BER Enable Write Sweep State Current Markers (Figure 2)
     print("  - BER Enable Write Sweep Markers (Figure 2)")
     plot_state_current_markers(dict_list_ews, ax=ax_bottom_left, add_legend=True)
