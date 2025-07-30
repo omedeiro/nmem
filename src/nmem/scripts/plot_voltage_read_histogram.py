@@ -10,7 +10,7 @@ from nmem.analysis.styles import apply_global_style
 apply_global_style()
 
 
-def main(save_dir="../plots"):
+def main(save_dir=None):
     dict_list = import_directory("../data/voltage_trace_averaged")
     fig, ax = plt.subplots()
     plot_voltage_hist(ax, dict_list[1])
@@ -30,7 +30,7 @@ def main(save_dir="../plots"):
     )
     if save_dir:
         plt.savefig(
-            f"{save_dir}/voltage_read_histogram.pdf", dpi=300, bbox_inches="tight"
+            f"{save_dir}/voltage_read_histogram.png", dpi=300, bbox_inches="tight"
         )
         plt.close()
     else:

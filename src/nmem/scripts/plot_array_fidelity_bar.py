@@ -14,7 +14,7 @@ from nmem.analysis.bar_plots import (
 )
 from nmem.analysis.core_analysis import process_ber_data
 from nmem.analysis.styles import apply_global_style
-
+import matplotlib.pyplot as plt
 # Set plot styles
 apply_global_style()
 
@@ -27,17 +27,28 @@ def generate_plots(ber_array, save_dir=None):
     """
     Generate the plots and save them to the specified directory.
     """
+    fig, ax = plot_ber_3d_bar(ber_array)
     if save_dir:
-        # Save the plots with a path provided
-        plot_ber_3d_bar(ber_array, save_path=f"{save_dir}/array_fidelity_bar_3d.png")
-        plot_fidelity_clean_bar(
-            ber_array, save_path=f"{save_dir}/array_fidelity_bar_clean.png"
+        plt.savefig(
+            f"{save_dir}/ber_3d_bar_plot.png",
+            dpi=300,
+            bbox_inches="tight",
         )
+        plt.close()
     else:
-        # Display the plots if no save path is provided
-        plot_ber_3d_bar(ber_array)
-        plot_fidelity_clean_bar(ber_array)
+        plt.show()
 
+    fig, ax = plt.subplots()
+    plot_fidelity_clean_bar(ber_array, ax=ax)
+    if save_dir:
+        plt.savefig(
+            f"{save_dir}/fidelity_clean_bar_plot.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
+        plt.close()
+    else:
+        plt.show()
 
 def main(save_dir=None):
     """

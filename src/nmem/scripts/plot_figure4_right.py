@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def main(save_dir="../plots"):
+def main(save_dir=None):
 
     fig = plt.figure(figsize=(60 / 25.4, 90 / 25.4))  # Vertical figure for 3x1 layout
 
@@ -93,7 +93,7 @@ def main(save_dir="../plots"):
     # Save or show the figure
     if save_dir:
         plt.savefig(
-            f"{save_dir}/figure4_right_panel_ber_analysis.pdf",
+            f"{save_dir}/figure4_right_panel_ber_analysis.png",
             dpi=300,
             bbox_inches="tight",
         )
