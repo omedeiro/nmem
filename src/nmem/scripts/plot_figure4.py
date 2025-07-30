@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def main(save_dir="../plots"):
+def main(save_dir=None):
     """
     Generate Figure 4 with comprehensive BER analysis.
 
@@ -140,7 +140,7 @@ def main(save_dir="../plots"):
     # Save or show the figure
     if save_dir:
         plt.savefig(
-            f"{save_dir}/figure4_comprehensive_ber_analysis.pdf",
+            f"{save_dir}/figure4_comprehensive_ber_analysis.png",
             dpi=300,
             bbox_inches="tight",
         )
