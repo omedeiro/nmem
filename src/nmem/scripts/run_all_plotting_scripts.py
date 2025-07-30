@@ -187,6 +187,7 @@ def main(output_dir=None, style_mode="thesis", generate_readme=True):
     if generate_readme:
         try:
             from nmem.scripts.update_plots_readme import create_plots_readme
+
             create_plots_readme(output_dir, style_mode)
         except Exception as e:
             logger.error(f"Failed to generate plots README: {e}")

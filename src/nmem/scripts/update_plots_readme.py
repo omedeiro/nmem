@@ -92,6 +92,101 @@ def find_script_for_image(image_name, scripts_dir):
     return None
 
 
+def extract_figure_size_from_script(script_file):
+    """
+    Extract the figure size from a plotting script.
+
+    Args:
+        script_file (Path): Path to the script file
+
+    Returns:
+        tuple: (width, height) in inches, or None if not found
+    """
+    if not script_file or not script_file.exists():
+        return None
+
+    try:
+        with open(script_file, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Look for common figure size patterns
+        patterns = [
+            # Direct figsize specification: figsize=(6, 4)
+            r"figsize\s*=\s*\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)",
+            # Division patterns: figsize=(120/25.4, 90/25.4)
+            r"figsize\s*=\s*\(\s*([0-9.]+)\s*/\s*[0-9.]+\s*,\s*([0-9.]+)\s*/\s*[0-9.]+\s*\)",
+            # get_consistent_figure_size patterns
+            r'get_consistent_figure_size\(["\'](\w+)["\']\)',
+        ]
+
+        import re
+
+        for pattern in patterns[:2]:  # Direct figsize patterns
+            match = re.search(pattern, content)
+            if match:
+                try:
+                    width = float(match.group(1))
+                    height = float(match.group(2))
+                    # Handle division cases like 120/25.4
+                    if "/" in pattern:
+                        # For mm to inch conversion (25.4 mm = 1 inch)
+                        if "25.4" in match.group(0):
+                            width = width / 25.4
+                            height = height / 25.4
+                    return (width, height)
+                except (ValueError, IndexError):
+                    continue
+
+        # Handle get_consistent_figure_size cases
+        get_size_match = re.search(patterns[2], content)
+        if get_size_match:
+            plot_type = get_size_match.group(1)
+            # Base size from styles.py
+            base_width, base_height = 6, 4
+
+            size_map = {
+                "single": (base_width, base_height),
+                "wide": (base_width * 3, base_height * 2),
+                "tall": (base_width, base_height * 1.5),
+                "square": (base_width, base_width),
+                "comparison": (base_width * 2, base_height),
+                "grid": (base_width * 2, base_height * 2),
+                "multi_row": (base_width, base_height * 1.5),
+                "large": (base_width * 2, base_height * 4),
+            }
+            return size_map.get(plot_type, (base_width, base_height))
+
+        # Default fallback to base size
+        return (6, 4)
+
+    except Exception as e:
+        logger.warning(f"Could not extract figure size from {script_file.name}: {e}")
+        return None
+
+
+def format_image_with_width(image_name, alt_text, figure_size=None):
+    """
+    Format an image reference with appropriate width attribute.
+
+    Args:
+        image_name (str): Image filename
+        alt_text (str): Alt text for the image
+        figure_size (tuple): (width, height) in inches, or None
+
+    Returns:
+        str: Formatted markdown image reference
+    """
+    if figure_size and len(figure_size) == 2:
+        width_inches = figure_size[0]
+        # Convert to a reasonable width for markdown (limit to reasonable sizes)
+        if width_inches > 12:
+            width_inches = 12  # Cap at 12 inches for very wide figures
+        return f'<img src="{image_name}" alt="{alt_text}" width="{width_inches}in">'
+    else:
+        # Fallback to standard markdown if no size info
+        return f"![{alt_text}]({image_name})"
+
+
 def create_plots_readme(plots_dir, style_mode="paper"):
     """
     Create a comprehensive README.md file for all plots in the directory.
@@ -174,8 +269,10 @@ def create_plots_readme(plots_dir, style_mode="paper"):
             # Extract description if script file exists
             if group["script_file"] and group["script_file"].exists():
                 description = extract_plot_description(group["script_file"])
+                figure_size = extract_figure_size_from_script(group["script_file"])
             else:
                 description = "No description available"
+                figure_size = None
 
             f.write(f"### {script_name}\n\n")
             f.write(f"**Script:** `{script_name}.py`\n\n")
@@ -202,7 +299,7 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                         .title()
                     )
 
-                    left_cell = f"{left_param} | ![{left_param}]({left_img})"
+                    left_cell = f"{left_param} | {format_image_with_width(left_img, left_param, figure_size)}"
 
                     if right_img:
                         right_param = (
@@ -211,7 +308,7 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                             .replace("_", " ")
                             .title()
                         )
-                        right_cell = f"{right_param} | ![{right_param}]({right_img})"
+                        right_cell = f"{right_param} | {format_image_with_width(right_img, right_param, figure_size)}"
                     else:
                         right_cell = " | "
 
@@ -234,12 +331,14 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                 part2_img = next((img for img in image_files if "part2" in img), None)
 
                 if part1_img and part2_img:
-                    f.write(f"| ![Part 1]({part1_img}) | ![Part 2]({part2_img}) |\n")
+                    f.write(
+                        f"| {format_image_with_width(part1_img, 'Part 1', figure_size)} | {format_image_with_width(part2_img, 'Part 2', figure_size)} |\n"
+                    )
                 else:
                     # Fallback to first two images if naming pattern doesn't match
                     if len(image_files) >= 2:
                         f.write(
-                            f"| ![Part 1]({image_files[0]}) | ![Part 2]({image_files[1]}) |\n"
+                            f"| {format_image_with_width(image_files[0], 'Part 1', figure_size)} | {format_image_with_width(image_files[1], 'Part 2', figure_size)} |\n"
                         )
 
                 f.write("\n")
@@ -272,24 +371,28 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                 # Row 1: Current sweep plots
                 if sweep_off and sweep_on:
                     f.write(
-                        f"| ![Write Current Sweep OFF]({sweep_off}) | ![Write Current Sweep ON]({sweep_on}) |\n"
+                        f"| {format_image_with_width(sweep_off, 'Write Current Sweep OFF', figure_size)} | {format_image_with_width(sweep_on, 'Write Current Sweep ON', figure_size)} |\n"
                     )
 
                 # Row 2: Trace stack plots
                 if trace_off and trace_on:
                     f.write(
-                        f"| ![Voltage Trace Stack OFF]({trace_off}) | ![Voltage Trace Stack ON]({trace_on}) |\n"
+                        f"| {format_image_with_width(trace_off, 'Voltage Trace Stack OFF', figure_size)} | {format_image_with_width(trace_on, 'Voltage Trace Stack ON', figure_size)} |\n"
                     )
 
                 f.write("\n")
             else:
                 # Standard handling for other plots
                 if len(image_files) == 1:
-                    f.write(f"**Image:** ![{script_name}]({image_files[0]})\n\n")
+                    f.write(
+                        f"**Image:** {format_image_with_width(image_files[0], script_name, figure_size)}\n\n"
+                    )
                 else:
                     f.write("**Images:**\n")
                     for i, img_file in enumerate(image_files, 1):
-                        f.write(f"- Figure {i}: ![{script_name}_fig{i}]({img_file})\n")
+                        f.write(
+                            f"- Figure {i}: {format_image_with_width(img_file, f'{script_name}_fig{i}', figure_size)}\n"
+                        )
                     f.write("\n")
 
             f.write("---\n\n")
