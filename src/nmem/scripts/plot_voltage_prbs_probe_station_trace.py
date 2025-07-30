@@ -43,7 +43,7 @@ def main(data_dir="../data/voltage_prbs_probe_station", trim=4500, save_dir=None
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/ber_prbs_probe_station_trace.png",
+            f"{save_dir}/voltage_prbs_probe_station_trace.png",
             dpi=300,
             bbox_inches="tight",
         )

@@ -121,7 +121,7 @@ def main(save_dir=None):
 
         if save_dir:
             plt.savefig(
-                f"{save_dir}/ber_read_sweep_fitting.png", dpi=300, bbox_inches="tight"
+                f"{save_dir}/calc_read_sweep_fitting.png", dpi=300, bbox_inches="tight"
             )
             plt.close()
         else:

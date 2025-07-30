@@ -134,8 +134,6 @@ def main(save_dir=None):
     data_dict = import_write_sweep_formatted_markers(dict_list_ws)
     plot_write_sweep_formatted_markers(ax_bottom_center, data_dict, add_legend=True)
 
-    # Adjust layout
-    plt.tight_layout()
 
     # Save or show the figure
     if save_dir:
