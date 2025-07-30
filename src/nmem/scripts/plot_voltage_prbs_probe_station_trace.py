@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main(data_dir="../data/ber_prbs_probe_station", trim=4500, save_dir=None):
+def main(data_dir="../data/voltage_prbs_probe_station", trim=4500, save_dir=None):
     data_list = import_directory(data_dir)
     total_error, W1R0_error, W0R1_error, error_locs = analyze_prbs_errors(
         data_list, trim=trim
