@@ -77,7 +77,7 @@ extracted from BER vs enable/write current sweep measurements. These markers hel
 identify optimal current combinations for reliable memory operations by highlighting
 key state transitions and operating regions.
 
-**Image:** ![plot_ber_enable_write_sweep_markers](ber_enable_write_sweep.png)
+**Image:** ![plot_ber_enable_write_sweep_markers](ber_enable_write_sweep_markers.png)
 
 ---
 
