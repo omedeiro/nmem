@@ -16,7 +16,7 @@ def main(save_dir=None):
 
     if save_dir:
         plt.savefig(
-            f"{save_dir}/ber_read_current_sweep_enable_read.png",
+            f"{save_dir}/figure2.png",
             dpi=300,
             bbox_inches="tight",
         )

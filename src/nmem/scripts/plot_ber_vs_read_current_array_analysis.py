@@ -132,7 +132,7 @@ def main(
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/read_current_operating_width_vs_write_current.png",
+            f"{save_dir}/ber_vs_read_current_array_analysis.png",
             bbox_inches="tight",
             dpi=300,
         )

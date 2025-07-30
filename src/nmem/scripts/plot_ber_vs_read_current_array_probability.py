@@ -40,7 +40,7 @@ def main(
     apply_legend_style(ax, "outside_right", title="Write Current [$\\mu$A]")
     if save_dir:
         fig.savefig(
-            f"{save_dir}/switching_probability_vs_read_current.png",
+            f"{save_dir}/ber_vs_read_current_array_probability.png",
             bbox_inches="tight",
             dpi=300,
         )

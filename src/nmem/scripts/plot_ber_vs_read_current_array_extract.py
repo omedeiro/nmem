@@ -99,7 +99,7 @@ def main(
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/state_current_vs_write_current.png",
+            f"{save_dir}/ber_vs_read_current_array_extract.png",
             bbox_inches="tight",
             dpi=300,
         )
