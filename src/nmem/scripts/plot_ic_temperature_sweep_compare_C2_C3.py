@@ -1,11 +1,12 @@
-'''
-# This script compares C2 and C3 cells based on enable current relation data.
-# It generates two plots: 
-#  1. A single axis comparison of C2 and C3 cells.
-#  2. Subplots for C3 cell data.
-#  Despite being in the same column, the C2 and C3 cells exhibit different behaviors,
-#  C3 has a step in the enable current relation, while C2 has a typical response. 
-'''
+"""
+This script compares C2 and C3 cells based on enable current relation data.
+It generates two plots:
+ 1. A single axis comparison of C2 and C3 cells.
+ 2. Subplots for C3 cell data.
+Despite being in the same column, the C2 and C3 cells exhibit different behaviors,
+C3 has a step in the enable current relation, while C2 has a typical response.
+"""
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.core_analysis import (
