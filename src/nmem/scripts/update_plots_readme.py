@@ -82,6 +82,20 @@ def find_script_for_image(image_name, scripts_dir):
         if prefixed_script.exists():
             return prefixed_script
 
+    # Search through script contents to find which script generates this image
+    for script_file in scripts_dir.glob("plot_*.py"):
+        try:
+            with open(script_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                # Look for savefig calls that might generate this image
+                if f'"{image_name}.png"' in content or f"'{image_name}.png'" in content:
+                    return script_file
+                # Also check with f-strings
+                if f'{image_name}.png' in content:
+                    return script_file
+        except Exception:
+            continue
+
     # For complex cases, look for partial matches
     image_base = image_name.replace("plot_", "")
     for script_file in scripts_dir.glob("plot_*.py"):
@@ -164,26 +178,35 @@ def extract_figure_size_from_script(script_file):
         return None
 
 
-def format_image_with_width(image_name, alt_text, figure_size=None):
+def format_image_with_width(image_name, alt_text, figure_size=None, in_table=False):
     """
-    Format an image reference with appropriate width attribute.
+    Format an image reference with width control when possible.
 
     Args:
         image_name (str): Image filename
         alt_text (str): Alt text for the image
         figure_size (tuple): (width, height) in inches, or None
+        in_table (bool): Whether the image will be displayed in a table
 
     Returns:
-        str: Formatted markdown image reference
+        str: Formatted image reference
     """
+    # For images in tables, use standard markdown to avoid table formatting issues
+    if in_table:
+        return f"![{alt_text}]({image_name})"
+    
+    # For standalone images, use HTML with width when available
+    # This works on GitHub and most modern markdown viewers
     if figure_size and len(figure_size) == 2:
         width_inches = figure_size[0]
-        # Convert to a reasonable width for markdown (limit to reasonable sizes)
-        if width_inches > 12:
-            width_inches = 12  # Cap at 12 inches for very wide figures
-        return f'<img src="{image_name}" alt="{alt_text}" width="{width_inches}in">'
+        # Convert to pixels (assume 96 DPI for web display)
+        width_pixels = int(width_inches * 96)
+        # Cap at reasonable size for web viewing
+        if width_pixels > 800:
+            width_pixels = 800
+        return f'<img src="{image_name}" alt="{alt_text}" width="{width_pixels}">'
     else:
-        # Fallback to standard markdown if no size info
+        # Use standard markdown if no size info available
         return f"![{alt_text}]({image_name})"
 
 
@@ -299,7 +322,7 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                         .title()
                     )
 
-                    left_cell = f"{left_param} | {format_image_with_width(left_img, left_param, figure_size)}"
+                    left_cell = f"{left_param} | {format_image_with_width(left_img, left_param, figure_size, in_table=True)}"
 
                     if right_img:
                         right_param = (
@@ -308,7 +331,7 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                             .replace("_", " ")
                             .title()
                         )
-                        right_cell = f"{right_param} | {format_image_with_width(right_img, right_param, figure_size)}"
+                        right_cell = f"{right_param} | {format_image_with_width(right_img, right_param, figure_size, in_table=True)}"
                     else:
                         right_cell = " | "
 
@@ -332,13 +355,13 @@ def create_plots_readme(plots_dir, style_mode="paper"):
 
                 if part1_img and part2_img:
                     f.write(
-                        f"| {format_image_with_width(part1_img, 'Part 1', figure_size)} | {format_image_with_width(part2_img, 'Part 2', figure_size)} |\n"
+                        f"| {format_image_with_width(part1_img, 'Part 1', figure_size, in_table=True)} | {format_image_with_width(part2_img, 'Part 2', figure_size, in_table=True)} |\n"
                     )
                 else:
                     # Fallback to first two images if naming pattern doesn't match
                     if len(image_files) >= 2:
                         f.write(
-                            f"| {format_image_with_width(image_files[0], 'Part 1', figure_size)} | {format_image_with_width(image_files[1], 'Part 2', figure_size)} |\n"
+                            f"| {format_image_with_width(image_files[0], 'Part 1', figure_size, in_table=True)} | {format_image_with_width(image_files[1], 'Part 2', figure_size, in_table=True)} |\n"
                         )
 
                 f.write("\n")
@@ -371,13 +394,13 @@ def create_plots_readme(plots_dir, style_mode="paper"):
                 # Row 1: Current sweep plots
                 if sweep_off and sweep_on:
                     f.write(
-                        f"| {format_image_with_width(sweep_off, 'Write Current Sweep OFF', figure_size)} | {format_image_with_width(sweep_on, 'Write Current Sweep ON', figure_size)} |\n"
+                        f"| {format_image_with_width(sweep_off, 'Write Current Sweep OFF', figure_size, in_table=True)} | {format_image_with_width(sweep_on, 'Write Current Sweep ON', figure_size, in_table=True)} |\n"
                     )
 
                 # Row 2: Trace stack plots
                 if trace_off and trace_on:
                     f.write(
-                        f"| {format_image_with_width(trace_off, 'Voltage Trace Stack OFF', figure_size)} | {format_image_with_width(trace_on, 'Voltage Trace Stack ON', figure_size)} |\n"
+                        f"| {format_image_with_width(trace_off, 'Voltage Trace Stack OFF', figure_size, in_table=True)} | {format_image_with_width(trace_on, 'Voltage Trace Stack ON', figure_size, in_table=True)} |\n"
                     )
 
                 f.write("\n")
