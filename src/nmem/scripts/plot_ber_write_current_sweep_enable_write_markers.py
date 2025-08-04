@@ -5,6 +5,8 @@ This script generates plots showing temperature markers vs write current,
 displaying the operating margins and bounds for write current settings.
 These markers help identify safe operating regions and enable current margins
 for reliable memory write operations.
+
+See primary sweep: plot_ber_write_current_sweep_enable_write.py
 """
 
 import matplotlib.pyplot as plt
@@ -33,7 +35,6 @@ def main(save_dir=None):
     dict_list = import_write_sweep_formatted()
     data_dict = import_write_sweep_formatted_markers(dict_list)
     plot_write_sweep_formatted_markers(ax, data_dict)
-
 
     if save_dir:
         plt.savefig(
