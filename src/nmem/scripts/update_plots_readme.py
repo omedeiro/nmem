@@ -91,7 +91,7 @@ def find_script_for_image(image_name, scripts_dir):
                 if f'"{image_name}.png"' in content or f"'{image_name}.png'" in content:
                     return script_file
                 # Also check with f-strings
-                if f'{image_name}.png' in content:
+                if f"{image_name}.png" in content:
                     return script_file
         except Exception:
             continue
@@ -194,7 +194,7 @@ def format_image_with_width(image_name, alt_text, figure_size=None, in_table=Fal
     # For images in tables, use standard markdown to avoid table formatting issues
     if in_table:
         return f"![{alt_text}]({image_name})"
-    
+
     # For standalone images, use HTML with width when available
     # This works on GitHub and most modern markdown viewers
     if figure_size and len(figure_size) == 2:
