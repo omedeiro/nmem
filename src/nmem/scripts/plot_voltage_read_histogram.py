@@ -1,3 +1,7 @@
+'''
+Script to plot the read amplitudes from 200e3 write and read operations. 
+Voltages are binned according to the previously written state. 
+'''
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory

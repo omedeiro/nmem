@@ -1,3 +1,17 @@
+'''
+Script to plot voltages from an array emulation experiment.
+
+Each trace color represents a different operational check. 
+The additional read pulse is not enabled and the aedditional enable pulse does not have a data pulse. Therefore, no impact on the state is observed. 
+
+From left to right: 
+Green: 1us delay
+Orange: 2us delay
+Purple: 3us delay
+Pink: 3us delay with additional enable and read pulse.
+Light green: 3us delay with additional enable and read pulse, input reversed. 
+'''
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
