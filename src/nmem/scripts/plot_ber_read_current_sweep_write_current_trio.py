@@ -1,3 +1,10 @@
+'''
+Script to plot the bit error rate (BER) for read current sweeps at write currents from 0 to 300µA at three different enable read current values.
+
+compare with plot_ber_read_current_sweep_enable_write_trio
+
+'''
+
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 
@@ -9,7 +16,7 @@ from nmem.analysis.data_import import import_directory
 from nmem.analysis.plot_utils import (
     add_colorbar,
 )
-from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size, apply_legend_style
 from nmem.analysis.sweep_plots import (
     plot_read_sweep_array,
     plot_read_sweep_write_current,
@@ -56,15 +63,12 @@ def plot_read_temp_sweep_C3():
         )
         axs[i].set_box_aspect(1.0)
         axs[i].set_xlim(600, 800)
-    # axs[i].legend(
-    #     frameon=False,
-    #     bbox_to_anchor=(1.1, 1.2),
-    #     loc="upper left",
-    #     title="Write Current [µA]",
-    # )
-    axpos = axs[2].get_position()
-    cbar = add_colorbar(axs[2], dict_list, "write_current", cax=cax)
-    cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
+    
+    apply_legend_style(axs[i], "outside_right", title="Write Current [$\mu$A]")
+    cax.set_axis_off() 
+    # axpos = axs[2].get_position()
+    # cbar = add_colorbar(axs[2], dict_list, "write_current", cax=cax)
+    # cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
 
     return fig, axs
 
@@ -101,7 +105,7 @@ def main(save_dir=None):
 
     if save_dir:
         fig.savefig(
-            f"{save_dir}/ber_read_current_sweep_write_current2.png", bbox_inches="tight"
+            f"{save_dir}/ber_read_current_sweep_write_current_trio.png", bbox_inches="tight"
         )
         plt.close(fig)
     else:
