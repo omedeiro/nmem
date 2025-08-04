@@ -109,7 +109,7 @@ def plot_extruded_bar(
     save_path=None,
     xticks=None,
     xticklabels=None,
-    fontsize=10,
+    fontsize=8,
     label_inside=True,
     **kwargs,
 ):
