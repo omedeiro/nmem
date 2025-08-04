@@ -1,7 +1,8 @@
 """
-# Script to plot the bit error rate (BER) for read current sweeps at 
-# multiple enable read currents and three enable write currents.
+Script to plot the bit error rate (BER) for read current sweeps at 
+multiple enable read currents and three enable write currents.
 
+With I_{EW} = 290µA, the operation is mostly inverting. while at 310µA it is mostly nominal. 
 """
 
 import matplotlib.pyplot as plt

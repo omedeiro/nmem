@@ -2,8 +2,10 @@
 """
 Generate array fidelity bar plots showing bit error rates across memory array positions.
 
-Creates both 3D and clean 2D bar visualizations of BER data to analyze
+Creates both 3D and 2D bar visualizations of BER data to analyze
 memory array performance and identify spatial patterns in error rates.
+
+Minimum BER was determined using the parameter_optimize script calculated from 200e3 measurements. 
 """
 
 import logging

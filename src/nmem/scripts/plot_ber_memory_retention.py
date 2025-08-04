@@ -6,6 +6,8 @@ Plot Bit Error Rate (BER) Memory Retention
 Generates a plot showing the relationship between memory retention time and bit error rate
 Times shorter than 10ms were programmed by adjusting the waveform output. Longer delays were programmed with software defined triggers. 
 
+BER calculated from 200e3 measurements. The bias settings were kept constant for all measurements. i.e. the settings were not reoptimized at each point. 
+
 """
 
 
