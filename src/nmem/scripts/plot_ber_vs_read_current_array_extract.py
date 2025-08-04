@@ -3,8 +3,9 @@
 Plot state current vs write current relationship.
 
 This script analyzes the relationship between state current markers and
-write current, showing how different write currents affect the stored
-current states in the memory cell.
+write current, showing how different write currents affect the separation of sweep edges. 
+
+See primary sweep: plot_ber_vs_read_current_array.py
 """
 import matplotlib.pyplot as plt
 import numpy as np

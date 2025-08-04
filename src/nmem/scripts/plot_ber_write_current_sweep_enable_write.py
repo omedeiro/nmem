@@ -5,6 +5,8 @@ This script generates plots showing the relationship between bit error rate (BER
 and write current values. It visualizes how BER varies across different write
 current settings, helping to identify optimal write current ranges for reliable
 memory operations.
+
+See extracted points: plot_ber_write_current_sweep_enable_write_markers.py
 """
 
 import matplotlib.pyplot as plt

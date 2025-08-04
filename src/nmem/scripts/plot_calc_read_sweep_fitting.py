@@ -1,3 +1,8 @@
+'''
+Script plots the calculated state currents as a function of temperature. 
+It tries to fit to markers extracted from the experimental data. 
+'''
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio

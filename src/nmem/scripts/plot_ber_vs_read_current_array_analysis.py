@@ -5,6 +5,8 @@ Plot read current operating width vs write current with persistent current.
 This script analyzes the operating width of read current as a function of
 write current, overlaying the theoretical persistent current relationship.
 Shows the stored persistent current relationship and operating margins.
+
+See primary sweep: plot_ber_vs_read_current_array.py
 """
 import matplotlib.pyplot as plt
 import numpy as np

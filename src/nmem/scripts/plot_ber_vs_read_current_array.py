@@ -2,9 +2,9 @@
 """
 Plot BER vs read current for different write currents.
 
-This script analyzes bit error rate as a function of read current for various
-write current setpoints. Shows the operating regions and switching behavior
-of the memory cell under different read conditions.
+See analysis plots: plot_ber_vs_read_current_array_analysis, plot_ber_vs_read_current_array_extract
+
+Cumulative switching probability is plotted: plot_ber_vs_read_current_array_probability
 """
 import matplotlib.pyplot as plt
 

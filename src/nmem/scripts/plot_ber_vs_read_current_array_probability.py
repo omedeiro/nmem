@@ -5,6 +5,10 @@ Plot switching probability vs read current analysis.
 This script analyzes switching probability as a function of read current
 for memory cells. Shows the probability of state switching at different
 read current levels, providing insights into read stability.
+
+
+See primary sweep: plot_ber_vs_read_current_array.py
+
 """
 import matplotlib.pyplot as plt
 
