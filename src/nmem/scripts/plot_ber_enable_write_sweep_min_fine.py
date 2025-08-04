@@ -2,9 +2,12 @@
 """
 Plot the bit error rate as a function of the enable write current. 
 
-Sweeps are shown for different write currents, allowing analysis of 
-how the enable write current affects the bit error rate across various 
-write current set points.
+For a write amplitude of 0uA. No operation is visible. 
+For write amplitudes of 5-10uA the minimum BER decreases and the width of the operating region increases.
+
+A maximum operating region is achieved at 40uA, where the minimum BER is still near 0. 
+
+At 50uA the minimum BER increases again, but the width of the operating region is still large.
 
 """
 import matplotlib.pyplot as plt
