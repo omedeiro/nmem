@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Plot BER vs read current for different write currents.
+Plot switching probability vs read current analysis.
 
-See analysis plots: plot_ber_vs_read_current_array_analysis, plot_ber_vs_read_current_array_extract
+This script analyzes switching probability as a function of read current
+for memory cells. Shows the probability of state switching at different
+read current levels, providing insights into read stability.
 
-Cumulative switching probability is plotted: plot_ber_vs_read_current_array_probability
+
+See primary sweep: plot_ber_vs_read_current_array_sweep.py
+
 """
 import matplotlib.pyplot as plt
 
@@ -14,7 +18,7 @@ from nmem.analysis.styles import (
     apply_legend_style,
     get_consistent_figure_size,
 )
-from nmem.analysis.sweep_plots import plot_read_sweep_array
+from nmem.analysis.sweep_plots import plot_read_switch_probability_array
 
 # Apply global plot styling
 apply_global_style()
@@ -25,27 +29,22 @@ def main(
     save_dir=None,
 ):
     """
-    Main function to generate BER vs read current plots.
+    Main function to generate switching probability vs read current plots.
     """
     dict_list = import_directory(data_dir)
 
     figsize = get_consistent_figure_size("single")
     fig, ax = plt.subplots(figsize=figsize)
 
-    # Plot BER vs read current for different write currents
-    plot_read_sweep_array(
-        ax,
-        dict_list,
-        "bit_error_rate",
-        "write_current",
-    )
+    # Plot switching probability vs read current
+    plot_read_switch_probability_array(ax, dict_list)
     ax.set_xlim(650, 850)
     ax.set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
-    ax.set_ylabel("BER")
+    ax.set_ylabel("Switching Probability")
     apply_legend_style(ax, "outside_right", title="Write Current [$\\mu$A]")
     if save_dir:
         fig.savefig(
-            f"{save_dir}/ber_vs_read_current_array.png",
+            f"{save_dir}/ber_vs_read_current_array_sweep_probability.png",
             bbox_inches="tight",
             dpi=300,
         )
