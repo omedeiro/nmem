@@ -1,3 +1,8 @@
+'''
+This script plots the results of a transient trangular waveform with both positive and negative amplitudes. 
+Both amplitudes are plotted to visualize the opposite circulating current. 
+'''
+
 import os
 
 import h5py
