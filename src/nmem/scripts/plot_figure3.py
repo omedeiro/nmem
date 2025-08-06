@@ -1,4 +1,6 @@
-
+'''
+Script to plot Figure 3 from current sweep data.
+'''
 
 import matplotlib.pyplot as plt
 

@@ -1,3 +1,7 @@
+'''
+Script to plot Figure 2 from read current sweep data.
+'''
+
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_read_current_sweep_data
