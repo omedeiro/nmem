@@ -203,6 +203,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         linestyle="--",
         color=color,
         label=f"{signal_name.capitalize()} Critical Current",
+        linewidth=1.5,
     )
     plot_transient(
         ax,
@@ -211,6 +212,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         signal_name="tran_left_branch_current",
         color="C0",
         label="Left Branch Current",
+        linewidth=1.5,
     )
     plot_transient(
         ax,
@@ -219,6 +221,7 @@ def plot_case(ax, data_dict, case, signal_name="left", color=None):
         signal_name="tran_right_branch_current",
         color="C1",
         label="Right Branch Current",
+        linewidth=1.5,
     )
     pos = ax.get_position()
     # ax.set_position([pos.x0, pos.y0, pos.width, pos.height * 1.6])
@@ -259,12 +262,14 @@ def create_plot(
                 -1 * data_dict[case]["tran_left_critical_current"],
                 color="C0",
                 linestyle="--",
+                linewidth=1.5
             )
             ax.plot(
                 data_dict[case]["time"],
                 -1 * data_dict[case]["tran_right_critical_current"],
                 color="C1",
                 linestyle="--",
+                linewidth=1.5
             )
             ax.set_ylim(-300, 900)
             ax.set_xlim(time_window)
@@ -280,7 +285,7 @@ def create_plot(
             ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x*1e9:.0f}"))
 
             ax: plt.Axes = axs[f"B{i}"]
-            plot_case_vout(ax, data_dict, case, "tran_output_voltage", color="k")
+            plot_case_vout(ax, data_dict, case, "tran_output_voltage", color="k", linewidth=1.5)
             ax.set_ylim(-50e-3, 50e-3)
             ax.set_xlim(time_window)
             ax.axhline(0, color="black", linestyle="--", linewidth=0.5)

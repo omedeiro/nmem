@@ -1,5 +1,5 @@
-from typing import Literal
 import warnings
+from typing import Literal, Tuple
 
 import ltspice
 import matplotlib.gridspec as gridspec
@@ -11,10 +11,7 @@ from matplotlib.axes import Axes
 from matplotlib.collections import PolyCollection
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.mplot3d import Axes3D
-
-# Suppress numpy warnings about all-nan slices
-warnings.filterwarnings("ignore", message="All-NaN slice encountered")
-warnings.filterwarnings("ignore", message="invalid value encountered")
+from matplotlib.ticker import LogLocator, MaxNLocator
 
 from nmem.analysis.bit_error import (
     calculate_ber_errorbar,
@@ -59,7 +56,16 @@ from nmem.analysis.plot_utils import (
     plot_fill_between_array,
     polygon_under_graph,
 )
-from nmem.analysis.styles import CMAP, CMAP3, RBCOLORS
+from nmem.analysis.styles import (
+    CMAP,
+    CMAP2,
+    CMAP3,
+    RBCOLORS,
+    MARKERS,
+    new_colors,
+    col_linestyles,
+    apply_legend_style,
+)
 from nmem.analysis.utils import (
     build_array,
     convert_cell_to_coordinates,
@@ -74,17 +80,23 @@ from nmem.simulation.spice_circuits.plotting import (
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
+from nmem.analysis.styles import get_consistent_figure_size
+
+# Suppress numpy warnings about all-nan slices
+warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+warnings.filterwarnings("ignore", message="invalid value encountered")
 
 
 def plot_critical_currents_from_dc_sweep(
-    ax: Axes, dict_list: list, substrate_temp: float = 1.3, save: bool = False
+    ax: Axes,
+    dict_list: list,
+    substrate_temp: float = 1.3,
 ) -> Axes:
 
     critical_currents, critical_currents_std = get_critical_currents_from_trace(
         dict_list
     )
 
-    cmap = plt.cm.coolwarm(np.linspace(0, 1, len(dict_list)))
     heater_currents = np.array(
         [data["heater_current"].flatten() * 1e6 for data in dict_list]
     ).flatten()
@@ -94,18 +106,15 @@ def plot_critical_currents_from_dc_sweep(
         heater_currents,
         critical_currents,
         "o--",
-        color=cmap[0],
         label="$I_{{EN}}$",
         linewidth=0.5,
         markersize=0.5,
-        markerfacecolor=cmap[0],
     )
 
     ax.fill_between(
         heater_currents,
         critical_currents + critical_currents_std,
         critical_currents - critical_currents_std,
-        color=cmap[0],
         alpha=0.3,
         edgecolor="none",
     )
@@ -116,15 +125,15 @@ def plot_critical_currents_from_dc_sweep(
     ax.set_xlim([-500, 500])
 
     # Add secondary y-axis for temperature
-    ax2 = ax.twinx()
-    temp = calculate_channel_temperature(
-        CRITICAL_TEMP, substrate_temp, np.abs(heater_currents), 500
-    )
-    ax2.plot(heater_currents, temp, "o--")
-    ax2.set_ylim([0, 13])
-    ax2.set_ylabel("Temperature [K]")
-    ax2.axhline(substrate_temp, color="black", linestyle="--", linewidth=0.5)
-    ax2.axhline(CRITICAL_TEMP, color="black", linestyle="--", linewidth=0.5)
+    # ax2 = ax.twinx()
+    # temp = calculate_channel_temperature(
+    #     CRITICAL_TEMP, substrate_temp, np.abs(heater_currents), 500
+    # )
+    # ax2.plot(heater_currents, temp, "o--")
+    # ax2.set_ylim([0, 13])
+    # ax2.set_ylabel("Temperature [K]")
+    # ax2.axhline(substrate_temp, color="black", linestyle="--", linewidth=0.5)
+    # ax2.axhline(CRITICAL_TEMP, color="black", linestyle="--", linewidth=0.5)
 
     return ax
 
@@ -132,32 +141,18 @@ def plot_critical_currents_from_dc_sweep(
 def plot_ic_vs_ih_array(
     heater_currents,
     avg_current,
-    ystd,
     cell_names,
+    ax=None,
 ):
     """
     Plots Ic vs Ih for all cells in the array, including average fit line.
     Returns (fig, ax).
     """
-    row_colors = {
-        "A": "#1f77b4",
-        "B": "#ff7f0e",
-        "C": "#2ca02c",
-        "D": "#d62728",
-        "E": "#9467bd",
-        "F": "#8c564b",
-        "G": "#e377c2",
-    }
-    col_linestyles = {
-        "1": "-",
-        "2": "--",
-        "3": "-.",
-        "4": ":",
-        "5": (0, (3, 1, 1, 1)),
-        "6": (0, (5, 2)),
-        "7": (0, (1, 1)),
-    }
-    fig, ax = plt.subplots(figsize=(3, 3))
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     x_intercepts = []
     y_intercepts = []
     avg_error_list = []
@@ -166,140 +161,75 @@ def plot_ic_vs_ih_array(
     for j in range(heater_currents.shape[1]):
         ih = np.squeeze(heater_currents[0, j]) * 1e6
         ic = np.squeeze(avg_current[0, j])
-        err = np.squeeze(ystd[0, j])
 
         cell_name = str(cell_names[0, j][0])
         row, col = cell_name[0], cell_name[1]
-
-        color = row_colors.get(row, "black")
+        color = new_colors.get(row)
         linestyle = col_linestyles.get(col, "-")
 
-        # Add to legend only if the row is not already included
-        label = f"{row}" if row not in rows_in_legend else None
-        if label:
-            rows_in_legend.add(row)
-
-        ax.errorbar(
-            ih,
-            ic,
-            yerr=err,
-            label=label,
-            color=color,
-            linestyle=linestyle,
-            marker="o",  # Slightly larger marker
-            markersize=2,
-            linewidth=1.2,  # Main line width
-            elinewidth=1.75,  # Thinner error bar lines
-            capsize=2,  # No caps for error bars
-            alpha=0.9,  # Slight transparency for overlap
-        )
         ax.plot(
             ih,
             ic,
-            label=label,
+            label=cell_name,
             color=color,
             linestyle=linestyle,
-            marker="none",
-            linewidth=1.5,  # Main line width
-            alpha=0.5,  # Slight transparency for overlap
         )
-        avg_error_list.append(np.nanmean(err))
-        # Linear fit for intercepts (200-600 µA)
-        valid_indices = (ih >= 200) & (ih <= 550)
-        ih_filtered = ih[valid_indices]
-        ic_filtered = ic[valid_indices]
 
-        if len(ih_filtered) > 1:
-            z = np.polyfit(ih_filtered, ic_filtered, 1)
-            x_intercept = -z[1] / z[0]
-            y_intercept = z[1]
+        # avg_error_list.append(np.nanmean(err))
+        # # Linear fit for intercepts (200-600 µA)
+        # valid_indices = (ih >= 200) & (ih <= 550)
+        # ih_filtered = ih[valid_indices]
+        # ic_filtered = ic[valid_indices]
 
-            x_intercepts.append(x_intercept)
-            y_intercepts.append(y_intercept)
+        # if len(ih_filtered) > 1:
+        #     z = np.polyfit(ih_filtered, ic_filtered, 1)
+        #     x_intercept = -z[1] / z[0]
+        #     y_intercept = z[1]
 
-    # Average fit line
-    filtered_x = np.array(x_intercepts)
-    filtered_y = np.array(y_intercepts)
-    valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
+        #     x_intercepts.append(x_intercept)
+        #     y_intercepts.append(y_intercept)
 
-    # Check if we have valid data before calculating means
-    if np.any(valid_avg):
-        avg_x_intercept = np.nanmean(filtered_x[valid_avg])
-        avg_y_intercept = np.nanmean(filtered_y[valid_avg])
-    else:
-        # Fallback values if no valid data
-        avg_x_intercept = 0
-        avg_y_intercept = 0
+    # # Average fit line
+    # filtered_x = np.array(x_intercepts)
+    # filtered_y = np.array(y_intercepts)
+    # valid_avg = (filtered_x > 0) & (filtered_x < 1e3)
 
-    def avg_line(x):
-        if avg_x_intercept != 0:
-            slope = avg_y_intercept / avg_x_intercept
-            return -slope * x + avg_y_intercept
-        else:
-            return np.zeros_like(x)  # Return zeros if no valid intercept
+    # # Check if we have valid data before calculating means
+    # if np.any(valid_avg):
+    #     avg_x_intercept = np.nanmean(filtered_x[valid_avg])
+    #     avg_y_intercept = np.nanmean(filtered_y[valid_avg])
+    # else:
+    #     # Fallback values if no valid data
+    #     avg_x_intercept = 0
+    #     avg_y_intercept = 0
 
-    fit_range = np.linspace(0, 800, 100)
-    ax.plot(
-        fit_range,
-        avg_line(fit_range),
-        color="black",
-        linestyle="-",
-        linewidth=2,
-        label="Fit",
-    )
+    # def avg_line(x):
+    #     if avg_x_intercept != 0:
+    #         slope = avg_y_intercept / avg_x_intercept
+    #         return -slope * x + avg_y_intercept
+    #     else:
+    #         return np.zeros_like(x)  # Return zeros if no valid intercept
+
+    # fit_range = np.linspace(0, 800, 100)
+    # ax.plot(
+    #     fit_range,
+    #     avg_line(fit_range),
+    #     color="black",
+    #     linestyle="-",
+    #     linewidth=2,
+    #     label="Fit",
+    # )
 
     # Final touches
     ax.set_xlabel(r"$I_{\text{enable}}$ [µA]")
     ax.set_ylabel(r"$I_c$ [µA]")
     # ax.set_title(r"$I_c$ vs. $I_h$ Across Array Cells")
     ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    ax.legend(ncol=2, frameon=False, loc="upper right")
+    apply_legend_style(ax, "outside_right", title="Cell", ncol=7)
     ax.set_ybound(lower=0)
     ax.set_xlim(0, 800)
 
     return fig, ax
-
-
-# def plot_enable_write_sweep(ax, dict_list):
-#     ax = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-#     ax.set_ylabel("BER")
-#     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-#     return ax
-
-
-def plot_write_current_sweep(
-    ax: plt.Axes, dict_list: list[dict[str, list[float]]]
-) -> plt.Axes:
-    plot_read_sweep_array(
-        ax, dict_list, "bit_error_rate", "write_current", add_errorbar=False
-    )
-    ax.set_xlabel("Read Current [$\mu$A]")
-    ax.set_ylabel("Bit Error Rate")
-    # ax.legend(
-    #     frameon=False, bbox_to_anchor=(1.1, 1), loc="upper left", title="Write Current"
-    # )
-
-    return ax
-
-
-def plot_enable_sweep(
-    ax: plt.Axes,
-    dict_list: list[dict],
-    range=None,
-    add_errorbar=False,
-    add_colorbar=False,
-):
-    N = len(dict_list)
-    if range is not None:
-        dict_list = dict_list[range]
-    # ax, ax2 = plot_enable_write_sweep_multiple(ax, dict_list[0:6])
-    ax = plot_enable_write_sweep_multiple(
-        ax, dict_list, add_errorbar=add_errorbar, N=N, add_colorbar=add_colorbar
-    )
-
-    ax.set_ylabel("BER")
-    ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-    return ax
 
 
 def plot_enable_write_sweep(ax: plt.Axes, dict_list: list[dict], **kwargs):
@@ -350,18 +280,6 @@ def plot_enable_write_temp(
     return ax
 
 
-def plot_enable_write_sweep2(dict_list):
-    """
-    Plots the enable write sweep for multiple datasets.
-    Returns (fig, ax).
-    """
-    fig, ax = plt.subplots()
-    ax = plot_enable_write_sweep_multiple(ax, dict_list)
-    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
-    ax.set_ylabel("BER")
-    return fig, ax
-
-
 def plot_write_temp_vs_current(
     ax, write_current_array, write_temp_array, critical_current_zero
 ):
@@ -388,51 +306,64 @@ def plot_write_temp_vs_current(
     return ax, ax2
 
 
-def plot_enable_write_sweep_fine(data_list2):
-    """
-    Plots the fine enable write sweep for the provided data list.
-    Returns (fig, ax).
-    """
-    fig, ax = plt.subplots(figsize=(6, 4))
-    plot_enable_write_sweep_multiple(ax, data_list2)
-    ax.set_xlim([260, 310])
-
-    return fig, ax
-
-
 def plot_enable_write_sweep_multiple(
-    ax: Axes,
     dict_list: list[dict],
     add_errorbar: bool = False,
     N: int = None,
-    add_colorbar: bool = True,
+    add_legend: bool = True,
+    xlabel: str = "$I_{\\mathrm{enable}}$ [µA]",
+    ylabel: str = "Bit Error Rate",
+    ax: Axes = None,
+    **kwargs,
 ) -> Axes:
     if N is None:
         N = len(dict_list)
-    colors = CMAP(np.linspace(0, 1, N))
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     write_current_list = []
     for data_dict in dict_list:
         write_current = get_write_current(data_dict)
         write_current_list.append(write_current)
 
+    # Normalize colors based on actual min/max range of write currents
+    min_write_current = min(write_current_list)
+    max_write_current = max(write_current_list)
+
     for i, data_dict in enumerate(dict_list):
-        write_current_norm = write_current_list[i] / 100
+        write_current = write_current_list[i]
+        # Properly normalize to use full colormap range
+        if max_write_current > min_write_current:
+            write_current_norm = (write_current - min_write_current) / (
+                max_write_current - min_write_current
+            )
+        else:
+            write_current_norm = 0.5  # Default to middle if all values are the same
+
         plot_enable_sweep_single(
-            ax, data_dict, color=CMAP(write_current_norm), add_errorbar=add_errorbar
+            ax,
+            data_dict,
+            color=CMAP(write_current_norm),
+            add_errorbar=add_errorbar,
+            label=f"{write_current:.1f} µA",
+            **kwargs,
         )
 
-    if add_colorbar:
-        norm = mcolors.Normalize(
-            vmin=min(write_current_list), vmax=max(write_current_list)
-        )  # Normalize for colormap
-        sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-        sm.set_array([])
-        cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-        cbar.set_label("Write Current [µA]")
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+
+    if add_legend:
+        apply_legend_style(ax, "outside_right", title="Write Current")
 
     ax.set_ylim(0, 1)
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    return ax
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+    return fig, ax
 
 
 def plot_enable_current_vs_temp(data):
@@ -440,11 +371,8 @@ def plot_enable_current_vs_temp(data):
     Plots enable current vs. critical current and channel temperature for all cells.
     Returns (fig, axs, axs2).
     """
-    colors = CMAP(np.linspace(0.1, 1, 4))
-    markers = ["o", "s", "D", "^"]
-    fig, axs = plt.subplots(
-        1, 1, figsize=(120 / 25.4, 90 / 25.4), sharex=True, sharey=True
-    )
+    colors = CMAP3(np.linspace(0.1, 1, 4))
+    fig, axs = plt.subplots(sharex=True, sharey=True)
     axs2 = axs.twinx()
     for d in data:
         axs.plot(
@@ -452,13 +380,15 @@ def plot_enable_current_vs_temp(data):
             d["yfit"],
             label=f"Cell {d['cell']}",
             color=colors[d["column"]],
-            marker=markers[d["row"]],
+            marker=MARKERS[d["row"]],
         )
         axs2.plot(
             d["enable_currents"], d["channel_temperature"], color="grey", marker="o"
         )
     axs2.set_ybound(lower=0)
-    axs.legend(loc="upper right")
+    apply_legend_style(
+        axs, "outside_right", bbox_to_anchor=(1.15, 1), title="Cell", ncol=4
+    )
     axs.set_xlim(0, 600)
     axs.set_ylim(0, 1000)
     axs.set_xlabel("Enable Current ($\mu$A)")
@@ -476,10 +406,14 @@ def plot_enable_sweep_single(
     enable_currents = get_enable_current_sweep(data_dict)
     bit_error_rate = get_bit_error_rate(data_dict)
     write_current = get_write_current(data_dict)
+
+    # Use provided label or create default label
+    label = kwargs.pop("label", f"$I_{{W}}$ = {write_current:.1f}µA")
+
     ax.plot(
         enable_currents,
         bit_error_rate,
-        label=f"$I_{{W}}$ = {write_current:.1f}µA",
+        label=label,
         **kwargs,
     )
     if add_errorbar:
@@ -525,27 +459,27 @@ def plot_read_sweep(
 
     if variable_name == "write_current":
         variable = get_write_current(data_dict)
-        label = f"{variable:.2f}µA"
+        label = f"{variable:.1f} µA"
     if variable_name == "enable_write_current":
         variable = get_enable_write_current(data_dict)
         write_temp = get_channel_temperature(data_dict, "write")
         if write_temp is None:
-            label = f"{variable:.2f}µA"
+            label = f"{variable:.1f} µA"
         else:
-            label = f"{variable:.2f}µA, {write_temp:.2f}K"
+            label = f"{variable:.1f} µA, {write_temp:.1f}K"
     if variable_name == "read_width":
         variable = get_read_width(data_dict)
-        label = f"{variable:.2f} pts "
+        label = f"{variable:.1f} pts "
     if variable_name == "write_width":
         variable = get_write_width(data_dict)
-        label = f"{variable:.2f} pts "
+        label = f"{variable:.1f} pts "
     if variable_name == "enable_read_current":
         variable = get_enable_read_current(data_dict)
         read_temp = get_channel_temperature(data_dict, "read")
-        label = f"{variable:.2f}µA, {read_temp:.2f}K"
+        label = f"{variable:.1f} µA, {read_temp:.1f} K"
     if variable_name == "enable_write_width":
         variable = get_enable_write_width(data_dict)
-        label = f"{variable:.2f} pts"
+        label = f"{variable:.1f} pts"
 
     ax.plot(
         read_currents,
@@ -618,18 +552,19 @@ def plot_read_sweep_array(
     return ax
 
 
-def plot_read_sweep_write_current(data_list):
-    fig, ax = plt.subplots()
-    plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
+def plot_read_sweep_write_current(
+    data_list: list[dict], ax: Axes = None
+) -> Tuple[plt.Figure, Axes]:
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    ax = plot_read_sweep_array(ax, data_list, "bit_error_rate", "write_current")
     ax.set_xlabel("Read Current [$\mu$A]")
     ax.set_ylabel("Bit Error Rate")
-    ax.legend(
-        frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(1, 1),
-        title="Write Current [$\mu$A]",
-    )
-    
+    apply_legend_style(ax, "outside_right", title="Write Current [$\mu$A]")
+
     return fig, ax
 
 
@@ -673,60 +608,76 @@ def plot_read_delay(ax: Axes, dict_list: dict) -> Axes:
             bit_error_rate,
             label=f"+{i+1}µs",
             color=colors[i],
-            marker=".",
-            markeredgecolor="k",
         )
     ax.set_xlim(read_currents[0], read_currents[-1])
     ax.set_yscale("log")
     return ax
 
 
-def plot_write_sweep(ax: Axes, dict_list: str) -> Axes:
-    # colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
+def plot_write_sweep(ax: Axes, dict_list: str, add_legend: bool = True) -> Axes:
     write_temp_list = []
     enable_write_current_list = []
+
+    # Collect enable write currents for normalization
+    for data_dict in dict_list:
+        enable_write_current = get_enable_write_current(data_dict)
+        enable_write_current_list.append(enable_write_current)
+
+    # Normalize colors based on actual min/max range of enable write currents
+    min_enable_current = min(enable_write_current_list)
+    max_enable_current = max(enable_write_current_list)
+
     for i, data_dict in enumerate(dict_list):
         x, y, ztotal = build_array(data_dict, "bit_error_rate")
-        _, _, zswitch = build_array(data_dict, "total_switches_norm")
         write_temp = get_channel_temperature(data_dict, "write")
-        enable_write_current = get_enable_write_current(data_dict)
+        enable_write_current = enable_write_current_list[i]
         write_temp_list.append(write_temp)
-        enable_write_current_list.append(enable_write_current)
+
+        # Properly normalize to use full colormap range
+        if max_enable_current > min_enable_current:
+            enable_current_norm = (enable_write_current - min_enable_current) / (
+                max_enable_current - min_enable_current
+            )
+        else:
+            enable_current_norm = 0.5  # Default to middle if all values are the same
+
         ax.plot(
             y,
             ztotal,
             label=f"$T_{{W}}$ = {write_temp:.2f} K, $I_{{EW}}$ = {enable_write_current:.2f} µA",
-            color=colors[dict_list.index(data_dict)],
-            marker=".",
+            color=CMAP2(enable_current_norm),
         )
+
     ax.set_ylim([0, 1])
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
-    norm = mcolors.Normalize(
-        vmin=min(enable_write_current_list), vmax=max(enable_write_current_list)
-    )
-    sm = plt.cm.ScalarMappable(cmap=CMAP, norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(sm, ax=ax, orientation="vertical", fraction=0.05, pad=0.05)
-    cbar.set_label("$I_{{EW}}$ [µA]")
+
+    if add_legend:
+        apply_legend_style(ax, "outside_right")
+
     return ax
 
 
-def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict]):
-    plot_write_sweep(ax, dict_list)
+def plot_write_sweep_formatted(ax: plt.Axes, dict_list: list[dict], **kwargs) -> Axes:
+    plot_write_sweep(ax, dict_list, **kwargs)
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("BER")
+    ax.set_ylabel("Bit Error Rate")
     ax.set_xlim(0, 300)
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
     return ax
 
 
-def plot_read_current_sweep_three(
-    dict_list
-):
-    fig = plt.figure(figsize=(6, 3))
-    gs = gridspec.GridSpec(1, 4, width_ratios=[1, 1, 1, 0.05], wspace=0.5)
-    axs = [fig.add_subplot(gs[i]) for i in range(3)]
-    cax = fig.add_subplot(gs[3])  # dedicated colorbar axis
+def plot_read_current_sweep_three(dict_list: list[dict], axs: list[Axes] = None):
+    if axs is None:
+        fig, axs = plt.subplots(
+            1,
+            4,
+            width_ratios=[1, 1, 1, 0.05],
+            figsize=get_consistent_figure_size("wide"),
+        )
+        cax = axs[3]
+    else:
+        fig = axs[0].figure
+
     for i in range(3):
         plot_read_sweep_array(
             axs[i], dict_list[i], "bit_error_rate", "enable_read_current"
@@ -747,7 +698,7 @@ def plot_read_current_sweep_three(
     cbar = add_colorbar(axs[2], dict_list, "enable_read_current", cax=cax)
     cbar.ax.set_position([axpos.x1 + 0.02, axpos.y0, 0.01, axpos.y1 - axpos.y0])
     cbar.set_ticks(plt.MaxNLocator(nbins=6))
-    
+
     return fig, axs, cbar
 
 
@@ -756,9 +707,7 @@ def plot_read_current_sweep_enable_write(
     data_list2,
     colors,
 ):
-    fig, axs = plt.subplots(
-        1, 2, figsize=(8.37, 2), constrained_layout=True, width_ratios=[1, 0.25]
-    )
+    fig, axs = plt.subplots(1, 2, constrained_layout=True, width_ratios=[1, 0.25])
     # Left plot: BER vs. enable_write_current
     ax = axs[0]
     for j, data_dict in enumerate(data_list2):
@@ -800,7 +749,7 @@ def plot_read_current_sweep_enable_write(
     ax.set_ylabel("$T_{\\mathrm{write}}$ [K]")
     ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
-    
+
     return fig, axs
 
 
@@ -812,7 +761,6 @@ def plot_read_current_sweep_sim(
     save_fig=False,
     output_path="spice_comparison_sim.pdf",
 ):
-    from nmem.simulation.spice_circuits.plotting import create_plot
 
     inner = [
         ["T0", "T1", "T2", "T3"],
@@ -826,7 +774,6 @@ def plot_read_current_sweep_sim(
     ]
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
-        figsize=(6, 3),
         height_ratios=[1, 0.25],
     )
     CASE = 16
@@ -899,8 +846,8 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     ]
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
-        figsize=(180 / 25.4, 180 / 25.4),
         height_ratios=[2, 0.5, 1, 1],
+        figsize=(180/25.4, 180/25.4),
     )
 
     CASE = 16
@@ -918,8 +865,8 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     selected_labels2 = [
         "$i_{\mathrm{H_L}}$",
         "$i_{\mathrm{H_R}}$",
-        "$I_{\mathrm{c,H_L}}$",
-        "$I_{\mathrm{c,H_R}}$",
+        "$I_{\mathrm{c,H_L}}(I_{\mathrm{enable}})$",
+        "$I_{\mathrm{c,H_R}}(I_{\mathrm{enable}})$",
     ]
     selected_handles = [handles[labels.index(lbl)] for lbl in selected_labels]
 
@@ -930,22 +877,29 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         "write_current",
         marker=".",
         linestyle="-",
-        markersize=4,
+        markersize=2,
+        linewidth=1.0,
     )
     axs["A"].set_xlim(650, 850)
     axs["A"].set_ylabel("BER")
-    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["A"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
     plot_read_switch_probability_array(
-        axs["B"], dict_list, write_current_list, marker=".", linestyle="-", markersize=2
+        axs["B"],
+        dict_list,
+        write_current_list,
+        marker=".",
+        linestyle="-",
+        markersize=2,
+        linewidth=1.0,
     )
     axs["B"].set_xlim(650, 850)
     # ax.axvline(IRM, color="black", linestyle="--", linewidth=0.5)
-    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
-    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["B"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
+    axs["D"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
 
     axs["C"].set_xlim(650, 850)
     axs["D"].set_xlim(650, 850)
-    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=-1)
+    axs["C"].set_xlabel("$I_{\mathrm{read}}$ [µA]", labelpad=0)
     axs["C"].set_ylabel("BER")
     axs["B"].set_ylabel("Switching Probability")
     axs["D"].set_ylabel("Switching Probability")
@@ -964,19 +918,21 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
             axs["C"],
             ltsp_data_dict,
             color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
+            label=f"{ltsp_write_current} µA",
             marker=".",
             linestyle="-",
-            markersize=5,
+            markersize=2,
+            linewidth=1.0,
         )
 
         plot_current_sweep_switching(
             axs["D"],
             ltsp_data_dict,
             color=CMAP(ltsp_write_current / max_write_current),
-            label=f"{ltsp_write_current} $\mu$A",
+            label=f"{ltsp_write_current} µA",
             marker=".",
-            markersize=5,
+            markersize=2,
+            linewidth=1.0,
         )
 
     axs["A"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
@@ -985,18 +941,55 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     axs["D"].axvline(case_current, color="black", linestyle="--", linewidth=0.5)
 
     axs["B"].legend(
-        loc="upper right",
+        loc="lower right",
+        bbox_to_anchor=(0.99, -0.02),
         labelspacing=0.1,
-        fontsize=6,
+        fontsize=5,
+        handlelength=0.8,
     )
     axs["D"].legend(
-        loc="upper right",
+        loc="lower right",
         labelspacing=0.1,
-        fontsize=6,
+        fontsize=5,
+        handlelength=0.8,
+    )
+    axs["A"].legend(
+        loc="lower right",
+        bbox_to_anchor=(0.99, -0.02),
+        labelspacing=0.1,
+        fontsize=5,
+        handlelength=0.8,
+    )
+    axs["C"].legend(
+        loc="lower right",
+        labelspacing=0.1,
+        fontsize=5,
+        handlelength=0.8,
     )
 
-    fig.subplots_adjust(hspace=0.5, wspace=0.5)
-    fig.patch.set_alpha(0)
+    # Add professional Nature-style cell labels to plots A and C
+    axs["A"].text(
+        0.95, 0.95, 
+        "Cell C3", 
+        transform=axs["A"].transAxes,
+        fontsize=7,
+        fontweight='bold',
+        ha='right',
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
+    )
+    axs["B"].text(
+        0.95, 0.95, 
+        "Cell C3", 
+        transform=axs["B"].transAxes,
+        fontsize=7,
+        fontweight='bold',
+        ha='right',
+        va='top',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
+    )
+
+    fig.subplots_adjust(hspace=0.3, wspace=0.3)
 
     ax_legend = fig.add_axes([0.5, 0.9, 0.1, 0.01])
     ax_legend.axis("off")
@@ -1006,16 +999,19 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
         loc="center",
         ncol=4,
         bbox_to_anchor=(0.0, 1.0),
-        frameon=False,
-        handlelength=2.5,
-        fontsize=8,
+        fontsize=6,
     )
-    
+
+    axs["A"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["B"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["C"].xaxis.set_major_locator(plt.MultipleLocator(25))
+    axs["D"].xaxis.set_major_locator(plt.MultipleLocator(25))
     return fig, axs
+
 
 def plot_read_current_operating(dict_list):
     """Plot all figures using the provided data dictionary list."""
-    fig, axs = plt.subplot_mosaic("AB;CD", figsize=(8.3, 4))
+    fig, axs = plt.subplot_mosaic("AB;CD")
 
     plot_read_sweep_array(
         axs["A"],
@@ -1029,6 +1025,8 @@ def plot_read_current_operating(dict_list):
     axs["B"].set_xlim(650, 850)
     axs["A"].set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
     axs["A"].set_ylabel("BER")
+    axs["B"].set_xlabel("$I_{\\mathrm{read}}$ [$\\mu$A]", labelpad=-3)
+    axs["B"].set_ylabel("Switching Probability")
 
     ax = axs["C"]
     for data_dict in dict_list:
@@ -1039,11 +1037,7 @@ def plot_read_current_operating(dict_list):
                 ax.plot(
                     write_current,
                     state_current,
-                    "o",
                     label=f"{write_current} $\\mu$A",
-                    markerfacecolor=RBCOLORS[i],
-                    markeredgecolor="none",
-                    markersize=4,
                 )
     ax.set_xlim(0, write_current)
     ax.set_ylabel("$I_{\\mathrm{state}}$ [$\\mu$A]")
@@ -1137,9 +1131,6 @@ def plot_read_current_operating(dict_list):
     ax.plot(
         write_current_list,
         np.abs(delta_read_current),
-        "-o",
-        color="black",
-        markersize=3.5,
     )
     ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
     ax.set_ylabel("$|\\Delta I_{\\mathrm{read}}|$ [$\\mu$A]")
@@ -1161,8 +1152,9 @@ def plot_read_current_operating(dict_list):
         alpha=0.1,
     )
     fig.subplots_adjust(wspace=0.33, hspace=0.4)
-    
+
     return fig, axs
+
 
 def plot_retention(delay_list, bit_error_rate_list, ax=None):
 
@@ -1180,8 +1172,8 @@ def plot_retention(delay_list, bit_error_rate_list, ax=None):
     ax.set_xlabel("Memory Retention Time (s)")
     ax.set_xscale("log")
     ax.set_xbound(lower=1e-6)
-    ax.xaxis.set_label_position("top")
-    ax.xaxis.set_ticks_position("top")
+    # ax.xaxis.set_label_position("top")
+    # ax.xaxis.set_ticks_position("top")
     ax.grid(True, which="both", linestyle="--")
     ax.set_yscale("log")
     ax.set_ylim([1e-4, 1e-3])
@@ -1217,6 +1209,33 @@ def plot_temp_vs_current(ax, data, data2):
     return ax
 
 
+def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
+    bit_error_rate = get_bit_error_rate(data_dict)
+    total_switches_norm = get_total_switches_norm(data_dict)
+    measurement_param = data_dict.get("y")[0][:, 1] * 1e6
+
+    ax.plot(
+        measurement_param,
+        bit_error_rate,
+        color="#08519C",
+        label="Bit Error Rate",
+        marker=".",
+    )
+    ax.plot(
+        measurement_param,
+        total_switches_norm,
+        color="grey",
+        label="Switching Probability",
+        linestyle="--",
+        linewidth=1,
+    )
+    apply_legend_style(ax, "outside_right")
+    ax.set_yticks([0, 0.5, 1])
+    ax.set_ylim([-0.05, 1.05])
+    ax.set_ylabel("Bit Error Rate")
+    return ax
+
+
 def plot_read_current_sweep_enable_read(
     dict_list,
     data_list,
@@ -1225,7 +1244,7 @@ def plot_read_current_sweep_enable_read(
     """
     Plot the read and write current/temperature sweeps.
     """
-    colors = CMAP(np.linspace(0, 1, len(data_list2)))
+
     # Preprocess
     read_temperatures = []
     enable_read_currents = []
@@ -1242,9 +1261,7 @@ def plot_read_current_sweep_enable_read(
         enable_write_currents.append(enable_write_current)
         write_temperatures.append(write_temperature)
     # Plot
-    fig, axs = plt.subplots(
-        2, 2, figsize=(6, 3), constrained_layout=True, width_ratios=[1, 0.25]
-    )
+    fig, axs = plt.subplots(2, 2, constrained_layout=True, width_ratios=[1, 0.25])
     ax: plt.Axes = axs[1, 0]
     plot_enable_read_sweep(ax, dict_list[::-1], marker=".")
     ax: plt.Axes = axs[1, 1]
@@ -1253,28 +1270,6 @@ def plot_read_current_sweep_enable_read(
     plot_enable_write_sweep(ax, data_list2, marker=".")
     ax = axs[0, 1]
     plot_enable_write_temp(ax, enable_write_currents, write_temperatures)
-    
-    return fig, axs
-
-def plot_write_current_enable_sweep_margin(
-    dict_list,
-    inner,
-):
-    """
-    Plots the write current enable sweep margin using a subplot mosaic.
-    Returns (fig, axs).
-    """
-    fig, axs = plt.subplot_mosaic(inner, figsize=(6, 2))
-    sort_dict_list = sorted(
-        dict_list, key=lambda x: x.get("write_current").flatten()[0]
-    )
-    ax = axs["A"]
-    plot_enable_sweep(
-        ax, sort_dict_list, range=slice(0, len(sort_dict_list), 2), add_colorbar=True
-    )
-    ax = axs["B"]
-    plot_enable_sweep_markers(ax, sort_dict_list)
-    fig.subplots_adjust(wspace=0.7, hspace=0.5)
 
     return fig, axs
 
@@ -1284,9 +1279,6 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
     ax.plot(
         enable_read_currents,
         read_temperatures,
-        marker="o",
-        color="black",
-        markersize=4,
     )
     enable_read_currents = enable_read_currents[::-1]
     read_temperatures = read_temperatures[::-1]
@@ -1294,11 +1286,6 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
         ax.plot(
             enable_read_currents[i],
             read_temperatures[i],
-            marker="o",
-            markersize=5,
-            markeredgecolor="black",
-            markerfacecolor=colors[i],
-            markeredgewidth=0.2,
         )
 
     ax.set_xlabel("$I_{\mathrm{enable}}$ [µA]")
@@ -1306,7 +1293,12 @@ def plot_enable_read_temp(ax: plt.Axes, enable_read_currents, read_temperatures)
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.2))
 
 
-def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
+def plot_enable_sweep_markers(dict_list: list[dict], ax: plt.Axes = None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     ax.yaxis.set_major_locator(plt.MultipleLocator(0.20))
     ax.set_ylim([8.3, 9.7])
 
@@ -1320,7 +1312,7 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
         write_temps = get_channel_temperature_sweep(data_dict)
         enable_currents = get_enable_current_sweep(data_dict)
         write_current_array[j] = write_current
-        critical_current_zero = get_critical_current_heater_off(data_dict)
+
         for i, arg in enumerate(berargs):
             if not np.isnan(arg) and arg is not None:
                 arg_idx = int(arg)
@@ -1329,15 +1321,12 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
                 ):
                     write_temp_array[j, i] = write_temps[arg_idx]
                     enable_current_array[j, i] = enable_currents[arg_idx]
-    markers = ["o", "s", "D", "^"]
     for i in range(4):
         ax.plot(
             enable_current_array[:, i],
             write_current_array,
             linestyle="--",
-            marker=markers[i],
-            markeredgecolor="k",
-            markeredgewidth=0.5,
+            marker=MARKERS[i],
             color=RBCOLORS[i],
         )
     ax.set_ylim(0, 100)
@@ -1346,126 +1335,147 @@ def plot_enable_sweep_markers(ax: plt.Axes, dict_list: list[dict]):
     ax.yaxis.set_minor_locator(plt.MultipleLocator(10))
     ax.xaxis.set_major_locator(plt.MultipleLocator(25))
     ax.xaxis.set_minor_locator(plt.MultipleLocator(5))
-    ax.grid()
+    ax.grid(linestyle="--", linewidth=0.5, zorder=-1)
     ax.set_ylabel("$I_{\mathrm{write}}$ [$\mu$A]")
     ax.set_xlabel("$I_{\mathrm{enable}}$ [$\mu$A]")
-    ax.legend(
-        [
+    apply_legend_style(
+        ax,
+        style="outside_right",
+        labels=[
             "$I_{1}$",
             "$I_{0}$",
             "$I_{0,\mathrm{inv}}$",
             "$I_{1,\mathrm{inv}}$",
         ],
-        loc="upper right",
-        frameon=True,
-        ncol=2,
-        facecolor="white",
-        edgecolor="none",
     )
-
-
-def plot_state_current_markers2(dict_list):
-    """
-    Plots state current markers for each dataset.
-    Returns (fig, ax).
-    """
-    colors = {
-        0: "red",
-        1: "red",
-        2: "blue",
-        3: "blue",
-    }
-    fig, ax = plt.subplots()
-    for data_dict in dict_list:
-        state_current_markers = get_state_current_markers(
-            data_dict, "enable_write_current"
-        )
-        write_current = get_write_current(data_dict)
-        for i, state_current in enumerate(state_current_markers[0, :]):
-            if state_current > 0:
-                ax.plot(
-                    write_current,
-                    state_current,
-                    "o",
-                    label=f"{write_current} $\\mu$A",
-                    markerfacecolor=colors[i],
-                    markeredgecolor="none",
-                )
-    ax.set_xlabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
-    ax.set_ylabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
     return fig, ax
 
 
 def plot_state_current_markers(
-    ax: Axes,
-    data_dict: dict,
-    current_sweep: Literal["read_current", "enable_write_current"],
-    **kwargs,
+    dict_list: list[dict], ax: plt.Axes = None, add_legend: bool = True
+):
+    """
+    Plots state current markers for each dataset.
+    Returns (fig, ax).
+    """
+
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    write_current_list = []
+    state_current_list = []
+    for data_dict in dict_list:
+        state_current_markers = get_state_current_markers(
+            data_dict, "enable_write_current"
+        )
+        write_current_list.append(get_write_current(data_dict))
+        state_current_list.append(state_current_markers[0, :])
+    state_currents = np.array(state_current_list)
+    write_currents = np.array(write_current_list)
+    colors = CMAP(np.linspace(0, 1, len(write_currents)))
+    labels = [
+        "$I_{1}$",
+        "$I_{0}$",
+        "$I_{0,\mathrm{inv}}$",
+        "$I_{1,\mathrm{inv}}$",
+    ]
+    for i in range(4):
+        ax.plot(
+            state_currents[:, i],
+            write_currents,
+            marker=MARKERS[i],
+            color="gray",
+            label=labels[i],
+            zorder=-1,
+            markersize=2,
+        )
+        ax.scatter(
+            state_currents[:, i],
+            write_currents,
+            marker=MARKERS[i],
+            c=colors,
+            s=10,
+            zorder=1,
+            label="_nolegend_",  # Prevent duplicate legend entries
+        )
+
+    ax.set_ylabel("$I_{\\mathrm{write}}$ [$\\mu$A]")
+    ax.set_xlabel("$I_{\\mathrm{enable}}$ [$\\mu$A]")
+
+    if add_legend:
+        # Apply standardized legend style
+        apply_legend_style(
+            ax,
+            style="inside_lower_left",
+            labels=[
+                "$I_{1}$",
+                "$I_{0}$",
+                "$I_{0,\mathrm{inv}}$",
+                "$I_{1,\mathrm{inv}}$",
+            ],
+        )
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+    ax.set_axisbelow(True)
+
+    return fig, ax
+
+
+def plot_write_sweep_formatted_markers(
+    ax: plt.Axes, data_dict: dict, add_legend: bool = True
 ) -> Axes:
-
-    state_current_markers = get_state_current_markers(data_dict, current_sweep)
-    currents = state_current_markers[0, :]
-    bit_error_rate = state_current_markers[1, :]
-    if currents[0] > 0:
-        for i in range(2):
-            ax.plot(
-                currents[i],
-                bit_error_rate[i],
-                color="blue",
-                marker="o",
-                markeredgecolor="k",
-                linewidth=1.5,
-                label="_state0",
-                markersize=12,
-                **kwargs,
-            )
-    if currents[2] > 0:
-        for i in range(2, 4):
-            ax.plot(
-                currents[i],
-                bit_error_rate[i],
-                color="red",
-                marker="o",
-                markeredgecolor="k",
-                linewidth=1.5,
-                label="_state1",
-                markersize=12,
-                **kwargs,
-            )
-    return ax
-
-
-def plot_write_sweep_formatted_markers(ax: plt.Axes, data_dict: dict):
     data = data_dict.get("data")
     data2 = data_dict.get("data2")
-    colors = CMAP(np.linspace(0, 1, 4))
+    colors = CMAP2(np.linspace(0, 1, len([d["write_current"] for d in data2])))
+
+    ax.scatter(
+        [d["write_current"] for d in data],
+        [d["enable_write_current"] for d in data],
+        marker="o",
+        c=colors[-len(data) :],
+        s=8,  # Increase the size of the markers
+        label="_nolegend_",  # Prevent duplicate legend entries
+    )
+
+    ax.scatter(
+        [d["write_current"] for d in data2],
+        [d["enable_write_current"] for d in data2],
+        marker="+",
+        c=colors,
+        linewidths=1.5,  # Increase the thickness of the marker lines
+        s=12,  # Increase the size of the markers
+        zorder=1,
+        label="_nolegend_",  # Prevent duplicate legend entries
+    )
     ax.plot(
         [d["write_current"] for d in data],
-        [d["write_temp"] for d in data],
-        "d",
-        color=colors[0],
-        markeredgecolor="black",
-        markeredgewidth=0.5,
+        [d["enable_write_current"] for d in data],
+        "-o",
+        color="gray",
+        zorder=-1,
+        label="Lower bound",
     )
     ax.plot(
         [d["write_current"] for d in data2],
-        [d["write_temp"] for d in data2],
-        "o",
-        color=colors[2],
-        markeredgecolor="black",
-        markeredgewidth=0.5,
+        [d["enable_write_current"] for d in data2],
+        "-+",
+        color="gray",
+        zorder=-1,
+        label="Upper bound",
     )
     ax.set_xlabel("$I_{\mathrm{write}}$ [$\mu$A]")
-    ax.set_ylabel("$T_{\mathrm{write}}$ [K]")
+    ax.set_ylabel("$I_{\mathrm{enable}}$ [$\mu$A]")
     ax.set_xlim(0, 300)
-    ax.legend(
-        ["Lower bound", "Upper bound"],
-        loc="upper right",
-        fontsize=6,
-        facecolor="white",
-        frameon=True,
-    )
-    ax.grid()
+    ax.grid(axis="x", linestyle="--", linewidth=0.5, zorder=-1)
+    ax.set_axisbelow(True)
+
+    if add_legend:
+        apply_legend_style(
+            ax,
+            style="inside_lower_left",
+            labels=["Lower bound", "Upper bound"],
+        )
     return ax
 
 
@@ -1512,10 +1522,6 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
             zs=write_current,
             zdir="y",
             color=colors[i],
-            marker=".",
-            markerfacecolor="k",
-            markersize=5,
-            linewidth=2,
         )
         zlist.append(write_current)
         verts = polygon_under_graph(enable_write_currents, bit_error_rate, 0.5)
@@ -1545,10 +1551,16 @@ def plot_waterfall(ax: Axes3D, dict_list: list[dict]) -> Axes3D:
     return ax
 
 
-def plot_cell_data(ax, data_dict, colors, markers):
+def plot_cell_data(
+    data_dict: dict, colors: list, markers: list, ax: plt.Axes = None
+) -> Tuple[plt.Axes, plt.Figure]:
     """
     Helper function to plot a single cell's data.
     """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
     cell = get_current_cell(data_dict)
     column, row = convert_cell_to_coordinates(cell)
     x = data_dict["x"][0]
@@ -1561,69 +1573,71 @@ def plot_cell_data(ax, data_dict, colors, markers):
         yfit,
         label=f"{cell}",
         color=colors[column],
-        marker=markers[row],
-        markeredgecolor="k",
-        markeredgewidth=0.1,
     )
-    ax.legend(loc="upper right", fontsize=6, labelspacing=0.1, handlelength=0.5)
     ax.set_xlim(0, 600)
     ax.set_ylim(0, 1500)
 
-    return ax
+    apply_legend_style(ax, "outside_right")
+    return ax, fig
 
 
-def plot_grid(axs: Axes, dict_list: list[dict]) -> Axes:
+def plot_grid(axs: Axes, dict_list: list[dict]) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
-    markers = ["o", "s", "D", "^"]
 
     for data_dict in dict_list:
         cell = get_current_cell(data_dict)
         column, row = convert_cell_to_coordinates(cell)
         ax = axs[row, column]
-        ax = plot_cell_data(ax, data_dict, colors, markers)
-
-        # xfit, yfit = filter_plateau(xfit, yfit, yfit[0] * 0.75)
-        # plot_linear_fit(ax, xfit, yfit)
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
 
         ax.xaxis.set_major_locator(MultipleLocator(500))
         ax.xaxis.set_minor_locator(MultipleLocator(100))
-
+        apply_legend_style(ax, style="inside_upper_right", labels=[cell])
     axs[-1, 0].set_xlabel("Enable Current [µA]")
     axs[-1, 0].set_ylabel("Critical Current [µA]")
     return axs
 
 
-def plot_row(axs, dict_list):
+def plot_row(axs, dict_list) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
-    markers = ["o", "s", "D", "^"]
 
     for data_dict in dict_list:
         column, row = convert_cell_to_coordinates(get_current_cell(data_dict))
         ax = axs[column]
-        ax = plot_cell_data(ax, data_dict, colors, markers)
-
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
+        apply_legend_style(
+            ax,
+            style="inside_upper_right",
+        )
     return axs
 
 
-def plot_column(axs, dict_list):
+def plot_column(axs, dict_list) -> list[Axes]:
     colors = CMAP3(np.linspace(0.1, 1, 4))
-    markers = ["o", "s", "D", "^"]
 
     for data_dict in dict_list:
         row = convert_cell_to_coordinates(get_current_cell(data_dict))[1]
         ax = axs[row]
-        ax = plot_cell_data(ax, data_dict, colors, markers)
-
+        ax, _ = plot_cell_data(data_dict, colors, MARKERS, ax=ax)
+        apply_legend_style(
+            ax,
+            style="inside_upper_right",
+        )
     return axs
 
 
-def plot_full_grid(axs, dict_list):
+def plot_full_grid(axs, dict_list) -> list[Axes]:
     plot_grid(axs[1:5, 0:4], dict_list)
-    plot_row(axs[0, 0:4], dict_list)
-    plot_column(axs[1:5, 4], dict_list)
+    row_axs = plot_row(axs[0, 0:4], dict_list)
+    col_axs = plot_column(axs[1:5, 4], dict_list)
     axs[0, 4].axis("off")
     axs[4, 0].set_xlabel("Enable Current [µA]")
     axs[4, 0].set_ylabel("Critical Current [µA]")
+
+    for ax in row_axs:
+        ax.legend().remove()
+    for ax in col_axs:
+        ax.legend().remove()
     return axs
 
 
@@ -1647,28 +1661,51 @@ def plot_bit_error_rate_args(ax: Axes, data_dict: dict, color) -> Axes:
     return ax
 
 
-def plot_bit_error_rate(ax: Axes, data_dict: dict) -> Axes:
-    bit_error_rate = get_bit_error_rate(data_dict)
-    total_switches_norm = get_total_switches_norm(data_dict)
-    measurement_param = data_dict.get("y")[0][:, 1] * 1e6
+def plot_loop_size_sweep(dict_list, vch_list, ber_est_list, loop_sizes, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    for i in range(len(dict_list)):
+        ax.plot(
+            vch_list[i], ber_est_list[i], label=f"$w_{{5}}$ = {loop_sizes[i]:.1f} µm"
+        )
+    ax.set_yscale("log")
+    ax.set_xlabel("channel voltage [mV]")
+    ax.set_ylabel("estimated BER")
+    apply_legend_style(ax, "outside_right")
 
-    ax.plot(
-        measurement_param,
-        bit_error_rate,
-        color="#08519C",
-        label="Bit Error Rate",
-        marker=".",
+    return fig, ax
+
+
+def plot_loop_size_sweep_ber(loop_sizes, best_ber, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
+    ax.plot(loop_sizes, best_ber, "-o")
+    ax.set_yscale("log")
+    ax.set_xlabel("loop size [µm]")
+    ax.set_ylabel("minimum BER")
+    ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+    ax.xaxis.set_major_locator(MaxNLocator(7))
+    return fig, ax
+
+
+if __name__ == "__main__":
+    # Example usage of the plotting functions
+    fig, ax = plt.subplots()
+    from nmem.analysis.data_import import (
+        import_directory,
+        import_write_sweep_formatted_markers,
+        import_write_sweep_formatted,
     )
-    ax.plot(
-        measurement_param,
-        total_switches_norm,
-        color="grey",
-        label="_Total Switches",
-        linestyle="--",
-        linewidth=1,
-    )
-    ax.legend()
-    ax.set_yticks([0, 0.5, 1])
-    ax.set_ylim([0, 1])
-    ax.set_ylabel("Normalized\nBit Error Rate")
-    return ax
+
+    dict_list_ews = import_directory("../data/ber_sweep_enable_write_current/data1")
+    dict_list_ws = import_write_sweep_formatted()
+
+    # plot_state_current_markers(dict_list_ews, ax=ax, add_legend=False)
+
+    data_dict = import_write_sweep_formatted_markers(dict_list_ws)
+    plot_write_sweep_formatted_markers(ax, data_dict, add_legend=False)

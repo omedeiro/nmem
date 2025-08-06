@@ -1,3 +1,8 @@
+#! /usr/bin/env python3
+"""
+Generate memory scaling comparison plots showing capacity and density.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -14,10 +19,9 @@ from nmem.analysis.memory_data import (
     tech_cap,
     tech_den,
 )
-from nmem.analysis.styles import set_inter_font, set_pres_style
+from nmem.analysis.styles import apply_global_style, get_consistent_figure_size
 
-set_inter_font()
-set_pres_style()
+apply_global_style()
 
 
 def main(save_dir=None):
@@ -25,7 +29,8 @@ def main(save_dir=None):
     Generate memory scaling comparison plots showing capacity and density.
     """
     # ---------------------- Create Figure ----------------------
-    fig, axs = plt.subplots(2, 1, figsize=(8, 9), sharex=False)
+    figsize = get_consistent_figure_size("multi_row")
+    fig, axs = plt.subplots(2, 1, figsize=figsize, sharex=False)
     fig.suptitle(
         "Superconducting vs. Semiconducting Memory Scaling Comparison",
         weight="bold",

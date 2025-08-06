@@ -1,15 +1,30 @@
+#!/usr/bin/env python3
+"""
+Plot voltage traces and write current sweep analysis with write enable toggle.
+
+This script analyzes voltage traces and bit error rates with the write enable
+signal toggled on and off. Generates four plots arranged in a 2x2 layout:
+- Write current sweep plots (BER vs write current) for enable OFF/ON
+- Voltage trace stack plots for enable OFF/ON
+
+Enables comparison of memory cell behavior with and without write enable.
+"""
 import matplotlib.pyplot as plt
 
 from nmem.analysis.constants import TRACE_INDEX
 from nmem.analysis.data_import import (
     import_directory,
 )
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_bit_error_rate,
 )
 from nmem.analysis.trace_plots import (
     plot_voltage_trace_stack,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

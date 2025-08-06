@@ -1,3 +1,10 @@
+#! /usr/bin/env python3
+
+"""
+Plot a radar chart comparing various memory metrics across different datasets.
+This script generates a spider plot (radar chart) to visualize and compare multiple memory metrics.
+
+"""
 import matplotlib.pyplot as plt
 
 from nmem.analysis.memory_data import (
@@ -13,6 +20,10 @@ from nmem.analysis.memory_data import (
 from nmem.analysis.spider_plots import (
     plot_radar,
 )
+from nmem.analysis.styles import apply_global_style
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

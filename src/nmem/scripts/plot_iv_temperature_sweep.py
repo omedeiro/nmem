@@ -6,7 +6,6 @@ from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
 from nmem.analysis.trace_plots import (
-    plot_combined_dc_figure,
     plot_current_voltage_from_dc_sweep,
 )
 
@@ -26,11 +25,6 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
     fig2, ax2 = plt.subplots()
     plot_current_voltage_from_dc_sweep(ax2, data_list)
 
-    # Create combined figure
-    fig3, axs = plt.subplots(1, 3, figsize=(7, 4))
-    plot_combined_dc_figure(axs, data_list)
-    plt.subplots_adjust(wspace=0.4)
-
     if save_dir:
         # Save all figures
         fig1.savefig(
@@ -40,11 +34,6 @@ def main(data_dir="../data/dc_sweep", save_dir=None):
         )
         fig2.savefig(
             f"{save_dir}/iv_temperature_sweep_current_voltage.png",
-            bbox_inches="tight",
-            dpi=300,
-        )
-        fig3.savefig(
-            f"{save_dir}/iv_temperature_sweep_combined.png",
             bbox_inches="tight",
             dpi=300,
         )

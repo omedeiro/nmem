@@ -2,17 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 from matplotlib.axes import Axes
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import Normalize
 
 from nmem.analysis.utils import get_cell_labels
+from nmem.analysis.styles import get_consistent_figure_size
 
 
 def plot_ber_3d_bar(
     ber_array: np.ndarray,
     total_trials: int = 200_000,
-    ax: Axes = None,
-    save_path: str = None,
-) -> tuple[plt.Figure, Axes]:
+    ax: Axes3D = None,
+) -> tuple[plt.Figure, Axes3D]:
     """
     Plots a 3D bar chart for the Bit Error Rate (BER) array.
 
@@ -71,10 +72,10 @@ def plot_ber_3d_bar(
     ax.invert_yaxis()
 
     # Labels and ticks
-    ax.set_xlabel("Column")
-    ax.set_ylabel("Row")
-    ax.set_zlabel("Errors")
-    ax.set_title("Error Count per Cell")
+    ax.set_xlabel("Column", labelpad=-8)
+    ax.set_ylabel("Row", labelpad=-8)
+    ax.set_zlabel("Errors", labelpad=-8)
+    # ax.set_title("Error Count per Cell")
     ax.set_xticks(np.arange(4) + 0.3)  # Offset tick locations
     ax.set_xticklabels(["A", "B", "C", "D"])
     ax.set_yticks(np.arange(4) + 0.3)  # Offset tick locations
@@ -84,17 +85,16 @@ def plot_ber_3d_bar(
     ax.set_zlim(1, 500)
     ax.view_init(elev=45, azim=220)
 
-    # Colorbar
-    mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
-    mappable.set_array([])  # Empty array, just to set the color scale
-    cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
-    cbar.set_label("Errors (per 200k)")
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid display when saving
-    else:
-        plt.show()
+    ax.xaxis.set_tick_params(pad=-4)
+    ax.yaxis.set_tick_params(pad=-4)
+    ax.zaxis.set_tick_params(pad=-4)
+
+    # Colorbar
+    # mappable = cm.ScalarMappable(norm=norm, cmap=cm.Blues)
+    # mappable.set_array([])  # Empty array, just to set the color scale
+    # cbar = fig.colorbar(mappable, ax=ax, shrink=0.6, pad=0.1)
+    # cbar.set_label("Errors (per 200k)")
 
     return fig, ax
 
@@ -103,10 +103,9 @@ def plot_fidelity_clean_bar(
     ber_array: np.ndarray,
     total_trials: int = 200_000,
     ax: Axes = None,
-    save_path: str = None,
 ) -> tuple[plt.Figure, Axes]:
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=get_consistent_figure_size("wide"))
     else:
         fig = ax.figure
 
@@ -127,22 +126,22 @@ def plot_fidelity_clean_bar(
 
     # Plotting
     x = np.arange(len(fidelity_flat))
-    ax.bar(x, fidelity_flat, yerr=errors, capsize=3, color="#658DDC", edgecolor="black")
+    ax.bar(x, fidelity_flat, yerr=errors, capsize=1, color="#658DDC", edgecolor="black", linewidth=0.5)
 
     # Add value labels only if they fit in the visible range
-    for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
-        if val > 0.998:  # only plot label if within axis range
-            ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=8)
-        if val < 0.998:
-            ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=8)
+    # for i, (val, label) in enumerate(zip(fidelity_flat, display_values)):
+    #     if val > 0.998:  # only plot label if within axis range
+    #         ax.text(i, val + 1e-4, label, ha="center", va="bottom", fontsize=6)
+    #     if val < 0.998:
+    #         ax.text(i, 0.998 + 2e-4, label, ha="center", va="top", fontsize=6)
     # Formatting
     ax.set_xticks(x)
     ax.set_xlim(-1.5, len(x) + 0.5)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
+    ax.set_xticklabels(labels, rotation=45, ha="center")
     ax.set_ylabel("Fidelity (1 - BER)")
     ax.set_ylim(0.998, 1.0001)
     ax.grid(axis="y", linestyle="--", alpha=0.6)
-
+    ax.set_xlabel("Cell")
     # Reference lines
     ax.axhline(0.999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
     ax.axhline(0.9999, color="#555555", linestyle="--", linewidth=0.8, zorder=3)
@@ -153,25 +152,20 @@ def plot_fidelity_clean_bar(
         linewidth=0.8,
         zorder=3,
     )
-    ax.text(
-        len(x) + 0.3,
-        1 - 1.5e-3,
-        "Previous Record",
-        va="top",
-        ha="right",
-        fontsize=14,
-        color="red",
-        zorder=4,
-        bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
-    )
+    # ax.text(
+    #     len(x) + 0.3,
+    #     1 - 1.5e-3,
+    #     "Previous Record",
+    #     va="top",
+    #     ha="right",
+    #     fontsize=12,
+    #     color="red",
+    #     zorder=4,
+    #     bbox=dict(facecolor="white", edgecolor="none", alpha=0.8, pad=1),
+    # )
     ax.set_ylim(0.998, 1.0004)
     ax.set_yticks([0.998, 0.999, 0.9999])
     ax.set_yticklabels(["0.998", "0.999", "0.9999"])
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)  # Close the figure to avoid display when saving
-    else:
-        plt.show()
-        
+
     return fig, ax

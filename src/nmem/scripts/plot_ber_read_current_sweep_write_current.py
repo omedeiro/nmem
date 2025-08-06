@@ -1,10 +1,17 @@
+'''
+Script to plot the bit error rate (BER) for read current sweeps at write currents from 0 to 70µA.
 
+'''
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
+from nmem.analysis.styles import apply_global_style
 from nmem.analysis.sweep_plots import (
     plot_read_sweep_write_current,
 )
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(save_dir=None):

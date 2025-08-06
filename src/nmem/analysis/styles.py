@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -8,16 +8,97 @@ from matplotlib import colors as mcolors
 from matplotlib import font_manager as fm
 from matplotlib.colors import to_rgb
 
-RBCOLORS = {0: "blue", 1: "blue", 2: "red", 3: "red"}
+RBCOLORS = {0: "blue", 1: "lightblue", 2: "darkred", 3: "red"}
+MARKERS = ["o", "s", "D", "^"]
+
 C0 = "#1b9e77"
 C1 = "#d95f02"
 CMAP = plt.get_cmap("coolwarm")
-CMAP2 = mcolors.LinearSegmentedColormap.from_list("custom_cmap", [C0, C1])
+CMAP2 = plt.get_cmap("viridis")
 CMAP3 = plt.get_cmap("plasma").reversed()
 
 # Global style configuration
 STYLE_CONFIG = {
     "mode": "paper",  # Can be "presentation", "paper", or "thesis"
+}
+
+# Standardized legend configurations
+LEGEND_CONFIG = {
+    "outside_right": {
+        "bbox_to_anchor": (1.05, 1),
+        "loc": "upper left",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": True,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "columnspacing": 1.0,
+    },
+    "inside_upper_right": {
+        "loc": "upper right",
+        "frameon": False,
+        "fancybox": False,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+    },
+    "inside_upper_left": {
+        "loc": "upper left",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+    },
+    "inside_lower_left": {
+        "loc": "lower left",
+        "frameon": True,
+        "fancybox": False,
+        "shadow": False,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "edgecolor": "white",
+    },
+    "bottom_outside": {
+        "bbox_to_anchor": (0.5, -0.15),
+        "loc": "upper center",
+        "frameon": True,
+        "fancybox": True,
+        "shadow": True,
+        "fontsize": "small",
+        "handlelength": 1.5,
+        "handletextpad": 0.5,
+        "ncol": 4,
+    },
+}
+
+new_colors = {
+    "A": "#1b9e77",  # Teal
+    "B": "#d95f02",  # Orange
+    "C": "#7570b3",  # Purple
+    "D": "#e7298a",  # Pink
+    "E": "#66a61e",  # Green
+    "F": "#e6ab02",  # Mustard
+    "G": "#a6761d",  # Brown
+    # "H": "#666666",  # Gray
+}
+
+# Set as default color cycle for matplotlib
+plt.rcParams["axes.prop_cycle"] = plt.cycler(color=new_colors.values())
+
+col_linestyles = {
+    "1": "-",
+    "2": "--",
+    "3": "-.",
+    "4": ":",
+    "5": "-",
+    "6": "-",
+    "7": "--",
+    "8": "-.",
 }
 
 
@@ -79,8 +160,8 @@ def apply_global_style(**kwargs) -> None:
     elif mode == "thesis":
         set_thesis_style(**kwargs)
     else:
-        # Default to thesis style
-        set_thesis_style(**kwargs)
+        # Default to paper style
+        set_paper_style(**kwargs)
 
 
 def set_pres_style(dpi=600, font_size=14, grid_alpha=0.4):
@@ -154,8 +235,8 @@ def set_paper_style() -> None:
     """Paper/publication-optimized style with Inter fonts and compact layout."""
     set_inter_font()
     golden_ratio = (1 + 5**0.5) / 2  # ≈1.618
-    width = 3.5  # Example width in inches (single-column for Nature)
-    height = width / golden_ratio
+    width = 60 / 25.4
+    height = 45 / 25.4
     plt.rcParams.update(
         {
             "figure.figsize": [width, height],
@@ -163,19 +244,19 @@ def set_paper_style() -> None:
             "ps.fonttype": 42,
             "font.family": "Inter",
             "mathtext.fontset": "stix",  # Changed from "cm" to reduce font subsetting
-            "font.size": 9,
-            "axes.titlesize": 9,
-            "axes.labelsize": 9,
-            "xtick.labelsize": 8,
-            "ytick.labelsize": 8,
-            "legend.fontsize": 8,
+            "font.size": 5,
+            "axes.titlesize": 5,
+            "axes.labelsize": 5,
+            "xtick.labelsize": 5,
+            "ytick.labelsize": 5,
+            "legend.fontsize": 5,
             "axes.linewidth": 0.5,
             "xtick.major.width": 0.5,
             "ytick.major.width": 0.5,
             "xtick.direction": "out",
             "ytick.direction": "out",
             "lines.markersize": 3,
-            "lines.linewidth": 1.2,
+            "lines.linewidth": 0.5,
             "legend.frameon": False,
             "xtick.major.size": 2,
             "ytick.major.size": 2,
@@ -229,3 +310,109 @@ def set_thesis_style(dpi=300, font_size=11, grid_alpha=0.3) -> None:
             "savefig.pad_inches": 0.15,
         }
     )
+
+
+def get_figure_size(nrows=1, ncols=1, aspect_ratio=None):
+    """
+    Get appropriate figure size based on current global style and subplot configuration.
+
+    Args:
+        nrows (int): Number of subplot rows
+        ncols (int): Number of subplot columns
+        aspect_ratio (float, optional): Override aspect ratio (width/height)
+
+    Returns:
+        tuple: (width, height) in inches
+    """
+    # Get base figure size from current style
+    base_width, base_height = plt.rcParams["figure.figsize"]
+
+    # Calculate figure size based on subplot grid
+    width = base_width * ncols
+    height = base_height * nrows
+
+    # Apply custom aspect ratio if provided
+    if aspect_ratio is not None:
+        height = width / aspect_ratio
+
+    return (width, height)
+
+
+def get_consistent_figure_size(plot_type="single"):
+    """
+    Get consistent figure size for common plot types.
+
+    Args:
+        plot_type (str): Type of plot. Options:
+            - "single": Single plot (default)
+            - "wide": Wide single plot (1.5x width)
+            - "tall": Tall single plot (1.5x height)
+            - "square": Square aspect ratio
+            - "comparison": Side-by-side comparison (2x1 grid)
+            - "grid": 2x2 grid
+            - "multi_row": Multi-row layout (1x3 or similar)
+
+    Returns:
+        tuple: (width, height) in inches
+    """
+    base_width, base_height = plt.rcParams["figure.figsize"]
+
+    size_map = {
+        "single": (base_width, base_height),
+        "wide": (base_width * 3, base_height * 2),
+        "tall": (base_width, base_height * 1.5),
+        "square": (base_width, base_width),
+        "comparison": (base_width * 2, base_height),
+        "grid": (base_width * 2, base_height * 2),
+        "multi_row": (base_width, base_height * 1.5),
+        "large": (base_width * 2, base_height * 4),  # For larger multi-panel plots
+    }
+
+    return size_map.get(plot_type, (base_width, base_height))
+
+
+def apply_legend_style(ax, style="outside_right", **kwargs):
+    """
+    Apply a standardized legend style to an axes object.
+
+    Args:
+        ax: Matplotlib axes object
+        style: Legend style name from LEGEND_CONFIG
+        **kwargs: Additional legend parameters to override defaults
+
+    Returns:
+        legend: The legend object
+    """
+    if style not in LEGEND_CONFIG:
+        raise ValueError(
+            f"Unknown legend style '{style}'. Available styles: {list(LEGEND_CONFIG.keys())}"
+        )
+
+    # Start with the base configuration
+    legend_params = LEGEND_CONFIG[style].copy()
+
+    # Override with any provided kwargs
+    legend_params.update(kwargs)
+
+    # Apply the legend
+    legend = ax.legend(**legend_params)
+
+    return legend
+
+
+def get_legend_config(style="outside_right"):
+    """
+    Get a copy of the legend configuration for a specific style.
+
+    Args:
+        style: Legend style name from LEGEND_CONFIG
+
+    Returns:
+        dict: Legend configuration parameters
+    """
+    if style not in LEGEND_CONFIG:
+        raise ValueError(
+            f"Unknown legend style '{style}'. Available styles: {list(LEGEND_CONFIG.keys())}"
+        )
+
+    return LEGEND_CONFIG[style].copy()
