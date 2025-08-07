@@ -32,10 +32,10 @@ def plot_fill_between_array(ax: Axes, dict_list: list[dict]) -> Axes:
 
 
 
-def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, **kwargs) -> Axes:
+def plot_fitting(ax: Axes, xfit: np.ndarray, yfit: np.ndarray, add_text:bool=False, **kwargs) -> Axes:
     # xfit, yfit = filter_plateau(xfit, yfit, 0.98 * Ic0)
     ax.plot(xfit, yfit, **kwargs)
-    plot_linear_fit(ax, xfit, yfit)
+    plot_linear_fit(ax, xfit, yfit, add_text=add_text)
 
     return ax
 
@@ -134,7 +134,7 @@ def add_colorbar(
     data_dict_list: list[dict],
     cbar_label: Literal["write_current", "enable_read_current"],
     cax=None,
-):
+)-> plt.colorbar:
     data_list = []
     for data_dict in data_dict_list:
         if cbar_label == "write_current":

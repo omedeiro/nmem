@@ -15,7 +15,9 @@ from nmem.analysis.utils import (
     create_rmeas_matrix,
 )
 from nmem.measurement.cells import CELLS
-
+from nmem.analysis.bit_error import get_bit_error_rate
+from nmem.analysis.currents import get_write_currents, get_enable_current_sweep
+from nmem.analysis.data_import import import_directory
 
 def annotate_matrix(ax, R, fmt="{:.2g}", color="white"):
     """Add text annotations to matrix cells."""
@@ -211,7 +213,6 @@ def plot_combined_histogram_and_die_maps(df, wafer_row_numbers, limit_dict, N=7)
     axs[-1, 0].set_xlabel("Resistance (kΩ)", fontsize=8)
 
     axs[2, 0].set_xlim(500, 1500)
-    fig.patch.set_visible(False)
 
     return fig, axs
 
@@ -225,7 +226,6 @@ def plot_parameter_array(
     reverse: bool = False,
     cmap: plt.cm = None,
     ax: Axes = None,
-    save_path: str = None,
 ) -> Axes:
     if ax is None:
         fig, ax = plt.subplots()
@@ -252,11 +252,6 @@ def plot_parameter_array(
     ax.set_yticks(range(4), ["1", "2", "3", "4"])
     ax.tick_params(axis="both", length=0)
 
-    if save_path:
-        fig.savefig(save_path, bbox_inches="tight", dpi=300)
-        plt.close(fig)
-    else:
-        plt.show()
     return ax
 
 
@@ -392,3 +387,181 @@ def plot_wafer_maps(maps, titles, cmaps, grid_x, grid_y, radius, annotate_points
         cbar.set_label("Thickness (nm)", fontsize=9)
     plt.tight_layout()
     return fig
+
+
+def plot_state_current_matrix(dict_list, ax=None, vmin=None, vmax=None):
+    """
+    Plot BER as a matrix with write current vs enable current.
+    
+    Args:
+        dict_list: List of measurement dictionaries
+        ax: Matplotlib axis to plot on
+        vmin, vmax: Color scale limits
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+    
+    # Collect data from all measurements
+    write_currents = []
+    enable_currents = []
+    ber_data = []
+    
+    for dict_item in dict_list:
+        write_current = get_write_currents(dict_item)[0]
+        enable_current = get_enable_current_sweep(dict_item)
+        bit_error_rate = get_bit_error_rate(dict_item)
+        
+        write_currents.append(write_current)
+        enable_currents.append(enable_current)
+        ber_data.append(bit_error_rate)
+    
+    # Get unique write currents and enable current array (should be same for all)
+    unique_write_currents = sorted(set(write_currents))
+    enable_current_array = enable_currents[0]  # All should be the same
+    
+    # Create matrix: rows = write currents, cols = enable currents
+    ber_matrix = np.full((len(unique_write_currents), len(enable_current_array)), np.nan)
+    
+    # Fill the matrix
+    for i, dict_item in enumerate(dict_list):
+        write_current = write_currents[i]
+        ber_values = ber_data[i]
+        
+        # Find row index for this write current
+        row_idx = unique_write_currents.index(write_current)
+        ber_matrix[row_idx, :] = ber_values
+    
+    # Set color limits if not provided
+    if vmin is None:
+        vmin = np.nanmin(ber_matrix)
+    if vmax is None:
+        vmax = np.nanmax(ber_matrix)
+    
+    # Create the plot
+    im = ax.imshow(
+        ber_matrix,
+        cmap=plt.get_cmap("Reds").reversed(),
+        norm=LogNorm(vmin=vmin, vmax=vmax) if vmin > 0 else None,
+        origin="lower",
+        aspect="auto",
+        extent=[
+            enable_current_array.min(),
+            enable_current_array.max(),
+            min(unique_write_currents),
+            max(unique_write_currents),
+        ],
+    )
+    
+    # Set labels and title
+    ax.set_xlabel("Enable Current [µA]")
+    ax.set_ylabel("Write Current [µA]")
+    ax.set_title("Bit Error Rate Matrix")
+    
+    # Add colorbar
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("Bit Error Rate")
+    
+    return ax
+
+
+def plot_ber_heatmap_detailed(dict_list, ax=None, annotate=False):
+    """
+    Plot detailed BER heatmap with discrete tick marks.
+    
+    Args:
+        dict_list: List of measurement dictionaries
+        ax: Matplotlib axis to plot on
+        annotate: Whether to add text annotations
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 6))
+    else:
+        fig = ax.figure
+    
+    # Collect and organize data
+    write_currents = []
+    enable_currents = []
+    ber_data = []
+    
+    for dict_item in dict_list:
+        write_current = get_write_currents(dict_item)[0]
+        enable_current = get_enable_current_sweep(dict_item)
+        bit_error_rate = get_bit_error_rate(dict_item)
+        
+        write_currents.append(write_current)
+        enable_currents.append(enable_current)
+        ber_data.append(bit_error_rate)
+    
+    # Get unique values
+    unique_write_currents = sorted(set(write_currents))
+    enable_current_array = enable_currents[0]
+    
+    # Create matrix
+    ber_matrix = np.full((len(unique_write_currents), len(enable_current_array)), np.nan)
+    
+    for i, dict_item in enumerate(dict_list):
+        write_current = write_currents[i]
+        ber_values = ber_data[i]
+        row_idx = unique_write_currents.index(write_current)
+        ber_matrix[row_idx, :] = ber_values
+    
+    # Plot with proper indexing for discrete ticks
+    im = ax.imshow(
+        ber_matrix,
+        cmap=plt.get_cmap("Reds").reversed(),
+        origin="lower",
+        aspect="auto",
+        extent=[
+            enable_current_array.min(),
+            enable_current_array.max(),
+            min(unique_write_currents),
+            max(unique_write_currents),
+        ],
+    )
+    
+    # Set discrete ticks
+    # ax.set_xticks(range(0, len(enable_current_array), 5))  # Every 5th enable current
+    # ax.set_xticklabels([f"{enable_current_array[i]:.0f}" for i in range(0, len(enable_current_array), 5)])
+    
+    # ax.set_yticks(range(len(unique_write_currents)))
+    # ax.set_yticklabels([f"{wc:.0f}" for wc in unique_write_currents])
+    
+    ax.set_xlabel("Enable Current [µA]")
+    ax.set_ylabel("Write Current [µA]")
+    ax.set_title("Bit Error Rate Heatmap")
+    
+    # Add annotations if requested
+    if annotate:
+        for i in range(len(unique_write_currents)):
+            for j in range(len(enable_current_array)):
+                if not np.isnan(ber_matrix[i, j]):
+                    text = f"{ber_matrix[i, j]:.3f}"
+                    ax.text(j, i, text, ha="center", va="center", 
+                           fontsize=6, color="white" if ber_matrix[i, j] > 0.5 else "black")
+    
+    # Colorbar
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("Bit Error Rate")
+    
+    return fig, ax
+
+
+if __name__ == "__main__":
+    # Example usage
+    dict_list = import_directory("../data/ber_sweep_enable_write_current/data1")
+    
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Plot 1: Continuous color mapping
+    plot_state_current_matrix(dict_list, ax=ax1)
+    ax1.set_title("BER Matrix (Continuous)")
+    
+    # Plot 2: Detailed heatmap with discrete ticks
+    plot_ber_heatmap_detailed(dict_list, ax=ax2, annotate=False)
+    ax2.set_title("BER Heatmap (Detailed)")
+    
+    plt.tight_layout()
+    plt.show()

@@ -7,8 +7,8 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     plot_general_histogram(
         data_dict["read_zero_top"][0, :] * 1e3,
         bins=100,
-        color="#658DDC",
-        alpha=0.8,
+        color="#1966ff",
+        alpha=0.5,
         label="Read 0",
         log=True,
         range=(200, 600),
@@ -18,15 +18,15 @@ def plot_voltage_hist(ax: Axes, data_dict: dict) -> Axes:
     plot_general_histogram(
         data_dict["read_one_top"][0, :] * 1e3,
         bins=100,
-        color="#DF7E79",
-        alpha=0.8,
+        color="#ff7f0e",
+        alpha=0.5,
         label="Read 1",
         log=True,
         range=(200, 600),
         ax=ax,
     )
     ax.legend()
-    ax.set_xlabel("Voltage (mV)")
+    ax.set_xlabel("Voltage [mV]")
     ax.set_ylabel("Counts")
     return ax
 
@@ -74,7 +74,7 @@ def plot_general_histogram(
     label=None,
     color="#1f77b4",
     alpha=0.7,
-    edgecolor="black",
+    edgecolor=None,
     xlabel=None,
     ylabel=None,
     title=None,
@@ -83,7 +83,7 @@ def plot_general_histogram(
     yscale=None,
     range=None,
     legend=True,
-    grid=True,
+    grid=False,
     ax=None,
     **kwargs,
 ) -> tuple[plt.Figure, Axes]:

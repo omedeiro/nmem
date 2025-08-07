@@ -4,22 +4,22 @@ Bit Error Rate vs Enable/Write Current Sweep Analysis
 This script analyzes and visualizes the relationship between bit error rate (BER)
 and enable/write current combinations. It generates plots showing how BER varies
 with different current settings, helping to identify optimal operating parameters
-for memory write operations. Includes both sweep plots and state current markers
-to provide comprehensive analysis of write current dependencies.
+for memory write operations.
 """
 
 import matplotlib.pyplot as plt
 
 from nmem.analysis.data_import import import_directory
-from nmem.analysis.sweep_plots import (
-    plot_enable_write_sweep2,
-    plot_state_current_markers2,
-)
+from nmem.analysis.styles import apply_global_style
+from nmem.analysis.sweep_plots import plot_enable_write_sweep_multiple
+
+# Apply global plot styling
+apply_global_style()
 
 
 def main(data_dir="../data/ber_sweep_enable_write_current/data1", save_dir=None):
     """
-    Generate BER vs enable/write current sweep plots and state current markers.
+    Generate BER vs enable/write current sweep plot.
 
     Args:
         data_dir (str): Directory containing the measurement data
@@ -28,22 +28,11 @@ def main(data_dir="../data/ber_sweep_enable_write_current/data1", save_dir=None)
     dict_list = import_directory(data_dir)
 
     # Plot enable write sweep
-    fig1, ax1 = plot_enable_write_sweep2(dict_list)
+    fig, ax = plt.subplots()
+    fig, ax = plot_enable_write_sweep_multiple(dict_list, ax=ax)
     if save_dir:
         plt.savefig(
             f"{save_dir}/ber_enable_write_sweep.png",
-            dpi=300,
-            bbox_inches="tight",
-        )
-        plt.close()
-    else:
-        plt.show()
-
-    # Plot state current markers
-    fig2, ax2 = plot_state_current_markers2(dict_list)
-    if save_dir:
-        plt.savefig(
-            f"{save_dir}/ber_enable_write_sweep_state_current_markers.png",
             dpi=300,
             bbox_inches="tight",
         )

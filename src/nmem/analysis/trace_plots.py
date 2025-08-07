@@ -19,7 +19,7 @@ from nmem.analysis.core_analysis import (
     get_voltage_trace_data,
 )
 from nmem.analysis.plot_utils import plot_message
-from nmem.analysis.styles import CMAP
+from nmem.analysis.styles import CMAP, apply_legend_style, get_consistent_figure_size
 from nmem.analysis.sweep_plots import (
     plot_critical_currents_from_dc_sweep,
 )
@@ -78,8 +78,8 @@ def plot_voltage_trace_stack(
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
     axs[2].set_xlim([0, 10])
     fig = plt.gcf()
-    fig.supylabel("Voltage [mV]")
-    fig.supxlabel("Time [µs]")
+    fig.supylabel("Voltage [mV]", x=-0.02)
+    fig.supxlabel("Time [µs]", y=-0.03)
     fig.subplots_adjust(hspace=0.0)
     return axs
 
@@ -89,6 +89,8 @@ def plot_voltage_trace_averaged(
 ) -> Axes:
     x, y = get_voltage_trace_data(data_dict, trace_name)
     ax.plot((x - x[0]), y, **kwargs)
+    ax.xaxis.set_major_locator(MultipleLocator(.1))
+    ax.yaxis.set_major_locator(MaxNLocator(4))
     return ax
 
 
@@ -109,24 +111,27 @@ def plot_current_voltage_from_dc_sweep(ax: Axes, dict_list: list) -> Axes:
     return ax
 
 
-def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> List[Axes]:
-    colors = CMAP(np.linspace(0.1, 1, len(dict_list)))
-    colors = np.flipud(colors)
+def plot_time_concatenated_traces(dict_list: List[dict], axs: Axes) -> List[Axes]:
+    if axs is None:
+        fig, axs = plt.subplots(3, 1, sharex=True)
+    else:
+        fig = axs[0].get_figure()
     for idx, data_dict in enumerate(dict_list):
         shift = 10 * idx
         chan_in_x, chan_in_y, enab_in_x, enab_in_y, chan_out_x, chan_out_y = (
             extract_shifted_traces(data_dict, time_shift=shift)
         )
-        plot_voltage_trace(axs[0], chan_in_x, chan_in_y, color=colors[0])
-        plot_voltage_trace(axs[1], enab_in_x, enab_in_y, color=colors[1])
-        plot_voltage_trace(axs[2], chan_out_x, chan_out_y, color=colors[-1])
+        plot_voltage_trace(axs[0], chan_in_x, chan_in_y)
+        plot_voltage_trace(axs[1], enab_in_x, enab_in_y)
+        plot_voltage_trace(axs[2], chan_out_x, chan_out_y)
     axs[2].xaxis.set_major_locator(MultipleLocator(10))
     axs[2].xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x)}"))
     axs[2].set_xlim(0, 50)
-    axs[0].legend(["input"], loc="upper right", fontsize=8, frameon=True)
-    axs[1].legend(["enable"], loc="upper right", fontsize=8, frameon=True)
-    axs[2].legend(["output"], loc="upper right", fontsize=8, frameon=True)
-    fig = plt.gcf()
+
+    apply_legend_style(axs[0], "outside_right", labels=["Input"])
+    apply_legend_style(axs[1], "outside_right", labels=["Enable"])
+    apply_legend_style(axs[2], "outside_right", labels=["Output"])
+
     fig.supylabel("Voltage [mV]", fontsize=9)
     fig.supxlabel("Time [µs]", y=-0.02, fontsize=9)
     fig.subplots_adjust(hspace=0.0)
@@ -135,7 +140,8 @@ def plot_time_concatenated_traces(axs: List[Axes], dict_list: List[dict]) -> Lis
 
 def plot_voltage_pulse_avg(dict_list, logger=None):
     """Plot voltage pulse traces and histograms."""
-    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=(6, 5), constrained_layout=True)
+    figsize = get_consistent_figure_size("single")
+    fig, ax_dict = plt.subplot_mosaic("A;B", figsize=figsize, constrained_layout=True)
     ax2 = ax_dict["A"].twinx()
     ax3 = ax_dict["B"].twinx()
 
@@ -164,15 +170,15 @@ def plot_voltage_pulse_avg(dict_list, logger=None):
     if logger:
         logger.info(f"Sigma separation: {sigma_sep:.2f} mV")
         logger.info(f"Sigma average: {sigma_avg:.2f} mV")
-    ax_dict["A"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["A"].legend(loc="upper left", handlelength=2)
     ax_dict["A"].set_ylabel("Voltage [mV]")
-    ax2.legend(loc="upper right", handlelength=1.2)
+    ax2.legend(loc="upper right", handlelength=2)
     ax2.set_ylabel("Voltage [mV]")
-    ax3.legend(loc="upper right", handlelength=1.2)
+    ax3.legend(loc="upper right", handlelength=2)
     ax3.set_ylabel("Voltage [mV]")
-    ax_dict["B"].set_xlabel("time [µs]")
+    ax_dict["B"].set_xlabel("Time [µs]")
     ax_dict["B"].set_ylabel("Voltage [mV]")
-    ax_dict["B"].legend(loc="upper left", handlelength=1.2)
+    ax_dict["B"].legend(loc="upper left", handlelength=2)
 
     return fig, ax_dict
 
