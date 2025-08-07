@@ -20,41 +20,6 @@ from nmem.simulation.pytdgl.sim.util import (
 )
 
 
-def set_inter_font():
-    if os.name == "nt":  # Windows
-        font_path = r"C:\Users\ICE\AppData\Local\Microsoft\Windows\Fonts\Inter-VariableFont_opsz,wght.ttf"
-    elif os.name == "posix":
-        font_path = "/home/omedeiro/Inter-VariableFont_opsz,wght.ttf"
-    else:
-        font_path = None
-
-    if font_path and os.path.exists(font_path):
-        fm.fontManager.addfont(font_path)
-        mpl.rcParams["font.family"] = "Inter"
-
-
-set_inter_font()
-plt.rcParams.update(
-    {
-        # "figure.figsize": [width, height],
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-        "font.size": 7,
-        "axes.linewidth": 0.5,
-        "xtick.major.width": 0.5,
-        "ytick.major.width": 0.5,
-        "xtick.direction": "out",
-        "ytick.direction": "out",
-        "font.family": "Inter",
-        "lines.markersize": 3,
-        "lines.linewidth": 1.2,
-        "legend.fontsize": 6,
-        "legend.frameon": False,
-        "xtick.major.size": 2,
-        "ytick.major.size": 2,
-    }
-)
-
 
 def make_video_from_solution(
     solution, quantities=("order_parameter", "phase"), fps=20, figsize=(5, 4)
