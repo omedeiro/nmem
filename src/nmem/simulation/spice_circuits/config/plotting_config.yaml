@@ -1,0 +1,85 @@
+# Unified Plotting System Configuration
+# ====================================
+
+plot:
+  # Figure settings
+  figsize: [10, 6]
+  dpi: 300
+  font_size: 12
+  line_width: 1.5
+  marker_size: 6
+  
+  # Grid and styling
+  grid: true
+  grid_alpha: 0.3
+  legend: true
+  transparent: false
+  
+  # Axis settings
+  title: null
+  xlabel: null
+  ylabel: null
+  xlim: null
+  ylim: null
+  
+  # Style and colormap
+  colormap: "coolwarm"
+  style: "technical"  # publication, presentation, technical, minimal, custom
+
+export:
+  # Export settings
+  format: "png"  # png, pdf, svg, eps
+  dpi: 300
+  bbox_inches: "tight"
+  transparent: false
+  optimize: true
+
+colors:
+  # Color scheme for different signal types
+  left: "#1f77b4"      # Blue
+  right: "#d62728"     # Red  
+  voltage: "#9467bd"   # Purple
+  enable: "#ff7f0e"    # Orange
+  critical: "#2ca02c"  # Green
+  background: "#ffffff" # White
+  grid: "#cccccc"      # Light gray
+
+# Plot-specific configurations
+plot_types:
+  transient:
+    default_signals: ["left_current", "right_current"]
+    time_scale: 1e9    # Convert to nanoseconds
+    current_scale: 1e6 # Convert to microamps
+    voltage_scale: 1e3 # Convert to millivolts
+    
+  current_sweep:
+    default_metrics: ["bit_error_rate", "switching_probability"]
+    xlim_default: [650, 850]  # Default current range in µA
+    
+  voltage_output:
+    reference_line: true
+    reference_level: 0
+    time_scale: 1e9
+    voltage_scale: 1e3
+    
+  multi_panel:
+    default_layout:
+      transient: {row: 0, col: 0}
+      voltage: {row: 1, col: 0}
+      sweep: {row: 0, col: 1, rowspan: 2}
+
+# Publication-ready settings
+publication:
+  figsize: [6, 4]
+  font_size: 10
+  line_width: 1.0
+  dpi: 600
+  format: "pdf"
+  
+# Presentation settings  
+presentation:
+  figsize: [12, 8]
+  font_size: 16
+  line_width: 2.0
+  dpi: 150
+  format: "png"

@@ -1,0 +1,75 @@
+# SPICE Simulation Configuration
+# This file configures the complete simulation workflow
+
+# Waveform Generation Configuration
+waveforms:
+  # Standard waveform generation
+  standard:
+    cycle_time: 1.0e-6        # Cycle time in seconds
+    pulse_sigma: 35.0e-9      # Pulse width sigma in seconds  
+    hold_width_write: 120.0e-9 # Write hold width in seconds
+    hold_width_read: 300.0e-9  # Read hold width in seconds
+    hold_width_clear: 5.0e-9   # Clear hold width in seconds
+    write_amplitude: 80.0e-6   # Write current amplitude in amperes
+    read_amplitude: 725.0e-6   # Read current amplitude in amperes
+    enab_write_amplitude: 465.0e-6  # Enable write current in amperes
+    enab_read_amplitude: 300.0e-6   # Enable read current in amperes
+    clear_amplitude: 700.0e-6  # Clear current amplitude in amperes
+    dt: 0.1e-9                 # Time step in seconds
+    seed: 42                   # Random seed for reproducibility
+
+  # Parameter sweep configuration (optional)
+  # sweep:
+  #   parameter: 'read_amplitude'
+  #   values: [700e-6, 725e-6, 750e-6]
+  #   base_config: 'standard'
+
+  # Waveform comparison configuration (optional)
+  # comparison:
+  #   configurations:
+  #     - name: 'low_current'
+  #       read_amplitude: 700e-6
+  #     - name: 'high_current' 
+  #       read_amplitude: 750e-6
+
+# Simulation Configuration
+simulation:
+  template: 'nmem_cell_read_template.cir'  # Circuit template file
+  ltspice_path: '/mnt/c/Program Files/LTC/LTspiceXVII/XVIIx64.exe'  # Path to LTspice
+  
+  # Simulation parameters
+  parameters:
+    temp: 4.2        # Temperature in Kelvin
+    timeout: 300     # Simulation timeout in seconds
+    
+  # Parameter sweep configuration (optional)
+  # sweep:
+  #   parameter: 'temp'
+  #   values: [4.0, 4.2, 4.5]
+  #   output_prefix: 'temp_sweep'
+
+# Plotting Configuration  
+plotting:
+  types:                    # Plot types to generate
+    - 'transient'          # Time-domain analysis
+    - 'multi_panel'        # Multi-panel overview
+    # - 'current_sweep'     # Current sweep analysis
+    # - 'voltage_output'    # Voltage output analysis
+    
+  generate_report: true     # Generate comprehensive report
+  style: 'publication'      # Plot style: publication, presentation, technical
+  
+  # Export settings
+  export:
+    formats: ['png', 'pdf'] # Export formats
+    dpi: 300               # Resolution for raster formats
+    
+# Output Directories (optional - defaults will be used if not specified)
+# directories:
+#   waveforms: './data/waveforms'
+#   results: './results'
+#   plots: './results/plots'
+
+# Logging Configuration
+logging:
+  level: 'INFO'             # DEBUG, INFO, WARNING, ERROR

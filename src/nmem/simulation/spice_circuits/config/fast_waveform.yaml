@@ -1,0 +1,33 @@
+# Fast waveform parameters for quick simulation  
+waveform:
+  cycle_time: 2.0e-07     # 200 ns cycles (5x faster)
+  pulse_sigma: 1.5e-08    # 15 ns sigma (2.3x faster)
+  hold_width_write: 2.0e-08   # 20 ns write hold (6x faster)
+  hold_width_read: 5.0e-08    # 50 ns read hold (6x faster)
+  hold_width_clear: 5.0e-09
+  write_amplitude: 8.0e-05
+  read_amplitude: 7.25e-04
+  enab_write_amplitude: 4.6e-04   # 460 µA
+  enab_read_amplitude: 3.0e-04
+  clear_amplitude: 7.0e-04
+  dt: 1.0e-10
+
+simulation:
+  ltspice_path: "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe"
+  template_netlist: "nmem_cell_read_template.cir"
+  output_format: "csv"
+  logging_level: "INFO"
+
+paths:
+  data_dir: null
+  results_dir: null
+  circuit_files_dir: null
+  templates_dir: null
+
+plotting:
+  figure_size: [10, 4]
+  dpi: 300
+  font_size: 12
+  line_width: 1.5
+  grid: true
+  style: "default"
