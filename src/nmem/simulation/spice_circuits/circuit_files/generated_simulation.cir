@@ -12,7 +12,7 @@ R§irhr N008 0 1
 R§ichr N006 0 1
 R§irhl N007 0 1
 R§ichl N005 0 1
-.tran 0 50u 0 1n
+.tran 0 2.5e-05 0 1e-09
 .options reltol 1e-6
 .param Jsw_set=270G Jconst_set=270G enable_set=530u
 .lib "\\wsl.localhost\Ubuntu-22.04\home\omedeiro\nmem\src\nmem\simulation\spice_circuits\circuit_files\hTron_behavioral.lib"

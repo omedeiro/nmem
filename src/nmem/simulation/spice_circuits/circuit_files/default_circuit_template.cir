@@ -12,7 +12,7 @@ R§irhr N008 0 1
 R§ichr N006 0 1
 R§irhl N007 0 1
 R§ichl N005 0 1
-.tran 0 50u 0 1n
+.tran {start_time} {stop_time} {start_save} {time_step}
 .options reltol 1e-6
 .param Jsw_set=270G Jconst_set=270G enable_set=530u
 .lib hTron_behavioral.lib
