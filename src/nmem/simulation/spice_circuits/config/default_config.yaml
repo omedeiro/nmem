@@ -27,11 +27,3 @@ paths:
   results_dir: null         # Will use default if null
   circuit_files_dir: null   # Will use default if null
   templates_dir: null       # Will use default if null
-
-plotting:
-  figsize: [6, 4]  # Smaller figure size
-  dpi: 120         # Lower DPI for smaller interactive windows
-  font_size: 7
-  line_width: 1.5
-  grid: true
-  style: "technical"

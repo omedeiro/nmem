@@ -23,11 +23,3 @@ paths:
   results_dir: null
   circuit_files_dir: null
   templates_dir: null
-
-plotting:
-  figure_size: [10, 4]
-  dpi: 300
-  font_size: 12
-  line_width: 1.5
-  grid: true
-  style: "default"
