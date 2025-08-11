@@ -29,9 +29,9 @@ paths:
   templates_dir: null       # Will use default if null
 
 plotting:
-  figure_size: [12, 6]
-  dpi: 300
-  font_size: 12
+  figsize: [6, 4]  # Smaller figure size
+  dpi: 120         # Lower DPI for smaller interactive windows
+  font_size: 7
   line_width: 1.5
   grid: true
-  style: "default"
+  style: "technical"

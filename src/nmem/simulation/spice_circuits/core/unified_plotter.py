@@ -82,9 +82,9 @@ class PlotStyle(Enum):
 class PlotConfig:
     """Configuration for individual plots."""
 
-    figsize: Tuple[float, float] = (10, 6)
+    figsize: Tuple[float, float] = (6, 4)
     dpi: int = 300
-    font_size: int = 12
+    font_size: int = 10
     line_width: float = 1.5
     marker_size: float = 6
     grid: bool = True
@@ -261,6 +261,7 @@ class UnifiedPlotter:
                 "lines.markersize": self.plot_config.marker_size,
                 "grid.alpha": self.plot_config.grid_alpha,
                 "figure.dpi": self.plot_config.dpi,
+                "figure.figsize": self.plot_config.figsize,  # Set default figure size
                 "savefig.dpi": self.plot_config.dpi,
                 "savefig.transparent": self.plot_config.transparent,
                 "savefig.bbox": "tight",
@@ -327,6 +328,23 @@ class UnifiedPlotter:
 
         except Exception as e:
             print(f"Warning: Error loading config: {e}")
+
+    def update_config_from_dict(self, config_dict: Dict[str, Any]):
+        """Update configuration from a dictionary.
+
+        Args:
+            config_dict: Dictionary containing plot configuration
+        """
+        if not config_dict:
+            return
+
+        # Update plot config - handle both 'plot' and direct keys
+        plot_settings = config_dict.get("plot", config_dict)
+
+        for key, value in plot_settings.items():
+            if hasattr(self.plot_config, key):
+                setattr(self.plot_config, key, value)
+                print(f"Updated plot config: {key} = {value}")
 
     def create_plot(
         self,
@@ -696,9 +714,12 @@ class UnifiedPlotter:
         panel_config = kwargs.get(
             "panel_config",
             {
-                "transient": {"row": 0, "col": 0},
-                "voltage": {"row": 1, "col": 0},
-                "sweep": {"row": 0, "col": 1, "rowspan": 2},
+                "input_waveforms": {
+                    "row": 0,
+                    "col": 0,
+                },  # Top panel, spans both columns
+                "transient": {"row": 1, "col": 0},  # Bottom left
+                "voltage": {"row": 2, "col": 0},  # Bottom right
             },
         )
 
@@ -712,15 +733,13 @@ class UnifiedPlotter:
         )
 
         fig = plt.figure(
-            figsize=(
-                self.plot_config.figsize[0] * cols,
-                self.plot_config.figsize[1] * rows,
-            ),
+            figsize=self.plot_config.figsize,  # Use the configured figsize directly
             dpi=self.plot_config.dpi,
         )
         gs = gridspec.GridSpec(rows, cols, figure=fig)
 
         axes = {}
+        shared_x_axis = None  # For sharing x-axis across time-based plots
 
         for panel_type, config in panel_config.items():
             row = config.get("row", 0)
@@ -728,7 +747,23 @@ class UnifiedPlotter:
             rowspan = config.get("rowspan", 1)
             colspan = config.get("colspan", 1)
 
-            ax = fig.add_subplot(gs[row : row + rowspan, col : col + colspan])
+            # Share x-axis for time-based plots
+            sharex = None
+            if panel_type in ["input_waveforms", "transient", "voltage"]:
+                if shared_x_axis is None:
+                    # First time-based plot - this will be the master
+                    ax = fig.add_subplot(gs[row : row + rowspan, col : col + colspan])
+                    shared_x_axis = ax
+                else:
+                    # Subsequent time-based plots share x-axis with the first
+                    ax = fig.add_subplot(
+                        gs[row : row + rowspan, col : col + colspan],
+                        sharex=shared_x_axis,
+                    )
+            else:
+                # Non-time-based plots (like sweep) don't share x-axis
+                ax = fig.add_subplot(gs[row : row + rowspan, col : col + colspan])
+
             axes[panel_type] = ax
 
             # Create subplot based on type
@@ -738,6 +773,8 @@ class UnifiedPlotter:
                 self._plot_voltage_on_axis(ax, data, **kwargs)
             elif panel_type == "sweep":
                 self._plot_sweep_on_axis(ax, data, **kwargs)
+            elif panel_type == "input_waveforms":
+                self._plot_input_waveforms_on_axis(ax, data, **kwargs)
 
         plt.tight_layout()
         return fig
@@ -770,8 +807,9 @@ class UnifiedPlotter:
             ax.plot(time, voltage, color=self.colors["voltage"])
             ax.axhline(0, color="black", linestyle="--", alpha=0.5)
 
-        ax.set_xlabel("Time (ns)")
+        ax.set_xlabel("Time (ns)")  # Show x-axis label on bottom plot
         ax.set_ylabel("Voltage (mV)")
+        ax.set_title("Output Voltage")
         ax.grid(True, alpha=self.plot_config.grid_alpha)
 
     def _plot_sweep_on_axis(self, ax: plt.Axes, data: Dict[str, Any], **kwargs):
@@ -786,6 +824,70 @@ class UnifiedPlotter:
 
         ax.set_xlabel(f'{sweep_param.replace("_", " ").title()} (μA)')
         ax.set_ylabel("BER")
+        ax.grid(True, alpha=self.plot_config.grid_alpha)
+
+    def _plot_input_waveforms_on_axis(
+        self, ax: plt.Axes, data: Dict[str, Any], **kwargs
+    ):
+        """Plot input waveforms (enable and channel currents) on given axis."""
+        case_data = data[0] if isinstance(data, dict) and 0 in data else data
+        time = case_data.get("time", np.array([])) * 1e9  # Convert to nanoseconds
+
+        # Look for input current signals
+        enable_current = (
+            case_data.get("enable_current", np.array([])) * 1e6
+        )  # Convert to microamps
+        input_current = case_data.get("input_current", np.array([])) * 1e6
+
+        if len(time) > 0:
+            if len(enable_current) > 0:
+                ax.plot(
+                    time,
+                    enable_current,
+                    color=self.colors["enable"],
+                    linewidth=self.plot_config.line_width,
+                    label="Enable Current",
+                )
+
+            if len(input_current) > 0:
+                ax.plot(
+                    time,
+                    input_current,
+                    color=self.colors["voltage"],
+                    linewidth=self.plot_config.line_width,
+                    label="Channel Current",
+                )
+
+        ax.set_ylabel("Input Current (μA)")
+        ax.set_title("Input Waveforms")
+        ax.grid(True, alpha=self.plot_config.grid_alpha)
+
+        # Don't show x-axis labels on top plot (shared x-axis)
+        ax.tick_params(labelbottom=False)
+
+        if self.plot_config.legend and (
+            len(enable_current) > 0 or len(input_current) > 0
+        ):
+            ax.legend()
+
+    def _plot_transient_on_axis(self, ax: plt.Axes, data: Dict[str, Any], **kwargs):
+        """Plot transient data on given axis."""
+        case_data = data[0] if isinstance(data, dict) and 0 in data else data
+        time = case_data.get("time", np.array([])) * 1e9
+        left_current = case_data.get("left_current", np.array([])) * 1e6
+        right_current = case_data.get("right_current", np.array([])) * 1e6
+
+        if len(time) > 0:
+            ax.plot(time, left_current, label="Left Current", color=self.colors["left"])
+            ax.plot(
+                time, right_current, label="Right Current", color=self.colors["right"]
+            )
+
+        # Don't show x-axis labels on middle plot (shared x-axis)
+        ax.tick_params(labelbottom=False)
+        ax.set_ylabel("Current (μA)")
+        ax.set_title("Output Currents")
+        ax.legend()
         ax.grid(True, alpha=self.plot_config.grid_alpha)
 
     def _plot_custom(self, data: Dict[str, Any], **kwargs) -> plt.Figure:

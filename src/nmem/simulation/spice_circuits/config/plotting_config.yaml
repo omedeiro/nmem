@@ -3,9 +3,9 @@
 
 plot:
   # Figure settings
-  figsize: [10, 6]
-  dpi: 300
-  font_size: 12
+  figsize: [6, 4]  # Smaller default size
+  dpi: 120         # Lower DPI for interactive windows
+  font_size: 7
   line_width: 1.5
   marker_size: 6
   

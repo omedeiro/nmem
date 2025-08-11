@@ -228,20 +228,23 @@ def run_simulation(
 
         # The raw file will be created alongside the netlist in circuit_files
         raw_file_in_circuit_dir = output_netlist.with_suffix(".raw")
-        
+
         if raw_file_in_circuit_dir.exists():
-            # Copy the result to the results directory  
+            # Copy the result to the results directory
             result_file = output_dir / "simulation.raw"
             import shutil
+
             shutil.copy2(raw_file_in_circuit_dir, result_file)
-            
+
             simulation_results["standard"] = result_file
             logger.info(f"   ✅ Standard simulation complete: {result_file.name}")
-            
+
             # Optionally remove the raw file from circuit_files to keep it clean
             # raw_file_in_circuit_dir.unlink()  # Uncomment to auto-delete
         else:
-            logger.error(f"   ❌ Simulation failed - no output file: {raw_file_in_circuit_dir}")
+            logger.error(
+                f"   ❌ Simulation failed - no output file: {raw_file_in_circuit_dir}"
+            )
 
     # Run parameter sweeps if configured
     if "sweep" in config.get("simulation", {}):
