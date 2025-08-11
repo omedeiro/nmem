@@ -296,6 +296,10 @@ def plot_results(
     else:
         plotter = UnifiedPlotter()
 
+    # Apply plotting config from main config file if present
+    if plot_config:
+        plotter.update_config_from_dict(plot_config)
+
     plot_files = {}
 
     # Generate plots for each simulation result
