@@ -6,9 +6,6 @@ from matplotlib.path import Path
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.interpolate import griddata
 
-from nmem.analysis.analysis import set_plot_style
-
-set_plot_style()
 
 
 def make_device():

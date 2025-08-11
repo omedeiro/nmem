@@ -19,7 +19,7 @@ from nmem.analysis.currents import (
 )
 from nmem.analysis.styles import CMAP
 from nmem.analysis.utils import filter_first
-from nmem.simulation.spice_circuits.functions import process_read_data
+from nmem.simulation.spice_circuits.core.data_processing import process_read_data
 
 
 def load_autoprobe_data(filepath, grid_size=56):
@@ -418,7 +418,9 @@ def import_read_current_sweep_sim_data(
         write_current_list.append(write_current * 1e6)
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
-    ltsp_data = ltspice.Ltspice("../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw").parse()
+    ltsp_data = ltspice.Ltspice(
+        "../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw"
+    ).parse()
     ltsp_data_dict = process_read_data(ltsp_data)
     dict_list = import_directory(write_current_dir)
     write_current_list2 = []
@@ -448,7 +450,9 @@ def load_current_sweep_data():
     sorted_args = np.argsort(write_current_list)
     files = [files[i] for i in sorted_args]
 
-    ltsp_data = ltspice.Ltspice("../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw").parse()
+    ltsp_data = ltspice.Ltspice(
+        "../data/ber_sweep_read_current/ltspice_simulation/nmem_cell_read_example_trace.raw"
+    ).parse()
     ltsp_data_dict = process_read_data(ltsp_data)
 
     dict_list = import_directory(

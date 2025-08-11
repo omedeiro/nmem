@@ -74,13 +74,13 @@ from nmem.analysis.utils import (
 from nmem.measurement.cells import (
     CELLS,
 )
-from nmem.simulation.spice_circuits.functions import process_read_data
-from nmem.simulation.spice_circuits.plotting import (
+from nmem.simulation.spice_circuits.core.data_processing import process_read_data
+from nmem.analysis.styles import get_consistent_figure_size
+from nmem.analysis.state_currents_plots import (
     create_plot,
     plot_current_sweep_ber,
     plot_current_sweep_switching,
 )
-from nmem.analysis.styles import get_consistent_figure_size
 
 # Suppress numpy warnings about all-nan slices
 warnings.filterwarnings("ignore", message="All-NaN slice encountered")
@@ -847,7 +847,7 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
     fig, axs = plt.subplot_mosaic(
         outer_nested_mosaic,
         height_ratios=[2, 0.5, 1, 1],
-        figsize=(180/25.4, 180/25.4),
+        figsize=(180 / 25.4, 180 / 25.4),
     )
 
     CASE = 16
@@ -969,24 +969,30 @@ def plot_current_sweep_results(files, ltsp_data_dict, dict_list, write_current_l
 
     # Add professional Nature-style cell labels to plots A and C
     axs["A"].text(
-        0.95, 0.95, 
-        "Cell C3", 
+        0.95,
+        0.95,
+        "Cell C3",
         transform=axs["A"].transAxes,
         fontsize=7,
-        fontweight='bold',
-        ha='right',
-        va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
+        fontweight="bold",
+        ha="right",
+        va="top",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8
+        ),
     )
     axs["B"].text(
-        0.95, 0.95, 
-        "Cell C3", 
+        0.95,
+        0.95,
+        "Cell C3",
         transform=axs["B"].transAxes,
         fontsize=7,
-        fontweight='bold',
-        ha='right',
-        va='top',
-        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='none', alpha=0.8)
+        fontweight="bold",
+        ha="right",
+        va="top",
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="none", alpha=0.8
+        ),
     )
 
     fig.subplots_adjust(hspace=0.3, wspace=0.3)
