@@ -309,6 +309,7 @@ class SimulationAutomator:
         enab_pwl_path: Union[str, Path],
         output_netlist: Union[str, Path],
         extract_results: bool = True,
+        substitutions: Optional[Dict[str, str]] = None,
     ) -> Optional[float]:
         """Run a simulation with specific channel and enable waveform files.
 
@@ -318,6 +319,7 @@ class SimulationAutomator:
             enab_pwl_path: Path to enable PWL file
             output_netlist: Path for generated netlist
             extract_results: Whether to extract and return persistent current
+            substitutions: Optional dictionary of template substitutions
 
         Returns:
             Persistent current in µA if extract_results=True, otherwise None
@@ -325,7 +327,7 @@ class SimulationAutomator:
         try:
             # Generate netlist with both PWL files
             self.runner.generate_netlist(
-                template_netlist, chan_pwl_path, enab_pwl_path, output_netlist
+                template_netlist, chan_pwl_path, enab_pwl_path, output_netlist, substitutions
             )
 
             # Run simulation

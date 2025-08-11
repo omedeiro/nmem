@@ -218,12 +218,26 @@ def run_simulation(
         # Save generated netlist in circuit_files (will be overwritten each time)
         output_netlist = circuit_dir / "generated_simulation.cir"
 
+        # Prepare timing substitutions from config
+        timing_substitutions = {}
+        if "start_time" in sim_config:
+            timing_substitutions["{start_time}"] = str(sim_config["start_time"])
+        if "stop_time" in sim_config:
+            stop_time = sim_config["stop_time"]
+            timing_substitutions["{stop_time}"] = f"{float(stop_time):.6g}"
+        if "start_save" in sim_config:
+            timing_substitutions["{start_save}"] = str(sim_config["start_save"])
+        if "time_step" in sim_config:
+            time_step = sim_config["time_step"]
+            timing_substitutions["{time_step}"] = f"{float(time_step):.6g}"
+
         result = automator.run_waveform_simulation(
             template_netlist=template_netlist,
             chan_pwl_path=waveform_files["chan"],
             enab_pwl_path=waveform_files["enab"],
             output_netlist=output_netlist,
             extract_results=False,  # We'll analyze the raw file ourselves
+            substitutions=timing_substitutions,
         )
 
         # The raw file will be created alongside the netlist in circuit_files
