@@ -205,7 +205,7 @@ def run_simulation(
     # Get circuit file
     circuit_dir = Path(__file__).parent / "circuit_files"
     template_netlist = circuit_dir / sim_config.get(
-        "template", "default_circuit_template.cir"
+        "template_netlist", "default_circuit_template.cir"
     )
 
     if not template_netlist.exists():
@@ -215,7 +215,8 @@ def run_simulation(
 
     # Run single simulation if standard waveforms exist
     if "chan" in waveform_files and "enab" in waveform_files:
-        output_netlist = output_dir / "simulation.cir"
+        # Save generated netlist in circuit_files (will be overwritten each time)
+        output_netlist = circuit_dir / "generated_simulation.cir"
 
         result = automator.run_waveform_simulation(
             template_netlist=template_netlist,
@@ -225,14 +226,22 @@ def run_simulation(
             extract_results=False,  # We'll analyze the raw file ourselves
         )
 
-        # The raw file should be created alongside the netlist
-        result_file = output_netlist.with_suffix(".raw")
-
-        if result_file.exists():
+        # The raw file will be created alongside the netlist in circuit_files
+        raw_file_in_circuit_dir = output_netlist.with_suffix(".raw")
+        
+        if raw_file_in_circuit_dir.exists():
+            # Copy the result to the results directory  
+            result_file = output_dir / "simulation.raw"
+            import shutil
+            shutil.copy2(raw_file_in_circuit_dir, result_file)
+            
             simulation_results["standard"] = result_file
             logger.info(f"   ✅ Standard simulation complete: {result_file.name}")
+            
+            # Optionally remove the raw file from circuit_files to keep it clean
+            # raw_file_in_circuit_dir.unlink()  # Uncomment to auto-delete
         else:
-            logger.error(f"   ❌ Simulation failed - no output file: {result_file}")
+            logger.error(f"   ❌ Simulation failed - no output file: {raw_file_in_circuit_dir}")
 
     # Run parameter sweeps if configured
     if "sweep" in config.get("simulation", {}):
