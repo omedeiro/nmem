@@ -327,7 +327,11 @@ class SimulationAutomator:
         try:
             # Generate netlist with both PWL files
             self.runner.generate_netlist(
-                template_netlist, chan_pwl_path, enab_pwl_path, output_netlist, substitutions
+                template_netlist,
+                chan_pwl_path,
+                enab_pwl_path,
+                output_netlist,
+                substitutions,
             )
 
             # Run simulation
