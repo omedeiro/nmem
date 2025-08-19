@@ -239,7 +239,7 @@ B3 Meas_Ihs 0
 
 Lc drain N_hs 
 + Flux = {chan_inductance} * x / (2.0 * cos(0.67 * asin(0.6 * abs(x) / Isw_Tsub)) - 1) 
-+ Rser = 1e-100 
++ Rser = 1e-12
 + Rpar = 1e6
   * Channel inductor
 
