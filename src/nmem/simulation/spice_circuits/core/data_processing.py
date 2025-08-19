@@ -105,6 +105,13 @@ def process_read_data(ltspice_data: ltspice.Ltspice) -> List[Dict[str, Any]]:
         except:
             case_data["write_current"] = [0.0]
 
+        # Extract read current
+        try:
+            read_current = ltspice_data.get_data("I(R2)", case=case)
+            case_data["read_current"] = [np.max(read_current)]
+        except:
+            case_data["read_current"] = np.zeros_like(time)
+
         # Extract output voltage
         try:
             case_data["output_voltage"] = ltspice_data.get_data("V(out)", case=case)
