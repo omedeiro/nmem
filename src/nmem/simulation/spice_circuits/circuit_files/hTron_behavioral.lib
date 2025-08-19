@@ -192,7 +192,7 @@ B_sqrt_approx N_sqrt_approx 0 V = (V(N_sqrt_arg) + delta) / 2
 
 * Lumped-elements circuit, mimics the heat transfer
 B_heat N001 0 
-+ V = I(R_heater)
++ V = abs(I(R_heater))
 
 R1 heat N001 1
 C1 heat 0 {tau_thermal}
