@@ -6,15 +6,15 @@ R1 N001 N002 1n
 R2 N003 out 1n
 R3 out 0 50
 R4 out 0 1G
-X§HL N002 N004 out 0 tempL N005 N007 hTron_behav chan_width=150n, heater_width=100n, chan_thickness=23.6n, chan_length=1u, sheet_resistance=78, heater_resistance=300, critical_temp=12.5, substrate_temp=1.3, eta=3, Jsw_tilde={Jsw_set}, Isupp_tilde={enable_set}, Jchanr={Jconst_set}, tau_on=5n, ICh_bias_on=100u, Ih_bias_on={enable_set}
-X§HR N004 0 out 0 tempR N006 N008 hTron_behav chan_width=300n, heater_width=100n, chan_thickness=23.5n, chan_length=6u, sheet_resistance=78, heater_resistance=300, critical_temp=12.5, substrate_temp=1.3, eta=3, Jsw_tilde={Jsw_set}, Isupp_tilde={enable_set}, Jchanr={Jconst_set}, tau_on=5n, ICh_bias_on=100u, Ih_bias_on={enable_set}
+X§HL N002 N004 out 0 tempL N005 N007 hTron_behav chan_width=250n, heater_width=100n, chan_thickness=23.6n, chan_length=2.2u, sheet_resistance=78, heater_resistance=300, critical_temp=12.5, substrate_temp=1.3, eta=3, Jsw_tilde={Jsw_set}, Isupp_tilde={enable_set}, Jchanr={Jconst_set}, tau_on=5n, ICh_bias_on=100u, Ih_bias_on=500u
+X§HR N004 0 out 0 tempR N006 N008 hTron_behav chan_width=350n, heater_width=100n, chan_thickness=23.5n, chan_length=4u, sheet_resistance=78, heater_resistance=300, critical_temp=12.5, substrate_temp=1.3, eta=3, Jsw_tilde={Jsw_set}, Isupp_tilde={enable_set}, Jchanr={Jconst_set}, tau_on=5n, ICh_bias_on=100u, Ih_bias_on=500u
 R§irhr N008 0 1
 R§ichr N006 0 1
 R§irhl N007 0 1
 R§ichl N005 0 1
 .tran {start_time} {stop_time} {start_save} {time_step}
 .options reltol 1e-6
-.param Jsw_set=270G Jconst_set=270G enable_set=530u
+.param Jsw_set=250G Jconst_set=99G enable_set=540u
 .lib hTron_behavioral.lib
 .backanno
 .end
