@@ -194,7 +194,7 @@ B_sqrt_approx N_sqrt_approx 0 V = (V(N_sqrt_arg) + delta) / 2
 
 * Lumped-elements circuit, mimics the heat transfer
 B_heat N001 0 
-+ V = abs(I(R_heater))
++ V = abs(I(R_heater)* heater_resistance)
 
 R1 heat N001 1
 C1 heat 0 {tau_thermal}
@@ -214,7 +214,7 @@ R_stab N001 0 1G
 .func Isw(T) 
 + Jc_0K * chan_width * chan_thickness * (1 - (T / critical_temp)**3) ** 2.1
 
-.funct Iretrap(T)
+.func Iretrap(T)
 + sqrt(max(1n, hc*(chan_width**2)*chan_thickness*critical_temp/rho)) * sqrt(max(1n, 1 - (T / critical_temp)))
 **************************************************
 ** BEHAVIORAL SOURCES **
@@ -231,7 +231,7 @@ B2 Meas_Isw 0
 
 * Replace 1 by 0.99 in B3 to improve stability in large circuits
 B3 Meas_Ihs 0 
-+ V = max(1n, min(Iretrap(V(Meas_TCh))*2, 0.99 * V(Meas_Isw)))
++ V = max(1n, min(Iretrap(V(Meas_TCh)), 0.99 * V(Meas_Isw)))
   * Retrapping current
 
 
