@@ -18,7 +18,6 @@ LINE Normal -161 -49 -208 -49
 LINE Normal -161 1 -208 1
 LINE Normal -161 48 -208 48
 WINDOW 0 -33 -80 Bottom 2
-SYMATTR SpiceLine chan_width=100n, chan_length=1u
 SYMATTR ModelFile hTron_behavioral.lib
 SYMATTR SpiceModel hTron_behav
 SYMATTR Prefix X
