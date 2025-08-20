@@ -101,7 +101,7 @@
 .PARAM psi = rho*(Isw_Tsub)**2/(hc*(chan_width**2)*chan_thickness*(critical_temp-substrate_temp))
 
 * Retrapping current (A)
-.PARAM Ir = sqrt(2/psi)*Isw_Tsub
+.PARAM Iretrap_Tsub = sqrt(2/psi)*Isw_Tsub
 
 * Compute Ih_supp and Jc_0K (valid values of eta are 2 or 3)
 .PARAM eta = 3
