@@ -80,8 +80,8 @@
 * Heat capacity (J/m^3 K)
 .PARAM heatCapacity_c = 4400
 
-* Thermal conductivity (W/m^2 K) of substrate interface
-.PARAM hc = 50k
+* Thermal interface conductance between channel and substrate (W/m²K)
+.PARAM thermal_interface_conductance = 50k
 
 .PARAM tau_on = 5n
 
@@ -92,13 +92,13 @@
 .PARAM chan_inductance = {inductivity*chan_squares}
 
 * Characteristic velocity (m/s)
-.PARAM vo={1*sqrt(hc*kappa/chan_thickness)/heatCapacity_c}
+.PARAM vo={1*sqrt(thermal_interface_conductance*kappa/chan_thickness)/heatCapacity_c}
 
 * Switching current at substrate temperature (A)
 .PARAM Isw_Tsub = Isw(substrate_temp)
 
 * Stekly parameter (unitless)
-.PARAM psi = rho*(Isw_Tsub)**2/(hc*(chan_width**2)*chan_thickness*(critical_temp-substrate_temp))
+.PARAM psi = rho*(Isw_Tsub)**2/(thermal_interface_conductance*(chan_width**2)*chan_thickness*(critical_temp-substrate_temp))
 
 * Retrapping current (A)
 .PARAM Iretrap_Tsub = sqrt(2/psi)*Isw_Tsub
@@ -215,7 +215,7 @@ R_stab N001 0 1G
 + Jc_0K * chan_width * chan_thickness * (1 - (T / critical_temp)**3) ** 2.1
 
 .func Iretrap(T)
-+ sqrt(max(1n, hc*(chan_width**2)*chan_thickness*critical_temp/rho)) * sqrt(max(1n, 1 - (T / critical_temp)))
++ sqrt(max(1n, thermal_interface_conductance*(chan_width**2)*chan_thickness*critical_temp/rho)) * sqrt(max(1n, 1 - (T / critical_temp)))
 **************************************************
 ** BEHAVIORAL SOURCES **
 **************************************************
