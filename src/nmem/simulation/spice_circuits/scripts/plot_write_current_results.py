@@ -257,8 +257,8 @@ def plot_transient_results(results_dir: Path, write_currents: list = None) -> No
 
             time = ltsp.get_time() * 1e9  # Convert to nanoseconds
 
-            # Create figure with 4 subplots (current, voltage, critical currents, retrapping currents)
-            fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 16))
+            # Create figure with 5 subplots (current, voltage, critical currents, retrapping currents, temperature)
+            fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(12, 20))
             fig.suptitle(
                 f"Transient Analysis - Write Current: {write_current_str} μA",
                 fontsize=16,
@@ -527,7 +527,6 @@ def plot_transient_results(results_dir: Path, write_currents: list = None) -> No
                 print(f"⚠️  Right retrapping current not found in {filename}: I(irhr)")
 
             # Retrapping currents subplot formatting
-            ax4.set_xlabel("Time (ns)", fontsize=12)  # Only bottom subplot has x-label
             ax4.set_ylabel("Current (μA)", fontsize=12)
             ax4.set_title("Retrapping Currents", fontsize=14)
             ax4.grid(True, alpha=0.3)
@@ -543,6 +542,129 @@ def plot_transient_results(results_dir: Path, write_currents: list = None) -> No
                     va="center",
                     transform=ax4.transAxes,
                 )
+
+            # =============================================================
+            # FIFTH SUBPLOT: TEMPERATURE (Left and Right hTron Temperatures)
+            # =============================================================
+            temperature_plotted = False
+
+            # Add colors for temperature traces
+            colors["temp_left"] = "#8c564b"  # Brown
+            colors["temp_right"] = "#e377c2"  # Pink
+
+            # Try to get temperature measurements
+            # Based on the circuit, temperature nodes are tempL and tempR
+            try:
+                left_temp = ltsp.get_data("V(tempL)")  # Temperature in Kelvin
+                ax5.plot(
+                    time,
+                    left_temp,
+                    color=colors["temp_left"],
+                    linewidth=2,
+                    label="Left hTron Temperature",
+                )
+                temperature_plotted = True
+            except Exception:
+                print(f"⚠️  Left temperature V(tempL) not found in {filename}")
+
+            try:
+                right_temp = ltsp.get_data("V(tempR)")  # Temperature in Kelvin
+                ax5.plot(
+                    time,
+                    right_temp,
+                    color=colors["temp_right"],
+                    linewidth=2,
+                    label="Right hTron Temperature",
+                )
+                temperature_plotted = True
+            except Exception:
+                print(f"⚠️  Right temperature V(tempR) not found in {filename}")
+
+            # If primary signals not found, try case variations
+            if not temperature_plotted:
+                temperature_signals = ["V(templ)", "V(tempr)", "V(TEMPL)", "V(TEMPR)"]
+                for i, signal_name in enumerate(temperature_signals):
+                    try:
+                        temperature = ltsp.get_data(
+                            signal_name
+                        )  # Temperature in Kelvin
+                        label = (
+                            "Left hTron Temperature"
+                            if i % 2 == 0
+                            else "Right hTron Temperature"
+                        )
+                        color = (
+                            colors["temp_left"] if i % 2 == 0 else colors["temp_right"]
+                        )
+                        ax5.plot(
+                            time,
+                            temperature,
+                            color=color,
+                            linewidth=2,
+                            label=label,
+                        )
+                        temperature_plotted = True
+                    except Exception:
+                        continue
+
+            # If still no temperature found, try to find any temperature-like signal
+            if not temperature_plotted:
+                try:
+                    available_signals = ltsp.get_variable_names()
+                    for signal in available_signals:
+                        if "temp" in signal.lower() or "tch" in signal.lower():
+                            try:
+                                temp_data = ltsp.get_data(signal)
+                                ax5.plot(
+                                    time,
+                                    temp_data,
+                                    color=colors["temp_left"],
+                                    linewidth=2,
+                                    label=f"Temperature ({signal})",
+                                )
+                                temperature_plotted = True
+                                break
+                            except Exception:
+                                continue
+                except Exception:
+                    pass
+
+            # Temperature subplot formatting
+            ax5.set_xlabel("Time (ns)", fontsize=12)  # Only bottom subplot has x-label
+            ax5.set_ylabel("Temperature (K)", fontsize=12)
+            ax5.set_title("hTron Channel Temperature", fontsize=14)
+            ax5.grid(True, alpha=0.3)
+
+            if temperature_plotted:
+                ax5.legend(loc="upper right")
+            else:
+                ax5.text(
+                    0.5,
+                    0.5,
+                    "No temperature data available",
+                    ha="center",
+                    va="center",
+                    transform=ax5.transAxes,
+                )
+
+                # Debug: print available signals to help identify temperature signals
+                try:
+                    available_signals = ltsp.get_variable_names()
+                    temp_related = [
+                        s
+                        for s in available_signals
+                        if any(term in s.lower() for term in ["temp", "tch", "meas"])
+                    ]
+                    if temp_related:
+                        print(
+                            f"⚠️  Temperature-related signals found in {filename}: {temp_related}"
+                        )
+                    else:
+                        print(
+                            f"⚠️  No temperature signals found in {filename}. Available signals: {available_signals[:10]}..."
+                        )
+                except Exception:
+                    print(f"⚠️  Could not list available signals in {filename}")
 
             plt.tight_layout()
 
