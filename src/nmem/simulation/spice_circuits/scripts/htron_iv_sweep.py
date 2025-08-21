@@ -64,7 +64,7 @@ class HTronIVSweep:
             "circuit_template": "htron_iv_template.cir",
             "bias_current_range": [1300e-6, 1300e-6, 1e-6],  # Single value: 1300 µA
             "heater_current_range": [0, 0, 1e-6],  # Single value: 0 µA
-            "simulation_time": 80e-6,  # Total simulation time in seconds
+            "simulation_time": 10e-6,  # Total simulation time in seconds
             "device_parameters": {
                 "chan_width": "100n",
                 "chan_length": "1u",
@@ -80,8 +80,8 @@ class HTronIVSweep:
                 "V(out)",
                 "V(temp)",
                 "I(I2)",
-                "I(R§ic)",
-                "I(R§ir)",
+                "I(ic)",
+                "I(ir)",
             ],
         }
 
@@ -251,6 +251,7 @@ class HTronIVSweep:
 
         except Exception as e:
             self.logger.error(f"❌ Error extracting data from {raw_file}: {e}")
+            print(f"DEBUG: extract_iv_data failed: {e}")
             return {}
 
     def run_iv_sweep(self) -> pd.DataFrame:

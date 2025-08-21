@@ -259,10 +259,12 @@ def plot_transient_iv_results(results_dir: Path, bias_currents: list = None) -> 
         print("❌ Simulations directory not found")
         return
 
-    # Find .raw files
-    all_raw_files = list(simulations_dir.glob("*.raw"))
+    # Find .raw files (exclude .op.raw files which are operating point only)
+    all_raw_files = [
+        f for f in simulations_dir.glob("*.raw") if not f.name.endswith(".op.raw")
+    ]
     if not all_raw_files:
-        print("❌ No .raw files found in simulations directory")
+        print("❌ No transient .raw files found in simulations directory")
         return
 
     # Filter by specific bias currents if provided
@@ -386,6 +388,34 @@ def plot_transient_iv_results(results_dir: Path, bias_currents: list = None) -> 
                     linewidth=2,
                     label="Heater Current",
                     alpha=0.7,
+                )
+            except Exception:
+                pass
+
+            # Try to get ic current (critical current)
+            try:
+                ic_current = ltsp.get_data("I(ic)") * 1e6  # Convert to µA
+                ax2.plot(
+                    time,
+                    ic_current,
+                    color="#2ca02c",  # Green
+                    linewidth=2,
+                    label="Critical Current (ic)",
+                    alpha=0.8,
+                )
+            except Exception:
+                pass
+
+            # Try to get ir current (retrapping current)
+            try:
+                ir_current = ltsp.get_data("I(ir)") * 1e6  # Convert to µA
+                ax2.plot(
+                    time,
+                    ir_current,
+                    color="#d62728",  # Red
+                    linewidth=2,
+                    label="Retrapping Current (ir)",
+                    alpha=0.8,
                 )
             except Exception:
                 pass
