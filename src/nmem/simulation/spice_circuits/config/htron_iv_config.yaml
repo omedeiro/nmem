@@ -1,0 +1,59 @@
+# hTron IV Sweep Configuration
+# Configuration for single hTron device IV characterization
+
+# Circuit Configuration
+circuit_template: "htron_iv_template.cir"
+
+# Measurement Configuration
+measurements:
+  # Bias current sweep
+  bias_currents:
+    start: 300e-6       # A - Starting bias current
+    stop: 300e-6        # A - Ending bias current
+    steps: 1           # Number of steps
+    
+  # Heater current sweep  
+  heater_currents:
+    start: 0e-6         # A - Starting heater current
+    stop: 100e-6       # A - Ending heater current
+    steps: 2            # Number of steps
+
+
+# Analysis Configuration
+analysis:
+  switching_threshold: 0.5e-3     # V - Voltage threshold for switching detection
+  time_window:
+    start: 10e-6        # s - Analysis start time
+    end: 90e-6          # s - Analysis end time
+  
+# Plotting Configuration
+plotting:
+  iv_curves:
+    plot_individual: true         # Plot individual IV curves
+    plot_parametric: true         # Plot parametric sweeps
+    
+  switching_analysis:
+    plot_thresholds: true         # Plot switching thresholds vs heater current
+    plot_hysteresis: true         # Plot hysteresis loops
+    
+  transient_analysis:
+    plot_voltage_traces: true     # Plot voltage vs time traces
+    plot_current_traces: true     # Plot current vs time traces
+
+# Output Configuration
+output:
+  base_directory: "htron_iv_results"
+  save_raw_data: true             # Save extracted data to CSV
+  save_plots: true                # Save generated plots
+  generate_report: true           # Generate analysis report
+
+# Simulation Settings
+simulation:
+  ltspice_path: "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe"
+  ltspice_timeout: 120            # s - LTspice timeout
+  parallel_simulations: 4         # Number of parallel simulations
+  
+# Logging
+logging:
+  level: "INFO"                   # DEBUG, INFO, WARNING, ERROR
+  save_log: true                  # Save log to file
