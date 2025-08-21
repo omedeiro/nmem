@@ -77,12 +77,11 @@ class HTronIVSweep:
                 "Jchanr": "99G",
             },
             "output_signals": [
-                "I(X§U1:Lc)",
                 "V(out)",
-                "V(tempCh)",
+                "V(temp)",
                 "I(I2)",
-                "V(Meas_Isw)",
-                "V(Meas_Ihs)",
+                "I(ic)",
+                "I(ir)",
             ],
         }
 
