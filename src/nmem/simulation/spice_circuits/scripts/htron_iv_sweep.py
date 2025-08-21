@@ -62,9 +62,9 @@ class HTronIVSweep:
         default_config = {
             "ltspice_path": "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe",
             "circuit_template": "htron_iv_template.cir",
-            "bias_current_range": [0, 500e-6, 50e-6],  # Start, stop, step in Amps
-            "heater_current_range": [0, 500e-6, 100e-6],  # Start, stop, step in Amps
-            "simulation_time": 400e-6,  # Total simulation time in seconds
+            "bias_current_range": [1300e-6, 1300e-6, 1e-6],  # Single value: 1300 µA
+            "heater_current_range": [0, 0, 1e-6],  # Single value: 0 µA
+            "simulation_time": 80e-6,  # Total simulation time in seconds
             "device_parameters": {
                 "chan_width": "100n",
                 "chan_length": "1u",
@@ -80,8 +80,8 @@ class HTronIVSweep:
                 "V(out)",
                 "V(temp)",
                 "I(I2)",
-                "I(ic)",
-                "I(ir)",
+                "I(R§ic)",
+                "I(R§ir)",
             ],
         }
 
