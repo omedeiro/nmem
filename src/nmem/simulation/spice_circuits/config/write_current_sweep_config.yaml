@@ -1,0 +1,25 @@
+# Write Current Sweep Configuration
+
+# Waveform generation parameters
+waveform_config:
+  cycle_time: 1.0e-6          # Time between operations (1 µs)
+  pulse_sigma: 35.0e-9        # Gaussian pulse standard deviation (35 ns)
+  hold_width_write: 120.0e-9  # Write pulse hold width (120 ns)
+  hold_width_read: 300.0e-9   # Read pulse hold width (300 ns)
+  hold_width_clear: 5.0e-9    # Clear pulse hold width (5 ns)
+  read_amplitude: 725.0e-6    # Read current amplitude (725 µA)
+  enab_write_amplitude: 515.0e-6  # Enable write current (465 µA)
+  enab_read_amplitude: 329.0e-6   # Enable read current (300 µA)
+  clear_amplitude: 535.0e-6   # Clear current amplitude (700 µA)
+  dt: 0.1e-9                  # Time step for waveform generation (0.1 ns)
+  seed: 42                    # Random seed for reproducibility
+
+# SPICE simulation parameters
+simulation_config:
+  "{start_time}": "0"         # Simulation start time
+  "{stop_time}": "4.0e-6"     # Simulation stop time
+  "{start_save}": "0"         # Start saving results from time 0
+  "{time_step}": "1e-9"       # Maximum time step (1 ns)
+
+# LTspice executable path (adjust for your system)
+ltspice_path: "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe"
