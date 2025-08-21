@@ -18,6 +18,7 @@ import numpy as np
 from pathlib import Path
 import glob
 from datetime import datetime
+from typing import Dict
 
 # Set non-interactive backend for headless operation
 import matplotlib
@@ -65,182 +66,321 @@ def load_results(csv_path: Path) -> pd.DataFrame:
         raise RuntimeError(f"Failed to load results: {e}")
 
 
-def create_iv_curves_plot(df: pd.DataFrame, output_path: Path = None) -> None:
-    """Create IV curves for different heater currents."""
+def extract_switching_parameters(results_dir: Path) -> Dict[str, float]:
+    """Extract switching and retrapping currents from I-V characteristic data.
 
-    # Filter successful simulations
-    df_success = df[df["Success"] == True].copy()
+    Returns:
+        Dictionary with switching and retrapping parameters
+    """
 
-    if len(df_success) == 0:
-        print("⚠️  Warning: No successful simulations found. Skipping IV curves plot.")
-        return None
+    try:
+        import ltspice
+    except ImportError:
+        print("❌ ltspice package not available for parameter extraction")
+        return {}
 
-    # Get unique heater currents
-    heater_currents = sorted(df_success["Heater_Current_uA"].unique())
+    simulations_dir = results_dir / "simulations"
+    if not simulations_dir.exists():
+        print("❌ Simulations directory not found")
+        return {}
+
+    # Find .raw files (exclude .op.raw files)
+    all_raw_files = [
+        f for f in simulations_dir.glob("*.raw") if not f.name.endswith(".op.raw")
+    ]
+    if not all_raw_files:
+        print("❌ No transient .raw files found")
+        return {}
+
+    # Use the first simulation file
+    raw_file = all_raw_files[0]
+
+    try:
+        # Load and parse simulation data
+        ltsp = ltspice.Ltspice(str(raw_file))
+        ltsp.parse()
+
+        # Get time, voltage and current data
+        time = ltsp.get_time()
+        voltage = ltsp.get_data("V(out)") * 1e3  # Convert to mV
+        current = ltsp.get_data("I(I2)") * 1e6  # Convert to µA
+
+        # Define voltage threshold for switching detection (e.g., 1 mV)
+        voltage_threshold = 1.0  # mV
+
+        # Separate the data into ramp up and ramp down phases
+        # Find the peak current point to separate phases
+        max_current_idx = np.argmax(np.abs(current))
+
+        # Ramp up phase: beginning to peak
+        ramp_up_current = current[: max_current_idx + 1]
+        ramp_up_voltage = voltage[: max_current_idx + 1]
+
+        # Ramp down phase: peak to end
+        ramp_down_current = current[max_current_idx:]
+        ramp_down_voltage = voltage[max_current_idx:]
+
+        # Find switching current (during ramp up)
+        # Look for where voltage first exceeds threshold during current increase
+        switching_current_pos = None
+        switching_current_neg = None
+
+        # Positive sweep switching (ramp up)
+        pos_mask = ramp_up_current > 0
+        if np.any(pos_mask):
+            pos_current = ramp_up_current[pos_mask]
+            pos_voltage = ramp_up_voltage[pos_mask]
+            switched_indices = np.where(pos_voltage > voltage_threshold)[0]
+            if len(switched_indices) > 0:
+                switching_current_pos = pos_current[switched_indices[0]]
+
+        # Negative sweep switching (ramp up in absolute value)
+        neg_mask = ramp_up_current < 0
+        if np.any(neg_mask):
+            neg_current = np.abs(ramp_up_current[neg_mask])
+            neg_voltage = np.abs(ramp_up_voltage[neg_mask])
+            switched_indices = np.where(neg_voltage > voltage_threshold)[0]
+            if len(switched_indices) > 0:
+                switching_current_neg = neg_current[switched_indices[0]]
+
+        # Find retrapping current (during ramp down)
+        # Look for where voltage drops below threshold during current decrease
+        retrapping_current_pos = None
+        retrapping_current_neg = None
+
+        # Positive sweep retrapping (ramp down)
+        pos_mask = ramp_down_current > 0
+        if np.any(pos_mask):
+            pos_current = ramp_down_current[pos_mask]
+            pos_voltage = ramp_down_voltage[pos_mask]
+            # Look for where voltage drops below threshold (device returns to superconducting)
+            retrap_indices = np.where(pos_voltage < voltage_threshold)[0]
+            if len(retrap_indices) > 0:
+                # Take the current value just before voltage drops below threshold
+                if retrap_indices[0] > 0:
+                    retrapping_current_pos = pos_current[retrap_indices[0] - 1]
+                else:
+                    retrapping_current_pos = pos_current[retrap_indices[0]]
+
+        # Negative sweep retrapping (ramp down in absolute value)
+        neg_mask = ramp_down_current < 0
+        if np.any(neg_mask):
+            neg_current = np.abs(ramp_down_current[neg_mask])
+            neg_voltage = np.abs(ramp_down_voltage[neg_mask])
+            retrap_indices = np.where(neg_voltage < voltage_threshold)[0]
+            if len(retrap_indices) > 0:
+                if retrap_indices[0] > 0:
+                    retrapping_current_neg = neg_current[retrap_indices[0] - 1]
+                else:
+                    retrapping_current_neg = neg_current[retrap_indices[0]]
+
+        # Calculate averages (should be symmetric)
+        switching_currents = [
+            x for x in [switching_current_pos, switching_current_neg] if x is not None
+        ]
+        retrapping_currents = [
+            x for x in [retrapping_current_pos, retrapping_current_neg] if x is not None
+        ]
+
+        parameters = {}
+
+        if switching_currents:
+            parameters["switching_current_avg"] = np.mean(switching_currents)
+            parameters["switching_current_pos"] = (
+                switching_current_pos if switching_current_pos else np.nan
+            )
+            parameters["switching_current_neg"] = (
+                switching_current_neg if switching_current_neg else np.nan
+            )
+            parameters["switching_asymmetry"] = (
+                (
+                    abs(switching_current_pos - switching_current_neg)
+                    / np.mean(switching_currents)
+                    * 100
+                )
+                if len(switching_currents) == 2
+                else 0
+            )
+
+        if retrapping_currents:
+            parameters["retrapping_current_avg"] = np.mean(retrapping_currents)
+            parameters["retrapping_current_pos"] = (
+                retrapping_current_pos if retrapping_current_pos else np.nan
+            )
+            parameters["retrapping_current_neg"] = (
+                retrapping_current_neg if retrapping_current_neg else np.nan
+            )
+            parameters["retrapping_asymmetry"] = (
+                (
+                    abs(retrapping_current_pos - retrapping_current_neg)
+                    / np.mean(retrapping_currents)
+                    * 100
+                )
+                if len(retrapping_currents) == 2
+                else 0
+            )
+
+        # Validate that retrapping < switching (as it should be)
+        if (
+            "switching_current_avg" in parameters
+            and "retrapping_current_avg" in parameters
+        ):
+            # Calculate hysteresis
+            parameters["hysteresis_current"] = (
+                parameters["switching_current_avg"]
+                - parameters["retrapping_current_avg"]
+            )
+            parameters["hysteresis_percentage"] = (
+                parameters["hysteresis_current"]
+                / parameters["switching_current_avg"]
+                * 100
+            )
+
+            if (
+                parameters["retrapping_current_avg"]
+                > parameters["switching_current_avg"]
+            ):
+                print(
+                    "⚠️  Warning: Retrapping current > switching current - this may indicate analysis error"
+                )
+
+        # Print results
+        print("\n" + "=" * 50)
+        print("🔍 HTRON SWITCHING PARAMETERS")
+        print("=" * 50)
+
+        if "switching_current_avg" in parameters:
+            print(f"Switching Current (Ramp Up):")
+            print(f"  • Average: {parameters['switching_current_avg']:.1f} µA")
+            if not np.isnan(parameters["switching_current_pos"]):
+                print(
+                    f"  • Positive sweep: {parameters['switching_current_pos']:.1f} µA"
+                )
+            if not np.isnan(parameters["switching_current_neg"]):
+                print(
+                    f"  • Negative sweep: {parameters['switching_current_neg']:.1f} µA"
+                )
+            print(f"  • Asymmetry: {parameters['switching_asymmetry']:.1f}%")
+
+        if "retrapping_current_avg" in parameters:
+            print(f"\nRetrapping Current (Ramp Down):")
+            print(f"  • Average: {parameters['retrapping_current_avg']:.1f} µA")
+            if not np.isnan(parameters["retrapping_current_pos"]):
+                print(
+                    f"  • Positive sweep: {parameters['retrapping_current_pos']:.1f} µA"
+                )
+            if not np.isnan(parameters["retrapping_current_neg"]):
+                print(
+                    f"  • Negative sweep: {parameters['retrapping_current_neg']:.1f} µA"
+                )
+            print(f"  • Asymmetry: {parameters['retrapping_asymmetry']:.1f}%")
+
+        # Print hysteresis information
+        if "hysteresis_current" in parameters:
+            print(f"\nHysteresis:")
+            print(f"  • Current window: {parameters['hysteresis_current']:.1f} µA")
+            print(f"  • Percentage: {parameters['hysteresis_percentage']:.1f}%")
+
+        print("=" * 50)
+
+        return parameters
+
+    except Exception as e:
+        print(f"❌ Error extracting switching parameters: {e}")
+        return {}
+
+
+def create_iv_characteristic_plot(results_dir: Path, output_path: Path = None) -> None:
+    """Create current vs voltage characteristic plot from raw simulation files."""
+
+    try:
+        import ltspice
+    except ImportError:
+        print("❌ ltspice package not available for I-V characteristic plotting")
+        return
+
+    simulations_dir = results_dir / "simulations"
+    if not simulations_dir.exists():
+        print("❌ Simulations directory not found")
+        return
+
+    # Find .raw files (exclude .op.raw files which are operating point only)
+    all_raw_files = [
+        f for f in simulations_dir.glob("*.raw") if not f.name.endswith(".op.raw")
+    ]
+    if not all_raw_files:
+        print("❌ No transient .raw files found in simulations directory")
+        return
+
+    # Sort files
+    all_raw_files.sort()
+
+    print(
+        f"📊 Generating I-V characteristic plot from {len(all_raw_files)} simulations..."
+    )
 
     # Create figure
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+    fig.suptitle("hTron I-V Characteristic", fontsize=16, fontweight="bold")
 
-    # Color map for different heater currents
-    colors = plt.cm.viridis(np.linspace(0, 1, len(heater_currents)))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(all_raw_files)))
 
-    # Plot 1: IV curves (bias current vs max voltage)
-    for i, heater_i in enumerate(heater_currents):
-        df_heater = df_success[df_success["Heater_Current_uA"] == heater_i]
+    for i, raw_file in enumerate(all_raw_files):
+        try:
+            # Extract parameters from filename
+            filename = raw_file.stem
 
-        if len(df_heater) > 0:
-            ax1.plot(
-                df_heater["Bias_Current_uA"],
-                df_heater["Max_Voltage_mV"],
-                "o-",
-                color=colors[i],
-                linewidth=2,
-                markersize=6,
-                label=f"Heater: {heater_i:.0f} µA",
-            )
+            # Load and parse simulation data
+            ltsp = ltspice.Ltspice(str(raw_file))
+            ltsp.parse()
 
-    ax1.set_xlabel("Bias Current (µA)", fontsize=12)
-    ax1.set_ylabel("Max Voltage (mV)", fontsize=12)
-    ax1.set_title("hTron IV Characteristics", fontsize=14, fontweight="bold")
-    ax1.grid(True, alpha=0.3)
-    ax1.legend()
+            # Get voltage and current data
+            try:
+                voltage = ltsp.get_data("V(out)") * 1e3  # Convert to mV
+                current = ltsp.get_data("I(I2)") * 1e6  # Convert to µA
 
-    # Plot 2: Current transfer (bias current vs max measured current)
-    for i, heater_i in enumerate(heater_currents):
-        df_heater = df_success[df_success["Heater_Current_uA"] == heater_i]
+                # Plot I-V characteristic
+                ax.plot(
+                    voltage,
+                    current,
+                    color=colors[i],
+                    linewidth=2,
+                    label=f"{filename.replace('iv_bias_', '').replace('uA_heater_', 'µA, heater ').replace('uA', 'µA')}",
+                    alpha=0.8,
+                )
 
-        if len(df_heater) > 0 and "Max_Current_uA" in df_heater.columns:
-            ax2.plot(
-                df_heater["Bias_Current_uA"],
-                df_heater["Max_Current_uA"],
-                "s-",
-                color=colors[i],
-                linewidth=2,
-                markersize=6,
-                label=f"Heater: {heater_i:.0f} µA",
-            )
+            except Exception as e:
+                print(f"⚠️  Could not extract voltage/current from {filename}: {e}")
+                continue
 
-    ax2.set_xlabel("Bias Current (µA)", fontsize=12)
-    ax2.set_ylabel("Max Measured Current (µA)", fontsize=12)
-    ax2.set_title("Current Transfer Characteristics", fontsize=14, fontweight="bold")
-    ax2.grid(True, alpha=0.3)
-    ax2.legend()
+        except Exception as e:
+            print(f"⚠️  Error processing {raw_file.name}: {e}")
+            continue
 
-    plt.tight_layout()
-
-    # Save plot
-    if output_path is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = csv_path.parent / f"iv_curves_{timestamp}.png"
-
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    print(f"📈 IV curves plot saved to: {output_path}")
-
-    return fig
-
-
-def create_switching_threshold_plot(df: pd.DataFrame, output_path: Path = None) -> None:
-    """Create plot showing switching threshold vs heater current."""
-
-    # Filter successful simulations
-    df_success = df[df["Success"] == True].copy()
-
-    if len(df_success) == 0:
-        print("⚠️  Warning: No successful simulations found. Skipping threshold plot.")
-        return None
-
-    # Define switching threshold (e.g., where voltage > 1 mV)
-    threshold_voltage = 1.0  # mV
-
-    switching_thresholds = []
-    heater_currents = sorted(df_success["Heater_Current_uA"].unique())
-
-    for heater_i in heater_currents:
-        df_heater = df_success[df_success["Heater_Current_uA"] == heater_i]
-
-        # Find switching threshold (first bias current where voltage exceeds threshold)
-        switched = df_heater[df_heater["Max_Voltage_mV"] > threshold_voltage]
-
-        if len(switched) > 0:
-            switching_threshold = switched["Bias_Current_uA"].min()
-            switching_thresholds.append(switching_threshold)
-        else:
-            switching_thresholds.append(np.nan)
-
-    # Create plot
-    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-
-    # Remove NaN values for plotting
-    valid_data = [
-        (h, s) for h, s in zip(heater_currents, switching_thresholds) if not np.isnan(s)
-    ]
-
-    if valid_data:
-        heater_vals, threshold_vals = zip(*valid_data)
-
-        ax.plot(
-            heater_vals,
-            threshold_vals,
-            "o-",
-            linewidth=3,
-            markersize=8,
-            color="tab:red",
-        )
-
-        # Add trend line if we have enough points
-        if len(threshold_vals) >= 2:
-            z = np.polyfit(heater_vals, threshold_vals, 1)
-            p = np.poly1d(z)
-            ax.plot(
-                heater_vals,
-                p(heater_vals),
-                "--",
-                alpha=0.7,
-                color="tab:blue",
-                label=f"Linear fit: slope = {z[0]:.2f} µA/µA",
-            )
-            ax.legend()
-
-    ax.set_xlabel("Heater Current (µA)", fontsize=12)
-    ax.set_ylabel("Switching Threshold (µA)", fontsize=12)
-    ax.set_title(
-        f"hTron Switching Threshold vs Heater Current\n(Threshold: {threshold_voltage} mV)",
-        fontsize=14,
-        fontweight="bold",
-    )
+    # Format plot
+    ax.set_xlabel("Voltage (mV)", fontsize=12)
+    ax.set_ylabel("Current (µA)", fontsize=12)
+    ax.set_title("Current vs Voltage Characteristic", fontsize=14)
     ax.grid(True, alpha=0.3)
 
-    # Add statistics text box
-    if valid_data:
-        min_threshold = min(threshold_vals)
-        max_threshold = max(threshold_vals)
-        threshold_range = max_threshold - min_threshold
+    # Add legend if there are multiple traces
+    if len(all_raw_files) > 1:
+        ax.legend(loc="best")
 
-        textstr = f"""Data Points: {len(threshold_vals)}
-Min Threshold: {min_threshold:.1f} µA
-Max Threshold: {max_threshold:.1f} µA
-Range: {threshold_range:.1f} µA"""
-
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.8)
-        ax.text(
-            0.02,
-            0.98,
-            textstr,
-            transform=ax.transAxes,
-            fontsize=10,
-            verticalalignment="top",
-            bbox=props,
-        )
+    # Add zero lines
+    ax.axhline(y=0, color="black", linestyle="--", alpha=0.5, linewidth=1)
+    ax.axvline(x=0, color="black", linestyle="--", alpha=0.5, linewidth=1)
 
     plt.tight_layout()
 
     # Save plot
     if output_path is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = csv_path.parent / f"switching_threshold_{timestamp}.png"
+        output_path = results_dir / f"iv_characteristic_{timestamp}.png"
 
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    print(f"📈 Switching threshold plot saved to: {output_path}")
+    print(f"📈 I-V characteristic plot saved to: {output_path}")
+    plt.close()
 
     return fig
 
@@ -498,7 +638,8 @@ def main():
         "--show-transients",
         "-t",
         action="store_true",
-        help="Also plot transient results",
+        default=True,
+        help="Also plot transient results (default: True)",
     )
     parser.add_argument(
         "--transient-bias-currents",
@@ -530,17 +671,12 @@ def main():
         # Create plots
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # IV curves plot
-        iv_output = (
-            results_dir / f"iv_curves_{timestamp}.png"
-            if not args.output
-            else Path(args.output)
-        )
-        create_iv_curves_plot(df, iv_output)
+        # Extract switching parameters
+        switching_params = extract_switching_parameters(results_dir)
 
-        # Switching threshold plot
-        threshold_output = results_dir / f"switching_threshold_{timestamp}.png"
-        create_switching_threshold_plot(df, threshold_output)
+        # I-V characteristic plot
+        iv_char_output = results_dir / f"iv_characteristic_{timestamp}.png"
+        create_iv_characteristic_plot(results_dir, iv_char_output)
 
         # Create transient plots if requested
         if args.show_transients:
