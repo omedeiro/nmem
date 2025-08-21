@@ -62,9 +62,9 @@ class HTronIVSweep:
         default_config = {
             "ltspice_path": "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe",
             "circuit_template": "htron_iv_template.cir",
-            "bias_current_range": [1300e-6, 1300e-6, 1e-6],  # Single value: 1300 µA
+            "bias_current_range": [300e-6, 300e-6, 1e-6],  # Single value: 1300 µA
             "heater_current_range": [0, 0, 1e-6],  # Single value: 0 µA
-            "simulation_time": 10e-6,  # Total simulation time in seconds
+            "simulation_time": 400e-6,  # Total simulation time in seconds
             "device_parameters": {
                 "chan_width": "100n",
                 "chan_length": "1u",
@@ -170,6 +170,9 @@ class HTronIVSweep:
         Returns:
             Tuple of (success, raw_file_path)
         """
+        # Create simulation name for logging and file naming
+        sim_name = f"iv_bias_{bias_current*1e6:.0f}uA_heater_{heater_current*1e6:.0f}uA"
+
         try:
             # Create circuit file with parameters
             circuit_template_path = (
@@ -180,10 +183,18 @@ class HTronIVSweep:
             with open(circuit_template_path, "r") as f:
                 circuit_content = f.read()
 
-            # Replace only the bias current parameters (simplified approach)
-            modified_circuit = circuit_content.replace(
-                ".param I_bias=300u I_heater=500u",
-                f".param I_bias={bias_current:.2e} I_heater={heater_current:.2e}",
+            # Replace placeholders with actual values
+            sim_time = self.config["simulation_time"]
+            modified_circuit = circuit_content.format(
+                channel_bias=f"{bias_current:.2e}",
+                heater_bias=f"{heater_current:.2e}",
+                I_bias=f"{bias_current:.2e}",
+                I_heater=f"{heater_current:.2e}",
+                neg_I_bias=f"{-bias_current:.2e}",
+                start_time="0",
+                stop_time=f"{sim_time:.2e}",
+                start_save="0",
+                time_step="1n",
             )
 
             # Fix library path like the write sweep does
@@ -195,9 +206,6 @@ class HTronIVSweep:
             )
 
             # Create simulation-specific circuit file
-            sim_name = (
-                f"iv_bias_{bias_current*1e6:.0f}uA_heater_{heater_current*1e6:.0f}uA"
-            )
             circuit_path = self.results_dir / "simulations" / f"{sim_name}.cir"
 
             with open(circuit_path, "w") as f:
@@ -208,8 +216,13 @@ class HTronIVSweep:
                 f"🔄 Running: Bias={bias_current*1e6:.0f}µA, Heater={heater_current*1e6:.0f}µA"
             )
 
-            raw_file = self.ltspice_runner.run_simulation(circuit_path)
-            if raw_file and raw_file.exists():
+            # LTspice runner returns None, so we need to construct the raw file path
+            self.ltspice_runner.run_simulation(circuit_path)
+
+            # Construct expected raw file path
+            raw_file = circuit_path.with_suffix(".raw")
+
+            if raw_file.exists():
                 return True, raw_file
             else:
                 self.logger.error(f"❌ Simulation failed for {sim_name}")
