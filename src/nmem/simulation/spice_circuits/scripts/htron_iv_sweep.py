@@ -63,7 +63,7 @@ class HTronIVSweep:
             "ltspice_path": "/mnt/c/Users/omedeiro/AppData/Local/Programs/ADI/LTspice/LTspice.exe",
             "circuit_template": "htron_iv_template.cir",
             "bias_current_range": [300e-6, 300e-6, 1e-6],  # Single value: 1300 µA
-            "heater_current_range": [0, 0, 1e-6],  # Single value: 0 µA
+            "heater_current_range": [0, 100e-6, 50e-6],  # 0, 25, 50, 75, 100 µA
             "simulation_time": 400e-6,  # Total simulation time in seconds
             "device_parameters": {
                 "chan_width": "100n",
@@ -79,7 +79,9 @@ class HTronIVSweep:
             "output_signals": [
                 "V(out)",
                 "V(temp)",
+                "I(I1)",
                 "I(I2)",
+                "I(R3)",
                 "I(ic)",
                 "I(ir)",
             ],
@@ -188,9 +190,6 @@ class HTronIVSweep:
             modified_circuit = circuit_content.format(
                 channel_bias=f"{bias_current:.2e}",
                 heater_bias=f"{heater_current:.2e}",
-                I_bias=f"{bias_current:.2e}",
-                I_heater=f"{heater_current:.2e}",
-                neg_I_bias=f"{-bias_current:.2e}",
                 start_time="0",
                 stop_time=f"{sim_time:.2e}",
                 start_save="0",
@@ -211,10 +210,16 @@ class HTronIVSweep:
             with open(circuit_path, "w") as f:
                 f.write(modified_circuit)
 
+            # Save the generated circuit for debugging
+            debug_path = self.results_dir / f"{sim_name}_debug.cir"
+            with open(debug_path, "w") as f:
+                f.write(modified_circuit)
+
             # Run simulation
             self.logger.info(
                 f"🔄 Running: Bias={bias_current*1e6:.0f}µA, Heater={heater_current*1e6:.0f}µA"
             )
+            self.logger.info(f"🔧 Debug circuit saved to: {debug_path}")
 
             # LTspice runner returns None, so we need to construct the raw file path
             self.ltspice_runner.run_simulation(circuit_path)
@@ -336,7 +341,11 @@ class HTronIVSweep:
 
                             # Add additional extracted signals
                             for signal, data in iv_data.items():
-                                if signal not in ["time"] and len(data) > 0:
+                                if (
+                                    signal not in ["time"]
+                                    and data is not None
+                                    and len(data) > 0
+                                ):
                                     result[
                                         f"Max_{signal.replace('(', '').replace(')', '').replace(':', '_')}"
                                     ] = np.max(np.abs(data))
