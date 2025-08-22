@@ -41,3 +41,7 @@ dist/
 
 # Simulation and CAD files
 *.cir
+*.plt
+*.net
+*.asc
+*.yaml
