@@ -1,27 +1,13 @@
-* hTron IV Sweep Circuit Template
-* Single hTron device characterization
-
-* Current sources
-I1 0 heater_in {I_heater}
-I2 0 out PWL(0 0 100u {I_bias} 200u 0 300u {-I_bias} 400u 0)
-
-* hTron device using behavioral model
-X_hTron heater_in 0 out 0 temp Meas_Isw Meas_Ihs hTron_behav chan_width=100n, chan_length=4u, heater_resistance=300
-* Load resistor
+I1 0 N001 400µ
+I2 0 out PWL(0 0 100u 300u 200u 0 300u -300u 400u 0)
 R1 out 0 50
-
-* Additional measurement resistors
-R§ic Meas_Isw 0 1
-R§ir Meas_Ihs 0 1
-
-* Parameters - only bias currents are variable
-.param I_bias=300u I_heater=500u
-
-* Analysis
-.tran 0 85u 0 1n
+R§ic N003 0 1
+R§ir N004 0 1
+X§hTron N002 0 out 0 temp N003 N004 hTron_behav
+R2 N001 N002 1m
+R3 out 0 1G
+.tran 0 400u 0 1n
 .options reltol 1e-6
-
-* Include behavioral model
 .lib hTron_behavioral.lib
-
+.backanno
 .end
