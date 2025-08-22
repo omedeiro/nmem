@@ -560,6 +560,20 @@ def plot_transient_iv_results(results_dir: Path, bias_currents: list = None) -> 
             except Exception:
                 pass
 
+            # Try to get R3 current
+            try:
+                r3_current = ltsp.get_data("I(R3)") * 1e6  # Convert to µA
+                ax2.plot(
+                    time,
+                    r3_current,
+                    color="#ff1493",  # Deep Pink
+                    linewidth=2,
+                    label="R3 Current",
+                    alpha=0.8,
+                )
+            except Exception:
+                pass
+
             # Current subplot formatting
             ax2.set_xlabel("Time (µs)", fontsize=12)
             ax2.set_ylabel("Current (µA)", fontsize=12)
